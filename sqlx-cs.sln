@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqlx-cs-core", "sqlx-cs-core\sqlx-cs-core.csproj", "{4C40C0D3-9B11-431A-9EFA-11034A781B30}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqlx-cs-pg", "sqlx-cs-pg\sqlx-cs-pg.csproj", "{DB5284D7-0926-4A99-A077-8291B1983A55}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
