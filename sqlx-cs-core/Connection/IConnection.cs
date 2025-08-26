@@ -16,7 +16,7 @@ public interface IConnection : IAsyncDisposable
 
     public Task Rollback(CancellationToken cancellationToken = default);
 
-    internal Task<bool> IsValid(CancellationToken cancellationToken = default);
+    public Task<bool> IsValid(CancellationToken cancellationToken = default);
 
     public IExecutableQuery CreateQuery(string sql);
 
