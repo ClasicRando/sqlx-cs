@@ -35,4 +35,9 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
     {
         return queryExecutor.ExecuteQuery(this, cancellationToken);
     }
+
+    public void Dispose()
+    {
+        ParameterBuffer.Dispose();
+    }
 }

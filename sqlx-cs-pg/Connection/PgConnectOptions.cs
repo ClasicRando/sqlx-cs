@@ -4,27 +4,80 @@ using Sqlx.Postgres.Auth.Sasl;
 
 namespace Sqlx.Postgres.Connection;
 
-public class PgConnectOptions(PgConnectOptionsBuilder builder)
+public class PgConnectOptions
 {
-    public string Host { get; } = builder.Host;
-    public ushort Port { get; } = builder.Port;
-    public string Username { get; } = builder.Username;
-    public string ApplicationName { get; } = builder.ApplicationName;
-    public string? Password { get; } = builder.Password;
-    public string? Database { get; } = builder.Database;
-    public TimeSpan QueryTimeout { get; } = builder.QueryTimeout;
-    public int StatementCacheCapacity { get; } = builder.StatementCacheCapacity;
-    public bool UseExtendedProtocolForSimpleQueries { get; } = builder.UseExtendedProtocolForSimpleQueries;
-    public int ExtraFloatPoints { get; } = builder.ExtraFloatPoints;
-    public SslMode SslMode { get; } = builder.SslMode;
-    public string? CurrentSchema { get; } = builder.CurrentSchema;
-    public TimeSpan? TimeZoneOffset { get; } = builder.TimeZoneOffset;
-    public ChannelBinding ChannelBinding { get; } = builder.ChannelBinding;
-    public ILoggerFactory LoggerFactory { get; } = builder.LoggerFactory;
+    public class Builder(string host, ushort port, string username)
+    {
+        public string Host { get; } = host;
+        public ushort Port { get; } = port;
+        public string Username { get; } = username;
+        public string ApplicationName { get; set; } = "sqlx-cs-driver";
+        public string? Password { get; set; }
+        public string? Database { get; set; }
+        public TimeSpan QueryTimeout { get; set; } = TimeSpan.Zero;
+        public int StatementCacheCapacity { get; set; } = 100;
+        public bool UseExtendedProtocolForSimpleQueries { get; set; } = true;
+        public int ExtraFloatPoints { get; set; } = 1;
+        public SslMode SslMode { get; set; } = SslMode.Prefer;
+        public string? CurrentSchema { get; set; } = null;
+        public TimeSpan? TimeZoneOffset { get; set; } = null;
+        public ChannelBinding ChannelBinding { get; set; } = ChannelBinding.Prefer;
+        public ILoggerFactory LoggerFactory { get; set; } = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddConsole());
+
+        public PgConnectOptions Build()
+        {
+            if (QueryTimeout < TimeSpan.Zero)
+            {
+                throw new ArgumentException(
+                    "Timeout must be positive or 0 TimeSpan",
+                    nameof(QueryTimeout));
+            }
+            return new PgConnectOptions(this);
+        }
+    
+        public override string ToString()
+        {
+            return
+                $"{nameof(Host)}: {Host}, {nameof(Port)}: {Port}, {nameof(ApplicationName)}: {ApplicationName}, {nameof(Database)}: {Database}, {nameof(QueryTimeout)}: {QueryTimeout}, {nameof(StatementCacheCapacity)}: {StatementCacheCapacity}, {nameof(UseExtendedProtocolForSimpleQueries)}: {UseExtendedProtocolForSimpleQueries}, {nameof(ExtraFloatPoints)}: {ExtraFloatPoints}, {nameof(SslMode)}: {SslMode}, {nameof(CurrentSchema)}: {CurrentSchema}, {nameof(TimeZoneOffset)}: {TimeZoneOffset}, {nameof(ChannelBinding)}: {ChannelBinding}";
+        }
+    }
+
+    private PgConnectOptions(Builder builder)
+    {
+        Host = builder.Host;
+        Port = builder.Port;
+        Username = builder.Username;
+        ApplicationName = builder.ApplicationName;
+        Password = builder.Password;
+        Database = builder.Database;
+        QueryTimeout = builder.QueryTimeout;
+        StatementCacheCapacity = builder.StatementCacheCapacity;
+        UseExtendedProtocolForSimpleQueries = builder.UseExtendedProtocolForSimpleQueries;
+        ExtraFloatPoints = builder.ExtraFloatPoints;
+        SslMode = builder.SslMode;
+        CurrentSchema = builder.CurrentSchema;
+        ChannelBinding = builder.ChannelBinding;
+        LoggerFactory = builder.LoggerFactory;
+    }
+    
+    public string Host { get; }
+    public ushort Port { get; }
+    public string Username { get; }
+    public string ApplicationName { get; }
+    public string? Password { get; }
+    public string? Database { get; }
+    public TimeSpan QueryTimeout { get; }
+    public int StatementCacheCapacity { get; }
+    public bool UseExtendedProtocolForSimpleQueries { get; }
+    public int ExtraFloatPoints { get; }
+    public SslMode SslMode { get; }
+    public string? CurrentSchema { get; }
+    public ChannelBinding ChannelBinding { get; }
+    public ILoggerFactory LoggerFactory { get; }
     
     public override string ToString()
     {
         return
-            $"{nameof(Host)}: {Host}, {nameof(Port)}: {Port}, {nameof(ApplicationName)}: {ApplicationName}, {nameof(Database)}: {Database}, {nameof(QueryTimeout)}: {QueryTimeout}, {nameof(StatementCacheCapacity)}: {StatementCacheCapacity}, {nameof(UseExtendedProtocolForSimpleQueries)}: {UseExtendedProtocolForSimpleQueries}, {nameof(ExtraFloatPoints)}: {ExtraFloatPoints}, {nameof(SslMode)}: {SslMode}, {nameof(CurrentSchema)}: {CurrentSchema}, {nameof(TimeZoneOffset)}: {TimeZoneOffset}, {nameof(ChannelBinding)}: {ChannelBinding}";
+            $"{nameof(Host)}: {Host}, {nameof(Port)}: {Port}, {nameof(ApplicationName)}: {ApplicationName}, {nameof(Database)}: {Database}, {nameof(QueryTimeout)}: {QueryTimeout}, {nameof(StatementCacheCapacity)}: {StatementCacheCapacity}, {nameof(UseExtendedProtocolForSimpleQueries)}: {UseExtendedProtocolForSimpleQueries}, {nameof(ExtraFloatPoints)}: {ExtraFloatPoints}, {nameof(SslMode)}: {SslMode}, {nameof(CurrentSchema)}: {CurrentSchema}, {nameof(ChannelBinding)}: {ChannelBinding}";
     }
 }

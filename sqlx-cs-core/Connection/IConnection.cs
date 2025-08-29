@@ -1,3 +1,4 @@
+using Sqlx.Core.Exceptions;
 using Sqlx.Core.Query;
 
 namespace Sqlx.Core.Connection;
@@ -21,6 +22,16 @@ public interface IConnection : IAsyncDisposable
     public IExecutableQuery CreateQuery(string sql);
 
     public IQueryBatch CreateQueryBatch();
+
+    public TConnection Unwrap<TConnection>() where TConnection : IConnection
+    {
+        if (this is TConnection result)
+        {
+            return result;
+        }
+
+        throw new SqlxException($"Could not unwrap a {GetType()} as {typeof(TConnection)}");
+    }
 
     public Task CloseAsync(CancellationToken cancellationToken = default);
 }

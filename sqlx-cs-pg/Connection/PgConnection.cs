@@ -22,7 +22,7 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
     private readonly ILogger _logger;
     private long _inTransaction;
     private int _pendingReadyForQuery;
-    private readonly SemaphoreSlim _semaphore = new(0, 1);
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     internal PgConnection(PgStream pgStream, PgConnectionPool pool)
     {

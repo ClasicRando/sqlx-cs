@@ -22,4 +22,11 @@ public static class ConnectionPoolExtensions
             throw;
         }
     }
+    
+    public static async Task<TConnection> AcquireAs<TConnection>(
+        this IConnectionPool connectionPool)
+        where TConnection : IConnection
+    {
+        return (await connectionPool.Acquire().ConfigureAwait(false)).Unwrap<TConnection>();
+    }
 }

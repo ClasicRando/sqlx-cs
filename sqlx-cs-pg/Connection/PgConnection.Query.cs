@@ -79,7 +79,7 @@ public partial class PgConnection
             await ExecutePreparedStatement(statement, parameterBuffer, true, cancellationToken)
                 .ConfigureAwait(false);
             
-            var items = CollectResult(null, cancellationToken).ConfigureAwait(false);
+            var items = CollectResult(statement, cancellationToken).ConfigureAwait(false);
             await foreach (var item in items)
             {
                 yield return item;

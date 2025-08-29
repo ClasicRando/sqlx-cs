@@ -15,14 +15,14 @@ public sealed class StartupMessage(PgConnectOptions options) : IPgFrontendMessag
             {
                 buf.WriteShort(3);
                 buf.WriteShort(0);
-                buf.WriteCString("username");
+                buf.WriteCString("user");
                 buf.WriteCString(Options.Username);
                 if (Options.Database is not null)
                 {
                     buf.WriteCString("database");
                     buf.WriteCString(Options.Database);
                 }
-                buf.WriteCString("encoding");
+                buf.WriteCString("client_encoding");
                 buf.WriteCString("UTF-8");
                 buf.WriteCString("DateStyle");
                 buf.WriteCString("ISO");
@@ -42,7 +42,7 @@ public sealed class StartupMessage(PgConnectOptions options) : IPgFrontendMessag
                 buf.WriteCString("application_name");
                 buf.WriteCString(Options.ApplicationName);
                 buf.WriteCString("statement_timeout");
-                var queryTimeout = int.Max((int)Options.QueryTimeout.TotalMilliseconds, int.MaxValue);
+                var queryTimeout = int.Max((int)Options.QueryTimeout.TotalMilliseconds, 0);
                 buf.WriteCString(queryTimeout.ToString());
                 
                 buf.WriteByte(0);

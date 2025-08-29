@@ -1,9 +1,8 @@
 using System.Text.Json.Serialization.Metadata;
-using Sqlx.Core.Types;
 
 namespace Sqlx.Core.Query;
 
-public interface IQuery
+public interface IQuery : IDisposable
 {
     public string Query { get; }
     

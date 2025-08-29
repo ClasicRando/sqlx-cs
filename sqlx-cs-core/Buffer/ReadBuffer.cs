@@ -8,15 +8,15 @@ namespace Sqlx.Core.Buffer;
 public ref struct ReadBuffer
 {
     private static readonly Encoding Encoding = Charsets.Default;
-    internal readonly Span<byte> Inner;
+    private readonly Span<byte> _inner;
     private int _position = 0;
 
     public ReadBuffer(Span<byte> inner)
     {
-        Inner = inner;
+        _inner = inner;
     }
 
-    public int Remaining => Inner.Length - _position;
+    public int Remaining => _inner.Length - _position;
 
     public bool IsExhausted => Remaining == 0;
 
@@ -39,7 +39,7 @@ public ref struct ReadBuffer
     public byte ReadByte()
     {
         CheckBound(sizeof(byte));
-        var result = Inner[_position];
+        var result = _inner[_position];
         _position += sizeof(byte);
         return result;
     }
@@ -48,7 +48,7 @@ public ref struct ReadBuffer
     public short ReadShort()
     {
         CheckBound(sizeof(short));
-        var result = Unsafe.ReadUnaligned<short>(ref Inner[_position]);
+        var result = Unsafe.ReadUnaligned<short>(ref _inner[_position]);
         _position += sizeof(short);
         return BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(result) : result;
     }
@@ -57,7 +57,7 @@ public ref struct ReadBuffer
     public int ReadInt()
     {
         CheckBound(sizeof(int));
-        var result = Unsafe.ReadUnaligned<int>(ref Inner[_position]);
+        var result = Unsafe.ReadUnaligned<int>(ref _inner[_position]);
         _position += sizeof(int);
         return BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(result) : result;
     }
@@ -66,7 +66,7 @@ public ref struct ReadBuffer
     public long ReadLong()
     {
         CheckBound(sizeof(long));
-        var result = Unsafe.ReadUnaligned<long>(ref Inner[_position]);
+        var result = Unsafe.ReadUnaligned<long>(ref _inner[_position]);
         _position += sizeof(long);
         return BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(result) : result;
     }
@@ -76,8 +76,8 @@ public ref struct ReadBuffer
     {
         CheckBound(sizeof(float));
         var result = BitConverter.IsLittleEndian
-            ? BitConverter.Int32BitsToSingle(BinaryPrimitives.ReverseEndianness(Unsafe.ReadUnaligned<int>(ref Inner[_position])))
-            : Unsafe.ReadUnaligned<float>(ref Inner[_position]);
+            ? BitConverter.Int32BitsToSingle(BinaryPrimitives.ReverseEndianness(Unsafe.ReadUnaligned<int>(ref _inner[_position])))
+            : Unsafe.ReadUnaligned<float>(ref _inner[_position]);
         _position += sizeof(float);
         return result;
     }
@@ -87,8 +87,8 @@ public ref struct ReadBuffer
     {
         CheckBound(sizeof(double));
         var result = BitConverter.IsLittleEndian
-            ? BitConverter.Int64BitsToDouble(BinaryPrimitives.ReverseEndianness(Unsafe.ReadUnaligned<long>(ref Inner[_position])))
-            : Unsafe.ReadUnaligned<double>(ref Inner[_position]);
+            ? BitConverter.Int64BitsToDouble(BinaryPrimitives.ReverseEndianness(Unsafe.ReadUnaligned<long>(ref _inner[_position])))
+            : Unsafe.ReadUnaligned<double>(ref _inner[_position]);
         _position += sizeof(double);
         return result;
     }
@@ -96,8 +96,8 @@ public ref struct ReadBuffer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> ReadBytesAsSpan()
     {
-        var result = Inner[_position..];
-        _position = Inner.Length;
+        var result = _inner[_position..];
+        _position = _inner.Length;
         return result;
     }
 
@@ -105,7 +105,7 @@ public ref struct ReadBuffer
     public ReadOnlySpan<byte> ReadBytesAsSpan(int length)
     {
         CheckBound(length);
-        var result = Inner.Slice(_position, length);
+        var result = _inner.Slice(_position, length);
         _position += length;
         return result;
     }
@@ -113,18 +113,15 @@ public ref struct ReadBuffer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public byte[] ReadBytes()
     {
-        var result = new byte[Remaining];
-        Inner.CopyTo(result.AsSpan());
-        _position = Inner.Length;
-        return result;
+        return ReadBytes(Remaining);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public byte[] ReadBytes(int length)
     {
         CheckBound(length);
-        var result = new byte[Remaining];
-        Inner.CopyTo(result.AsSpan());
+        var result = new byte[length];
+        _inner.Slice(_position, length).CopyTo(result.AsSpan());
         _position += length;
         return result;
     }
@@ -132,8 +129,8 @@ public ref struct ReadBuffer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string ReadText()
     {
-        var result = Encoding.GetString(Inner[_position..]);
-        _position = Inner.Length;
+        var result = Encoding.GetString(_inner[_position..]);
+        _position = _inner.Length;
         return result;
     }
 
@@ -141,20 +138,20 @@ public ref struct ReadBuffer
     public string ReadText(int length)
     {
         CheckBound(length);
-        var result = Encoding.GetString(Inner.Slice(_position, length));
+        var result = Encoding.GetString(_inner.Slice(_position, length));
         _position += length;
         return result;
     }
 
     public int GetRemainingCharCount()
     {
-        return Encoding.GetCharCount(Inner[_position..]);
+        return Encoding.GetCharCount(_inner[_position..]);
     }
 
     public void ReadText(Span<char> chars)
     {
         CheckBound(chars.Length);
-        Encoding.GetChars(Inner.Slice(_position, chars.Length), chars);
+        Encoding.GetChars(_inner.Slice(_position, chars.Length), chars);
         _position += chars.Length;
     }
 
@@ -162,8 +159,8 @@ public ref struct ReadBuffer
     public string ReadCString()
     {
         var index = _position;
-        while (Inner[index++] != 0);
-        var result = Encoding.GetString(Inner.Slice(_position, index - _position - 1));
+        while (_inner[index++] != 0);
+        var result = Encoding.GetString(_inner.Slice(_position, index - _position - 1));
         _position += index - _position;
         return result;
     }
@@ -171,7 +168,7 @@ public ref struct ReadBuffer
     public ReadBuffer Slice(int length)
     {
         CheckBound(length);
-        var slice = Inner.Slice(_position, length);
+        var slice = _inner.Slice(_position, length);
         _position += length;
         return new ReadBuffer(slice);
     }

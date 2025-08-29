@@ -28,9 +28,13 @@ public sealed class WriteBuffer : System.IO.Stream, IDisposable
 
     public int BytesWritten => _writePosition;
 
-    public ReadOnlySpan<byte> Span => _buffer.AsSpan(0, _writePosition);
+    public ReadOnlySpan<byte> ReadableSpan => _buffer.AsSpan(0, _writePosition);
 
-    public ReadOnlyMemory<byte> Memory => _buffer.AsMemory(0, _writePosition);
+    public ReadOnlyMemory<byte> ReadableMemory => _buffer.AsMemory(0, _writePosition);
+
+    public Span<byte> WriteableSpan => _buffer.AsSpan(_writePosition);
+
+    public Memory<byte> WriteableMemory => _buffer.AsMemory(_writePosition);
 
     public new void WriteByte(byte value)
     {
@@ -129,7 +133,7 @@ public sealed class WriteBuffer : System.IO.Stream, IDisposable
 
     public void WriteCString(ReadOnlySpan<char> value)
     {
-        if (value.Length == 0)
+        if (value.Length != 0)
         {
             WriteString(value);
         }
@@ -149,11 +153,12 @@ public sealed class WriteBuffer : System.IO.Stream, IDisposable
     public void WriteLengthPrefixed(bool includeLength, Action<WriteBuffer> action)
     {
         var start = _writePosition;
-        var size = includeLength ? 4 : 0;
         WriteInt(0);
         action(this);
-        size += _writePosition - start;
-        Unsafe.WriteUnaligned(ref _buffer[start], size);
+        var size = _writePosition - start - (includeLength ? 0 : 4);
+        Unsafe.WriteUnaligned(
+            ref _buffer[start],
+            BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(size) : size);
     }
 
     public byte[] CopyBytes()
@@ -161,6 +166,11 @@ public sealed class WriteBuffer : System.IO.Stream, IDisposable
         var result = new byte[_writePosition];
         _buffer.AsSpan(0, _writePosition).CopyTo(result);
         return result;
+    }
+
+    public void Reset()
+    {
+        _writePosition = 0;
     }
 
     public new void Dispose()

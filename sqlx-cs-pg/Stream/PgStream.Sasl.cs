@@ -10,7 +10,7 @@ namespace Sqlx.Postgres.Stream;
 
 internal partial class PgStream
 {
-    private const string Mechanism = "SCARM-SHA-256";
+    private const string Mechanism = "SCRAM-SHA-256";
     private const string CbindFlag = "n";
     private const string Cbind = "biws";
     
@@ -43,7 +43,7 @@ internal partial class PgStream
 
     private async Task<string> SendScramInit(SaslAuthMessage saslAuthMessage, CancellationToken cancellationToken)
     {
-        var serverSupportsSha256 = saslAuthMessage.AuthMechanisms.Contains("SCARM-SHA-256");
+        var serverSupportsSha256 = saslAuthMessage.AuthMechanisms.Contains("SCRAM-SHA-256");
         // var allowSha256 = serverSupportsSha256 &&
         //                   _connectOptions.ChannelBinding != ChannelBinding.Require;
         // var serverSupportsSha256Plus = saslAuthMessage.AuthMechanisms.Contains("SCARM-SHA-256-PLUS");
@@ -127,7 +127,7 @@ internal partial class PgStream
         var serverKey = Hmac(saltedPassword, "Server Key");
         var serverSignature = Hmac(serverKey, authMessage);
 
-        var messageStr = $"{clientFinalMessageWithoutProof},r={clientProof}";
+        var messageStr = $"{clientFinalMessageWithoutProof},p={clientProof}";
 
         var saslResponse = new SaslResponseMessage(messageStr);
         await SendMessage(saslResponse, cancellationToken).ConfigureAwait(false);

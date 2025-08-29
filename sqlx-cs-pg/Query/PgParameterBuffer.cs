@@ -10,7 +10,7 @@ internal class PgParameterBuffer : IDisposable
     private readonly List<PgType> _pgTypes = [];
 
     public short ParameterCount => (short)_pgTypes.Count;
-    public ReadOnlyMemory<byte> Memory => _buffer.Memory;
+    public ReadOnlyMemory<byte> Memory => _buffer.ReadableMemory;
     public IReadOnlyList<PgType> PgTypes => _pgTypes;
     
     public void Encode<T>(T? value) where T : notnull

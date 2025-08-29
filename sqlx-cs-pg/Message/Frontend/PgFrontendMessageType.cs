@@ -15,7 +15,6 @@ internal enum PgFrontendMessageType : byte
     Parse = (byte)'P',
     Password = (byte)'p',
     Query = (byte)'Q',
-    SaslResponse = (byte)'p',
     Sync = (byte)'S',
     Terminate = (byte)'X',
 }

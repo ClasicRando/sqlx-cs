@@ -42,6 +42,7 @@ internal sealed partial class PgStream : IAsyncDisposable
         await SendMessage(new StartupMessage(ConnectOptions), cancellationToken)
             .ConfigureAwait(false);
         await HandleAuthFlow(cancellationToken).ConfigureAwait(false);
+        await WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken).ConfigureAwait(false);
     }
     
     private async Task HandleAuthFlow(CancellationToken cancellationToken)
@@ -69,7 +70,8 @@ internal sealed partial class PgStream : IAsyncDisposable
             case SaslAuthMessage saslAuthMessage:
                 await SaslAuthFlow(
                     ConnectOptions.Password ?? throw new PgException("Cannot connect to database without Password property"),
-                    saslAuthMessage, cancellationToken).ConfigureAwait(false);
+                    saslAuthMessage,
+                    cancellationToken).ConfigureAwait(false);
                 break;
             default:
                 throw new PgException($"Auth request type cannot be handled. {authentication}");
@@ -200,12 +202,12 @@ internal sealed partial class PgStream : IAsyncDisposable
     internal async Task<IPgBackendMessage> ReceiveNextMessage(CancellationToken cancellationToken)
     {
         var format = (PgBackendMessageType)await _asyncStream.ReadByteAsync(cancellationToken).ConfigureAwait(false);
-        var size = await _asyncStream.ReadIntAsync(cancellationToken).ConfigureAwait(false);
+        var size = await _asyncStream.ReadIntAsync(cancellationToken).ConfigureAwait(false) - 4;
         var contents = _arrayPool.Rent(size);
         try
         {
-            await _asyncStream.ReadBuffer(contents.AsMemory(), cancellationToken).ConfigureAwait(false);
-            return ParseMessage(format, contents);
+            await _asyncStream.ReadBuffer(contents.AsMemory(0, size), cancellationToken).ConfigureAwait(false);
+            return ParseMessage(format, contents.AsSpan(0, size));
         }
         finally
         {
@@ -231,21 +233,22 @@ internal sealed partial class PgStream : IAsyncDisposable
         message.Encode(_buffer);
     }
 
-    internal ValueTask SendMessage<T>(T message, CancellationToken cancellationToken)
+    internal Task SendMessage<T>(T message, CancellationToken cancellationToken)
         where T : IPgFrontendMessage
     {
         message.Encode(_buffer);
         return Flush(cancellationToken);
     }
 
-    private ValueTask Flush(CancellationToken cancellationToken)
+    private async Task Flush(CancellationToken cancellationToken)
     {
-        return _asyncStream.WriteAsync(_buffer.Memory, cancellationToken);
+        await _asyncStream.WriteAsync(_buffer.ReadableMemory, cancellationToken);
+        _buffer.Reset();
     }
 
     private static IPgBackendMessage ParseMessage(
         PgBackendMessageType messageType,
-        byte[] contents)
+        Span<byte> contents)
     {
         ReadBuffer buffer = new(contents);
         return messageType switch

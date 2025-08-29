@@ -7,7 +7,7 @@ public static class ExecutableQueryExtensions
 {
     public static async Task<long> ExecuteNonQuery(
         this IExecutableQuery executableQuery,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         long count = 0;
         var results = executableQuery.Execute(cancellationToken);
@@ -24,7 +24,7 @@ public static class ExecutableQueryExtensions
 
     public static async IAsyncEnumerable<TRow> Fetch<TRow>(
         this IExecutableQuery executableQuery,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
         where TRow : IFromRow<TRow>
     {
         var results = executableQuery.Execute(cancellationToken)
@@ -36,7 +36,7 @@ public static class ExecutableQueryExtensions
                 case { Right: not null }:
                     yield break;
                 case { Left: not null }:
-                    yield return TRow.Decode(result.Left);
+                    yield return TRow.FromRow(result.Left);
                     break;
             }
         }
@@ -44,7 +44,7 @@ public static class ExecutableQueryExtensions
 
     public static ValueTask<List<TRow>> FetchAll<TRow>(
         this IExecutableQuery executableQuery,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
         where TRow : IFromRow<TRow>
     {
         return Fetch<TRow>(executableQuery, cancellationToken).ToListAsync(cancellationToken);
