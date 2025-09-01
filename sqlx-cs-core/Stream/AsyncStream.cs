@@ -22,6 +22,7 @@ public sealed class AsyncStream : IAsyncStream
 
     public async Task OpenAsync(string host, ushort port, CancellationToken cancellationToken)
     {
+        await CloseAsync(cancellationToken);
         var endPoints = await GetIpEndpoints(host, port, cancellationToken);
         for (var i = 0; i < endPoints.Length; i++)
         {

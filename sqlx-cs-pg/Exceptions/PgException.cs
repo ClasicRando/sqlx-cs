@@ -36,4 +36,11 @@ public class PgException : SqlxException
 
         return sub;
     }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static SqlxException EnumOutOfRange<TEnum>(TEnum enumValue) where TEnum : Enum
+    {
+        return new SqlxException(
+            $"Expected enum value of {typeof(TEnum)} to be within range but found {enumValue}");
+    }
 }

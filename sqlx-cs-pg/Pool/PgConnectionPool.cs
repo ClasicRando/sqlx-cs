@@ -12,7 +12,7 @@ using Sqlx.Postgres.Stream;
 
 namespace Sqlx.Postgres.Pool;
 
-public class PgConnectionPool(PgConnectOptions options) : IConnectionPool
+public sealed class PgConnectionPool(PgConnectOptions options) : IConnectionPool
 {
     public PgConnectOptions ConnectOptions { get; } = options;
     
@@ -22,9 +22,9 @@ public class PgConnectionPool(PgConnectOptions options) : IConnectionPool
         return Task.FromResult<IConnection>(new PgConnection(stream, this));
     }
 
-    public IExecutableQuery CreateQuery(string sql)
+    public IExecutableQuery CreateQuery(string query)
     {
-        return new PgExecutableQuery(sql, this);
+        return new PgExecutableQuery(query, this);
     }
 
     public IQueryBatch CreateQueryBatch()

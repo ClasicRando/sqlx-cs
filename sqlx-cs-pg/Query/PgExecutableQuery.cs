@@ -2,11 +2,13 @@ using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
+using Sqlx.Postgres.Exceptions;
 
 namespace Sqlx.Postgres.Query;
 
 internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IExecutableQuery
 {
+    private IQueryExecutor? _queryExecutor = queryExecutor;
     public string Query { get; } = sql;
 
     public PgParameterBuffer ParameterBuffer { get; } = new();
@@ -33,11 +35,13 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
 
     public IAsyncEnumerable<Either<IDataRow, QueryResult>> Execute(CancellationToken cancellationToken)
     {
-        return queryExecutor.ExecuteQuery(this, cancellationToken);
+        PgException.ThrowIfNull(_queryExecutor);
+        return _queryExecutor.ExecuteQuery(this, cancellationToken);
     }
 
     public void Dispose()
     {
         ParameterBuffer.Dispose();
+        _queryExecutor = null;
     }
 }

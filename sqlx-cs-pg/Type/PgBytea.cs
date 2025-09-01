@@ -44,7 +44,7 @@ internal abstract class PgBytea: IPgDbType<byte[]>
         ColumnDecodeError.CheckOrThrow<byte[]>(
             (size & 0x01) == 0,
             metadata,
-            () => "Hex encoded byte array must have an even number of elements");
+            "Hex encoded byte array must have an even number of elements");
 
         var index = HexStart.Length;
         var result = new byte[size >> 1];

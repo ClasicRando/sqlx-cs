@@ -4,6 +4,7 @@ using Sqlx.Core;
 using Sqlx.Core.Cache;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Exceptions;
+using Sqlx.Core.Pool;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Exceptions;
@@ -33,8 +34,8 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
             _pgStream.ConnectOptions.StatementCacheCapacity);
     }
 
-    public bool IsConnected => _pgStream.IsConnected;
-
+    public ConnectionStatus Status { get; private set; } = ConnectionStatus.Closed;
+    
     public bool InTransaction
     {
         get => Interlocked.Read(ref _inTransaction) == 1;
@@ -43,7 +44,22 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
 
     public async Task OpenAsync(CancellationToken cancellationToken = default)
     {
-        await _pgStream.OpenAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            Status = ConnectionStatus.Connecting;
+            await _pgStream.OpenAsync(cancellationToken).ConfigureAwait(false);
+            Status = ConnectionStatus.Idle;
+        }
+        catch (SqlxException)
+        {
+            Status = ConnectionStatus.Broken;
+            throw;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     private enum TransactionCommand
@@ -53,24 +69,24 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
         Rollback = 2,
     }
 
-    public Task Begin(CancellationToken cancellationToken = default)
+    public Task BeginAsync(CancellationToken cancellationToken = default)
     {
         return ExecuteTransactionCommand(TransactionCommand.Begin, cancellationToken);
     }
 
-    public Task Commit(CancellationToken cancellationToken = default)
+    public Task CommitAsync(CancellationToken cancellationToken = default)
     {
         return ExecuteTransactionCommand(TransactionCommand.Commit, cancellationToken);
     }
 
-    public Task Rollback(CancellationToken cancellationToken = default)
+    public Task RollbackAsync(CancellationToken cancellationToken = default)
     {
         return ExecuteTransactionCommand(TransactionCommand.Rollback, cancellationToken);
     }
 
-    public async Task<bool> IsValid(CancellationToken cancellationToken = default)
+    public async Task<bool> IsValidAsync(CancellationToken cancellationToken = default)
     {
-        ThrowIfNotConnected();
+        ThrowIfNotReady();
         try
         {
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -81,11 +97,13 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
                 .ConfigureAwait(false);
             if (result is { Right: not null })
             {
+                Status = ConnectionStatus.Broken;
                 return false;
             }
         }
         catch (SqlxException)
         {
+            Status = ConnectionStatus.Broken;
             return false;
         }
         finally
@@ -96,9 +114,9 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
         return true;
     }
 
-    public IExecutableQuery CreateQuery(string sql)
+    public IExecutableQuery CreateQuery(string query)
     {
-        return new PgExecutableQuery(sql, this);
+        return new PgExecutableQuery(query, this);
     }
 
     public IQueryBatch CreateQueryBatch()
@@ -118,17 +136,33 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
 
     public async Task CloseAsync(CancellationToken cancellationToken = default)
     {
-        if (Pool is not null && await Pool.GiveBack(this, cancellationToken))
+        try
         {
-            return;
+            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            if (Pool is not null
+                && await Pool.GiveBack(this, cancellationToken).ConfigureAwait(false))
+            {
+                return;
+            }
+
+            Status = ConnectionStatus.Closed;
+            await _pgStream.CloseAsync(cancellationToken).ConfigureAwait(false);
         }
-        await _pgStream.CloseAsync(cancellationToken).ConfigureAwait(false);
+        catch (Exception)
+        {
+            Status = ConnectionStatus.Broken;
+            throw;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfNotConnected()
+    private void ThrowIfNotReady()
     {
-        if (!IsConnected)
+        if (Status is not ConnectionStatus.Idle)
         {
             throw new PgException("Attempted to perform operation before opening connection");
         }
@@ -138,7 +172,7 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
         TransactionCommand transactionCommand,
         CancellationToken cancellationToken)
     {
-        ThrowIfNotConnected();
+        ThrowIfNotReady();
         try
         {
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -155,11 +189,11 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
                 TransactionCommand.Begin => "BEGIN;",
                 TransactionCommand.Commit => "COMMIT;",
                 TransactionCommand.Rollback => "ROLLBACK;",
-                _ => throw SqlxException.EnumOutOfRange(transactionCommand),
+                _ => throw PgException.EnumOutOfRange(transactionCommand),
             };
             await _pgStream.SendMessage(new QueryMessage(sql), cancellationToken).ConfigureAwait(false);
             await _pgStream.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken).ConfigureAwait(false);
-            InTransaction = transactionCommand == 0;
+            InTransaction = transactionCommand is TransactionCommand.Begin;
         }
         catch (OutOfMemoryException)
         {
@@ -185,7 +219,6 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
                     // ignored
                 }
             }
-            InTransaction = false;
             throw;
         }
         finally

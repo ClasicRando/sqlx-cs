@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Sqlx.Core;
 using Sqlx.Core.Cache;
 using Sqlx.Core.Config;
+using Sqlx.Core.Pool;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Logging;
@@ -23,7 +24,7 @@ public partial class PgConnection
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sql);
-        ThrowIfNotConnected();
+        ThrowIfNotReady();
 
         if (_pgStream.ConnectOptions.UseExtendedProtocolForSimpleQueries && !sql.Contains('$'))
         {
@@ -43,10 +44,12 @@ public partial class PgConnection
         {
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
+            Status = ConnectionStatus.Executing;
             await _pgStream.SendMessage(new QueryMessage(sql), cancellationToken)
                 .ConfigureAwait(false);
             _pendingReadyForQuery++;
 
+            Status = ConnectionStatus.Fetching;
             var items = CollectResult(null, cancellationToken).ConfigureAwait(false);
             await foreach (var item in items)
             {
@@ -56,6 +59,7 @@ public partial class PgConnection
         finally
         {
             _semaphore.Release();
+            Status = ConnectionStatus.Idle;
         }
     }
 
@@ -65,12 +69,13 @@ public partial class PgConnection
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sql);
-        ThrowIfNotConnected();
+        ThrowIfNotReady();
         
         try
         {
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
+            Status = ConnectionStatus.Executing;
             PgPreparedStatement statement = await GetOrPrepareStatement(
                 sql,
                 parameterBuffer,
@@ -78,7 +83,7 @@ public partial class PgConnection
                 .ConfigureAwait(false);
             await ExecutePreparedStatement(statement, parameterBuffer, true, cancellationToken)
                 .ConfigureAwait(false);
-            
+            Status = ConnectionStatus.Fetching;
             var items = CollectResult(statement, cancellationToken).ConfigureAwait(false);
             await foreach (var item in items)
             {
@@ -88,6 +93,7 @@ public partial class PgConnection
         finally
         {
             _semaphore.Release();
+            Status = ConnectionStatus.Idle;
         }
     }
 
