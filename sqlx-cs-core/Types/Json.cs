@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
@@ -6,17 +7,18 @@ namespace Sqlx.Core.Types;
 public static class Json
 {
     public static void WriteToStream<T>(
-        System.IO.Stream stream,
+        IBufferWriter<byte> stream,
         T value,
         JsonTypeInfo<T>? typeInfo) where T : notnull
     {
+        var writer = new Utf8JsonWriter(stream);
         if (typeInfo is not null)
         {
-            JsonSerializer.Serialize(stream, value, typeInfo);
+            JsonSerializer.Serialize(writer, value, typeInfo);
             return;
         }
 
-        JsonSerializer.Serialize(stream, value);
+        JsonSerializer.Serialize(writer, value);
     }
     
     public static T FromBytes<T>(ReadOnlySpan<byte> bytes, JsonTypeInfo<T>? typeInfo = null)

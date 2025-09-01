@@ -84,6 +84,6 @@ internal abstract class PgBytea: IPgDbType<byte[]>
             var result = thirdDigit + secondDigit * 8 + nextChar * 8 * 8;
             buffer.WriteByte((byte)result);
         }
-        return buffer.CopyBytes();
+        return buffer.ReadableSpan.ToArray();
     }
 }

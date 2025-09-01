@@ -7,6 +7,7 @@ using System.Text;
 namespace Sqlx.Core.Buffer;
 
 public sealed class WriteBuffer : System.IO.Stream, IDisposable
+public sealed class WriteBuffer : System.IO.Stream, IBufferWriter<byte>, IDisposable
 {
     private const int DefaultCapacity = 8192;
     private static readonly Encoding Encoding = Charsets.Default;
@@ -179,6 +180,29 @@ public sealed class WriteBuffer : System.IO.Stream, IDisposable
         _buffer = [];
     }
     
+    // IBufferWriter<byte> implementation
+
+    public void Advance(int count)
+    {
+        _writePosition += count;
+    }
+
+    public Span<byte> GetSpan(int sizeHint = 0)
+    {
+        CheckBound(sizeHint);
+        return sizeHint == 0
+            ? _buffer.AsSpan(_writePosition)
+            : _buffer.AsSpan(_writePosition, sizeHint);
+    }
+
+    public Memory<byte> GetMemory(int sizeHint = 0)
+    {
+        CheckBound(sizeHint);
+        return sizeHint == 0
+            ? _buffer.AsMemory(_writePosition)
+            : _buffer.AsMemory(_writePosition, sizeHint);
+    }
+
     // Stream implementations. Does not allow seeking, reading or setting length
 
     public override bool CanRead => false;
