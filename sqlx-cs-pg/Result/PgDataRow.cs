@@ -9,15 +9,19 @@ using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Result;
 
-internal class PgDataRow : IDataRow
+internal sealed class PgDataRow : IDataRow
 {
+    private readonly byte[] _rowData;
+    private readonly PgColumnMetadata[] _columnMetadata;
+    private readonly Range?[] _columnValueSlices;
+    
     public PgDataRow(byte[] rowData, PgColumnMetadata[] columnMetadata)
     {
         _rowData = rowData;
         _columnMetadata = columnMetadata;
         var buffer = new ReadBuffer(rowData);
         int columnCount = buffer.ReadShort();
-        _columnValueSlices = new (int, int)?[columnCount];
+        _columnValueSlices = new Range?[columnCount];
         for (var i = 0; i < columnCount; i++)
         {
             var length = buffer.ReadInt();
@@ -29,10 +33,6 @@ internal class PgDataRow : IDataRow
             _columnValueSlices[i] = buffer.Skip(length);
         }
     }
-    
-    private readonly byte[] _rowData;
-    private readonly PgColumnMetadata[] _columnMetadata;
-    private readonly (int, int)?[] _columnValueSlices;
     
     public int IndexOf(string name)
     {
@@ -271,7 +271,7 @@ internal class PgDataRow : IDataRow
             throw ColumnDecodeError.Create<T>(columnMetadata);
         }
         
-        var bytes = _rowData.AsSpan()[slice.Item1..slice.Item2];
+        var bytes = _rowData.AsSpan()[slice.Start..slice.End];
         switch (columnMetadata.FormatCode)
         {
             case PgFormatCode.Text:
@@ -308,13 +308,13 @@ internal class PgDataRow : IDataRow
         return Decode<TResult, TType>(slice, columnMetadata);
     }
 
-    private TSelf DecodeSelf<TSelf>((int, int) slice, PgColumnMetadata columnMetadata)
+    private TSelf DecodeSelf<TSelf>(Range slice, PgColumnMetadata columnMetadata)
         where TSelf : IPgDbType<TSelf>
     {
         return Decode<TSelf, TSelf>(slice, columnMetadata);
     }
 
-    private TResult Decode<TResult, TType>((int, int) slice, PgColumnMetadata columnMetadata)
+    private TResult Decode<TResult, TType>(Range slice, PgColumnMetadata columnMetadata)
         where TResult : notnull
         where TType : IPgDbType<TResult>
     {
@@ -323,7 +323,7 @@ internal class PgDataRow : IDataRow
             throw ColumnDecodeError.Create<TResult>(columnMetadata);
         }
 
-        var bytes = _rowData.AsSpan()[slice.Item1..slice.Item2];
+        var bytes = _rowData.AsSpan()[slice.Start..slice.End];
         switch (columnMetadata.FormatCode)
         {
             case PgFormatCode.Text:

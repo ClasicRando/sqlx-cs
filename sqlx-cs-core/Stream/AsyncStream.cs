@@ -165,7 +165,10 @@ public sealed class AsyncStream : IAsyncStream
         }
     }
 
-    private async Task<IPEndPoint[]> GetIpEndpoints(string host, ushort port, CancellationToken cancellationToken)
+    private static async Task<IPEndPoint[]> GetIpEndpoints(
+        string host,
+        ushort port,
+        CancellationToken cancellationToken)
     {
         var ipAddresses = await Dns.GetHostAddressesAsync(host, cancellationToken)
             .ConfigureAwait(false);

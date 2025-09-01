@@ -4,7 +4,7 @@ using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Query;
 
-internal class PgParameterBuffer : IDisposable
+internal sealed class PgParameterBuffer : IDisposable
 {
     private readonly WriteBuffer _buffer = new();
     private readonly List<PgType> _pgTypes = [];

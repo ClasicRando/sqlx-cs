@@ -5,6 +5,12 @@ using System.Text;
 
 namespace Sqlx.Core.Buffer;
 
+/// <summary>
+/// Read-only buffer over a <see cref="Span{T}"/> of <see cref="byte"/>s. This acts as a thin
+/// wrapper over those bytes to allow for reading binary data (or text data as bytes) in an
+/// efficient manner without creating new objects to be collected. To avoid unnecessary checks at
+/// runtime, bounds checks are only done in DEBUG mode. 
+/// </summary>
 public ref struct ReadBuffer
 {
     private static readonly Encoding Encoding = Charsets.Default;
@@ -20,19 +26,18 @@ public ref struct ReadBuffer
 
     public bool IsExhausted => Remaining == 0;
 
+    /// <summary>
+    /// Skip the desired numbers of bytes in the buffer
+    /// </summary>
+    /// <param name="count">number of bytes to skip</param>
+    /// <returns>a range of the skipped indexes</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public (int, int) Skip(int count)
+    public Range Skip(int count)
     {
         CheckBound(count);
         var start = _position;
         _position += count;
-        return (start, _position);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Request(int count)
-    {
-        return Remaining >= count;
+        return new Range(start, _position);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -94,12 +99,7 @@ public ref struct ReadBuffer
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<byte> ReadBytesAsSpan()
-    {
-        var result = _inner[_position..];
-        _position = _inner.Length;
-        return result;
-    }
+    public ReadOnlySpan<byte> ReadBytesAsSpan() => ReadBytesAsSpan(Remaining);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> ReadBytesAsSpan(int length)
@@ -111,10 +111,7 @@ public ref struct ReadBuffer
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public byte[] ReadBytes()
-    {
-        return ReadBytes(Remaining);
-    }
+    public byte[] ReadBytes() => ReadBytes(Remaining);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public byte[] ReadBytes(int length)
@@ -127,13 +124,15 @@ public ref struct ReadBuffer
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public string ReadText()
-    {
-        var result = Encoding.GetString(_inner[_position..]);
-        _position = _inner.Length;
-        return result;
-    }
+    public string ReadText() => ReadText(Remaining);
 
+    /// <summary>
+    /// Read the desired number of bytes as a UTF-8 character string. If the number of bytes
+    /// specified will not result in a valid UTF-8 string (e.g. ends with a continuation character),
+    /// this method will fail.
+    /// </summary>
+    /// <param name="length">number of bytes to convert to a string</param>
+    /// <returns>UTF-8 character string</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string ReadText(int length)
     {
@@ -143,18 +142,11 @@ public ref struct ReadBuffer
         return result;
     }
 
-    public int GetRemainingCharCount()
-    {
-        return Encoding.GetCharCount(_inner[_position..]);
-    }
-
-    public void ReadText(Span<char> chars)
-    {
-        CheckBound(chars.Length);
-        Encoding.GetChars(_inner.Slice(_position, chars.Length), chars);
-        _position += chars.Length;
-    }
-
+    /// <summary>
+    /// Read as many characters as needed until the buffer contains a null terminator. If the entire
+    /// buffer is the string, but it does not end with a null terminator then the method will fail.
+    /// </summary>
+    /// <returns>next available null terminated string from the buffer</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string ReadCString()
     {
@@ -165,6 +157,12 @@ public ref struct ReadBuffer
         return result;
     }
 
+    /// <summary>
+    /// Take a sub slice of this buffer and treat it as a separate <see cref="ReadBuffer"/>.
+    /// Advances this buffer's read position to the end of the extracted slice.
+    /// </summary>
+    /// <param name="length">number of bytes to contain within the sub slice</param>
+    /// <returns>sub slice of this buffer as a new <see cref="ReadBuffer"/></returns>
     public ReadBuffer Slice(int length)
     {
         CheckBound(length);
@@ -173,6 +171,7 @@ public ref struct ReadBuffer
         return new ReadBuffer(slice);
     }
 
+    /// <summary>Set the read position of this buffer to the start</summary>
     public void Reset()
     {
         _position = 0;
