@@ -1,23 +1,11 @@
 namespace Sqlx.Core;
 
-public class Either<TLeft, TRight>
+public abstract record Either<TLeft, TRight>
 {
-    public TLeft? Left { get; }
-    public TRight? Right { get; }
-    
-    private Either(TLeft? left, TRight? right)
+    private Either()
     {
-        Left = left;
-        Right = right;
     }
 
-    public static Either<TLeft, TRight> OfLeft(TLeft left)
-    {
-        return new Either<TLeft, TRight>(left, default);
-    }
-
-    public static Either<TLeft, TRight> OfRight(TRight right)
-    {
-        return new Either<TLeft, TRight>(default, right);
-    }
+    public sealed record Left(TLeft Value) : Either<TLeft, TRight>;
+    public sealed record Right(TRight Value) : Either<TLeft, TRight>;
 }

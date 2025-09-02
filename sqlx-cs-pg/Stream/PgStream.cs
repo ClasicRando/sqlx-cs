@@ -104,11 +104,12 @@ internal sealed partial class PgStream : IAsyncDisposable
     {
         var result = await WaitForOrError<T>(cancellationToken)
             .ConfigureAwait(false);
-        if (result.Left is not null)
+        return result switch
         {
-            return result.Left;
-        }
-        throw new PgException(result.Right!);
+            Either<T, ErrorResponseMessage>.Left left => left.Value,
+            Either<T, ErrorResponseMessage>.Right right => throw new PgException(right.Value),
+            _ => throw new PgException("Found another Either type. How weird?"),
+        };
     }
 
     internal async Task<Either<T, ErrorResponseMessage>> WaitForOrError<T>(CancellationToken cancellationToken) where T : IPgBackendMessage
@@ -125,9 +126,9 @@ internal sealed partial class PgStream : IAsyncDisposable
             switch (postProcessMessage)
             {
                 case ErrorResponseMessage errorResponse:
-                    return Either<T, ErrorResponseMessage>.OfRight(errorResponse);
+                    return new Either<T, ErrorResponseMessage>.Right(errorResponse);
                 case T result:
-                    return Either<T, ErrorResponseMessage>.OfLeft(result);
+                    return new Either<T, ErrorResponseMessage>.Left(result);
                 default:
                     _logger.LogIgnoreUnexpectedMessage(
                         SqlxConfig.DetailedLoggingLevel,

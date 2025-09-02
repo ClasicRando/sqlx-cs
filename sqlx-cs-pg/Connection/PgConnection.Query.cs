@@ -163,13 +163,13 @@ public partial class PgConnection
                     break;
                 case DataRowMessage dataRowMessage:
                     var dataRow = new PgDataRow(dataRowMessage.RowData, columnMetadata);
-                    yield return Either<IDataRow, QueryResult>.OfLeft(dataRow);
+                    yield return new Either<IDataRow, QueryResult>.Left(dataRow);
                     break;
                 case CommandCompleteMessage commandCompleteMessage:
                     var queryResult = new QueryResult(
                         commandCompleteMessage.RowCount,
                         commandCompleteMessage.Message);
-                    yield return Either<IDataRow, QueryResult>.OfRight(queryResult);
+                    yield return new Either<IDataRow, QueryResult>.Right(queryResult);
                     break;
                 case ReadyForQueryMessage readyForQueryMessage:
                     HandleReadyForQuery(readyForQueryMessage);

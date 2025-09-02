@@ -95,7 +95,7 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
                 .ConfigureAwait(false);
             var result = await _pgStream.WaitForOrError<ReadyForQueryMessage>(cancellationToken)
                 .ConfigureAwait(false);
-            if (result is { Right: not null })
+            if (result is Either<ReadyForQueryMessage, ErrorResponseMessage>.Right)
             {
                 Status = ConnectionStatus.Broken;
                 return false;

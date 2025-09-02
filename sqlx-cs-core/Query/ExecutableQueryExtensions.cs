@@ -13,9 +13,9 @@ public static class ExecutableQueryExtensions
         var results = executableQuery.Execute(cancellationToken);
         await foreach (var result in results)
         {
-            if (result is { Right: not null })
+            if (result is Either<IDataRow, QueryResult>.Right right)
             {
-                count += result.Right.RowsAffected;
+                count += right.Value.RowsAffected;
             }
         }
 
@@ -33,10 +33,10 @@ public static class ExecutableQueryExtensions
         {
             switch (result)
             {
-                case { Right: not null }:
+                case Either<IDataRow, QueryResult>.Right:
                     yield break;
-                case { Left: not null }:
-                    yield return TRow.FromRow(result.Left);
+                case Either<IDataRow, QueryResult>.Left left:
+                    yield return TRow.FromRow(left.Value);
                     break;
             }
         }
