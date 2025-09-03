@@ -9,7 +9,6 @@ using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Message.Backend;
-using Sqlx.Postgres.Message.Frontend;
 using Sqlx.Postgres.Pool;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Stream;
@@ -18,6 +17,10 @@ namespace Sqlx.Postgres.Connection;
 
 public sealed partial class PgConnection : IConnection, IQueryExecutor
 {
+    private const string BeginQuery = "BEGIN;";
+    private const string CommitQuery = "COMMIT;";
+    private const string RollbackQuery = "ROLLBACK;";
+    
     private readonly PgStream _pgStream;
     internal PgConnectionPool? Pool;
     private readonly ILogger _logger;
@@ -91,8 +94,7 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
         {
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
-            await _pgStream.SendMessage(new QueryMessage("SELECT 1;"), cancellationToken)
-                .ConfigureAwait(false);
+            await _pgStream.SendQueryMessage("SELECT 1;", cancellationToken).ConfigureAwait(false);
             var result = await _pgStream.WaitForOrError<ReadyForQueryMessage>(cancellationToken)
                 .ConfigureAwait(false);
             if (result is Either<ReadyForQueryMessage, ErrorResponseMessage>.Right)
@@ -134,6 +136,12 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
             : SendExtendedQuery(query.Query, executableQuery.ParameterBuffer, cancellationToken);
     }
 
+    internal Task ReleaseResources(CancellationToken cancellationToken)
+    {
+        Status = ConnectionStatus.Closed;
+        return _pgStream.CloseAsync(cancellationToken);
+    }
+
     public async Task CloseAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -145,8 +153,7 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
                 return;
             }
 
-            Status = ConnectionStatus.Closed;
-            await _pgStream.CloseAsync(cancellationToken).ConfigureAwait(false);
+            await ReleaseResources(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception)
         {
@@ -186,12 +193,12 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
 
             var sql = transactionCommand switch
             {
-                TransactionCommand.Begin => "BEGIN;",
-                TransactionCommand.Commit => "COMMIT;",
-                TransactionCommand.Rollback => "ROLLBACK;",
+                TransactionCommand.Begin => BeginQuery,
+                TransactionCommand.Commit => CommitQuery,
+                TransactionCommand.Rollback => RollbackQuery,
                 _ => throw PgException.EnumOutOfRange(transactionCommand),
             };
-            await _pgStream.SendMessage(new QueryMessage(sql), cancellationToken).ConfigureAwait(false);
+            await _pgStream.SendQueryMessage(sql, cancellationToken).ConfigureAwait(false);
             await _pgStream.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken).ConfigureAwait(false);
             InTransaction = transactionCommand is TransactionCommand.Begin;
         }
@@ -205,19 +212,18 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
         }
         catch
         {
-            if (transactionCommand is TransactionCommand.Commit)
+            if (transactionCommand is not TransactionCommand.Commit) throw;
+            
+            try
             {
-                try
-                {
-                    await _pgStream.SendMessage(new QueryMessage("ROLLBACK;"), cancellationToken)
-                        .ConfigureAwait(false);
-                    await _pgStream.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)
-                        .ConfigureAwait(false);
-                }
-                catch
-                {
-                    // ignored
-                }
+                await _pgStream.SendQueryMessage(RollbackQuery, cancellationToken)
+                    .ConfigureAwait(false);
+                await _pgStream.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch
+            {
+                // ignored
             }
             throw;
         }

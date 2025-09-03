@@ -16,6 +16,7 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnection
 {
+    private const string UnnamedPortal = "";
     private readonly LruCache<string, PgPreparedStatement> _statementCache;
     private int _nextStatementId = 1;
     
@@ -45,8 +46,7 @@ public partial class PgConnection
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
             Status = ConnectionStatus.Executing;
-            await _pgStream.SendMessage(new QueryMessage(sql), cancellationToken)
-                .ConfigureAwait(false);
+            await _pgStream.SendQueryMessage(sql, cancellationToken).ConfigureAwait(false);
             _pendingReadyForQuery++;
 
             Status = ConnectionStatus.Fetching;
@@ -127,14 +127,13 @@ public partial class PgConnection
         bool sendSync,
         CancellationToken cancellationToken)
     {
-        var bindMessage = new BindMessage(
-            null,
+        _pgStream.WriteBindMessage(
+            UnnamedPortal,
             preparedStatement.StatementName,
             parameterBuffer.ParameterCount,
             parameterBuffer.Memory);
-        _pgStream.WriteMessage(bindMessage);
-        _pgStream.WriteMessage(new ExecuteMessage(null, 0));
-        _pgStream.WriteMessage(new CloseMessage(MessageTarget.Portal, null));
+        _pgStream.WriteExecuteMessage(UnnamedPortal, 0);
+        _pgStream.WriteCloseMessage(MessageTarget.Portal, UnnamedPortal);
         return sendSync ? WriteSync(cancellationToken) : Task.CompletedTask;
     }
 
@@ -191,16 +190,15 @@ public partial class PgConnection
 
     private async Task WriteSync(CancellationToken cancellationToken)
     {
-        await _pgStream.SendMessage(SyncMessage.Instance, cancellationToken).ConfigureAwait(false);
+        await _pgStream.SendSyncMessage(cancellationToken).ConfigureAwait(false);
         _pendingReadyForQuery++;
     }
 
     private async Task ReleasePreparedStatement(PgPreparedStatement preparedStatement, CancellationToken cancellationToken)
     {
-        var closeMessage = new CloseMessage(
+        _pgStream.WriteCloseMessage(
             MessageTarget.PreparedStatement,
             preparedStatement.StatementName);
-        _pgStream.WriteMessage(closeMessage);
         await WriteSync(cancellationToken).ConfigureAwait(false);
         await WaitUntilReady(cancellationToken).ConfigureAwait(false);
     }
@@ -208,8 +206,8 @@ public partial class PgConnection
     private async Task<PgPreparedStatement> ExecuteStatementPrepare(string sql, IReadOnlyList<PgType> parameterTypes, CancellationToken cancellationToken)
     {
         var statement = new PgPreparedStatement(sql, _nextStatementId++);
-        _pgStream.WriteMessage(new ParseMessage(statement.StatementName, sql, parameterTypes));
-        _pgStream.WriteMessage(new DescribeMessage(MessageTarget.PreparedStatement, statement.StatementName));
+        _pgStream.WriteParseMessage(statement.StatementName, sql, parameterTypes);
+        _pgStream.WriteDescribeMessage(MessageTarget.PreparedStatement, statement.StatementName);
         await WriteSync(cancellationToken).ConfigureAwait(false);
         
         while (true)

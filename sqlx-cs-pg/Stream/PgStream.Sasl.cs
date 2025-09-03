@@ -4,7 +4,6 @@ using Sqlx.Core;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Message.Auth;
 using Sqlx.Postgres.Message.Backend;
-using Sqlx.Postgres.Message.Frontend;
 
 namespace Sqlx.Postgres.Stream;
 
@@ -74,8 +73,11 @@ internal partial class PgStream
 
         var clientNonce = GetNonce();
 
-        var saslInitialMessage = new SaslInitialMessage(Mechanism, $"{CbindFlag},,n=*,r={clientNonce}");
-        await SendMessage(saslInitialMessage, cancellationToken).ConfigureAwait(false);
+        await SendSaslInitialMessage(
+            Mechanism,
+            $"{CbindFlag},,n=*,r={clientNonce}",
+            cancellationToken)
+            .ConfigureAwait(false);
         return clientNonce;
     }
 
@@ -129,8 +131,7 @@ internal partial class PgStream
 
         var messageStr = $"{clientFinalMessageWithoutProof},p={clientProof}";
 
-        var saslResponse = new SaslResponseMessage(messageStr);
-        await SendMessage(saslResponse, cancellationToken).ConfigureAwait(false);
+        await SendSaslResponseMessage(messageStr, cancellationToken).ConfigureAwait(false);
         return serverSignature;
     }
 

@@ -3,16 +3,15 @@ using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Sqlx.Core;
 using Sqlx.Core.Buffer;
+using Sqlx.Core.Config;
 using Sqlx.Core.Stream;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Exceptions;
+using Sqlx.Postgres.Logging;
 using Sqlx.Postgres.Message;
 using Sqlx.Postgres.Message.Auth;
 using Sqlx.Postgres.Message.Backend;
-using Sqlx.Postgres.Message.Frontend;
 using Sqlx.Postgres.Notify;
-using Sqlx.Core.Config;
-using Sqlx.Postgres.Logging;
 
 namespace Sqlx.Postgres.Stream;
 
@@ -39,8 +38,7 @@ internal sealed partial class PgStream : IAsyncDisposable
     {
         await _asyncStream.OpenAsync(ConnectOptions.Host, ConnectOptions.Port, cancellationToken)
             .ConfigureAwait(false);
-        await SendMessage(new StartupMessage(ConnectOptions), cancellationToken)
-            .ConfigureAwait(false);
+        await SendStartupMessage(ConnectOptions, cancellationToken).ConfigureAwait(false);
         await HandleAuthFlow(cancellationToken).ConfigureAwait(false);
         await WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken).ConfigureAwait(false);
     }
@@ -227,18 +225,6 @@ internal sealed partial class PgStream : IAsyncDisposable
             _ => throw new PgException(
                 $"Expected {typeof(T)} message but found {message.GetType()}"),
         };
-    }
-
-    internal void WriteMessage<T>(T message) where T : IPgFrontendMessage
-    {
-        message.Encode(_buffer);
-    }
-
-    internal Task SendMessage<T>(T message, CancellationToken cancellationToken)
-        where T : IPgFrontendMessage
-    {
-        message.Encode(_buffer);
-        return Flush(cancellationToken);
     }
 
     private async Task Flush(CancellationToken cancellationToken)

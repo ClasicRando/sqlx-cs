@@ -9,8 +9,8 @@ internal partial class PgStream
 {
     private async Task SimplePasswordAuthFlow(string username, string password, byte[]? salt = null, CancellationToken cancellationToken = default)
     {
-        PasswordMessage passwordMessage = PasswordHelper.CreateSimplePassword(username, password, salt);
-        await SendMessage(passwordMessage, cancellationToken).ConfigureAwait(false);
+        var passwordBytes = PasswordHelper.CreateSimplePassword(username, password, salt);
+        await SendSimplePasswordMessage(passwordBytes, cancellationToken).ConfigureAwait(false);
 
         var authentication = await ReceiveNextMessageAs<AuthenticationMessage>(cancellationToken)
             .ConfigureAwait(false);

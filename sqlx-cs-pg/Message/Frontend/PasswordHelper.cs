@@ -1,36 +1,15 @@
 using System.Security.Cryptography;
-using System.Text;
 using Sqlx.Core;
-using Sqlx.Core.Buffer;
-using Sqlx.Postgres.Buffer;
 
 namespace Sqlx.Postgres.Message.Frontend;
 
-internal sealed class PasswordMessage(byte[] password) : IPgFrontendMessage
-{
-    // ReSharper disable once ReplaceWithPrimaryConstructorParameter
-    private readonly byte[] _password = password;
-
-    public void Encode(WriteBuffer buffer)
-    {
-        buffer.WriteCode(PgFrontendMessageType.Password);
-        buffer.WriteLengthPrefixed(
-            true,
-            buf =>
-            {
-                buf.WriteBytes(_password.AsSpan());
-                buf.WriteByte(0);
-            });
-    }
-}
-
 internal static class PasswordHelper
 {
-    internal static PasswordMessage CreateSimplePassword(string username, string password, byte[]? salt)
+    internal static byte[] CreateSimplePassword(string username, string password, byte[]? salt)
     {
-        return new PasswordMessage(salt is null
+        return salt is null
             ? Charsets.Default.GetBytes(password)
-            : CreateMd5HashedPassword(username, password, salt));
+            : CreateMd5HashedPassword(username, password, salt);
     }
 
     private static byte[] CreateMd5HashedPassword(string username, string password, byte[] salt)

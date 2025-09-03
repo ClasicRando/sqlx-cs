@@ -49,7 +49,7 @@ public sealed class PgConnectionPool(PgConnectOptions options) : IConnectionPool
     internal async Task<bool> GiveBack(PgConnection connection, CancellationToken cancellationToken)
     {
         connection.Pool = null;
-        await connection.CloseAsync(cancellationToken).ConfigureAwait(false);
+        await connection.ReleaseResources(cancellationToken).ConfigureAwait(false);
         return true;
     }
     
