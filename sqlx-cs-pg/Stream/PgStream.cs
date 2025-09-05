@@ -271,19 +271,16 @@ internal sealed partial class PgStream : IAsyncDisposable
         };
     }
 
-    internal async Task CloseAsync(CancellationToken cancellationToken = default)
+    internal ValueTask CloseAsync(CancellationToken cancellationToken = default)
     {
-        if (!_asyncStream.IsConnected)
-        {
-            return;
-        }
-
-        await _asyncStream.CloseAsync(cancellationToken).ConfigureAwait(false);
+        return !_asyncStream.IsConnected
+            ? ValueTask.CompletedTask
+            : _asyncStream.CloseAsync(cancellationToken);
     }
 
     public async ValueTask DisposeAsync()
     {
         _buffer.Dispose();
-        await CloseAsync();
+        await _asyncStream.DisposeAsync();
     }
 }

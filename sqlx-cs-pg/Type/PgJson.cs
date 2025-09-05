@@ -17,7 +17,7 @@ internal abstract class PgJson<T> : IPgDbType<T> where T : notnull
     public static void Encode(T value, WriteBuffer buffer, JsonTypeInfo<T>? typeInfo)
     {
         buffer.WriteByte(1);
-        Json.WriteToStream(buffer, value, typeInfo);
+        Json.WriteToBuffer(buffer, value, typeInfo);
     }
 
     public static T DecodeBytes(PgBinaryValue value)

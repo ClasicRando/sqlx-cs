@@ -1,0 +1,336 @@
+using JetBrains.Annotations;
+using NSubstitute;
+using Sqlx.Core.Exceptions;
+using Sqlx.Core.Result;
+
+namespace Sqlx.Core.Query;
+
+[TestSubject(typeof(ExecutableQueryExtensions))]
+public class ExecutableQueryExtensionsTest
+{
+    private record TestRow : IFromRow<TestRow>
+    {
+        public static TestRow FromRow(IDataRow dataRow)
+        {
+            return new TestRow();
+        }
+    }
+    
+    private record struct TestRowStruct(int Id) : IFromRow<TestRowStruct>
+    {
+        public static TestRowStruct FromRow(IDataRow dataRow)
+        {
+            return new TestRowStruct(dataRow.GetIntNotNull(0));
+        }
+    }
+    
+    [Fact]
+    public async Task ExecuteNonQuery_Should_ReturnTotalAffectedRowCount()
+    {
+        List<Either<IDataRow, QueryResult>> lst = [
+            new Either<IDataRow, QueryResult>.Right(new QueryResult(20, string.Empty)),
+            new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+            new Either<IDataRow, QueryResult>.Right(new QueryResult(10, string.Empty)),
+        ];
+        var query = Substitute.For<IExecutableQuery>();
+        query.Execute(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+        var rowCount = await query.ExecuteNonQuery();
+        
+        Assert.Equal(30, rowCount);
+    }
+    
+    [Theory]
+    [MemberData(nameof(FetchCases))]
+    public async Task FetchAll_Should_ReturnAllRowsUntilFirstQueryResult(
+        List<Either<IDataRow, QueryResult>> results,
+        int expectedRowCount)
+    {
+        var query = Substitute.For<IExecutableQuery>();
+        query.Execute(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(results.ToAsyncEnumerable()));
+
+        var actualRows = await query.FetchAll<TestRow>();
+        
+        Assert.Equal(expectedRowCount, actualRows.Count);
+    }
+
+    public static IEnumerable<object[]> FetchCases()
+    {
+        yield return
+        [
+            new List<Either<IDataRow, QueryResult>>
+            {
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(20, string.Empty)),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(10, string.Empty)),
+            },
+            0,
+        ];
+        yield return
+        [
+            new List<Either<IDataRow, QueryResult>>
+            {
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(10, string.Empty)),
+            },
+            1,
+        ];
+        yield return
+        [
+            new List<Either<IDataRow, QueryResult>>
+            {
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(10, string.Empty)),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+            },
+            2,
+        ];
+    }
+
+    public class FetchFirst
+    {
+        [Fact]
+        public async Task Throw_When_NoRowsReturned()
+        {
+            List<Either<IDataRow, QueryResult>> lst = [
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(0, string.Empty)),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+            ];
+            var query = Substitute.For<IExecutableQuery>();
+            query.Execute(Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+            var error = await Assert.ThrowsAsync<SqlxException>(async () => await query.FetchFirst<TestRow>());
+        
+            Assert.Equal("Expected at least 1 row but found 0", error.Message);
+        }
+        
+        [Fact]
+        public async Task ReturnFirstRow_When_SingleRowFetched()
+        {
+            List<Either<IDataRow, QueryResult>> lst = [
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(1, string.Empty)),
+            ];
+            var query = Substitute.For<IExecutableQuery>();
+            query.Execute(Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+            var row = await query.FetchFirst<TestRow>();
+        
+            Assert.NotNull(row);
+        }
+        
+        [Fact]
+        public async Task ReturnFirstRow_When_MultipleRowsFetched()
+        {
+            var firstRow = Substitute.For<IDataRow>();
+            firstRow.GetInt(0).Returns(10);
+            List<Either<IDataRow, QueryResult>> lst = [
+                new Either<IDataRow, QueryResult>.Left(firstRow),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(2, string.Empty)),
+            ];
+            var query = Substitute.For<IExecutableQuery>();
+            query.Execute(Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+            var row = await query.FetchFirst<TestRowStruct>();
+        
+            Assert.Equal(10, row.Id);
+        }
+    }
+
+    public class FetchFirstOrDefault
+    {
+        [Fact]
+        public async Task ReturnNull_When_ClassAndNoRowsReturned()
+        {
+            List<Either<IDataRow, QueryResult>> lst = [
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(0, string.Empty)),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+            ];
+            var query = Substitute.For<IExecutableQuery>();
+            query.Execute(Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+            var row = await query.FetchFirstOrDefault<TestRow>();
+        
+            Assert.Null(row);
+        }
+        
+        [Fact]
+        public async Task ReturnDefault_When_StructAndNoRowsReturned()
+        {
+            List<Either<IDataRow, QueryResult>> lst = [
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(0, string.Empty)),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+            ];
+            var query = Substitute.For<IExecutableQuery>();
+            query.Execute(Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+            var row = await query.FetchFirstOrDefault<TestRowStruct>();
+        
+            Assert.Equal(default, row);
+        }
+        
+        [Fact]
+        public async Task ReturnFirstRow_When_SingleRowFetched()
+        {
+            List<Either<IDataRow, QueryResult>> lst = [
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(1, string.Empty)),
+            ];
+            var query = Substitute.For<IExecutableQuery>();
+            query.Execute(Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+            var row = await query.FetchFirstOrDefault<TestRow>();
+        
+            Assert.NotNull(row);
+        }
+        
+        [Fact]
+        public async Task ReturnFirstRow_When_MultipleRowsFetched()
+        {
+            var firstRow = Substitute.For<IDataRow>();
+            firstRow.GetInt(0).Returns(10);
+            List<Either<IDataRow, QueryResult>> lst = [
+                new Either<IDataRow, QueryResult>.Left(firstRow),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(2, string.Empty)),
+            ];
+            var query = Substitute.For<IExecutableQuery>();
+            query.Execute(Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+            var row = await query.FetchFirstOrDefault<TestRowStruct>();
+        
+            Assert.Equal(10, row.Id);
+        }
+    }
+
+    public class FetchSingle
+    {
+        [Fact]
+        public async Task Throw_When_NoRowsReturned()
+        {
+            List<Either<IDataRow, QueryResult>> lst = [
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(0, string.Empty)),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+            ];
+            var query = Substitute.For<IExecutableQuery>();
+            query.Execute(Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+            var error = await Assert.ThrowsAsync<SqlxException>(async () => await query.FetchSingle<TestRow>());
+        
+            Assert.Equal("Expected at least 1 row but found 0", error.Message);
+        }
+        
+        [Fact]
+        public async Task ReturnRow_When_SingleRowFetched()
+        {
+            List<Either<IDataRow, QueryResult>> lst = [
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(1, string.Empty)),
+            ];
+            var query = Substitute.For<IExecutableQuery>();
+            query.Execute(Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+            var row = await query.FetchSingle<TestRow>();
+        
+            Assert.NotNull(row);
+        }
+        
+        [Fact]
+        public async Task Throw_When_MultipleRowsFetched()
+        {
+            List<Either<IDataRow, QueryResult>> lst = [
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(2, string.Empty)),
+            ];
+            var query = Substitute.For<IExecutableQuery>();
+            query.Execute(Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+            var error = await Assert.ThrowsAsync<SqlxException>(async () => await query.FetchSingle<TestRow>());
+        
+            Assert.Equal("Expected a single row but found multiple", error.Message);
+        }
+    }
+
+    public class FetchSingleOrDefault
+    {
+        [Fact]
+        public async Task ReturnNull_When_ClassAndNoRowsReturned()
+        {
+            List<Either<IDataRow, QueryResult>> lst = [
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(0, string.Empty)),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+            ];
+            var query = Substitute.For<IExecutableQuery>();
+            query.Execute(Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+            var row = await query.FetchSingleOrDefault<TestRow>();
+        
+            Assert.Null(row);
+        }
+        
+        [Fact]
+        public async Task ReturnDefault_When_StructAndNoRowsReturned()
+        {
+            List<Either<IDataRow, QueryResult>> lst = [
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(0, string.Empty)),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+            ];
+            var query = Substitute.For<IExecutableQuery>();
+            query.Execute(Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+            var row = await query.FetchSingleOrDefault<TestRowStruct>();
+        
+            Assert.Equal(default, row);
+        }
+        
+        [Fact]
+        public async Task ReturnFirstRow_When_SingleRowFetched()
+        {
+            List<Either<IDataRow, QueryResult>> lst = [
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(1, string.Empty)),
+            ];
+            var query = Substitute.For<IExecutableQuery>();
+            query.Execute(Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+            var row = await query.FetchSingleOrDefault<TestRow>();
+        
+            Assert.NotNull(row);
+        }
+        
+        [Fact]
+        public async Task ReturnFirstRow_When_MultipleRowsFetched()
+        {
+            List<Either<IDataRow, QueryResult>> lst = [
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(2, string.Empty)),
+            ];
+            var query = Substitute.For<IExecutableQuery>();
+            query.Execute(Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
+
+            var error = await Assert.ThrowsAsync<SqlxException>(async () => await query.FetchSingleOrDefault<TestRow>());
+        
+            Assert.Equal("Expected a single row but found multiple", error.Message);
+        }
+    }
+}

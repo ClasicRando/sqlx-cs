@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Sqlx.Core;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Pool;
@@ -12,7 +11,7 @@ using Sqlx.Postgres.Stream;
 
 namespace Sqlx.Postgres.Pool;
 
-public sealed class PgConnectionPool(PgConnectOptions options) : IConnectionPool
+public sealed class PgConnectionPool(PgConnectOptions options) : IConnectionPool, IQueryExecutor
 {
     public PgConnectOptions ConnectOptions { get; } = options;
     
@@ -32,18 +31,13 @@ public sealed class PgConnectionPool(PgConnectOptions options) : IConnectionPool
         throw new NotImplementedException();
     }
 
-    public async IAsyncEnumerable<Either<IDataRow, QueryResult>> ExecuteQuery(
+    public async Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
         IQuery query,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
-        await using IConnection connection = await Acquire(cancellationToken);
-        PgConnection pgConnection = PgException.CheckIfIs<IConnection, PgConnection>(connection);
+        await using var connection = await this.AcquireAs<PgConnection>(cancellationToken);
         PgExecutableQuery executableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
-        await foreach (var result in pgConnection.ExecuteQuery(executableQuery, cancellationToken))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            yield return result;
-        }
+        return await connection.ExecuteQuery(executableQuery, cancellationToken);
     }
 
     internal async Task<bool> GiveBack(PgConnection connection, CancellationToken cancellationToken)

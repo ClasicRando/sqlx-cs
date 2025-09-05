@@ -50,6 +50,11 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
         try
         {
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            if (Status == ConnectionStatus.Idle)
+            {
+                return;
+            }
+            
             Status = ConnectionStatus.Connecting;
             await _pgStream.OpenAsync(cancellationToken).ConfigureAwait(false);
             Status = ConnectionStatus.Idle;
@@ -118,6 +123,7 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
 
     public IExecutableQuery CreateQuery(string query)
     {
+        
         return new PgExecutableQuery(query, this);
     }
 
@@ -126,17 +132,29 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
         throw new NotImplementedException();
     }
 
-    public IAsyncEnumerable<Either<IDataRow, QueryResult>> ExecuteQuery(
+    public async Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
         IQuery query,
         CancellationToken cancellationToken)
     {
         PgExecutableQuery executableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
-        return executableQuery.ParameterBuffer.ParameterCount == 0
-            ? SendSimpleQuery(query.Query, cancellationToken)
-            : SendExtendedQuery(query.Query, executableQuery.ParameterBuffer, cancellationToken);
+        await ConnectIfClosed(cancellationToken);
+        var results = executableQuery.ParameterBuffer.ParameterCount == 0
+            ? SendSimpleQuery(executableQuery.Query, cancellationToken)
+            : SendExtendedQuery(executableQuery.Query, executableQuery.ParameterBuffer, cancellationToken);
+        return results;
     }
 
-    internal Task ReleaseResources(CancellationToken cancellationToken)
+    private async ValueTask ConnectIfClosed(CancellationToken cancellationToken)
+    {
+        if (Status is not ConnectionStatus.Closed)
+        {
+            return;
+        }
+
+        await OpenAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    internal ValueTask ReleaseResources(CancellationToken cancellationToken)
     {
         Status = ConnectionStatus.Closed;
         return _pgStream.CloseAsync(cancellationToken);
@@ -171,7 +189,8 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
     {
         if (Status is not ConnectionStatus.Idle)
         {
-            throw new PgException("Attempted to perform operation before opening connection");
+            throw new PgException(
+                "Attempted to perform operation with a connection that is not idle");
         }
     }
 

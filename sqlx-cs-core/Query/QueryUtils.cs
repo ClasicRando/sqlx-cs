@@ -1,82 +1,40 @@
-using System.Text;
-
 namespace Sqlx.Core.Query;
 
 public static class QueryUtils
 {
+    /// <summary>
+    /// Search through the provided SQL block to find the total number of queries within. Queries
+    /// are expected to be separated by ';' so only SQL dialects with required separators work for
+    /// this method (e.g. T-SQL blocks might not work because semicolons are not required to be
+    /// valid SQL). 
+    /// </summary>
+    /// <param name="sql">SQL block to analyze</param>
+    /// <returns>total number of SQL queries within the block</returns>
     public static int QueryCount(ReadOnlySpan<char> sql)
     {
+        sql = sql.Trim();
         var result = 0;
         var inQuote = false;
-        var hasNonWhitespaceText = false;
         foreach (var c in sql)
         {
             switch (c)
             {
                 case '\'':
                     inQuote = !inQuote;
-                    hasNonWhitespaceText = true;
                     break;
                 case ';':
                     if (!inQuote)
                     {
                         result++;
-                        hasNonWhitespaceText = false;
-                    }
-                    break;
-                default:
-                    if (!char.IsWhiteSpace(c))
-                    {
-                        hasNonWhitespaceText = true;
                     }
                     break;
             }
         }
 
-        if (sql[^1] is not ';' && hasNonWhitespaceText)
+        if (sql[^1] is not ';')
         {
             result++;
         }
         return result;
-    }
-    
-    public static List<string> SplitQuery(string sql)
-    {
-        return !sql.Contains(';') ? [sql] : SplitQueryInner().ToList();
-
-        IEnumerable<string> SplitQueryInner()
-        {
-            var builder = new StringBuilder();
-            var inQuote = false;
-            foreach (var c in sql)
-            {
-                switch (c)
-                {
-                    case '\'':
-                        inQuote = !inQuote;
-                        builder.Append(c);
-                        break;
-                    case ';':
-                        if (inQuote)
-                        {
-                            builder.Append(c);
-                        }
-                        else
-                        {
-                            yield return builder.ToString();
-                            builder.Clear();
-                        }
-                        break;
-                    default:
-                        builder.Append(c);
-                        break;
-                }
-            }
-
-            if (builder.Length > 0)
-            {
-                yield return builder.ToString();
-            }
-        }
     }
 }

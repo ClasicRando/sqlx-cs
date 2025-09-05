@@ -7,7 +7,7 @@ public static class ConnectionPoolExtensions
     /// <summary>
     /// Acquire a connection from the pool and immediately start a new transaction against the
     /// connection before returning that rented connection. If starting a transaction fails, the
-    /// underlining connection is returned to the pool;
+    /// underlining connection is returned to the pool.
     /// </summary>
     /// <param name="connectionPool">connection pool to begin a transaction against</param>
     /// <param name="cancellationToken">optional cancellation token</param>
@@ -20,6 +20,10 @@ public static class ConnectionPoolExtensions
         try
         {
             connection = await connectionPool.Acquire(cancellationToken).ConfigureAwait(false);
+            if (connection.Status is ConnectionStatus.Closed)
+            {
+                await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+            }
             await connection.BeginAsync(cancellationToken).ConfigureAwait(false);
             return connection;
         }
@@ -30,7 +34,7 @@ public static class ConnectionPoolExtensions
             throw;
         }
     }
-    
+
     /// <summary>
     /// Acquire a connection from the pool and attempt to unwrap that connection as
     /// <typeparamref name="TConnection"/>. Equivalent to:
@@ -40,12 +44,15 @@ public static class ConnectionPoolExtensions
     /// </code>
     /// </summary>
     /// <param name="connectionPool">connection pool to fetch a connection from</param>
+    /// <param name="cancellationToken">optional cancellation token</param>
     /// <typeparam name="TConnection">desired output connection type</typeparam>
     /// <returns>a rented connection from the pool as the desired type</returns>
     public static async Task<TConnection> AcquireAs<TConnection>(
-        this IConnectionPool connectionPool)
+        this IConnectionPool connectionPool,
+        CancellationToken cancellationToken = default)
         where TConnection : IConnection
     {
-        return (await connectionPool.Acquire().ConfigureAwait(false)).Unwrap<TConnection>();
+        return (await connectionPool.Acquire(cancellationToken).ConfigureAwait(false))
+            .Unwrap<TConnection>();
     }
 }

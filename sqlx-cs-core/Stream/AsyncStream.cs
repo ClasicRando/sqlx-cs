@@ -7,6 +7,9 @@ using Sqlx.Core.Exceptions;
 
 namespace Sqlx.Core.Stream;
 
+/// <summary>
+/// Default implementation of <see cref="IAsyncStream"/>
+/// </summary>
 public sealed class AsyncStream : IAsyncStream
 {
     private static readonly ArrayPool<byte> ArrayPool = ArrayPool<byte>.Shared;
@@ -62,7 +65,14 @@ public sealed class AsyncStream : IAsyncStream
         return _stream.WriteAsync(buffer, cancellationToken);
     }
 
-    private async ValueTask FillBuffer(int length)
+    /// <summary>
+    /// Fill the internal buffer up the desired length. If the buffer's size meets or exceeds the
+    /// required length, no async operation is performed and the method exists early.
+    /// </summary>
+    /// <param name="length">require length of data in the internal buffer</param>
+    /// <param name="cancellationToken">token to cancel the async operation</param>
+    /// <exception cref="SqlxException">if the stream is closed</exception>
+    private async ValueTask FillBuffer(int length, CancellationToken cancellationToken)
     {
         SqlxException.ThrowIfNull(_stream);
         var bytesRemaining = _bufferLength - _bufferPosition;
@@ -82,7 +92,9 @@ public sealed class AsyncStream : IAsyncStream
         var count = length - bytesRemaining;
         while (count > 0)
         {
-            var bytesRead = await _stream.ReadAsync(_innerBuffer.AsMemory(_bufferLength))
+            var bytesRead = await _stream.ReadAsync(
+                _innerBuffer.AsMemory(_bufferLength),
+                cancellationToken)
                 .ConfigureAwait(false);
             if (bytesRead == 0)
             {
@@ -93,17 +105,17 @@ public sealed class AsyncStream : IAsyncStream
         }
     }
 
-    public async Task<byte> ReadByteAsync(CancellationToken cancellationToken)
+    public async ValueTask<byte> ReadByteAsync(CancellationToken cancellationToken)
     {
         SqlxException.ThrowIfNull(_stream);
-        await FillBuffer(1).ConfigureAwait(false);
+        await FillBuffer(1, cancellationToken).ConfigureAwait(false);
         return _innerBuffer[_bufferPosition++];
     }
 
-    public async Task<int> ReadIntAsync(CancellationToken cancellationToken)
+    public async ValueTask<int> ReadIntAsync(CancellationToken cancellationToken)
     {
         SqlxException.ThrowIfNull(_stream);
-        await FillBuffer(4).ConfigureAwait(false);
+        await FillBuffer(4, cancellationToken).ConfigureAwait(false);
         var result = new ReadBuffer(_innerBuffer.AsSpan(_bufferPosition))
             .ReadInt();
         _bufferPosition += 4;
@@ -113,12 +125,12 @@ public sealed class AsyncStream : IAsyncStream
     public async ValueTask ReadBuffer(Memory<byte> buffer, CancellationToken cancellationToken)
     {
         SqlxException.ThrowIfNull(_stream);
-        await FillBuffer(buffer.Length).ConfigureAwait(false);
+        await FillBuffer(buffer.Length, cancellationToken).ConfigureAwait(false);
         _innerBuffer.AsMemory(_bufferPosition, buffer.Length).CopyTo(buffer);
         _bufferPosition += buffer.Length;
     }
 
-    public async Task CloseAsync(CancellationToken cancellationToken)
+    public async ValueTask CloseAsync(CancellationToken cancellationToken)
     {
         if (_stream is SslStream sslStream)
         {
@@ -164,6 +176,9 @@ public sealed class AsyncStream : IAsyncStream
                 // ignored
             }
         }
+
+        _bufferLength = 0;
+        _bufferPosition = 0;
     }
 
     private static async Task<IPEndPoint[]> GetIpEndpoints(

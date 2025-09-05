@@ -1,11 +1,8 @@
 namespace Sqlx.Core.Result;
 
-public record QueryResult(long RowsAffected, string Message)
-{
-    public QueryResult Merge(QueryResult other)
-    {
-        return new QueryResult(
-            RowsAffected + other.RowsAffected,
-            $"{Message},{other.Message}".Trim(','));
-    }
-}
+/// <summary>
+/// Query result data sent by the database
+/// </summary>
+/// <param name="RowsAffected">number of rows impacted by the query</param>
+/// <param name="Message">message sent by the database after completing the query execution</param>
+public record QueryResult(long RowsAffected, string Message);

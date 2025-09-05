@@ -33,7 +33,8 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
         ParameterBuffer.EncodeNull();
     }
 
-    public IAsyncEnumerable<Either<IDataRow, QueryResult>> Execute(CancellationToken cancellationToken)
+    public Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> Execute(
+        CancellationToken cancellationToken)
     {
         PgException.ThrowIfNull(_queryExecutor);
         return _queryExecutor.ExecuteQuery(this, cancellationToken);

@@ -13,7 +13,7 @@ namespace Sqlx.Core.Buffer;
 /// To ensure that the <see cref="ArrayPool{T}.Shared"/> pool is not exhausted you must dispose of
 /// each instance created which calls <see cref="ArrayPool{T}.Return"/>.
 /// </summary>
-public sealed class WriteBuffer : System.IO.Stream, IBufferWriter<byte>, IDisposable
+public sealed class WriteBuffer : IBufferWriter<byte>, IDisposable
 {
     private const int DefaultCapacity = 8192;
     private static readonly Encoding Encoding = Charsets.Default;
@@ -32,7 +32,7 @@ public sealed class WriteBuffer : System.IO.Stream, IBufferWriter<byte>, IDispos
     }
 
     /// <summary>Number writeable bytes remaining in the buffer</summary>
-    public int Remaining => _buffer.Length - _writePosition;
+    private int Remaining => _buffer.Length - _writePosition;
 
     /// <summary><see cref="ReadOnlyMemory{T}"/> of the bytes written to this buffer</summary>
     public ReadOnlyMemory<byte> ReadableMemory => _buffer.AsMemory(0, _writePosition);
@@ -40,7 +40,7 @@ public sealed class WriteBuffer : System.IO.Stream, IBufferWriter<byte>, IDispos
     /// <summary><see cref="ReadOnlySpan{T}"/> of the bytes written to this buffer</summary>
     public ReadOnlySpan<byte> ReadableSpan => _buffer.AsSpan(0, _writePosition);
 
-    public new void WriteByte(byte value)
+    public void WriteByte(byte value)
     {
         CheckBound(sizeof(byte));
         _buffer[_writePosition] = value;
@@ -197,7 +197,7 @@ public sealed class WriteBuffer : System.IO.Stream, IBufferWriter<byte>, IDispos
         _writePosition = 0;
     }
 
-    public new void Dispose()
+    public void Dispose()
     {
         ArrayPool.Return(_buffer);
         _buffer = [];
@@ -224,42 +224,5 @@ public sealed class WriteBuffer : System.IO.Stream, IBufferWriter<byte>, IDispos
         return sizeHint == 0
             ? _buffer.AsMemory(_writePosition)
             : _buffer.AsMemory(_writePosition, sizeHint);
-    }
-
-    // Stream implementations. Does not allow seeking, reading or setting length
-
-    public override bool CanRead => false;
-    public override bool CanSeek => false;
-    public override bool CanWrite => true;
-    public override long Length => _buffer.Length;
-
-    public override long Seek(long offset, SeekOrigin origin)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override void SetLength(long value)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override void Write(byte[] buffer, int offset, int count)
-    {
-        WriteBytes(buffer.AsSpan(offset, count));
-    }
-
-    public override long Position
-    {
-        get => _writePosition;
-        set => _writePosition += (int)value;
-    }
-
-    public override void Flush()
-    {
-    }
-
-    public override int Read(byte[] buffer, int offset, int count)
-    {
-        throw new NotImplementedException();
     }
 }
