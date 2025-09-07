@@ -14,5 +14,5 @@ public interface IFromRow<out TResult> where TResult : notnull
     /// <param name="dataRow">database row to convert</param>
     /// <returns>a new instance of the result type</returns>
     /// <exception cref="Exceptions.ColumnDecodeError">if decoding a column value fails</exception>
-    public static abstract TResult FromRow(IDataRow dataRow);
+    static abstract TResult FromRow(IDataRow dataRow);
 }

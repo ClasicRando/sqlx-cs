@@ -15,7 +15,7 @@ using Sqlx.Postgres.Stream;
 
 namespace Sqlx.Postgres.Connection;
 
-public sealed partial class PgConnection : IConnection, IQueryExecutor
+public sealed partial class PgConnection : IConnection
 {
     private const string BeginQuery = "BEGIN;";
     private const string CommitQuery = "COMMIT;";
@@ -142,6 +142,13 @@ public sealed partial class PgConnection : IConnection, IQueryExecutor
             ? SendSimpleQuery(executableQuery.Query, cancellationToken)
             : SendExtendedQuery(executableQuery.Query, executableQuery.ParameterBuffer, cancellationToken);
         return results;
+    }
+
+    public Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQueryBatch(
+        IQueryBatch query,
+        CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
     }
 
     private async ValueTask ConnectIfClosed(CancellationToken cancellationToken)

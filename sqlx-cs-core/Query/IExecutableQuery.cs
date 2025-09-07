@@ -18,18 +18,18 @@ public interface IExecutableQuery : IQuery
     /// This is considered a low-level API for query execution since the user needs to manually
     /// process the rows and results. Prefer extension methods such as:
     /// <list type="bullet">
-    ///     <item><see cref="ExecutableQueryExtensions.ExecuteNonQuery"/></item>
-    ///     <item><see cref="ExecutableQueryExtensions.Fetch{T}"/></item>
-    ///     <item><see cref="ExecutableQueryExtensions.FetchFirst{T}"/></item>
-    ///     <item><see cref="ExecutableQueryExtensions.FetchFirstOrDefault{T}"/></item>
-    ///     <item><see cref="ExecutableQueryExtensions.FetchSingle{T}"/></item>
-    ///     <item><see cref="ExecutableQueryExtensions.FetchSingleOrDefault{T}"/></item>
-    ///     <item><see cref="ExecutableQueryExtensions.FetchAll{T}"/></item>
+    ///     <item><see cref="ExecutableQuery.ExecuteNonQuery"/></item>
+    ///     <item><see cref="ExecutableQuery.Fetch{T}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchFirst{T}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchFirstOrDefault{T}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchSingle{T}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchSingleOrDefault{T}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchAll{T}"/></item>
     /// </list>
     /// </para>
     /// </summary>
     /// <param name="cancellationToken">cancellation token</param>
     /// <returns>async generator of query result objects</returns>
-    public Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> Execute(
+    Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> Execute(
         CancellationToken cancellationToken);
 }

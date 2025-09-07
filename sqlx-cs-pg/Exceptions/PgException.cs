@@ -29,12 +29,10 @@ public class PgException : SqlxException
         where TSuper : notnull
         where TSub : TSuper
     {
-        if (value is not TSub sub)
-        {
-            throw new PgException($"Expected value of type {typeof(TSuper)} to be {typeof(TSub)} but it was actually {value.GetType()}");
-        }
-
-        return sub;
+        return value is not TSub sub
+            ? throw new PgException(
+                $"Expected value of type {typeof(TSuper)} to be {typeof(TSub)} but it was actually {value.GetType()}")
+            : sub;
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -5,7 +5,10 @@ using Sqlx.Core.Result;
 
 namespace Sqlx.Core.Query;
 
-public static class ExecutableQueryExtensions
+/// <summary>
+/// Provides a set of extension methods for <see cref="IExecutableQuery"/>
+/// </summary>
+public static class ExecutableQuery
 {
     /// <summary>
     /// Execute this query, ignoring any rows returned and just counting the total number of rows
@@ -20,7 +23,7 @@ public static class ExecutableQueryExtensions
         CancellationToken cancellationToken = default)
     {
         long count = 0;
-        var results = await executableQuery.Execute(cancellationToken);
+        var results = await executableQuery.Execute(cancellationToken).ConfigureAwait(false);
         await foreach (var result in results.WithCancellation(cancellationToken))
         {
             if (result is Either<IDataRow, QueryResult>.Right right)
@@ -174,11 +177,9 @@ public static class ExecutableQueryExtensions
         await using ConfiguredCancelableAsyncEnumerable<TRow>.Enumerator enumerable = results.GetAsyncEnumerator();
         if (!await enumerable.MoveNextAsync())
         {
-            if (requireRow)
-            {
-                throw new SqlxException("Expected at least 1 row but found 0");
-            }
-            return default;
+            return requireRow
+                ? throw new SqlxException("Expected at least 1 row but found 0")
+                : default;
         }
 
         TRow row = enumerable.Current;

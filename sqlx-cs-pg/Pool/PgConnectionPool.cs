@@ -11,7 +11,7 @@ using Sqlx.Postgres.Stream;
 
 namespace Sqlx.Postgres.Pool;
 
-public sealed class PgConnectionPool(PgConnectOptions options) : IConnectionPool, IQueryExecutor
+public sealed class PgConnectionPool(PgConnectOptions options) : IConnectionPool
 {
     public PgConnectOptions ConnectOptions { get; } = options;
     
@@ -38,6 +38,13 @@ public sealed class PgConnectionPool(PgConnectOptions options) : IConnectionPool
         await using var connection = await this.AcquireAs<PgConnection>(cancellationToken);
         PgExecutableQuery executableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
         return await connection.ExecuteQuery(executableQuery, cancellationToken);
+    }
+
+    public async Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQueryBatch(IQueryBatch query, CancellationToken cancellationToken)
+    {
+        await using var connection = await this.AcquireAs<PgConnection>(cancellationToken);
+        PgQueryBatch queryBatch = PgException.CheckIfIs<IQueryBatch, PgQueryBatch>(query);
+        return await connection.ExecuteQueryBatch(queryBatch, cancellationToken);
     }
 
     internal async Task<bool> GiveBack(PgConnection connection, CancellationToken cancellationToken)

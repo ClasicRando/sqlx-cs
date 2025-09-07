@@ -1,66 +1,79 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization.Metadata;
-using Sqlx.Core.Exceptions;
 
 namespace Sqlx.Core.Result;
 
 public interface IDataRow
 {
-    public int IndexOf(string name);
+    int IndexOf(string name);
 
-    public T? Get<T>(int index) where T : notnull;
+    bool? GetBoolean(int index);
 
-    public bool? GetBoolean(int index);
+    byte? GetByte(int index);
 
-    public byte? GetByte(int index);
+    short? GetShort(int index);
 
-    public short? GetShort(int index);
+    int? GetInt(int index);
 
-    public int? GetInt(int index);
+    long? GetLong(int index);
 
-    public long? GetLong(int index);
+    float? GetFloat(int index);
 
-    public float? GetFloat(int index);
+    double? GetDouble(int index);
 
-    public double? GetDouble(int index);
+    TimeOnly? GetTime(int index);
 
-    public TimeOnly? GetTime(int index);
+    DateOnly? GetDate(int index);
 
-    public DateOnly? GetDate(int index);
+    DateTime? GetDateTime(int index);
 
-    public DateTime? GetDateTime(int index);
+    DateTimeOffset? GetDateTimeOffset(int index);
 
-    public DateTimeOffset? GetDateTimeOffset(int index);
+    decimal? GetDecimal(int index);
 
-    public decimal? GetDecimal(int index);
+    byte[]? GetBytes(int index);
 
-    public byte[]? GetBytes(int index);
+    string? GetString(int index);
 
-    public string? GetString(int index);
+    Guid? GetGuid(int index);
 
-    public T? GetJson<T>(int index, JsonTypeInfo<T>? jsonTypeInfo = null) where T : notnull;
+    T? GetJson<T>(int index, JsonTypeInfo<T>? jsonTypeInfo = null) where T : notnull;
+
+    bool GetBooleanNotNull(int index);
+
+    byte GetByteNotNull(int index);
+
+    short GetShortNotNull(int index);
+
+    int GetIntNotNull(int index);
+
+    long GetLongNotNull(int index);
+
+    float GetFloatNotNull(int index);
+
+    double GetDoubleNotNull(int index);
+
+    TimeOnly GetTimeNotNull(int index);
+
+    DateOnly GetDateNotNull(int index);
+
+    DateTime GetDateTimeNotNull(int index);
+
+    DateTimeOffset GetDateTimeOffsetNotNull(int index);
+
+    decimal GetDecimalNotNull(int index);
+
+    byte[] GetBytesNotNull(int index);
+
+    string GetStringNotNull(int index);
+
+    Guid GetGuidNotNull(int index);
+
+    T GetJsonNotNull<T>(int index, JsonTypeInfo<T>? jsonTypeInfo = null) where T : notnull;
 }
 
 public static class DataRowExtensions
 {
-    public static T GetNotNull<T>(this IDataRow dataRow, int index) where T : notnull
-    {
-        return dataRow.Get<T>(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T? Get<T>(this IDataRow dataRow, string name) where T : notnull
-    {
-        return dataRow.Get<T>(dataRow.IndexOf(name));
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T GetNotNull<T>(this IDataRow dataRow, string name) where T : notnull
-    {
-        return GetNotNull<T>(dataRow, dataRow.IndexOf(name));
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool? GetBoolean(this IDataRow dataRow, string name)
     {
@@ -146,6 +159,12 @@ public static class DataRowExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Guid? GetGuid(this IDataRow dataRow, string name)
+    {
+        return dataRow.GetGuid(dataRow.IndexOf(name));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T? GetJson<T>(
         this IDataRow dataRow,
         string name,
@@ -153,114 +172,6 @@ public static class DataRowExtensions
         where T : notnull
     {
         return dataRow.GetJson(dataRow.IndexOf(name), jsonTypeInfo);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool GetBooleanNotNull(this IDataRow dataRow, int index)
-    {
-        return dataRow.GetBoolean(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte GetByteNotNull(this IDataRow dataRow, int index)
-    {
-        return dataRow.GetByte(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static short GetShortNotNull(this IDataRow dataRow, int index)
-    {
-        return dataRow.GetShort(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetIntNotNull(this IDataRow dataRow, int index)
-    {
-        return dataRow.GetInt(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static long GetLongNotNull(this IDataRow dataRow, int index)
-    {
-        return dataRow.GetLong(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static float GetFloatNotNull(this IDataRow dataRow, int index)
-    {
-        return dataRow.GetFloat(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static double GetDoubleNotNull(this IDataRow dataRow, int index)
-    {
-        return dataRow.GetDouble(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TimeOnly GetTimeNotNull(this IDataRow dataRow, int index)
-    {
-        return dataRow.GetTime(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DateOnly GetDateNotNull(this IDataRow dataRow, int index)
-    {
-        return dataRow.GetDate(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DateTime GetDateTimeNotNull(this IDataRow dataRow, int index)
-    {
-        return dataRow.GetDateTime(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DateTimeOffset GetDateTimeOffsetNotNull(this IDataRow dataRow, int index)
-    {
-        return dataRow.GetDateTimeOffset(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static decimal GetDecimalNotNull(this IDataRow dataRow, int index)
-    {
-        return dataRow.GetDecimal(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte[] GetBytesNotNull(this IDataRow dataRow, int index)
-    {
-        return dataRow.GetBytes(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string GetStringNotNull(this IDataRow dataRow, int index)
-    {
-        return dataRow.GetString(index)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T GetJsonNotNull<T>(
-        this IDataRow dataRow,
-        int index,
-        JsonTypeInfo<T>? jsonTypeInfo = null) where T : notnull
-    {
-        return dataRow.GetJson(index, jsonTypeInfo)
-               ?? throw new SqlxException($"Expected field #{index} to be non-null but found null");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -345,6 +256,12 @@ public static class DataRowExtensions
     public static string GetStringNotNull(this IDataRow dataRow, string name)
     {
         return dataRow.GetStringNotNull(dataRow.IndexOf(name));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Guid GetGuidNotNull(this IDataRow dataRow, string name)
+    {
+        return dataRow.GetGuidNotNull(dataRow.IndexOf(name));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

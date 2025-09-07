@@ -5,8 +5,8 @@ using Sqlx.Core.Result;
 
 namespace Sqlx.Core.Query;
 
-[TestSubject(typeof(ExecutableQueryExtensions))]
-public class ExecutableQueryExtensionsTest
+[TestSubject(typeof(ExecutableQuery))]
+public class ExecutableQueryTest
 {
     private record TestRow : IFromRow<TestRow>
     {
@@ -128,7 +128,7 @@ public class ExecutableQueryExtensionsTest
         public async Task ReturnFirstRow_When_MultipleRowsFetched()
         {
             var firstRow = Substitute.For<IDataRow>();
-            firstRow.GetInt(0).Returns(10);
+            firstRow.GetIntNotNull(0).Returns(10);
             List<Either<IDataRow, QueryResult>> lst = [
                 new Either<IDataRow, QueryResult>.Left(firstRow),
                 new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
@@ -198,7 +198,7 @@ public class ExecutableQueryExtensionsTest
         public async Task ReturnFirstRow_When_MultipleRowsFetched()
         {
             var firstRow = Substitute.For<IDataRow>();
-            firstRow.GetInt(0).Returns(10);
+            firstRow.GetIntNotNull(0).Returns(10);
             List<Either<IDataRow, QueryResult>> lst = [
                 new Either<IDataRow, QueryResult>.Left(firstRow),
                 new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),

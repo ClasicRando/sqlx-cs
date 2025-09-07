@@ -10,12 +10,37 @@ namespace Sqlx.Core.Query;
 public interface IQueryExecutor
 {
     /// <summary>
+    /// Create a new executable query the uses this connection to run the query. Make sure to keep
+    /// this connection open until you complete the query execution and extract all results.
+    /// </summary>
+    /// <param name="query">Query to execute against the database</param>
+    /// <returns>the executable query</returns>
+    IExecutableQuery CreateQuery(string query);
+
+    /// <summary>
+    /// Create a new query batch the uses this connection to run the queries. Make sure to keep this
+    /// connection open until you complete the query batch execution and extract all results.
+    /// </summary>
+    /// <returns>the query batch</returns>
+    IQueryBatch CreateQueryBatch();
+    
+    /// <summary>
     /// Execute the query and return an async stream of query result items
     /// </summary>
     /// <param name="query">query to execute</param>
     /// <param name="cancellationToken">token to cancel the async operation</param>
     /// <returns>an async stream of query result items</returns>
-    public Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
+    Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
         IQuery query,
+        CancellationToken cancellationToken);
+    
+    /// <summary>
+    /// Execute the query batch and return an async stream of query result items
+    /// </summary>
+    /// <param name="query">query batch to execute</param>
+    /// <param name="cancellationToken">token to cancel the async operation</param>
+    /// <returns>an async stream of query result items</returns>
+    Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQueryBatch(
+        IQueryBatch query,
         CancellationToken cancellationToken);
 }

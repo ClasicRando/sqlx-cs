@@ -9,7 +9,7 @@ public interface IAsyncStream : IAsyncDisposable
     /// <summary>
     /// True if the underlining stream is connected to the host
     /// </summary>
-    public bool IsConnected { get; }
+    bool IsConnected { get; }
     
     /// <summary>
     /// Open the stream's connection to a remote host at the specified port
@@ -17,35 +17,35 @@ public interface IAsyncStream : IAsyncDisposable
     /// <param name="host">host name/address to connect to</param>
     /// <param name="port">host port to connect to</param>
     /// <param name="cancellationToken">token to cancel the operation</param>
-    public Task OpenAsync(string host, ushort port, CancellationToken cancellationToken);
+    Task OpenAsync(string host, ushort port, CancellationToken cancellationToken);
     
     /// <summary>
     /// Write the entire memory segment to the stream
     /// </summary>
     /// <param name="buffer">memory segment to write to the stream</param>
     /// <param name="cancellationToken">token to cancel the operation</param>
-    public ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken);
+    ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken);
 
     /// <summary>
     /// Read a single byte from the stream
     /// </summary>
     /// <param name="cancellationToken">token to cancel the operation</param>
     /// <returns>the next byte from the stream</returns>
-    public ValueTask<byte> ReadByteAsync(CancellationToken cancellationToken);
+    ValueTask<byte> ReadByteAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Read the next 4 bytes from the stream and combine into a single int
     /// </summary>
     /// <param name="cancellationToken">token to cancel the operation</param>
     /// <returns>the next integer from the stream</returns>
-    public ValueTask<int> ReadIntAsync(CancellationToken cancellationToken);
+    ValueTask<int> ReadIntAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Read as many bytes as requested by the supplied buffer and copy those bytes into the buffer
     /// </summary>
     /// <param name="buffer">buffer to copy bytes into</param>
     /// <param name="cancellationToken">token to cancel the operation</param>
-    public ValueTask ReadBuffer(Memory<byte> buffer, CancellationToken cancellationToken);
+    ValueTask ReadBuffer(Memory<byte> buffer, CancellationToken cancellationToken);
 
     /// <summary>
     /// Close this stream's connection to the host. Does nothing if not already connected using
@@ -53,5 +53,5 @@ public interface IAsyncStream : IAsyncDisposable
     /// <see cref="OpenAsync"/> again.
     /// </summary>
     /// <param name="cancellationToken">token to cancel the operation</param>
-    public ValueTask CloseAsync(CancellationToken cancellationToken);
+    ValueTask CloseAsync(CancellationToken cancellationToken);
 }
