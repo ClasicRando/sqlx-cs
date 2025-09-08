@@ -376,7 +376,82 @@ public static class ExecutableQueryExtensions
         return BindPgNullableClass<PgRange<decimal>, PgRangeType<decimal, PgDecimal>>(query, value);
     }
 
-    public static IQuery BindPg<TValue, TType>(IQuery query, TValue value)
+    public static IQuery Bind(this IQuery query, bool?[]? value)
+    {
+        return BindPgArrayStruct<bool, PgBool>(query, value);
+    }
+
+    public static IQuery Bind(this IQuery query, byte?[]? value)
+    {
+        return BindPgArrayStruct<byte, PgChar>(query, value);
+    }
+
+    public static IQuery Bind(this IQuery query, short?[]? value)
+    {
+        return BindPgArrayStruct<short, PgShort>(query, value);
+    }
+    
+    public static IQuery Bind(this IQuery query, int?[]? value)
+    {
+        return BindPgArrayStruct<int, PgInt>(query, value);
+    }
+
+    public static IQuery Bind(this IQuery query, long?[]? value)
+    {
+        return BindPgArrayStruct<long, PgLong>(query, value);
+    }
+
+    public static IQuery Bind(this IQuery query, float?[]? value)
+    {
+        return BindPgArrayStruct<float, PgFloat>(query, value);
+    }
+
+    public static IQuery Bind(this IQuery query, double?[]? value)
+    {
+        return BindPgArrayStruct<double, PgDouble>(query, value);
+    }
+
+    public static IQuery Bind(this IQuery query, TimeOnly?[]? value)
+    {
+        return BindPgArrayStruct<TimeOnly, PgTime>(query, value);
+    }
+
+    public static IQuery Bind(this IQuery query, DateOnly?[]? value)
+    {
+        return BindPgArrayStruct<DateOnly, PgDate>(query, value);
+    }
+
+    public static IQuery Bind(this IQuery query, DateTime?[]? value)
+    {
+        return BindPgArrayStruct<DateTime, PgDateTime>(query, value);
+    }
+
+    public static IQuery Bind(this IQuery query, DateTimeOffset?[]? value)
+    {
+        return BindPgArrayStruct<DateTimeOffset, PgDateTimeOffset>(query, value);
+    }
+
+    public static IQuery Bind(this IQuery query, decimal?[]? value)
+    {
+        return BindPgArrayStruct<decimal, PgDecimal>(query, value);
+    }
+
+    public static IQuery Bind(this IQuery query, byte[]?[]? value)
+    {
+        return BindPgArrayClass<byte[], PgBytea>(query, value);
+    }
+
+    public static IQuery Bind(this IQuery query, string?[]? value)
+    {
+        return BindPgArrayClass<string, PgString>(query, value);
+    }
+
+    public static IQuery Bind(this IQuery query, Guid?[]? value)
+    {
+        return BindPgArrayStruct<Guid, PgUuid>(query, value);
+    }
+
+    public static IQuery BindPg<TValue, TType>(this IQuery query, TValue value)
         where TType : IPgDbType<TValue>
         where TValue : notnull
     {
@@ -385,7 +460,7 @@ public static class ExecutableQueryExtensions
     }
 
     public static IQuery BindPgNullableStruct<TValue, TType>(
-        IQuery query,
+        this IQuery query,
         TValue? value)
         where TType : IPgDbType<TValue>
         where TValue : struct
@@ -395,12 +470,32 @@ public static class ExecutableQueryExtensions
     }
 
     public static IQuery BindPgNullableClass<TValue, TType>(
-        IQuery query,
+        this IQuery query,
         TValue? value)
         where TType : IPgDbType<TValue>
         where TValue : class
     {
         var pgExecutableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
         return pgExecutableQuery.EncodeNullableClass<TValue, TType>(value);
+    }
+
+    public static IQuery BindPgArrayStruct<TElement, TType>(
+        this IQuery query,
+        TElement?[]? value)
+        where TType : IPgDbType<TElement>
+        where TElement : struct
+    {
+        var pgExecutableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
+        return pgExecutableQuery.EncodeNullableClass<TElement?[], PgArrayTypeStruct<TElement, TType>>(value);
+    }
+
+    public static IQuery BindPgArrayClass<TElement, TType>(
+        this IQuery query,
+        TElement?[]? value)
+        where TType : IPgDbType<TElement>
+        where TElement : class
+    {
+        var pgExecutableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
+        return pgExecutableQuery.EncodeNullableClass<TElement?[], PgArrayTypeClass<TElement, TType>>(value);
     }
 }

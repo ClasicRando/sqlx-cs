@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core;
@@ -126,102 +125,96 @@ internal sealed class PgDataRow : IDataRow
 
     public T? GetJson<T>(int index, JsonTypeInfo<T>? jsonTypeInfo = null) where T : notnull
     {
-        return GetJsonInternal(index, jsonTypeInfo);
+        ColumnData columnData = GetColumnData(index);
+        return columnData.IsNull ? default : GetJsonInternal(columnData, jsonTypeInfo);
     }
 
     public bool GetBooleanNotNull(int index)
     {
-        return Decode<bool, PgBool>(index, throwIfNull: true);
+        return DecodeNotNull<bool, PgBool>(index);
     }
 
     public byte GetByteNotNull(int index)
     {
-        return Decode<byte, PgChar>(index, throwIfNull: true);
+        return DecodeNotNull<byte, PgChar>(index);
     }
 
     public short GetShortNotNull(int index)
     {
-        return Decode<short, PgShort>(index, throwIfNull: true);
+        return DecodeNotNull<short, PgShort>(index);
     }
 
     public int GetIntNotNull(int index)
     {
-        return Decode<int, PgInt>(index, throwIfNull: true);
+        return DecodeNotNull<int, PgInt>(index);
     }
 
     public long GetLongNotNull(int index)
     {
-        return Decode<long, PgLong>(index, throwIfNull: true);
+        return DecodeNotNull<long, PgLong>(index);
     }
 
     public float GetFloatNotNull(int index)
     {
-        return Decode<float, PgFloat>(index, throwIfNull: true);
+        return DecodeNotNull<float, PgFloat>(index);
     }
 
     public double GetDoubleNotNull(int index)
     {
-        return Decode<double, PgDouble>(index, throwIfNull: true);
+        return DecodeNotNull<double, PgDouble>(index);
     }
 
     public TimeOnly GetTimeNotNull(int index)
     {
-        return Decode<TimeOnly, PgTime>(index, throwIfNull: true);
+        return DecodeNotNull<TimeOnly, PgTime>(index);
     }
 
     public DateOnly GetDateNotNull(int index)
     {
-        return Decode<DateOnly, PgDate>(index, throwIfNull: true);
+        return DecodeNotNull<DateOnly, PgDate>(index);
     }
 
     public DateTime GetDateTimeNotNull(int index)
     {
-        return Decode<DateTime, PgDateTime>(index, throwIfNull: true);
+        return DecodeNotNull<DateTime, PgDateTime>(index);
     }
 
     public DateTimeOffset GetDateTimeOffsetNotNull(int index)
     {
-        return Decode<DateTimeOffset, PgDateTimeOffset>(index, throwIfNull: true);
+        return DecodeNotNull<DateTimeOffset, PgDateTimeOffset>(index);
     }
 
     public decimal GetDecimalNotNull(int index)
     {
-        return Decode<decimal, PgDecimal>(index, throwIfNull: true);
+        return DecodeNotNull<decimal, PgDecimal>(index);
     }
 
     public byte[] GetBytesNotNull(int index)
     {
-        return Decode<byte[], PgBytea>(index, throwIfNull: true);
+        return DecodeNotNull<byte[], PgBytea>(index);
     }
 
     public string GetStringNotNull(int index)
     {
-        return Decode<string, PgString>(index, throwIfNull: true);
+        return DecodeNotNull<string, PgString>(index);
     }
 
     public Guid GetGuidNotNull(int index)
     {
-        return Decode<Guid, PgUuid>(index, throwIfNull: true);
+        return DecodeNotNull<Guid, PgUuid>(index);
     }
 
     public T GetJsonNotNull<T>(int index, JsonTypeInfo<T>? jsonTypeInfo = null) where T : notnull
     {
-        return GetJsonInternal(index, jsonTypeInfo, throwIfNull: true);
+        ColumnData columnData = GetColumnData(index);
+        return columnData.IsNull
+            ? throw new SqlxException($"Expected field #{index} to be non-null but found null")
+            : GetJsonInternal(columnData, jsonTypeInfo);
     }
 
-    private T? GetJsonInternal<T>(
-        int index,
-        JsonTypeInfo<T>? jsonTypeInfo,
-        [DoesNotReturnIf(true)] bool throwIfNull = false) where T : notnull
+    private T GetJsonInternal<T>(ColumnData columnData, JsonTypeInfo<T>? jsonTypeInfo)
+        where T : notnull
     {
-        ColumnData columnData = GetColumnData(index);
-        if (columnData.IsNull)
-        {
-            return throwIfNull
-                ? throw new SqlxException($"Expected field #{index} to be non-null but found null")
-                : default;
-        }
-
         if (PgJson<T>.DbType != columnData.ColumnMetadata.PgType && !PgJson<T>.IsCompatible(columnData.ColumnMetadata.PgType))
         {
             throw ColumnDecodeError.Create<T>(columnData.ColumnMetadata);
@@ -263,21 +256,22 @@ internal sealed class PgDataRow : IDataRow
             : new ColumnData(false, slice, columnMetadata);
     }
 
-    internal TResult? Decode<TResult, TType>(
-        int index,
-        [DoesNotReturnIf(true)] bool throwIfNull = false)
+    internal TResult? Decode<TResult, TType>(int index)
         where TResult : notnull
         where TType : IPgDbType<TResult>
     {
         ColumnData columnData = GetColumnData(index);
-        if (!columnData.IsNull)
-        {
-            return Decode<TResult, TType>(columnData);
-        }
-        
-        return throwIfNull
-            ? throw new SqlxException($"Expected field #{index} to be non-null but found null")
-            : default;
+        return !columnData.IsNull ? Decode<TResult, TType>(columnData) : default;
+    }
+
+    internal TResult DecodeNotNull<TResult, TType>(int index)
+        where TResult : notnull
+        where TType : IPgDbType<TResult>
+    {
+        ColumnData columnData = GetColumnData(index);
+        return !columnData.IsNull
+            ? Decode<TResult, TType>(columnData)
+            : throw new SqlxException($"Expected field #{index} to be non-null but found null");
     }
 
     private TResult Decode<TResult, TType>(ColumnData columnData)
@@ -320,7 +314,7 @@ public static class DataRowExtensions
     public static TDecode GetPgDecodeNotNull<TDecode>(this IDataRow dataRow, int index)
         where TDecode : IPgDbType<TDecode>
     {
-        return GetPgDecodeSelfInternal<TDecode>(dataRow, index, throwIfNull: true);
+        return GetPgDecodeSelfNotNullInternal<TDecode>(dataRow, index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -346,7 +340,7 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgTimeTz GetPgTimeTzNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeNotNull<PgTimeTz>(dataRow, index);
+        return GetPgDecodeSelfNotNullInternal<PgTimeTz>(dataRow, index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -370,7 +364,7 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgPoint GetPgPointNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeNotNull<PgPoint>(dataRow, index);
+        return GetPgDecodeSelfNotNullInternal<PgPoint>(dataRow, index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -394,7 +388,7 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgLine GetPgLineNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeNotNull<PgLine>(dataRow, index);
+        return GetPgDecodeSelfNotNullInternal<PgLine>(dataRow, index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -418,7 +412,7 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgLineSegment GetPgLineSegmentNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeNotNull<PgLineSegment>(dataRow, index);
+        return GetPgDecodeSelfNotNullInternal<PgLineSegment>(dataRow, index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -442,7 +436,7 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgBox GetPgBoxNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeNotNull<PgBox>(dataRow, index);
+        return GetPgDecodeSelfNotNullInternal<PgBox>(dataRow, index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -466,7 +460,7 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgPath GetPgPathNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeNotNull<PgPath>(dataRow, index);
+        return GetPgDecodeSelfNotNullInternal<PgPath>(dataRow, index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -490,7 +484,7 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgCircle GetPgCircleNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeNotNull<PgCircle>(dataRow, index);
+        return GetPgDecodeSelfNotNullInternal<PgCircle>(dataRow, index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -514,7 +508,7 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgPolygon GetPgPolygonNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeNotNull<PgPolygon>(dataRow, index);
+        return GetPgDecodeSelfNotNullInternal<PgPolygon>(dataRow, index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -538,7 +532,7 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgInterval GetPgIntervalNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeNotNull<PgInterval>(dataRow, index);
+        return GetPgDecodeSelfNotNullInternal<PgInterval>(dataRow, index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -562,7 +556,7 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgMacAddress GetPgMacAddressNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeNotNull<PgMacAddress>(dataRow, index);
+        return GetPgDecodeSelfNotNullInternal<PgMacAddress>(dataRow, index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -586,7 +580,7 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgMoney GetPgMoneyNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeNotNull<PgMoney>(dataRow, index);
+        return GetPgDecodeSelfNotNullInternal<PgMoney>(dataRow, index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -610,7 +604,7 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgInet GetPgInetNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeNotNull<PgInet>(dataRow, index);
+        return GetPgDecodeSelfNotNullInternal<PgInet>(dataRow, index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -634,10 +628,9 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgRange<long> GetPgRangeLongNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeInternal<PgRange<long>, PgRangeType<long, PgLong>>(
+        return GetPgDecodeNotNullInternal<PgRange<long>, PgRangeType<long, PgLong>>(
             dataRow,
-            index,
-            throwIfNull: true);
+            index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -661,10 +654,9 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgRange<int> GetPgRangeIntNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeInternal<PgRange<int>, PgRangeType<int, PgInt>>(
+        return GetPgDecodeNotNullInternal<PgRange<int>, PgRangeType<int, PgInt>>(
             dataRow,
-            index,
-            throwIfNull: true);
+            index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -688,10 +680,9 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgRange<DateOnly> GetPgRangeDateOnlyNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeInternal<PgRange<DateOnly>, PgRangeType<DateOnly, PgDate>>(
+        return GetPgDecodeNotNullInternal<PgRange<DateOnly>, PgRangeType<DateOnly, PgDate>>(
             dataRow,
-            index,
-            throwIfNull: true);
+            index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -715,10 +706,9 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgRange<DateTime> GetPgRangeDateTimeNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeInternal<PgRange<DateTime>, PgRangeType<DateTime, PgDateTime>>(
+        return GetPgDecodeNotNullInternal<PgRange<DateTime>, PgRangeType<DateTime, PgDateTime>>(
             dataRow,
-            index,
-            throwIfNull: true);
+            index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -742,10 +732,9 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgRange<DateTimeOffset> GetPgRangeDateTimeOffsetNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeInternal<PgRange<DateTimeOffset>, PgRangeType<DateTimeOffset, PgDateTimeOffset>>(
+        return GetPgDecodeNotNullInternal<PgRange<DateTimeOffset>, PgRangeType<DateTimeOffset, PgDateTimeOffset>>(
             dataRow,
-            index,
-            throwIfNull: true);
+            index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -769,10 +758,9 @@ public static class DataRowExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PgRange<decimal> GetPgRangeDecimalNotNull(this IDataRow dataRow, int index)
     {
-        return GetPgDecodeInternal<PgRange<decimal>, PgRangeType<decimal, PgDecimal>>(
+        return GetPgDecodeNotNullInternal<PgRange<decimal>, PgRangeType<decimal, PgDecimal>>(
             dataRow,
-            index,
-            throwIfNull: true);
+            index);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -787,23 +775,33 @@ public static class DataRowExtensions
         return GetPgRangeDecimalNotNull(dataRow, dataRow.IndexOf(name));
     }
     
-    private static TResult? GetPgDecodeInternal<TResult, TType>(
-        IDataRow dataRow,
-        int index,
-        [DoesNotReturnIf(true)] bool throwIfNull = false)
+    private static TResult? GetPgDecodeInternal<TResult, TType>(IDataRow dataRow, int index)
         where TResult : notnull
         where TType : IPgDbType<TResult>
     {
         var pgDataRow = PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow);
-        return pgDataRow.Decode<TResult, TType>(index, throwIfNull);
+        return pgDataRow.Decode<TResult, TType>(index);
     }
     
-    private static TDecode? GetPgDecodeSelfInternal<TDecode>(
-        IDataRow dataRow,
-        int index,
-        [DoesNotReturnIf(true)] bool throwIfNull = false)
+    private static TResult GetPgDecodeNotNullInternal<TResult, TType>(IDataRow dataRow, int index)
+        where TResult : notnull
+        where TType : IPgDbType<TResult>
+    {
+        var pgDataRow = PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow);
+        return pgDataRow.DecodeNotNull<TResult, TType>(index);
+    }
+    
+    private static TDecode? GetPgDecodeSelfInternal<TDecode>(IDataRow dataRow, int index)
         where TDecode : IPgDbType<TDecode>
     {
-        return GetPgDecodeInternal<TDecode, TDecode>(dataRow, index, throwIfNull);
+        return GetPgDecodeInternal<TDecode, TDecode>(dataRow, index);
+    }
+    
+    private static TDecode GetPgDecodeSelfNotNullInternal<TDecode>(
+        IDataRow dataRow,
+        int index)
+        where TDecode : IPgDbType<TDecode>
+    {
+        return GetPgDecodeNotNullInternal<TDecode, TDecode>(dataRow, index);
     }
 }

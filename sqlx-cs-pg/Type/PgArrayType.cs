@@ -5,34 +5,27 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public abstract class PgArrayType<TElement, TType> : IPgDbType<TElement?[]>
-    where TType : IPgDbType<TElement>
-    where TElement : notnull
+internal static class PgArrayTypeUtils
 {
-    public static void Encode(TElement?[] value, WriteBuffer buffer)
+    public static void EncodeMetaFields<TElement, TType>(int length, WriteBuffer buffer)
+        where TType : IPgDbType<TElement>
+        where TElement : notnull
     {
         buffer.WriteInt(1);
         buffer.WriteInt(0);
         buffer.WriteInt(TType.DbType.TypeOid);
-        buffer.WriteInt(value.Length);
+        buffer.WriteInt(length);
         buffer.WriteInt(1);
-        foreach (TElement? element in value)
-        {
-            if (element is null)
-            {
-                buffer.WriteInt(-1);
-                continue;
-            }
-            buffer.WriteLengthPrefixed(false, buf => TType.Encode(element, buf));
-        }
     }
 
-    public static TElement?[] DecodeBytes(PgBinaryValue value)
+    public static int DecodeMetaFields<TElement, TType>(PgBinaryValue value)
+        where TType : IPgDbType<TElement>
+        where TElement : notnull
     {
         var dimensions = value.Buffer.ReadInt();
         if (dimensions == 0)
         {
-            return [];
+            return 0;
         }
         ColumnDecodeError.CheckOrThrow<TElement[]>(
             dimensions == 1,
@@ -55,37 +48,21 @@ public abstract class PgArrayType<TElement, TType> : IPgDbType<TElement?[]>
             lowerBound == 1,
             value.ColumnMetadata,
             $"Attempted to read an array with a lower bound other than 1. Got {lowerBound}");
-
-        var result = new TElement?[length];
-        for (var i = 0; i < length; i++)
-        {
-            var elementLength = value.Buffer.ReadInt();
-            if (elementLength == -1)
-            {
-                result[i] = default;
-                continue;
-            }
-            
-            var binaryValue = new PgBinaryValue(
-                value.Buffer.Slice(elementLength),
-                PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary));
-            result[i] = TType.DecodeBytes(binaryValue);
-        }
-
-        return result;
+        
+        return length;
     }
 
-    public static TElement?[] DecodeText(PgTextValue value)
+    public static List<Range?> DecodeTextRanges(PgTextValue value)
     {
-        List<TElement?> result = [];
-        var valueSlice = value.Chars[1..^1];
-        if (valueSlice.IsEmpty)
+        if (value.Chars is "{}")
         {
             return [];
         }
-
+        
+        List<Range?> result = [];
+        var lastIndex = value.Chars.Length - 2;
         var isDone = false;
-        var startIndex = 0;
+        var startIndex = 1;
 
         while (!isDone)
         {
@@ -93,9 +70,9 @@ public abstract class PgArrayType<TElement, TType> : IPgDbType<TElement?[]>
             var inQuotes = false;
 
             var i = startIndex;
-            for (; i < valueSlice.Length; i++)
+            for (; i <= lastIndex; i++)
             {
-                var currentChar = valueSlice[i];
+                var currentChar = value.Chars[i];
                 switch (currentChar)
                 {
                     case '"':
@@ -113,23 +90,174 @@ public abstract class PgArrayType<TElement, TType> : IPgDbType<TElement?[]>
             }
 
             isDone = !foundDelimiter;
-            var slice = valueSlice[startIndex..i];
+            var slice = value.Chars[startIndex..i];
             if (slice.IsEmpty || slice is "NULL")
             {
-                result.Add(default);
+                result.Add(null);
             }
             else
             {
-                var elementValue = new PgTextValue(
-                    slice,
-                    PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Text));
-                result.Add(TType.DecodeText(elementValue));
+                result.Add(startIndex..i);
             }
 
             startIndex = i + 1;
         }
 
-        return result.ToArray();
+        return result;
+    }
+}
+
+public abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
+    where TType : IPgDbType<TElement>
+    where TElement : class
+{
+    public static void Encode(TElement?[] value, WriteBuffer buffer)
+    {
+        PgArrayTypeUtils.EncodeMetaFields<TElement, TType>(value.Length, buffer);
+        foreach (TElement? element in value)
+        {
+            if (element is null)
+            {
+                buffer.WriteInt(-1);
+                continue;
+            }
+            buffer.WriteLengthPrefixed(false, buf => TType.Encode(element, buf));
+        }
+    }
+
+    public static TElement?[] DecodeBytes(PgBinaryValue value)
+    {
+        var length = PgArrayTypeUtils.DecodeMetaFields<TElement, TType>(value);
+        if (length == 0)
+        {
+            return [];
+        }
+
+        var result = new TElement?[length];
+        for (var i = 0; i < length; i++)
+        {
+            var elementLength = value.Buffer.ReadInt();
+            if (elementLength == -1)
+            {
+                result[i] = null;
+                continue;
+            }
+            
+            var binaryValue = new PgBinaryValue(
+                value.Buffer.Slice(elementLength),
+                PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary));
+            result[i] = TType.DecodeBytes(binaryValue);
+        }
+
+        return result;
+    }
+
+    public static TElement?[] DecodeText(PgTextValue value)
+    {
+        var ranges = PgArrayTypeUtils.DecodeTextRanges(value);
+        var result = new TElement?[ranges.Count];
+        
+        for (var index = 0; index < ranges.Count; index++)
+        {
+            var rng = ranges[index];
+            if (!rng.HasValue)
+            {
+                result[index] = null;
+                continue;
+            }
+
+            var slice = value.Chars[rng.Value];
+            var elementValue = new PgTextValue(
+                slice,
+                PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Text));
+            result[index] = TType.DecodeText(elementValue);
+        }
+
+        return result;
+    }
+    
+    public static PgType DbType => TType.ArrayDbType;
+
+    public static PgType ArrayDbType => DbType;
+
+    public static bool IsCompatible(PgType dbType)
+    {
+        return dbType.TypeOid == DbType.TypeOid;
+    }
+
+    public static PgType GetActualType(TElement?[] value)
+    {
+        return DbType;
+    }
+}
+
+public abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?[]>
+    where TType : IPgDbType<TElement>
+    where TElement : struct
+{
+    public static void Encode(TElement?[] value, WriteBuffer buffer)
+    {
+        PgArrayTypeUtils.EncodeMetaFields<TElement, TType>(value.Length, buffer);
+        foreach (var element in value)
+        {
+            if (!element.HasValue)
+            {
+                buffer.WriteInt(-1);
+                continue;
+            }
+            buffer.WriteLengthPrefixed(false, buf => TType.Encode(element.Value, buf));
+        }
+    }
+
+    public static TElement?[] DecodeBytes(PgBinaryValue value)
+    {
+        var length = PgArrayTypeUtils.DecodeMetaFields<TElement, TType>(value);
+        if (length == 0)
+        {
+            return [];
+        }
+
+        var result = new TElement?[length];
+        for (var i = 0; i < length; i++)
+        {
+            var elementLength = value.Buffer.ReadInt();
+            if (elementLength == -1)
+            {
+                result[i] = null;
+                continue;
+            }
+            
+            var binaryValue = new PgBinaryValue(
+                value.Buffer.Slice(elementLength),
+                PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary));
+            result[i] = TType.DecodeBytes(binaryValue);
+        }
+
+        return result;
+    }
+
+    public static TElement?[] DecodeText(PgTextValue value)
+    {
+        var ranges = PgArrayTypeUtils.DecodeTextRanges(value);
+        var result = new TElement?[ranges.Count];
+        
+        for (var index = 0; index < ranges.Count; index++)
+        {
+            var rng = ranges[index];
+            if (!rng.HasValue)
+            {
+                result[index] = null;
+                continue;
+            }
+
+            var slice = value.Chars[rng.Value];
+            var elementValue = new PgTextValue(
+                slice,
+                PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Text));
+            result[index] = TType.DecodeText(elementValue);
+        }
+
+        return result;
     }
     
     public static PgType DbType => TType.ArrayDbType;
