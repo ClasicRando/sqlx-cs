@@ -22,6 +22,8 @@ internal abstract class PgString : IPgDbType<string>
     
     public static PgType DbType => PgType.Text;
 
+    public static PgType ArrayDbType => PgType.TextArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid

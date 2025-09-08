@@ -26,6 +26,8 @@ internal abstract class PgBytea: IPgDbType<byte[]>
     
     public static PgType DbType => PgType.Bytea;
 
+    public static PgType ArrayDbType => PgType.ByteaArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid;

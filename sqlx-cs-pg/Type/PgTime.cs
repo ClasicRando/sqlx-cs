@@ -29,7 +29,9 @@ internal abstract class PgTime : IPgDbType<TimeOnly>
         return time;
     }
     
-    public static PgType DbType => PgType.Text;
+    public static PgType DbType => PgType.Time;
+
+    public static PgType ArrayDbType => PgType.TimeArray;
 
     public static bool IsCompatible(PgType dbType)
     {

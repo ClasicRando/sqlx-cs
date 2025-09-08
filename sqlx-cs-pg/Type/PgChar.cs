@@ -31,6 +31,8 @@ internal abstract class PgChar : IPgDbType<byte>
     
     public static PgType DbType => PgType.Char;
 
+    public static PgType ArrayDbType => PgType.CharArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid;

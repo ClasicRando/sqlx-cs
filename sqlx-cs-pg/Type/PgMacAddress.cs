@@ -118,6 +118,8 @@ public readonly record struct PgMacAddress(
 
     public static PgType DbType => PgType.Macaddr;
 
+    public static PgType ArrayDbType => PgType.MacaddrArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid || dbType.TypeOid == PgType.Macaddr8.TypeOid;

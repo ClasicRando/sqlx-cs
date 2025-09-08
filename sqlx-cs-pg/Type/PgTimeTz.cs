@@ -31,6 +31,8 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds) : IPgDb
 
     public static PgType DbType => PgType.Timetz;
 
+    public static PgType ArrayDbType => PgType.TimetzArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid;

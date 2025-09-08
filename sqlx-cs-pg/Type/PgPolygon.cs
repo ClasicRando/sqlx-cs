@@ -64,6 +64,8 @@ public readonly record struct PgPolygon(PgPoint[] Points) : IPgDbType<PgPolygon>
     
     public static PgType DbType => PgType.Polygon;
 
+    public static PgType ArrayDbType => PgType.PolygonArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid;

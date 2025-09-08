@@ -36,6 +36,8 @@ public readonly record struct PgCircle(PgPoint Center, double Radius) : IPgDbTyp
     
     public static PgType DbType => PgType.Circle;
 
+    public static PgType ArrayDbType => PgType.CircleArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid;

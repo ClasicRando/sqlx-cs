@@ -63,6 +63,8 @@ public readonly record struct PgPath(bool IsClosed, PgPoint[] Points) : IPgDbTyp
     
     public static PgType DbType => PgType.Path;
 
+    public static PgType ArrayDbType => PgType.PathArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid;

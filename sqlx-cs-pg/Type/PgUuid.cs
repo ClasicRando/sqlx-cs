@@ -35,6 +35,8 @@ public abstract class PgUuid : IPgDbType<Guid>
 
     public static PgType DbType => PgType.Uuid;
 
+    public static PgType ArrayDbType => PgType.UuidArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid;

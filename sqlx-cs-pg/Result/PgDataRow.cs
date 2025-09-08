@@ -626,13 +626,13 @@ public static class DataRowExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<long>? GetPgInt8Range(this IDataRow dataRow, int index)
+    public static PgRange<long>? GetPgRangeLong(this IDataRow dataRow, int index)
     {
         return GetPgDecodeInternal<PgRange<long>, PgRangeType<long, PgLong>>(dataRow, index);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<long> GetPgInt8RangeNotNull(this IDataRow dataRow, int index)
+    public static PgRange<long> GetPgRangeLongNotNull(this IDataRow dataRow, int index)
     {
         return GetPgDecodeInternal<PgRange<long>, PgRangeType<long, PgLong>>(
             dataRow,
@@ -641,25 +641,25 @@ public static class DataRowExtensions
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<long>? GetPgInt8Range(this IDataRow dataRow, string name)
+    public static PgRange<long>? GetPgRangeLong(this IDataRow dataRow, string name)
     {
-        return GetPgInt8Range(dataRow, dataRow.IndexOf(name));
+        return GetPgRangeLong(dataRow, dataRow.IndexOf(name));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<long> GetPgInt8RangeNotNull(this IDataRow dataRow, string name)
+    public static PgRange<long> GetPgRangeLongNotNull(this IDataRow dataRow, string name)
     {
-        return GetPgInt8RangeNotNull(dataRow, dataRow.IndexOf(name));
+        return GetPgRangeLongNotNull(dataRow, dataRow.IndexOf(name));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<int>? GetPgInt4Range(this IDataRow dataRow, int index)
+    public static PgRange<int>? GetPgRangeInt(this IDataRow dataRow, int index)
     {
         return GetPgDecodeInternal<PgRange<int>, PgRangeType<int, PgInt>>(dataRow, index);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<int> GetPgInt4RangeNotNull(this IDataRow dataRow, int index)
+    public static PgRange<int> GetPgRangeIntNotNull(this IDataRow dataRow, int index)
     {
         return GetPgDecodeInternal<PgRange<int>, PgRangeType<int, PgInt>>(
             dataRow,
@@ -668,25 +668,25 @@ public static class DataRowExtensions
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<int>? GetPgInt4Range(this IDataRow dataRow, string name)
+    public static PgRange<int>? GetPgRangeInt(this IDataRow dataRow, string name)
     {
-        return GetPgInt4Range(dataRow, dataRow.IndexOf(name));
+        return GetPgRangeInt(dataRow, dataRow.IndexOf(name));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<int> GetPgInt4RangeNotNull(this IDataRow dataRow, string name)
+    public static PgRange<int> GetPgRangeIntNotNull(this IDataRow dataRow, string name)
     {
-        return GetPgInt4RangeNotNull(dataRow, dataRow.IndexOf(name));
+        return GetPgRangeIntNotNull(dataRow, dataRow.IndexOf(name));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<DateOnly>? GetPgDateRange(this IDataRow dataRow, int index)
+    public static PgRange<DateOnly>? GetPgRangeDateOnly(this IDataRow dataRow, int index)
     {
         return GetPgDecodeInternal<PgRange<DateOnly>, PgRangeType<DateOnly, PgDate>>(dataRow, index);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<DateOnly> GetPgDateRangeNotNull(this IDataRow dataRow, int index)
+    public static PgRange<DateOnly> GetPgRangeDateOnlyNotNull(this IDataRow dataRow, int index)
     {
         return GetPgDecodeInternal<PgRange<DateOnly>, PgRangeType<DateOnly, PgDate>>(
             dataRow,
@@ -695,25 +695,79 @@ public static class DataRowExtensions
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<DateOnly>? GetPgDateRange(this IDataRow dataRow, string name)
+    public static PgRange<DateOnly>? GetPgRangeDateOnly(this IDataRow dataRow, string name)
     {
-        return GetPgDateRange(dataRow, dataRow.IndexOf(name));
+        return GetPgRangeDateOnly(dataRow, dataRow.IndexOf(name));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<DateOnly> GetPgDateRangeNotNull(this IDataRow dataRow, string name)
+    public static PgRange<DateOnly> GetPgRangeDateOnlyNotNull(this IDataRow dataRow, string name)
     {
-        return GetPgDateRangeNotNull(dataRow, dataRow.IndexOf(name));
+        return GetPgRangeDateOnlyNotNull(dataRow, dataRow.IndexOf(name));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<decimal>? GetPgNumericRange(this IDataRow dataRow, int index)
+    public static PgRange<DateTime>? GetPgRangeDateTime(this IDataRow dataRow, int index)
+    {
+        return GetPgDecodeInternal<PgRange<DateTime>, PgRangeType<DateTime, PgDateTime>>(dataRow, index);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PgRange<DateTime> GetPgRangeDateTimeNotNull(this IDataRow dataRow, int index)
+    {
+        return GetPgDecodeInternal<PgRange<DateTime>, PgRangeType<DateTime, PgDateTime>>(
+            dataRow,
+            index,
+            throwIfNull: true);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PgRange<DateTime>? GetPgRangeDateTime(this IDataRow dataRow, string name)
+    {
+        return GetPgRangeDateTime(dataRow, dataRow.IndexOf(name));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PgRange<DateTime> GetPgRangeDateTimeNotNull(this IDataRow dataRow, string name)
+    {
+        return GetPgRangeDateTimeNotNull(dataRow, dataRow.IndexOf(name));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PgRange<DateTimeOffset>? GetPgRangeDateTimeOffset(this IDataRow dataRow, int index)
+    {
+        return GetPgDecodeInternal<PgRange<DateTimeOffset>, PgRangeType<DateTimeOffset, PgDateTimeOffset>>(dataRow, index);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PgRange<DateTimeOffset> GetPgRangeDateTimeOffsetNotNull(this IDataRow dataRow, int index)
+    {
+        return GetPgDecodeInternal<PgRange<DateTimeOffset>, PgRangeType<DateTimeOffset, PgDateTimeOffset>>(
+            dataRow,
+            index,
+            throwIfNull: true);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PgRange<DateTimeOffset>? GetPgRangeDateTimeOffset(this IDataRow dataRow, string name)
+    {
+        return GetPgRangeDateTimeOffset(dataRow, dataRow.IndexOf(name));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PgRange<DateTimeOffset> GetPgRangeDateTimeOffsetNotNull(this IDataRow dataRow, string name)
+    {
+        return GetPgRangeDateTimeOffsetNotNull(dataRow, dataRow.IndexOf(name));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PgRange<decimal>? GetPgRangeDecimal(this IDataRow dataRow, int index)
     {
         return GetPgDecodeInternal<PgRange<decimal>, PgRangeType<decimal, PgDecimal>>(dataRow, index);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<decimal> GetPgNumericRangeNotNull(this IDataRow dataRow, int index)
+    public static PgRange<decimal> GetPgRangeDecimalNotNull(this IDataRow dataRow, int index)
     {
         return GetPgDecodeInternal<PgRange<decimal>, PgRangeType<decimal, PgDecimal>>(
             dataRow,
@@ -722,15 +776,15 @@ public static class DataRowExtensions
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<decimal>? GetPgNumericRange(this IDataRow dataRow, string name)
+    public static PgRange<decimal>? GetPgRangeDecimal(this IDataRow dataRow, string name)
     {
-        return GetPgNumericRange(dataRow, dataRow.IndexOf(name));
+        return GetPgRangeDecimal(dataRow, dataRow.IndexOf(name));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PgRange<decimal> GetPgNumericRangeNotNull(this IDataRow dataRow, string name)
+    public static PgRange<decimal> GetPgRangeDecimalNotNull(this IDataRow dataRow, string name)
     {
-        return GetPgNumericRangeNotNull(dataRow, dataRow.IndexOf(name));
+        return GetPgRangeDecimalNotNull(dataRow, dataRow.IndexOf(name));
     }
     
     private static TResult? GetPgDecodeInternal<TResult, TType>(

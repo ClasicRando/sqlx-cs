@@ -6,7 +6,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-internal abstract class PgDecimal : IPgDbType<decimal>
+internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType
 {
     private const int DecimalBits = 4;
     
@@ -80,6 +80,12 @@ internal abstract class PgDecimal : IPgDbType<decimal>
     }
     
     public static PgType DbType => PgType.Numeric;
+
+    public static PgType ArrayDbType => PgType.NumericArray;
+
+    public static PgType RangeType => PgType.Numrange;
+
+    public static PgType RangeArrayType => PgType.NumrangeArray;
 
     public static bool IsCompatible(PgType dbType)
     {

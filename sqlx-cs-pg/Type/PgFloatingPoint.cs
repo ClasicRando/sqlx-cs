@@ -54,7 +54,9 @@ internal abstract class PgDouble : IPgDbType<double>
         return value.ExtractFloat<double>();
     }
 
-    public static PgType DbType => PgType.Int8;
+    public static PgType DbType => PgType.Float8;
+
+    public static PgType ArrayDbType => PgType.Float8Array;
     
     public static bool IsCompatible(PgType dbType)
     {
@@ -96,6 +98,8 @@ internal abstract class PgFloat : IPgDbType<float>
     }
 
     public static PgType DbType => PgType.Float4;
+
+    public static PgType ArrayDbType => PgType.Float4Array;
     
     public static bool IsCompatible(PgType dbType)
     {

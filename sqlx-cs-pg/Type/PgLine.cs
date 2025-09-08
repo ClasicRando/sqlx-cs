@@ -60,6 +60,8 @@ public readonly record struct PgLine(double A, double B, double C) : IPgDbType<P
 
     public static PgType DbType => PgType.Line;
 
+    public static PgType ArrayDbType => PgType.LineArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid;

@@ -5,7 +5,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public abstract class PgDateTime : IPgDbType<DateTime>
+public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType
 {
     private const long PostgresEpochSeconds = 946_684_800;
     private const long PostgresEpochTicks = PostgresEpochSeconds * TimeSpan.TicksPerSecond;
@@ -33,6 +33,12 @@ public abstract class PgDateTime : IPgDbType<DateTime>
     }
     
     public static PgType DbType => PgType.Timestamp;
+
+    public static PgType ArrayDbType => PgType.TimestampArray;
+
+    public static PgType RangeType => PgType.Tsrange;
+
+    public static PgType RangeArrayType => PgType.TsrangeArray;
 
     public static bool IsCompatible(PgType dbType)
     {

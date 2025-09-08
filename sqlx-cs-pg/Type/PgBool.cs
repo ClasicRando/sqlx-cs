@@ -28,6 +28,8 @@ internal abstract class PgBool : IPgDbType<bool>
     
     public static PgType DbType => PgType.Bool;
 
+    public static PgType ArrayDbType => PgType.BoolArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid;

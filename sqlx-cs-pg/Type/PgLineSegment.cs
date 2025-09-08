@@ -41,6 +41,8 @@ public readonly record struct PgLineSegment(PgPoint Point1, PgPoint Point2) : IP
     
     public static PgType DbType => PgType.Lseg;
 
+    public static PgType ArrayDbType => PgType.LsegArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid;

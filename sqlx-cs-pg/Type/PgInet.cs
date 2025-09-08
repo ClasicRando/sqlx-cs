@@ -107,6 +107,8 @@ public record PgInet : IPgDbType<PgInet>
 
     public static PgType DbType => PgType.Inet;
 
+    public static PgType ArrayDbType => PgType.InetArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid || dbType.TypeOid == PgType.Cidr.TypeOid;

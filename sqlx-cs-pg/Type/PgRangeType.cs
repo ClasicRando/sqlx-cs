@@ -6,9 +6,9 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>
+internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>
+    where TType : IPgDbType<TValue>, IHasRangeType
     where TValue : notnull
-    where TType : IPgDbType<TValue>
 {
     public static void Encode(PgRange<TValue> value, WriteBuffer buffer)
     {
@@ -116,8 +116,10 @@ public abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>
         
         return new PgRange<TValue>(start, end);
     }
-    
-    public static PgType DbType => PgType.Point;
+
+    public static PgType DbType => TType.RangeType;
+
+    public static PgType ArrayDbType => TType.RangeArrayType;
 
     public static bool IsCompatible(PgType dbType)
     {

@@ -360,6 +360,16 @@ public static class ExecutableQueryExtensions
     {
         return BindPgNullableClass<PgRange<DateOnly>, PgRangeType<DateOnly, PgDate>>(query, value);
     }
+
+    public static IQuery Bind(this IQuery query, PgRange<DateTime>? value)
+    {
+        return BindPgNullableClass<PgRange<DateTime>, PgRangeType<DateTime, PgDateTime>>(query, value);
+    }
+
+    public static IQuery Bind(this IQuery query, PgRange<DateTimeOffset>? value)
+    {
+        return BindPgNullableClass<PgRange<DateTimeOffset>, PgRangeType<DateTimeOffset, PgDateTimeOffset>>(query, value);
+    }
     
     public static IQuery Bind(this IQuery query, PgRange<decimal>? value)
     {

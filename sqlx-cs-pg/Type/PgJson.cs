@@ -67,6 +67,8 @@ internal abstract class PgJson<T> : IPgDbType<T> where T : notnull
     
     public static PgType DbType => PgType.Jsonb;
 
+    public static PgType ArrayDbType => PgType.JsonbArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid || dbType.TypeOid == PgType.Json.TypeOid;

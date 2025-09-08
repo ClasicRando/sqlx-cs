@@ -40,6 +40,8 @@ public readonly record struct PgBox(PgPoint High, PgPoint Low) : IPgDbType<PgBox
     
     public static PgType DbType => PgType.Box;
 
+    public static PgType ArrayDbType => PgType.BoxArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid;

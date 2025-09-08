@@ -39,7 +39,7 @@ internal static class PgInteger
     }
 }
 
-internal abstract class PgLong : IPgDbType<long>
+internal abstract class PgLong : IPgDbType<long>, IHasRangeType
 {
     public static void Encode(long value, WriteBuffer buffer)
     {
@@ -57,6 +57,12 @@ internal abstract class PgLong : IPgDbType<long>
     }
 
     public static PgType DbType => PgType.Int8;
+
+    public static PgType ArrayDbType => PgType.Int8Array;
+
+    public static PgType RangeType => PgType.Int8Range;
+
+    public static PgType RangeArrayType => PgType.Int8RangeArray;
     
     public static bool IsCompatible(PgType dbType)
     {
@@ -69,7 +75,7 @@ internal abstract class PgLong : IPgDbType<long>
     }
 }
 
-internal abstract class PgInt : IPgDbType<int>
+internal abstract class PgInt : IPgDbType<int>, IHasRangeType
 {
     public static void Encode(int value, WriteBuffer buffer)
     {
@@ -89,6 +95,12 @@ internal abstract class PgInt : IPgDbType<int>
     }
 
     public static PgType DbType => PgType.Int4;
+
+    public static PgType ArrayDbType => PgType.Int4Array;
+
+    public static PgType RangeType => PgType.Int4Range;
+
+    public static PgType RangeArrayType => PgType.Int4RangeArray;
     
     public static bool IsCompatible(PgType dbType)
     {
@@ -121,6 +133,8 @@ internal abstract class PgShort : IPgDbType<short>
     }
 
     public static PgType DbType => PgType.Int2;
+
+    public static PgType ArrayDbType => PgType.Int2Array;
     
     public static bool IsCompatible(PgType dbType)
     {

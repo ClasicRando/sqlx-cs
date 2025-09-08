@@ -60,6 +60,8 @@ public readonly record struct PgMoney : IPgDbType<PgMoney>
 
     public static PgType DbType => PgType.Money;
 
+    public static PgType ArrayDbType => PgType.MoneyArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid;

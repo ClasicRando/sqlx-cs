@@ -9,11 +9,9 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
 {
     public TimeSpan ToTimeSpan()
     {
-        if (Months > 0)
-        {
-            throw new ArgumentException("TimeSpan does not support a month value", nameof(Months));
-        }
-        return new TimeSpan(Microseconds * TimeSpan.TicksPerMicrosecond + Days * TimeSpan.TicksPerDay);
+        return Months > 0
+            ? throw new ArgumentException("TimeSpan does not support a month value", nameof(Months))
+            : new TimeSpan(Microseconds * TimeSpan.TicksPerMicrosecond + Days * TimeSpan.TicksPerDay);
     }
     
     public static void Encode(PgInterval value, WriteBuffer buffer)
@@ -180,6 +178,8 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
 
     public static PgType DbType => PgType.Interval;
 
+    public static PgType ArrayDbType => PgType.IntervalArray;
+
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid;
@@ -196,37 +196,6 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
     private const long MicrosecondsPerMillisecond = 1_000L;
     private const long MicrosecondsPerMinute = SecondsPerMinute * MicrosecondsPerSecond;
     private const long MicrosecondsPerHour = MinutesPerHour * MicrosecondsPerMinute;
-}
-
-internal abstract class TimeSpanType : IPgDbType<TimeSpan>
-{
-    public static void Encode(TimeSpan value, WriteBuffer buffer)
-    {
-        var interval = value.ToPgInterval();
-        PgInterval.Encode(interval, buffer);
-    }
-
-    public static TimeSpan DecodeBytes(PgBinaryValue value)
-    {
-        return PgInterval.DecodeBytes(value).ToTimeSpan();
-    }
-
-    public static TimeSpan DecodeText(PgTextValue value)
-    {
-        return PgInterval.DecodeText(value).ToTimeSpan();
-    }
-
-    public static PgType DbType => PgType.Interval;
-
-    public static bool IsCompatible(PgType dbType)
-    {
-        return dbType.TypeOid == DbType.TypeOid;
-    }
-
-    public static PgType GetActualType(TimeSpan value)
-    {
-        return DbType;
-    }
 }
 
 public static class TimeSpanExtensions

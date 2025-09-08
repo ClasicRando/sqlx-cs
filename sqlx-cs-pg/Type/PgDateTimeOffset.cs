@@ -3,7 +3,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public abstract class PgDateTimeOffset : IPgDbType<DateTimeOffset>
+public abstract class PgDateTimeOffset : IPgDbType<DateTimeOffset>, IHasRangeType
 {
     public static void Encode(DateTimeOffset value, WriteBuffer buffer)
     {
@@ -21,6 +21,12 @@ public abstract class PgDateTimeOffset : IPgDbType<DateTimeOffset>
     }
     
     public static PgType DbType => PgType.Timestamptz;
+
+    public static PgType ArrayDbType => PgType.TimestamptzArray;
+
+    public static PgType RangeType => PgType.Tstzrange;
+
+    public static PgType RangeArrayType => PgType.TstzrangeArray;
 
     public static bool IsCompatible(PgType dbType)
     {
