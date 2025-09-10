@@ -25,7 +25,7 @@ internal sealed class PgParameterBuffer : IDisposable
         where TPgType : IPgDbType<TValue>
     {
         _buffer.WriteLengthPrefixed(false, buf => TPgType.Encode(value, buf));
-        _pgTypes.Add(TPgType.DbType);
+        _pgTypes.Add(TPgType.GetActualType(value));
     }
 
     public void EncodeBytes(ReadOnlySpan<byte> bytes)

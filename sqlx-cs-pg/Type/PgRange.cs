@@ -50,7 +50,7 @@ public record PgRange<T>(Bound<T> Lower, Bound<T> Upper) where T : notnull
     public string PostgresLiteral => _postgresLiteral.Value;
 }
 
-public class Bound<T> where T : notnull
+public class Bound<T> : IEquatable<Bound<T>> where T : notnull
 {
     public T? Value { get; }
     public BoundType Type { get; }
@@ -78,7 +78,15 @@ public class Bound<T> where T : notnull
 
     public override bool Equals(object? obj)
     {
-        if (obj is not Bound<T> other) return false;
+        return obj is Bound<T> other && Equals(other);
+    }
+
+    public bool Equals(Bound<T>? other)
+    {
+        if (other is null)
+        {
+            return false;
+        }
         if (Type is BoundType.Unbounded && other.Type is BoundType.Unbounded)
         {
             return true;

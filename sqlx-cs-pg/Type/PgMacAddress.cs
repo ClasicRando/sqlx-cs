@@ -1,3 +1,4 @@
+using System.Net.NetworkInformation;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Column;
@@ -34,6 +35,11 @@ public readonly record struct PgMacAddress(
     public PgMacAddress ToMacAddr()
     {
         return new PgMacAddress(A, B, C, F, G, H);
+    }
+
+    public PhysicalAddress ToPhysicalAddress()
+    {
+        return new PhysicalAddress(IsMacAddress8 ? [A, B, C, D, E, F, G, H] : [A, B, C, F, G, H]);
     }
 
     public override string ToString()

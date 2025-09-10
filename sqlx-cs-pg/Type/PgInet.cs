@@ -6,7 +6,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public record PgInet : IPgDbType<PgInet>, IHasArrayType
+public class PgInet : IPgDbType<PgInet>, IHasArrayType, IEquatable<PgInet>
 {
     private const byte PgsqlAfInet = 2;
     private const byte PgsqlAfInet6 = PgsqlAfInet + 1;
@@ -41,6 +41,11 @@ public record PgInet : IPgDbType<PgInet>, IHasArrayType
         ipAddress,
         (byte)(ipAddress.AddressFamily is AddressFamily.InterNetworkV6 ? 128 : 32))
     {
+    }
+
+    public IPAddress ToIpAddress()
+    {
+        return new IPAddress(_address);
     }
     
     public static void Encode(PgInet value, WriteBuffer buffer)
@@ -117,5 +122,27 @@ public record PgInet : IPgDbType<PgInet>, IHasArrayType
     public static PgType GetActualType(PgInet value)
     {
         return DbType;
+    }
+
+    public override string ToString()
+    {
+        return $"{nameof(PgInet)} {{ {string.Join(':', _address)}/{_prefix} }}";
+    }
+
+    public bool Equals(PgInet? other)
+    {
+        return other is not null
+               && _address.SequenceEqual(other._address)
+               && _prefix.Equals(other._prefix);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is PgInet other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(_address, _prefix);
     }
 }

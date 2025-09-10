@@ -4,11 +4,11 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public readonly record struct PgMoney : IPgDbType<PgMoney>, IHasArrayType
+public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<PgMoney>
 {
     private readonly long _inner;
     
-    internal PgMoney(long integer)
+    private PgMoney(long integer)
     {
         _inner = integer;
     }
@@ -70,5 +70,47 @@ public readonly record struct PgMoney : IPgDbType<PgMoney>, IHasArrayType
     public static PgType GetActualType(PgMoney value)
     {
         return DbType;
+    }
+
+    public override string ToString()
+    {
+        const decimal oneHundred = 100;
+        var decimalValue = _inner / oneHundred;
+        return $"{(_inner < 0 ? "-" : string.Empty)}${decimalValue}";
+    }
+
+    public bool Equals(PgMoney other)
+    {
+        return _inner == other._inner;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is PgMoney other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return _inner.GetHashCode();
+    }
+
+    public static bool operator ==(PgMoney left, PgMoney right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(PgMoney left, PgMoney right)
+    {
+        return !(left == right);
+    }
+
+    public static PgMoney operator +(PgMoney left, PgMoney right)
+    {
+        return new PgMoney(left._inner + right._inner);
+    }
+
+    public static PgMoney operator -(PgMoney left, PgMoney right)
+    {
+        return new PgMoney(left._inner - right._inner);
     }
 }
