@@ -5,7 +5,7 @@ using Sqlx.Postgres.Result;
 namespace Sqlx.Postgres.Type;
 
 public readonly record struct PgInterval(int Months, int Days, long Microseconds)
-    : IPgDbType<PgInterval>
+    : IPgDbType<PgInterval>, IHasArrayType
 {
     public TimeSpan ToTimeSpan()
     {

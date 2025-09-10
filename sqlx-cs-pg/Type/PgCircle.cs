@@ -4,7 +4,8 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public readonly record struct PgCircle(PgPoint Center, double Radius) : IPgDbType<PgCircle>, IPostGisType
+public readonly record struct PgCircle(PgPoint Center, double Radius)
+    : IPgDbType<PgCircle>, IPostGisType, IHasArrayType
 {
     private readonly Lazy<string> _postGisLiteral = new(() => $"<{Center.PostGisLiteral},{Radius}>");
 

@@ -4,7 +4,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-internal abstract class PgBool : IPgDbType<bool>
+internal abstract class PgBool : IPgDbType<bool>, IHasArrayType
 {
     public static void Encode(bool value, WriteBuffer buffer)
     {

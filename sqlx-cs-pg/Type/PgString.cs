@@ -3,7 +3,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-internal abstract class PgString : IPgDbType<string>
+internal abstract class PgString : IPgDbType<string>, IHasArrayType
 {
     public static void Encode(string value, WriteBuffer buffer)
     {

@@ -13,7 +13,7 @@ public readonly record struct PgMacAddress(
     byte E,
     byte F,
     byte G,
-    byte H) : IPgDbType<PgMacAddress>
+    byte H) : IPgDbType<PgMacAddress>, IHasArrayType
 {
     private const byte DefaultD = 0xFF;
     private const byte DefaultE = 0xFE;

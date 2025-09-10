@@ -8,7 +8,7 @@ namespace Sqlx.Postgres.Type;
 internal static class PgArrayTypeUtils
 {
     public static void EncodeMetaFields<TElement, TType>(int length, WriteBuffer buffer)
-        where TType : IPgDbType<TElement>
+        where TType : IPgDbType<TElement>, IHasArrayType
         where TElement : notnull
     {
         buffer.WriteInt(1);
@@ -108,7 +108,7 @@ internal static class PgArrayTypeUtils
 }
 
 public abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
-    where TType : IPgDbType<TElement>
+    where TType : IPgDbType<TElement>, IHasArrayType
     where TElement : class
 {
     public static void Encode(TElement?[] value, WriteBuffer buffer)
@@ -192,7 +192,7 @@ public abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
 }
 
 public abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?[]>
-    where TType : IPgDbType<TElement>
+    where TType : IPgDbType<TElement>, IHasArrayType
     where TElement : struct
 {
     public static void Encode(TElement?[] value, WriteBuffer buffer)

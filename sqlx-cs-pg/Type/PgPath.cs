@@ -4,7 +4,8 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public readonly record struct PgPath(bool IsClosed, PgPoint[] Points) : IPgDbType<PgPath>, IPostGisType
+public readonly record struct PgPath(bool IsClosed, PgPoint[] Points)
+    : IPgDbType<PgPath>, IPostGisType, IHasArrayType
 {
     private readonly Lazy<string> _postGisLiteral = new(() =>
     {

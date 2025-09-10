@@ -6,7 +6,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>
+internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>, IHasArrayType
     where TType : IPgDbType<TValue>, IHasRangeType
     where TValue : notnull
 {

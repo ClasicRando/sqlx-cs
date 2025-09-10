@@ -9,7 +9,7 @@ public interface IDataRow
 
     bool? GetBoolean(int index);
 
-    byte? GetByte(int index);
+    sbyte? GetByte(int index);
 
     short? GetShort(int index);
 
@@ -41,7 +41,7 @@ public interface IDataRow
 
     bool GetBooleanNotNull(int index);
 
-    byte GetByteNotNull(int index);
+    sbyte GetByteNotNull(int index);
 
     short GetShortNotNull(int index);
 
@@ -81,7 +81,7 @@ public static class DataRowExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte? GetByte(this IDataRow dataRow, string name)
+    public static sbyte? GetByte(this IDataRow dataRow, string name)
     {
         return dataRow.GetByte(dataRow.IndexOf(name));
     }
@@ -181,7 +181,7 @@ public static class DataRowExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte GetByteNotNull(this IDataRow dataRow, string name)
+    public static sbyte GetByteNotNull(this IDataRow dataRow, string name)
     {
         return dataRow.GetByteNotNull(dataRow.IndexOf(name));
     }

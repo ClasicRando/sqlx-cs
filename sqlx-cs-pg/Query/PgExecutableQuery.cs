@@ -25,14 +25,14 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
         return EncodeNullableStruct<bool, PgBool>(value);
     }
 
-    public IQuery Bind(byte value)
+    public IQuery Bind(sbyte value)
     {
-        return Encode<byte, PgChar>(value);
+        return Encode<sbyte, PgChar>(value);
     }
 
-    public IQuery Bind(byte? value)
+    public IQuery Bind(sbyte? value)
     {
-        return EncodeNullableStruct<byte, PgChar>(value);
+        return EncodeNullableStruct<sbyte, PgChar>(value);
     }
 
     public IQuery Bind(short value)
@@ -381,11 +381,6 @@ public static class ExecutableQueryExtensions
         return BindPgArrayStruct<bool, PgBool>(query, value);
     }
 
-    public static IQuery Bind(this IQuery query, byte?[]? value)
-    {
-        return BindPgArrayStruct<byte, PgChar>(query, value);
-    }
-
     public static IQuery Bind(this IQuery query, short?[]? value)
     {
         return BindPgArrayStruct<short, PgShort>(query, value);
@@ -482,7 +477,7 @@ public static class ExecutableQueryExtensions
     public static IQuery BindPgArrayStruct<TElement, TType>(
         this IQuery query,
         TElement?[]? value)
-        where TType : IPgDbType<TElement>
+        where TType : IPgDbType<TElement>, IHasArrayType
         where TElement : struct
     {
         var pgExecutableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
@@ -492,7 +487,7 @@ public static class ExecutableQueryExtensions
     public static IQuery BindPgArrayClass<TElement, TType>(
         this IQuery query,
         TElement?[]? value)
-        where TType : IPgDbType<TElement>
+        where TType : IPgDbType<TElement>, IHasArrayType
         where TElement : class
     {
         var pgExecutableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);

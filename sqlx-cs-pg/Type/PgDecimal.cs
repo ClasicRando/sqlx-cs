@@ -6,7 +6,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType
+internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArrayType
 {
     private const int DecimalBits = 4;
     

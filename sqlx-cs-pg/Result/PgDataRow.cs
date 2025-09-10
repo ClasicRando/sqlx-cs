@@ -53,9 +53,9 @@ internal sealed class PgDataRow : IDataRow
         return Decode<bool, PgBool>(index);
     }
 
-    public byte? GetByte(int index)
+    public sbyte? GetByte(int index)
     {
-        return Decode<byte, PgChar>(index);
+        return Decode<sbyte, PgChar>(index);
     }
 
     public short? GetShort(int index)
@@ -134,9 +134,9 @@ internal sealed class PgDataRow : IDataRow
         return DecodeNotNull<bool, PgBool>(index);
     }
 
-    public byte GetByteNotNull(int index)
+    public sbyte GetByteNotNull(int index)
     {
-        return DecodeNotNull<byte, PgChar>(index);
+        return DecodeNotNull<sbyte, PgChar>(index);
     }
 
     public short GetShortNotNull(int index)

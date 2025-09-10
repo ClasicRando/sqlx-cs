@@ -39,7 +39,7 @@ internal static class PgInteger
     }
 }
 
-internal abstract class PgLong : IPgDbType<long>, IHasRangeType
+internal abstract class PgLong : IPgDbType<long>, IHasRangeType, IHasArrayType
 {
     public static void Encode(long value, WriteBuffer buffer)
     {
@@ -75,7 +75,7 @@ internal abstract class PgLong : IPgDbType<long>, IHasRangeType
     }
 }
 
-internal abstract class PgInt : IPgDbType<int>, IHasRangeType
+internal abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
 {
     public static void Encode(int value, WriteBuffer buffer)
     {
@@ -113,7 +113,7 @@ internal abstract class PgInt : IPgDbType<int>, IHasRangeType
     }
 }
 
-internal abstract class PgShort : IPgDbType<short>
+internal abstract class PgShort : IPgDbType<short>, IHasArrayType
 {
     public static void Encode(short value, WriteBuffer buffer)
     {
@@ -122,13 +122,13 @@ internal abstract class PgShort : IPgDbType<short>
 
     public static short DecodeBytes(PgBinaryValue value)
     {
-        var integer = value.ExtractInteger<int>();
+        var integer = value.ExtractInteger<short>();
         return Integers.ValidateShort(integer, value.ColumnMetadata);
     }
 
     public static short DecodeText(PgTextValue value)
     {
-        var integer = value.ExtractInteger<int>();
+        var integer = value.ExtractInteger<short>();
         return Integers.ValidateShort(integer, value.ColumnMetadata);
     }
 

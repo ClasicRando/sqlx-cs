@@ -5,7 +5,8 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds) : IPgDbType<PgTimeTz>
+public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
+    : IPgDbType<PgTimeTz>, IHasArrayType
 {
     private const int OffsetStart = 8;
     

@@ -5,7 +5,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public abstract class PgUuid : IPgDbType<Guid>
+public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
 {
     public static void Encode(Guid value, WriteBuffer buffer)
     {

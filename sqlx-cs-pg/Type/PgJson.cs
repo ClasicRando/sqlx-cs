@@ -7,7 +7,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-internal abstract class PgJson<T> : IPgDbType<T> where T : notnull
+internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnull
 {
     public static void Encode(T value, WriteBuffer buffer)
     {

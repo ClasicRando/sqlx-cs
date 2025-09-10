@@ -4,7 +4,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public readonly record struct PgMoney : IPgDbType<PgMoney>
+public readonly record struct PgMoney : IPgDbType<PgMoney>, IHasArrayType
 {
     private readonly long _inner;
     

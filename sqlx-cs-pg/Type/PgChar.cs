@@ -4,24 +4,24 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-internal abstract class PgChar : IPgDbType<byte>
+internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
 {
-    public static void Encode(byte value, WriteBuffer buffer)
+    public static void Encode(sbyte value, WriteBuffer buffer)
     {
-        buffer.WriteByte(value);
+        buffer.WriteByte((byte)value);
     }
 
-    public static byte DecodeBytes(PgBinaryValue value)
+    public static sbyte DecodeBytes(PgBinaryValue value)
     {
-        return value.Buffer.ReadByte();
+        return (sbyte)value.Buffer.ReadByte();
     }
 
-    public static byte DecodeText(PgTextValue value)
+    public static sbyte DecodeText(PgTextValue value)
     {
         return value.Chars.Length switch
         {
-            4 => (byte)(((byte)value.Chars[1] << 6) | ((byte)value.Chars[2] << 3) | (byte)value.Chars[3]),
-            1 => (byte)value.Chars[0],
+            4 => (sbyte)(((byte)value.Chars[1] << 6) | ((byte)value.Chars[2] << 3) | (byte)value.Chars[3]),
+            1 => (sbyte)value.Chars[0],
             0 => 0,
             _ => throw ColumnDecodeError.Create<byte>(
                 value.ColumnMetadata,
@@ -38,7 +38,7 @@ internal abstract class PgChar : IPgDbType<byte>
         return dbType.TypeOid == DbType.TypeOid;
     }
 
-    public static PgType GetActualType(byte value)
+    public static PgType GetActualType(sbyte value)
     {
         return DbType;
     }

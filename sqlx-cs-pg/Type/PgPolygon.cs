@@ -4,7 +4,8 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public readonly record struct PgPolygon(PgPoint[] Points) : IPgDbType<PgPolygon>, IPostGisType
+public readonly record struct PgPolygon(PgPoint[] Points)
+    : IPgDbType<PgPolygon>, IPostGisType, IHasArrayType
 {
     private readonly Lazy<PgBox> _boundingBox = new(() => MakeBoundingBox(Points));
 

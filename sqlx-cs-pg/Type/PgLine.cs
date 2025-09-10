@@ -4,7 +4,8 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public readonly record struct PgLine(double A, double B, double C) : IPgDbType<PgLine>, IPostGisType
+public readonly record struct PgLine(double A, double B, double C)
+    : IPgDbType<PgLine>, IPostGisType, IHasArrayType
 {
     private readonly Lazy<string> _postGisLiteral = new(() => $"{{{A},{B},{C}}}");
 

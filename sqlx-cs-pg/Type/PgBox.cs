@@ -4,7 +4,8 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public readonly record struct PgBox(PgPoint High, PgPoint Low) : IPgDbType<PgBox>, IPostGisType
+public readonly record struct PgBox(PgPoint High, PgPoint Low)
+    : IPgDbType<PgBox>, IPostGisType, IHasArrayType
 {
     private readonly Lazy<string> _postGisLiteral = new(() => $"{High.PostGisLiteral},{Low.PostGisLiteral}");
 

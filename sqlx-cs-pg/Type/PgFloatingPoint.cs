@@ -37,7 +37,7 @@ internal static class PgFloatingPoint
     }
 }
 
-internal abstract class PgDouble : IPgDbType<double>
+internal abstract class PgDouble : IPgDbType<double>, IHasArrayType
 {
     public static void Encode(double value, WriteBuffer buffer)
     {
@@ -69,7 +69,7 @@ internal abstract class PgDouble : IPgDbType<double>
     }
 }
 
-internal abstract class PgFloat : IPgDbType<float>
+internal abstract class PgFloat : IPgDbType<float>, IHasArrayType
 {
     public static void Encode(float value, WriteBuffer buffer)
     {

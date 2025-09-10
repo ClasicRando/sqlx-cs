@@ -6,7 +6,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public record PgInet : IPgDbType<PgInet>
+public record PgInet : IPgDbType<PgInet>, IHasArrayType
 {
     private const byte PgsqlAfInet = 2;
     private const byte PgsqlAfInet6 = PgsqlAfInet + 1;

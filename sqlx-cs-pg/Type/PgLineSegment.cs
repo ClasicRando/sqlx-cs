@@ -4,7 +4,8 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public readonly record struct PgLineSegment(PgPoint Point1, PgPoint Point2) : IPgDbType<PgLineSegment>, IPostGisType
+public readonly record struct PgLineSegment(PgPoint Point1, PgPoint Point2)
+    : IPgDbType<PgLineSegment>, IPostGisType, IHasArrayType
 {
     private readonly Lazy<string> _postGisLiteral = new(() => $"({Point1.PostGisLiteral},{Point2.PostGisLiteral})");
 

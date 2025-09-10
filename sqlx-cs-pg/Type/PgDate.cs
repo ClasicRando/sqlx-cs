@@ -5,7 +5,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType
+internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayType
 {
     private static readonly DateOnly PostgresEpoch = new(2000, 1, 1);
     

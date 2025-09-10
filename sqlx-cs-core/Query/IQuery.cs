@@ -34,20 +34,20 @@ public interface IQuery : IDisposable
     IQuery Bind(bool? value);
 
     /// <summary>
-    /// Bind byte parameter to query. This puts that value as the nth parameter in the parameterized
-    /// query, where n is the current parameter as a 1-based index.
+    /// Bind sbyte parameter to query. This puts that value as the nth parameter in the
+    /// parameterized query, where n is the current parameter as a 1-based index.
     /// </summary>
     /// <param name="value">byte value</param>
     /// <returns>this query instance for method chaining</returns>
-    IQuery Bind(byte value);
+    IQuery Bind(sbyte value);
 
     /// <summary>
-    /// Bind byte parameter to query. This puts that value as the nth parameter in the parameterized
-    /// query, where n is the current parameter as a 1-based index.
+    /// Bind sbyte parameter to query. This puts that value as the nth parameter in the
+    /// parameterized query, where n is the current parameter as a 1-based index.
     /// </summary>
     /// <param name="value">byte value</param>
     /// <returns>this query instance for method chaining</returns>
-    IQuery Bind(byte? value);
+    IQuery Bind(sbyte? value);
 
     /// <summary>
     /// Bind short parameter to query. This puts that value as the nth parameter in the

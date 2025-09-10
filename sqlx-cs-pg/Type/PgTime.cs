@@ -4,7 +4,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-internal abstract class PgTime : IPgDbType<TimeOnly>
+internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
 {
     public static void Encode(TimeOnly value, WriteBuffer buffer)
     {

@@ -5,7 +5,7 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-internal abstract class PgBytea: IPgDbType<byte[]>
+internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
 {
     public static void Encode(byte[] value, WriteBuffer buffer)
     {
