@@ -20,19 +20,9 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
         return Encode<bool, PgBool>(value);
     }
 
-    public IQuery Bind(bool? value)
-    {
-        return EncodeNullableStruct<bool, PgBool>(value);
-    }
-
     public IQuery Bind(sbyte value)
     {
         return Encode<sbyte, PgChar>(value);
-    }
-
-    public IQuery Bind(sbyte? value)
-    {
-        return EncodeNullableStruct<sbyte, PgChar>(value);
     }
 
     public IQuery Bind(short value)
@@ -40,19 +30,9 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
         return Encode<short, PgShort>(value);
     }
 
-    public IQuery Bind(short? value)
-    {
-        return EncodeNullableStruct<short, PgShort>(value);
-    }
-
     public IQuery Bind(int value)
     {
         return Encode<int, PgInt>(value);
-    }
-
-    public IQuery Bind(int? value)
-    {
-        return EncodeNullableStruct<int, PgInt>(value);
     }
 
     public IQuery Bind(long value)
@@ -60,19 +40,9 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
         return Encode<long, PgLong>(value);
     }
 
-    public IQuery Bind(long? value)
-    {
-        return EncodeNullableStruct<long, PgLong>(value);
-    }
-
     public IQuery Bind(float value)
     {
         return Encode<float, PgFloat>(value);
-    }
-
-    public IQuery Bind(float? value)
-    {
-        return EncodeNullableStruct<float, PgFloat>(value);
     }
 
     public IQuery Bind(double value)
@@ -80,19 +50,9 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
         return Encode<double, PgDouble>(value);
     }
 
-    public IQuery Bind(double? value)
-    {
-        return EncodeNullableStruct<double, PgDouble>(value);
-    }
-
     public IQuery Bind(TimeOnly value)
     {
         return Encode<TimeOnly, PgTime>(value);
-    }
-
-    public IQuery Bind(TimeOnly? value)
-    {
-        return EncodeNullableStruct<TimeOnly, PgTime>(value);
     }
 
     public IQuery Bind(DateOnly value)
@@ -100,19 +60,9 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
         return Encode<DateOnly, PgDate>(value);
     }
 
-    public IQuery Bind(DateOnly? value)
-    {
-        return EncodeNullableStruct<DateOnly, PgDate>(value);
-    }
-
     public IQuery Bind(DateTime value)
     {
         return Encode<DateTime, PgDateTime>(value);
-    }
-
-    public IQuery Bind(DateTime? value)
-    {
-        return EncodeNullableStruct<DateTime, PgDateTime>(value);
     }
 
     public IQuery Bind(DateTimeOffset value)
@@ -120,19 +70,9 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
         return Encode<DateTimeOffset, PgDateTimeOffset>(value);
     }
 
-    public IQuery Bind(DateTimeOffset? value)
-    {
-        return EncodeNullableStruct<DateTimeOffset, PgDateTimeOffset>(value);
-    }
-
     public IQuery Bind(decimal value)
     {
         return Encode<decimal, PgDecimal>(value);
-    }
-
-    public IQuery Bind(decimal? value)
-    {
-        return EncodeNullableStruct<decimal, PgDecimal>(value);
     }
 
     public IQuery Bind(byte[]? value)
@@ -162,11 +102,6 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
         return Encode<Guid, PgUuid>(value);
     }
 
-    public IQuery Bind(Guid? value)
-    {
-        return EncodeNullableStruct<Guid, PgUuid>(value);
-    }
-
     public IQuery BindJson<T>(T? value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
     {
         if (value is null)
@@ -178,10 +113,9 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
         return this;
     }
 
-    public IQuery BindOutParameter<T>() where T : notnull
+    public IQuery BindNull<T>() where T : notnull
     {
-        ParameterBuffer.EncodeNull();
-        return this;
+        return EncodeNull();
     }
 
     public Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> Execute(
