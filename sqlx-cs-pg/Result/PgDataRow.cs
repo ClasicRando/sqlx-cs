@@ -13,13 +13,13 @@ namespace Sqlx.Postgres.Result;
 internal sealed class PgDataRow : IDataRow
 {
     private readonly byte[] _rowData;
-    private readonly PgColumnMetadata[] _columnMetadata;
+    private readonly PgStatementMetadata _statementMetadata;
     private readonly Range?[] _columnValueSlices;
     
-    public PgDataRow(byte[] rowData, PgColumnMetadata[] columnMetadata)
+    public PgDataRow(byte[] rowData, PgStatementMetadata statementMetadata)
     {
         _rowData = rowData;
-        _columnMetadata = columnMetadata;
+        _statementMetadata = statementMetadata;
         var buffer = new ReadBuffer(rowData);
         int columnCount = buffer.ReadShort();
         _columnValueSlices = new Range?[columnCount];
@@ -37,96 +37,12 @@ internal sealed class PgDataRow : IDataRow
     
     public int IndexOf(string name)
     {
-        for (var i = 0; i < _columnMetadata.Length; i++)
-        {
-            if (_columnMetadata[i].FieldName == name)
-            {
-                return i;
-            }
-        }
-
-        return -1;
+        return _statementMetadata.IndexOfFieldName(name);
     }
 
-    public bool? GetBoolean(int index)
+    public bool IsNull(int index)
     {
-        return Decode<bool, PgBool>(index);
-    }
-
-    public sbyte? GetByte(int index)
-    {
-        return Decode<sbyte, PgChar>(index);
-    }
-
-    public short? GetShort(int index)
-    {
-        return Decode<short, PgShort>(index);
-    }
-
-    public int? GetInt(int index)
-    {
-        return Decode<int, PgInt>(index);
-    }
-
-    public long? GetLong(int index)
-    {
-        return Decode<long, PgLong>(index);
-    }
-
-    public float? GetFloat(int index)
-    {
-        return Decode<float, PgFloat>(index);
-    }
-
-    public double? GetDouble(int index)
-    {
-        return Decode<double, PgDouble>(index);
-    }
-
-    public TimeOnly? GetTime(int index)
-    {
-        return Decode<TimeOnly, PgTime>(index);
-    }
-
-    public DateOnly? GetDate(int index)
-    {
-        return Decode<DateOnly, PgDate>(index);
-    }
-
-    public DateTime? GetDateTime(int index)
-    {
-        return Decode<DateTime, PgDateTime>(index);
-    }
-
-    public DateTimeOffset? GetDateTimeOffset(int index)
-    {
-        return Decode<DateTimeOffset, PgDateTimeOffset>(index);
-    }
-
-    public decimal? GetDecimal(int index)
-    {
-        return Decode<decimal, PgDecimal>(index);
-    }
-
-    public byte[]? GetBytes(int index)
-    {
-        return Decode<byte[], PgBytea>(index);
-    }
-
-    public string? GetString(int index)
-    {
-        return Decode<string, PgString>(index);
-    }
-
-    public Guid? GetGuid(int index)
-    {
-        return Decode<Guid, PgUuid>(index);
-    }
-
-    public T? GetJson<T>(int index, JsonTypeInfo<T>? jsonTypeInfo = null) where T : notnull
-    {
-        ColumnData columnData = GetColumnData(index);
-        return columnData.IsNull ? default : GetJsonInternal(columnData, jsonTypeInfo);
+        return _columnValueSlices[index] is null;
     }
 
     public bool GetBooleanNotNull(int index)
@@ -249,19 +165,11 @@ internal sealed class PgDataRow : IDataRow
 
     private ColumnData GetColumnData(int index)
     {
-        PgColumnMetadata columnMetadata = _columnMetadata[index];
+        PgColumnMetadata columnMetadata = _statementMetadata[index];
         var sliceItem = _columnValueSlices[index];
         return sliceItem is not {} slice
             ? new ColumnData(true, new Range(), columnMetadata)
             : new ColumnData(false, slice, columnMetadata);
-    }
-
-    internal TResult? Decode<TResult, TType>(int index)
-        where TResult : notnull
-        where TType : IPgDbType<TResult>
-    {
-        ColumnData columnData = GetColumnData(index);
-        return !columnData.IsNull ? Decode<TResult, TType>(columnData) : default;
     }
 
     internal TResult DecodeNotNull<TResult, TType>(int index)
@@ -301,7 +209,7 @@ internal sealed class PgDataRow : IDataRow
     }
 }
 
-public static class DataRowExtensions
+public static partial class DataRowExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TDecode? GetPgDecode<TDecode>(this IDataRow dataRow, int index)
@@ -1571,8 +1479,12 @@ public static class DataRowExtensions
         where TResult : notnull
         where TType : IPgDbType<TResult>
     {
+        if (dataRow.IsNull(index))
+        {
+            return default;
+        }
         var pgDataRow = PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow);
-        return pgDataRow.Decode<TResult, TType>(index);
+        return pgDataRow.DecodeNotNull<TResult, TType>(index);
     }
     
     private static TResult GetPgDecodeNotNullInternal<TResult, TType>(IDataRow dataRow, int index)

@@ -141,7 +141,7 @@ public partial class PgConnection
         PgPreparedStatement? preparedStatement,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var columnMetadata = preparedStatement?.ColumnMetadata ?? [];
+        var statementMetadata = new PgStatementMetadata(preparedStatement?.ColumnMetadata ?? []);
         while (true)
         {
             IPgBackendMessage backendMessage = await _pgStream.ReceiveNextMessage(cancellationToken)
@@ -158,10 +158,10 @@ public partial class PgConnection
                     {
                         preparedStatement.ColumnMetadata = rowDescription.ColumnMetadata;
                     }
-                    columnMetadata = rowDescription.ColumnMetadata;
+                    statementMetadata = new PgStatementMetadata(rowDescription.ColumnMetadata);
                     break;
                 case DataRowMessage dataRowMessage:
-                    var dataRow = new PgDataRow(dataRowMessage.RowData, columnMetadata);
+                    var dataRow = new PgDataRow(dataRowMessage.RowData, statementMetadata);
                     yield return new Either<IDataRow, QueryResult>.Left(dataRow);
                     break;
                 case CommandCompleteMessage commandCompleteMessage:
