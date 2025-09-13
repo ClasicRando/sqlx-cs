@@ -68,6 +68,7 @@ internal class PgDataRowDecoderGenerator : IIncrementalGenerator
             
             using Sqlx.Core.Result;
             using Sqlx.Postgres.Exceptions;
+            using Sqlx.Postgres.Type;
             
             namespace Sqlx.Postgres.Result;
             
@@ -106,13 +107,24 @@ internal class PgDataRowDecoderGenerator : IIncrementalGenerator
 
     private static string GenerateDecodeMethod(MethodToGenerate methodToGenerate)
     {
-        var resultTypeName = methodToGenerate.ReturnType
-            .WithNullableAnnotation(NullableAnnotation.NotAnnotated)
-            .ToDisplayString();
-        var decoderTypeName = methodToGenerate.DecoderType
-            ?.WithNullableAnnotation(NullableAnnotation.NotAnnotated)
-            .ToDisplayString()
-            ?? resultTypeName;
+        var resultTypeName = methodToGenerate.ReturnType.ToDisplayString();
+        string decoderTypeName;
+        if (methodToGenerate.IsArrayReturn)
+        {
+            ITypeSymbol resultTypeElement = SourceGenerationHelper.NotNullType(
+                ((IArrayTypeSymbol)methodToGenerate.ReturnType).ElementType);
+            var resultTypeElementName = resultTypeElement.ToDisplayString();
+            var tempDecoderTypeName = methodToGenerate.DecoderType?.ToDisplayString()
+                                      ?? resultTypeElementName;
+            decoderTypeName = resultTypeElement.IsValueType
+                ? $"PgArrayTypeStruct<{resultTypeElementName}, {tempDecoderTypeName}>"
+                : $"PgArrayTypeClass<{resultTypeElementName}, {tempDecoderTypeName}>";
+        }
+        else
+        {
+            decoderTypeName = methodToGenerate.DecoderType?.ToDisplayString() ?? resultTypeName;
+        }
+        
         var indexerName = methodToGenerate.IndexerParameterName;
         var indexerIsString = methodToGenerate.IndexerParameterType.ToDisplayString() is "string";
         var signature = $"public static partial {resultTypeName}{(methodToGenerate.IsReturnNullable ? '?' : string.Empty)} {methodToGenerate.Name}(this IDataRow dataRow, {methodToGenerate.IndexerParameterType.ToDisplayString()} {indexerName})";

@@ -178,8 +178,6 @@ public abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
     
     public static PgType DbType => TType.ArrayDbType;
 
-    public static PgType ArrayDbType => DbType;
-
     public static bool IsCompatible(PgType dbType)
     {
         return dbType.TypeOid == DbType.TypeOid;
@@ -261,8 +259,6 @@ public abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?[]
     }
     
     public static PgType DbType => TType.ArrayDbType;
-
-    public static PgType ArrayDbType => DbType;
 
     public static bool IsCompatible(PgType dbType)
     {

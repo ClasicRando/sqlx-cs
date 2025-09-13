@@ -99,7 +99,28 @@ public class PgDataRowDecoderGeneratorSnapshotTest
     }
     
     [Fact]
-    public Task When_CustomGenericDecoderSpecified()
+    public Task When_ValueTypeArrayAndNoDecoderSpecified()
+    {
+        const string source = 
+            """
+            using Sqlx.Core.Result;
+            using Sqlx.Postgres.Generator.Result;
+            using Sqlx.Postgres.Types;
+            
+            public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds);
+
+            public static class TestExtensions
+            {
+                [GeneratePgDecodeMethod]
+                public static partial PgTimeTz?[]? GetPgTimeTzArray(this IDataRow dataRow, int index);
+            }
+            """;
+
+        return TestHelper.VerifyPgDataRowDecoderGenerator(source);
+    }
+    
+    [Fact]
+    public Task When_ValueTypeArrayAndDecoderSpecified()
     {
         const string source = 
             """
@@ -109,8 +130,46 @@ public class PgDataRowDecoderGeneratorSnapshotTest
 
             public static class TestExtensions
             {
-                [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<bool, PgBool>))]
+                [GeneratePgDecodeMethod(Decoder = typeof(PgBool))]
                 public static partial bool?[]? GetPgBooleanArray(this IDataRow dataRow, int index);
+            }
+            """;
+
+        return TestHelper.VerifyPgDataRowDecoderGenerator(source);
+    }
+    
+    [Fact]
+    public Task When_RefTypeArrayAndNoDecoderSpecified()
+    {
+        const string source = 
+            """
+            using Sqlx.Core.Result;
+            using Sqlx.Postgres.Generator.Result;
+            using Sqlx.Postgres.Types;
+
+            public static class TestExtensions
+            {
+                [GeneratePgDecodeMethod]
+                public static partial PgInet?[]? GetPgInetArray(this IDataRow dataRow, int index);
+            }
+            """;
+
+        return TestHelper.VerifyPgDataRowDecoderGenerator(source);
+    }
+    
+    [Fact]
+    public Task When_RefTypeArrayAndDecoderSpecified()
+    {
+        const string source = 
+            """
+            using Sqlx.Core.Result;
+            using Sqlx.Postgres.Generator.Result;
+            using Sqlx.Postgres.Types;
+
+            public static class TestExtensions
+            {
+                [GeneratePgDecodeMethod(Decoder = typeof(PgString))]
+                public static partial string?[]? GetPgStrongArray(this IDataRow dataRow, int index);
             }
             """;
 

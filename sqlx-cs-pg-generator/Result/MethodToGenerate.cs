@@ -43,26 +43,11 @@ public class MethodToGenerate
 
     public string Name => _templateMethod.Name;
 
-    public ITypeSymbol ReturnType
-    {
-        get
-        {
-            if (!IsReturnNullable)
-            {
-                return _templateMethod.ReturnType;
-            }
-
-            if (_templateMethod.ReturnType.Name.StartsWith("Nullable"))
-            {
-                return ((INamedTypeSymbol)_templateMethod.ReturnType).TypeArguments[0];
-            }
-
-            return _templateMethod.ReturnType
-                .WithNullableAnnotation(NullableAnnotation.NotAnnotated);
-        }
-    }
+    public ITypeSymbol ReturnType => SourceGenerationHelper.NotNullType(_templateMethod.ReturnType);
 
     public bool IsReturnNullable => _templateMethod.ReturnNullableAnnotation is NullableAnnotation.Annotated;
+
+    public bool IsArrayReturn => _templateMethod.ReturnType.TypeKind is TypeKind.Array;
 
     private IParameterSymbol IndexerParameter => _templateMethod.Parameters[1];
 

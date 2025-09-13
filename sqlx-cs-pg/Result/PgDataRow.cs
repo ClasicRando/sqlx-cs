@@ -458,399 +458,399 @@ public static partial class DataRowExtensions
     [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<decimal, PgDecimal>))]
     public static partial PgRange<decimal> GetPgRangeDecimalNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<bool, PgBool>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBool))]
     public static partial bool?[]? GetPgBooleanArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<bool, PgBool>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBool))]
     public static partial bool?[] GetPgBooleanArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<bool, PgBool>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBool))]
     public static partial bool?[]? GetPgBooleanArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<bool, PgBool>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBool))]
     public static partial bool?[] GetPgBooleanArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<sbyte, PgChar>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgChar))]
     public static partial sbyte?[]? GetPgCharArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<sbyte, PgChar>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgChar))]
     public static partial sbyte?[] GetPgCharArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<sbyte, PgChar>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgChar))]
     public static partial sbyte?[]? GetPgCharArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<sbyte, PgChar>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgChar))]
     public static partial sbyte?[] GetPgCharArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<short, PgShort>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgShort))]
     public static partial short?[]? GetPgShortArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<short, PgShort>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgShort))]
     public static partial short?[] GetPgShortArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<short, PgShort>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgShort))]
     public static partial short?[]? GetPgShortArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<short, PgShort>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgShort))]
     public static partial short?[] GetPgShortArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<int, PgInt>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgInt))]
     public static partial int?[]? GetPgIntArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<int, PgInt>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgInt))]
     public static partial int?[] GetPgIntArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<int, PgInt>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgInt))]
     public static partial int?[]? GetPgIntArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<int, PgInt>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgInt))]
     public static partial int?[] GetPgIntArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<long, PgLong>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgLong))]
     public static partial long?[]? GetPgLongArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<long, PgLong>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgLong))]
     public static partial long?[] GetPgLongArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<long, PgLong>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgLong))]
     public static partial long?[]? GetPgLongArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<long, PgLong>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgLong))]
     public static partial long?[] GetPgLongArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<float, PgFloat>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgFloat))]
     public static partial float?[]? GetPgFloatArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<float, PgFloat>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgFloat))]
     public static partial float?[] GetPgFloatArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<float, PgFloat>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgFloat))]
     public static partial float?[]? GetPgFloatArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<float, PgFloat>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgFloat))]
     public static partial float?[] GetPgFloatArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<double, PgDouble>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDouble))]
     public static partial double?[]? GetPgDoubleArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<double, PgDouble>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDouble))]
     public static partial double?[] GetPgDoubleArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<double, PgDouble>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDouble))]
     public static partial double?[]? GetPgDoubleArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<double, PgDouble>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDouble))]
     public static partial double?[] GetPgDoubleArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<TimeOnly, PgTime>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgTime))]
     public static partial TimeOnly?[]? GetPgTimeArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<TimeOnly, PgTime>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgTime))]
     public static partial TimeOnly?[] GetPgTimeArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<TimeOnly, PgTime>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgTime))]
     public static partial TimeOnly?[]? GetPgTimeArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<TimeOnly, PgTime>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgTime))]
     public static partial TimeOnly?[] GetPgTimeArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<DateOnly, PgDate>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDate))]
     public static partial DateOnly?[]? GetPgDateArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<DateOnly, PgDate>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDate))]
     public static partial DateOnly?[] GetPgDateArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<DateOnly, PgDate>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDate))]
     public static partial DateOnly?[]? GetPgDateArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<DateOnly, PgDate>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDate))]
     public static partial DateOnly?[] GetPgDateArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<DateTime, PgDateTime>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDateTime))]
     public static partial DateTime?[]? GetPgDateTimeArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<DateTime, PgDateTime>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDateTime))]
     public static partial DateTime?[] GetPgDateTimeArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<DateTime, PgDateTime>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDateTime))]
     public static partial DateTime?[]? GetPgDateTimeArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<DateTime, PgDateTime>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDateTime))]
     public static partial DateTime?[] GetPgDateTimeArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<DateTimeOffset, PgDateTimeOffset>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDateTimeOffset))]
     public static partial DateTimeOffset?[]? GetPgDateTimeOffsetArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<DateTimeOffset, PgDateTimeOffset>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDateTimeOffset))]
     public static partial DateTimeOffset?[] GetPgDateTimeOffsetArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<DateTimeOffset, PgDateTimeOffset>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDateTimeOffset))]
     public static partial DateTimeOffset?[]? GetPgDateTimeOffsetArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<DateTimeOffset, PgDateTimeOffset>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDateTimeOffset))]
     public static partial DateTimeOffset?[] GetPgDateTimeOffsetArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<decimal, PgDecimal>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDecimal))]
     public static partial decimal?[]? GetPgDecimalArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<decimal, PgDecimal>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDecimal))]
     public static partial decimal?[] GetPgDecimalArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<decimal, PgDecimal>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDecimal))]
     public static partial decimal?[]? GetPgDecimalArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<decimal, PgDecimal>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgDecimal))]
     public static partial decimal?[] GetPgDecimalArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<byte[], PgBytea>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBytea))]
     public static partial byte[]?[]? GetPgBytesArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<byte[], PgBytea>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBytea))]
     public static partial byte[]?[] GetPgBytesArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<byte[], PgBytea>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBytea))]
     public static partial byte[]?[]? GetPgBytesArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<byte[], PgBytea>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBytea))]
     public static partial byte[]?[] GetPgBytesArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<string, PgString>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgString))]
     public static partial string?[]? GetPgStringArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<string, PgString>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgString))]
     public static partial string?[] GetPgStringNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<string, PgString>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgString))]
     public static partial string?[]? GetPgStringArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<string, PgString>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgString))]
     public static partial string?[] GetPgStringNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<Guid, PgUuid>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgUuid))]
     public static partial Guid?[]? GetPgGuidArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<Guid, PgUuid>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgUuid))]
     public static partial Guid?[] GetPgGuidArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<Guid, PgUuid>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgUuid))]
     public static partial Guid?[]? GetPgGuidArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<Guid, PgUuid>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgUuid))]
     public static partial Guid?[] GetPgGuidArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgTimeTz, PgTimeTz>))]
+    [GeneratePgDecodeMethod]
     public static partial PgTimeTz?[]? GetPgTimeTzArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgTimeTz, PgTimeTz>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgTimeTz))]
     public static partial PgTimeTz?[] GetPgTimeTzArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgTimeTz, PgTimeTz>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgTimeTz))]
     public static partial PgTimeTz?[]? GetPgTimeTzArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgTimeTz, PgTimeTz>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgTimeTz))]
     public static partial PgTimeTz?[] GetPgTimeTzArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgPoint, PgPoint>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgPoint))]
     public static partial PgPoint?[]? GetPgPointArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgPoint, PgPoint>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgPoint))]
     public static partial PgPoint?[] GetPgPointArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgPoint, PgPoint>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgPoint))]
     public static partial PgPoint?[]? GetPgPointArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgPoint, PgPoint>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgPoint))]
     public static partial PgPoint?[] GetPgPointArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgLine, PgLine>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgLine))]
     public static partial PgLine?[]? GetPgLineArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgLine, PgLine>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgLine))]
     public static partial PgLine?[] GetPgLineArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgLine, PgLine>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgLine))]
     public static partial PgLine?[]? GetPgLineArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgLine, PgLine>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgLine))]
     public static partial PgLine?[] GetPgLineArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgLineSegment, PgLineSegment>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgLineSegment))]
     public static partial PgLineSegment?[]? GetPgLineSegmentArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgLineSegment, PgLineSegment>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgLineSegment))]
     public static partial PgLineSegment?[] GetPgLineSegmentArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgLineSegment, PgLineSegment>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgLineSegment))]
     public static partial PgLineSegment?[]? GetPgLineSegmentArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgLineSegment, PgLineSegment>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgLineSegment))]
     public static partial PgLineSegment?[] GetPgLineSegmentArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgBox, PgBox>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBox))]
     public static partial PgBox?[]? GetPgBoxArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgBox, PgBox>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBox))]
     public static partial PgBox?[] GetPgBoxArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgBox, PgBox>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBox))]
     public static partial PgBox?[]? GetPgBoxArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgBox, PgBox>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBox))]
     public static partial PgBox?[] GetPgBoxArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgPath, PgPath>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgPath))]
     public static partial PgPath?[]? GetPgPathArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgPath, PgPath>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgPath))]
     public static partial PgPath?[] GetPgPathArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgPath, PgPath>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgPath))]
     public static partial PgPath?[]? GetPgPathArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgPath, PgPath>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgPath))]
     public static partial PgPath?[] GetPgPathArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgCircle, PgCircle>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgCircle))]
     public static partial PgCircle?[]? GetPgCircleArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgCircle, PgCircle>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgCircle))]
     public static partial PgCircle?[] GetPgCircleArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgCircle, PgCircle>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgCircle))]
     public static partial PgCircle?[]? GetPgCircleArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgCircle, PgCircle>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgCircle))]
     public static partial PgCircle?[] GetPgCircleArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgPolygon, PgPolygon>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgPolygon))]
     public static partial PgPolygon?[]? GetPgPolygonArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgPolygon, PgPolygon>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgPolygon))]
     public static partial PgPolygon?[] GetPgPolygonArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgPolygon, PgPolygon>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgPolygon))]
     public static partial PgPolygon?[]? GetPgPolygonArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgPolygon, PgPolygon>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgPolygon))]
     public static partial PgPolygon?[] GetPgPolygonArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgInterval, PgInterval>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgInterval))]
     public static partial PgInterval?[]? GetPgIntervalArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgInterval, PgInterval>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgInterval))]
     public static partial PgInterval?[] GetPgIntervalArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgInterval, PgInterval>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgInterval))]
     public static partial PgInterval?[]? GetPgIntervalArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgInterval, PgInterval>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgInterval))]
     public static partial PgInterval?[] GetPgIntervalArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgMacAddress, PgMacAddress>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgMacAddress))]
     public static partial PgMacAddress?[]? GetPgMacAddressArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgMacAddress, PgMacAddress>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgMacAddress))]
     public static partial PgMacAddress?[] GetPgMacAddressArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgMacAddress, PgMacAddress>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgMacAddress))]
     public static partial PgMacAddress?[]? GetPgMacAddressArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgMacAddress, PgMacAddress>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgMacAddress))]
     public static partial PgMacAddress?[] GetPgMacAddressArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgMoney, PgMoney>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgMoney))]
     public static partial PgMoney?[]? GetPgMoneyArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgMoney, PgMoney>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgMoney))]
     public static partial PgMoney?[] GetPgMoneyArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgMoney, PgMoney>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgMoney))]
     public static partial PgMoney?[]? GetPgMoneyArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeStruct<PgMoney, PgMoney>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgMoney))]
     public static partial PgMoney?[] GetPgMoneyArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgInet, PgInet>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgInet))]
     public static partial PgInet?[]? GetPgInetArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgInet, PgInet>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgInet))]
     public static partial PgInet?[] GetPgInetArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgInet, PgInet>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgInet))]
     public static partial PgInet?[]? GetPgInetArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgInet, PgInet>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgInet))]
     public static partial PgInet?[] GetPgInetArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<long>, PgRangeType<long, PgLong>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<long, PgLong>))]
     public static partial PgRange<long>?[]? GetPgRangeLongArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<long>, PgRangeType<long, PgLong>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<long, PgLong>))]
     public static partial PgRange<long>?[] GetPgRangeLongArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<long>, PgRangeType<long, PgLong>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<long, PgLong>))]
     public static partial PgRange<long>?[]? GetPgRangeLongArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<long>, PgRangeType<long, PgLong>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<long, PgLong>))]
     public static partial PgRange<long>?[] GetPgRangeLongArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<int>, PgRangeType<int, PgInt>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<int, PgInt>))]
     public static partial PgRange<int>?[]? GetPgRangeIntArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<int>, PgRangeType<int, PgInt>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<int, PgInt>))]
     public static partial PgRange<int>?[] GetPgRangeIntArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<int>, PgRangeType<int, PgInt>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<int, PgInt>))]
     public static partial PgRange<int>?[]? GetPgRangeIntArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<int>, PgRangeType<int, PgInt>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<int, PgInt>))]
     public static partial PgRange<int>?[] GetPgRangeIntArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<DateOnly>, PgRangeType<DateOnly, PgDate>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<DateOnly, PgDate>))]
     public static partial PgRange<DateOnly>?[]? GetPgRangeDateArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<DateOnly>, PgRangeType<DateOnly, PgDate>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<DateOnly, PgDate>))]
     public static partial PgRange<DateOnly>?[] GetPgRangeDateArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<DateOnly>, PgRangeType<DateOnly, PgDate>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<DateOnly, PgDate>))]
     public static partial PgRange<DateOnly>?[]? GetPgRangeDateArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<DateOnly>, PgRangeType<DateOnly, PgDate>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<DateOnly, PgDate>))]
     public static partial PgRange<DateOnly>?[] GetPgRangeDateArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<DateTime>, PgRangeType<DateTime, PgDateTime>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<DateTime, PgDateTime>))]
     public static partial PgRange<DateTime>?[]? GetPgRangeDateTimeArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<DateTime>, PgRangeType<DateTime, PgDateTime>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<DateTime, PgDateTime>))]
     public static partial PgRange<DateTime>?[] GetPgRangeDateTimeArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<DateTime>, PgRangeType<DateTime, PgDateTime>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<DateTime, PgDateTime>))]
     public static partial PgRange<DateTime>?[]? GetPgRangeDateTimeArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<DateTime>, PgRangeType<DateTime, PgDateTime>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<DateTime, PgDateTime>))]
     public static partial PgRange<DateTime>?[] GetPgRangeDateTimeArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<DateTimeOffset>, PgRangeType<DateTimeOffset, PgDateTimeOffset>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<DateTimeOffset, PgDateTimeOffset>))]
     public static partial PgRange<DateTimeOffset>?[]? GetPgRangeDateTimeOffsetArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<DateTimeOffset>, PgRangeType<DateTimeOffset, PgDateTimeOffset>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<DateTimeOffset, PgDateTimeOffset>))]
     public static partial PgRange<DateTimeOffset>?[] GetPgRangeDateTimeOffsetArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<DateTimeOffset>, PgRangeType<DateTimeOffset, PgDateTimeOffset>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<DateTimeOffset, PgDateTimeOffset>))]
     public static partial PgRange<DateTimeOffset>?[]? GetPgRangeDateTimeOffsetArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<DateTimeOffset>, PgRangeType<DateTimeOffset, PgDateTimeOffset>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<DateTimeOffset, PgDateTimeOffset>))]
     public static partial PgRange<DateTimeOffset>?[] GetPgRangeDateTimeOffsetArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<decimal>, PgRangeType<decimal, PgDecimal>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<decimal, PgDecimal>))]
     public static partial PgRange<decimal>?[]? GetPgRangeDecimalArray(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<decimal>, PgRangeType<decimal, PgDecimal>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<decimal, PgDecimal>))]
     public static partial PgRange<decimal>?[] GetPgRangeDecimalArrayNotNull(this IDataRow dataRow, int index);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<decimal>, PgRangeType<decimal, PgDecimal>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<decimal, PgDecimal>))]
     public static partial PgRange<decimal>?[]? GetPgRangeDecimalArray(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod(Decoder = typeof(PgArrayTypeClass<PgRange<decimal>, PgRangeType<decimal, PgDecimal>>))]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<decimal, PgDecimal>))]
     public static partial PgRange<decimal>?[] GetPgRangeDecimalArrayNotNull(this IDataRow dataRow, string name);
 }
