@@ -12,7 +12,7 @@ internal static class HexUtils
         {
             return result;
         }
-        throw ColumnDecodeError.Create<T>(metadata, $"Character is not valid hex. '{chr}'");
+        throw ColumnDecodeException.Create<T>(metadata, $"Character is not valid hex. '{chr}'");
     }
 
     public static int CharsToDigit<T>(
@@ -23,7 +23,7 @@ internal static class HexUtils
         {
             return result;
         }
-        throw ColumnDecodeError.Create<T>(
+        throw ColumnDecodeException.Create<T>(
             metadata,
             $"Could not decode '{chars}' as a hex number");
     }

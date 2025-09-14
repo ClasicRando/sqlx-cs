@@ -172,7 +172,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
         {
             '(' or ')' => Bound<TValue>.Excluded(value),
             '[' or ']' => Bound<TValue>.Included(value),
-            _ => throw ColumnDecodeError.Create<PgRange<TValue>>(
+            _ => throw ColumnDecodeException.Create<PgRange<TValue>>(
                 columnMetadata,
                 $"Illegal bound character '{chr}'"),
         };

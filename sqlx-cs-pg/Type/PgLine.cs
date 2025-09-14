@@ -32,7 +32,7 @@ public readonly record struct PgLine(double A, double B, double C)
         var firstPointSpan = value.Chars.Slice(1, commaIndex - 1);
         if (!double.TryParse(firstPointSpan, out var a))
         {
-            throw ColumnDecodeError.Create<PgLine>(
+            throw ColumnDecodeException.Create<PgLine>(
                 value.ColumnMetadata,
                 "Could not parse A value");
         }
@@ -41,7 +41,7 @@ public readonly record struct PgLine(double A, double B, double C)
         var secondPointSpan = value.Chars.Slice(commaIndex + 1, secondCommaIndex - commaIndex - 1);
         if (!double.TryParse(secondPointSpan, out var b))
         {
-            throw ColumnDecodeError.Create<PgLine>(
+            throw ColumnDecodeException.Create<PgLine>(
                 value.ColumnMetadata,
                 "Could not parse B value");
         }
@@ -51,7 +51,7 @@ public readonly record struct PgLine(double A, double B, double C)
             value.Chars.Length - secondCommaIndex - 2);
         if (!double.TryParse(thirdPointSpan, out var c))
         {
-            throw ColumnDecodeError.Create<PgLine>(
+            throw ColumnDecodeException.Create<PgLine>(
                 value.ColumnMetadata,
                 "Could not parse C value");
         }

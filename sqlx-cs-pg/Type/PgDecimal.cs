@@ -54,7 +54,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
 
         if ((ushort)sign == SignNan)
         {
-            throw ColumnDecodeError.Create<decimal>(
+            throw ColumnDecodeException.Create<decimal>(
                 value.ColumnMetadata,
                 "Cannot decode NAN as decimal");
         }
@@ -71,7 +71,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
     {
         if (!decimal.TryParse(value, null, out var result))
         {
-            throw ColumnDecodeError.Create<decimal>(
+            throw ColumnDecodeException.Create<decimal>(
                 value.ColumnMetadata,
                 $"Cannot convert '{value}' to a decimal value");
         }
@@ -128,7 +128,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
     /// <param name="scale"></param>
     /// <param name="columnMetadata"></param>
     /// <returns></returns>
-    /// <exception cref="ColumnDecodeError"></exception>
+    /// <exception cref="ColumnDecodeException"></exception>
     private static decimal CreateDecimal(
         ReadOnlySpan<short> digits,
         short weight,
@@ -139,14 +139,14 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
         var digitCount = digits.Length;
         if (digitCount > MaxDecimalNumericDigits)
         {
-            throw ColumnDecodeError.Create<decimal>(
+            throw ColumnDecodeException.Create<decimal>(
                 columnMetadata,
                 "Numeric value does not fit into a decimal");
         }
 
         if (short.Abs(scale) > MaxDecimalScale)
         {
-            throw ColumnDecodeError.Create<decimal>(
+            throw ColumnDecodeException.Create<decimal>(
                 columnMetadata,
                 "Numeric value does not fit into a decimal");
         }
@@ -157,16 +157,16 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
             return (ushort)sign switch
             {
                 SignPositive or SignNegative => decimal.Zero * scaleFactor,
-                SignNan => throw ColumnDecodeError.Create<decimal>(
+                SignNan => throw ColumnDecodeException.Create<decimal>(
                     columnMetadata, 
                     "Numeric value of NaN is not supported by decimal"),
-                SignPinf => throw ColumnDecodeError.Create<decimal>(
+                SignPinf => throw ColumnDecodeException.Create<decimal>(
                     columnMetadata, 
                     "Numeric value of Infinity is not supported by decimal"),
-                SignNinf => throw ColumnDecodeError.Create<decimal>(
+                SignNinf => throw ColumnDecodeException.Create<decimal>(
                     columnMetadata, 
                     "Numeric value of -Infinity is not supported by decimal"),
-                _ => throw ColumnDecodeError.Create<decimal>(
+                _ => throw ColumnDecodeException.Create<decimal>(
                     columnMetadata,
                     $"Sign code of {(ushort)sign} is not supported"),
             };

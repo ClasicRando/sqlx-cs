@@ -43,7 +43,7 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
     private static byte[] DecodeWithPrefix(ReadOnlySpan<char> value, PgColumnMetadata metadata)
     {
         var size = value.Length - HexStart.Length;
-        ColumnDecodeError.CheckOrThrow<byte[]>(
+        ColumnDecodeException.CheckOrThrow<byte[]>(
             (size & 0x01) == 0,
             metadata,
             "Hex encoded byte array must have an even number of elements");

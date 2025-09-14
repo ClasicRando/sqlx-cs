@@ -27,7 +27,7 @@ public readonly record struct PgBox(PgPoint High, PgPoint Low)
         var indexPairs = GeometryUtils.ExtractPointIndexes(value);
         if (indexPairs.Count == 2)
         {
-            throw ColumnDecodeError.Create<PgBox>(
+            throw ColumnDecodeException.Create<PgBox>(
                 value.ColumnMetadata,
                 $"Box geoms must have exactly 2 points. Found '{value.Chars}'");
         }

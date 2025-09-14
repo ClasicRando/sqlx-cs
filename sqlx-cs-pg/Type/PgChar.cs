@@ -23,7 +23,7 @@ internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
             4 => (sbyte)(((byte)value.Chars[1] << 6) | ((byte)value.Chars[2] << 3) | (byte)value.Chars[3]),
             1 => (sbyte)value.Chars[0],
             0 => 0,
-            _ => throw ColumnDecodeError.Create<byte>(
+            _ => throw ColumnDecodeException.Create<byte>(
                 value.ColumnMetadata,
                 $"Received invalid \"char\" text, {value}"),
         };

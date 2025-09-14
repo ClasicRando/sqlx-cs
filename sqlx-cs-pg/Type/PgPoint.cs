@@ -27,10 +27,10 @@ public readonly record struct PgPoint(double X, double Y)
         var commaIndex = value.Chars.IndexOf(',');
         if (!double.TryParse(value.Chars[1..commaIndex], out var x))
         {
-            throw ColumnDecodeError.Create<PgPoint>(value.ColumnMetadata, "Could not parse X coordinate");
+            throw ColumnDecodeException.Create<PgPoint>(value.ColumnMetadata, "Could not parse X coordinate");
         }
         return !double.TryParse(value.Chars.Slice(commaIndex + 1, value.Chars.Length - commaIndex - 2), out var y)
-            ? throw ColumnDecodeError.Create<PgPoint>(value.ColumnMetadata, "Could not parse Y coordinate")
+            ? throw ColumnDecodeException.Create<PgPoint>(value.ColumnMetadata, "Could not parse Y coordinate")
             : new PgPoint(x, y);
     }
     

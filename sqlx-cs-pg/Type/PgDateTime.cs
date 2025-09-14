@@ -27,7 +27,7 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
             return dateTime;
         }
         
-        throw ColumnDecodeError.Create<DateTime>(
+        throw ColumnDecodeException.Create<DateTime>(
             value.ColumnMetadata,
             $"Cannot parse '{value}' as a DateTime");
     }

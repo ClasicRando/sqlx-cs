@@ -28,7 +28,7 @@ public readonly record struct PgLineSegment(PgPoint Point1, PgPoint Point2)
         var indexPairs = GeometryUtils.ExtractPointIndexes(pointChars);
         if (indexPairs.Count == 2)
         {
-            throw ColumnDecodeError.Create<PgLineSegment>(
+            throw ColumnDecodeException.Create<PgLineSegment>(
                 value.ColumnMetadata,
                 $"Line segments must have exactly 2 points. Found '{value.Chars}'");
         }

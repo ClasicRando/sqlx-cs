@@ -35,7 +35,7 @@ public class IntegersTest
         columnMetadata.DataType.Returns(0);
         columnMetadata.FieldName.Returns("field");
         
-        var e = Assert.Throws<ColumnDecodeError>(() => Integers.ValidateInt(value, columnMetadata));
+        var e = Assert.Throws<ColumnDecodeException>(() => Integers.ValidateInt(value, columnMetadata));
         Assert.Contains("Value is outside of valid int", e.Message);
     }
     
@@ -66,7 +66,7 @@ public class IntegersTest
         columnMetadata.DataType.Returns(0);
         columnMetadata.FieldName.Returns("field");
         
-        var e = Assert.Throws<ColumnDecodeError>(() => Integers.ValidateShort(value, columnMetadata));
+        var e = Assert.Throws<ColumnDecodeException>(() => Integers.ValidateShort(value, columnMetadata));
         Assert.Contains("Value is outside of valid short", e.Message);
     }
     
@@ -96,7 +96,7 @@ public class IntegersTest
         columnMetadata.DataType.Returns(0);
         columnMetadata.FieldName.Returns("field");
         
-        var e = Assert.Throws<ColumnDecodeError>(() => Integers.ValidateByte(value, columnMetadata));
+        var e = Assert.Throws<ColumnDecodeException>(() => Integers.ValidateByte(value, columnMetadata));
         Assert.Contains("Value is outside of valid byte", e.Message);
     }
 }

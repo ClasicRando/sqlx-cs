@@ -131,7 +131,7 @@ internal sealed class PgDataRow : IDataRow
         
         if (PgJson<T>.DbType != columnData.ColumnMetadata.PgType && !PgJson<T>.IsCompatible(columnData.ColumnMetadata.PgType))
         {
-            throw ColumnDecodeError.Create<T>(columnData.ColumnMetadata);
+            throw ColumnDecodeException.Create<T>(columnData.ColumnMetadata);
         }
 
         var bytes = _rowData.AsSpan()[columnData.Range.Start..columnData.Range.End];
@@ -147,7 +147,7 @@ internal sealed class PgDataRow : IDataRow
                 PgBinaryValue binaryValue = new(buffer, columnData.ColumnMetadata);
                 return PgJson<T>.DecodeBytes(binaryValue, jsonTypeInfo);
             default:
-                throw ColumnDecodeError.Create<T>(
+                throw ColumnDecodeException.Create<T>(
                     columnData.ColumnMetadata,
                     $"Unexpected format code: {columnData.ColumnMetadata.FormatCode}");
         }
@@ -185,7 +185,7 @@ internal sealed class PgDataRow : IDataRow
         if (TType.DbType != columnData.ColumnMetadata.PgType
             && !TType.IsCompatible(columnData.ColumnMetadata.PgType))
         {
-            throw ColumnDecodeError.Create<TResult>(columnData.ColumnMetadata);
+            throw ColumnDecodeException.Create<TResult>(columnData.ColumnMetadata);
         }
 
         var bytes = _rowData.AsSpan()[columnData.Range.Start..columnData.Range.End];
@@ -199,7 +199,7 @@ internal sealed class PgDataRow : IDataRow
                 var buffer = new ReadBuffer(bytes);
                 return TType.DecodeBytes(new PgBinaryValue(buffer, columnData.ColumnMetadata));
             default:
-                throw ColumnDecodeError.Create<TResult>(
+                throw ColumnDecodeException.Create<TResult>(
                     columnData.ColumnMetadata,
                     $"Unexpected format code: {columnData.ColumnMetadata.FormatCode}");
         }

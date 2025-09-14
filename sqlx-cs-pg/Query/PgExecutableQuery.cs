@@ -163,7 +163,7 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
     }
 }
 
-public static class ExecutableQueryExtensions
+public static partial class ExecutableQueryExtensions
 {
     public static IQuery Bind(this IQuery query, PgTimeTz value)
     {

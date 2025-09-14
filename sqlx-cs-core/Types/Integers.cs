@@ -11,10 +11,10 @@ public static class Integers
     /// <param name="value">long value to check</param>
     /// <param name="columnMetadata">column metadata to construct the exception</param>
     /// <returns>the value cast to an int</returns>
-    /// <exception cref="ColumnDecodeError">if the value is not a valid int</exception>
+    /// <exception cref="ColumnDecodeException">if the value is not a valid int</exception>
     public static int ValidateInt(long value, IColumnMetadata columnMetadata)
     {
-        ColumnDecodeError.CheckOrThrow<int>(
+        ColumnDecodeException.CheckOrThrow<int>(
             value is >= int.MinValue and <= int.MaxValue,
             columnMetadata,
             "Value is outside of valid int");
@@ -27,10 +27,10 @@ public static class Integers
     /// <param name="value">long value to check</param>
     /// <param name="columnMetadata">column metadata to construct the exception</param>
     /// <returns>the value cast to a short</returns>
-    /// <exception cref="ColumnDecodeError">if the value is not a valid short</exception>
+    /// <exception cref="ColumnDecodeException">if the value is not a valid short</exception>
     public static short ValidateShort(long value, IColumnMetadata columnMetadata)
     {
-        ColumnDecodeError.CheckOrThrow<short>(
+        ColumnDecodeException.CheckOrThrow<short>(
             value is >= short.MinValue and <= short.MaxValue,
             columnMetadata,
             "Value is outside of valid short");
@@ -43,10 +43,10 @@ public static class Integers
     /// <param name="value">long value to check</param>
     /// <param name="columnMetadata">column metadata to construct the exception</param>
     /// <returns>the value cast to a byte</returns>
-    /// <exception cref="ColumnDecodeError">if the value is not a valid byte</exception>
+    /// <exception cref="ColumnDecodeException">if the value is not a valid byte</exception>
     public static byte ValidateByte(long value, IColumnMetadata columnMetadata)
     {
-        ColumnDecodeError.CheckOrThrow<byte>(
+        ColumnDecodeException.CheckOrThrow<byte>(
             value is >= byte.MinValue and <= byte.MaxValue,
             columnMetadata,
             "Value is outside of valid byte");

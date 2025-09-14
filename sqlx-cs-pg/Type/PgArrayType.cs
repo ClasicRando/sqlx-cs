@@ -27,7 +27,7 @@ internal static class PgArrayTypeUtils
         {
             return 0;
         }
-        ColumnDecodeError.CheckOrThrow<TElement[]>(
+        ColumnDecodeException.CheckOrThrow<TElement[]>(
             dimensions == 1,
             value.ColumnMetadata,
             $"Attempted to decode an array of {dimensions} dimensions. Only 1-dimensional arrays are supported");
@@ -36,7 +36,7 @@ internal static class PgArrayTypeUtils
         value.Buffer.ReadInt();
 
         var elementTypeOid = value.Buffer.ReadInt();
-        ColumnDecodeError.CheckOrThrow<TElement[]>(
+        ColumnDecodeException.CheckOrThrow<TElement[]>(
             elementTypeOid == TType.DbType.TypeOid,
             value.ColumnMetadata,
             $"Attempted to read an array with another element type. Expected {TType.DbType.TypeOid} but found {elementTypeOid}");
@@ -44,7 +44,7 @@ internal static class PgArrayTypeUtils
         var length = value.Buffer.ReadInt();
         var lowerBound = value.Buffer.ReadInt();
         
-        ColumnDecodeError.CheckOrThrow<TElement[]>(
+        ColumnDecodeException.CheckOrThrow<TElement[]>(
             lowerBound == 1,
             value.ColumnMetadata,
             $"Attempted to read an array with a lower bound other than 1. Got {lowerBound}");

@@ -22,7 +22,7 @@ internal abstract class PgBool : IPgDbType<bool>, IHasArrayType
         {
             't' => true,
             'f' => false,
-            _ => throw ColumnDecodeError.Create<bool>(value.ColumnMetadata),
+            _ => throw ColumnDecodeException.Create<bool>(value.ColumnMetadata),
         };
     }
     

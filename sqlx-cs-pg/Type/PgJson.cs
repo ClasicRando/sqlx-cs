@@ -38,7 +38,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
             var versionCode = value.Buffer.ReadByte();
             if (versionCode != 1)
             {
-                throw ColumnDecodeError.Create<T>(
+                throw ColumnDecodeException.Create<T>(
                     value.ColumnMetadata,
                     $"Unsupported JSONB format version: {versionCode}. Only version 1 is supported");
             }
@@ -56,7 +56,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
             var versionCode = value.Chars[0];
             if (versionCode != 1)
             {
-                throw ColumnDecodeError.Create<T>(
+                throw ColumnDecodeException.Create<T>(
                     value.ColumnMetadata,
                     $"Unsupported JSONB format version: {versionCode}. Only version 1 is supported");
             }

@@ -58,7 +58,7 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
         }
         if (offsetChar is not ('+' or '-'))
         {
-            throw ColumnDecodeError.Create<PgTimeTz>(
+            throw ColumnDecodeException.Create<PgTimeTz>(
                 columnMetadata,
                 $"Invalid offset char: {chars}");
         }
@@ -74,7 +74,7 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
         {
             if (!int.TryParse(offsetChars[splits[i]], null, out var result))
             {
-                throw ColumnDecodeError.Create<PgTimeTz>(
+                throw ColumnDecodeException.Create<PgTimeTz>(
                     columnMetadata,
                     $"Could not parse offset from '{chars}'");
             }

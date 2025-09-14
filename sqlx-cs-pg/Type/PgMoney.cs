@@ -53,7 +53,7 @@ public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<P
         {
             return new PgMoney(result);
         }
-        throw ColumnDecodeError.Create<PgMoney>(
+        throw ColumnDecodeException.Create<PgMoney>(
             value.ColumnMetadata,
             $"Could not parse '{value}' into a money value");
     }

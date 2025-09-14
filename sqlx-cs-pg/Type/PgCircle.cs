@@ -28,7 +28,7 @@ public readonly record struct PgCircle(PgPoint Center, double Radius)
         PgPoint center = PgPoint.DecodeText(value.Slice(1..midIndex));
         if (!double.TryParse(value.Chars[midIndex..^1], out var radius))
         {
-            throw ColumnDecodeError.Create<PgCircle>(
+            throw ColumnDecodeException.Create<PgCircle>(
                 value.ColumnMetadata,
                 $"Could not parse radius from '{value.Chars}'");
         }

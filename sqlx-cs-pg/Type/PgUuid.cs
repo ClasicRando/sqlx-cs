@@ -25,7 +25,7 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
     {
         if (!Guid.TryParse(value, null, out Guid guid))
         {
-            throw ColumnDecodeError.Create<Guid>(
+            throw ColumnDecodeException.Create<Guid>(
                 value.ColumnMetadata,
                 $"Could not parse '{value}' into a Guid");
         }

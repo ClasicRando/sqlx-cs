@@ -14,7 +14,7 @@ internal static class PgInteger
             2 => value.Buffer.ReadShort(),
             4 => value.Buffer.ReadInt(),
             8 => value.Buffer.ReadLong(),
-            _ => throw ColumnDecodeError.Create<T>(
+            _ => throw ColumnDecodeException.Create<T>(
                 value.ColumnMetadata,
                 $"Could not extract integer from buffer. Number of bytes = {value.Buffer.Remaining}"),
         };
@@ -24,7 +24,7 @@ internal static class PgInteger
     {
         if (!long.TryParse(value, null, out var parseResult))
         {
-            throw ColumnDecodeError.Create<T>(
+            throw ColumnDecodeException.Create<T>(
                 value.ColumnMetadata,
                 $"Could not convert {value} into {typeof(T)}");
         }

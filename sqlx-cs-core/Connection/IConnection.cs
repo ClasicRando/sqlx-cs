@@ -16,7 +16,7 @@ public interface IConnection : IQueryExecutor, IAsyncDisposable
     ConnectionStatus Status { get; }
     
     /// <summary>
-    /// True if the connection 
+    /// True if the connection is currently within a transaction
     /// </summary>
     bool InTransaction { get; }
 

@@ -1,3 +1,5 @@
+using Sqlx.Core.Exceptions;
+
 namespace Sqlx.Core.Result;
 
 /// <summary>
@@ -13,6 +15,6 @@ public interface IFromRow<out TResult> where TResult : notnull
     /// </summary>
     /// <param name="dataRow">database row to convert</param>
     /// <returns>a new instance of the result type</returns>
-    /// <exception cref="Exceptions.ColumnDecodeError">if decoding a column value fails</exception>
+    /// <exception cref="ColumnDecodeException">if decoding a column value fails</exception>
     static abstract TResult FromRow(IDataRow dataRow);
 }

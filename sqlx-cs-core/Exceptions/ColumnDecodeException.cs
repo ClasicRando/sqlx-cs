@@ -14,7 +14,7 @@ namespace Sqlx.Core.Exceptions;
 /// <param name="decodeType">desired CLR type to decode a database value to</param>
 /// <param name="reason">optional reason for the decoding failure</param>
 /// <param name="cause">optional cause for the decoding failure</param>
-public class ColumnDecodeError(
+public class ColumnDecodeException(
     int dataTypeId,
     string typeName,
     string columnName,
@@ -27,7 +27,7 @@ public class ColumnDecodeError(
     cause)
 {
     /// <summary>
-    /// Create a new <see cref="ColumnDecodeError"/> using the supplied data
+    /// Create a new <see cref="ColumnDecodeException"/> using the supplied data
     /// </summary>
     /// <param name="metadata">column metadata instance to extract column type data</param>
     /// <param name="reason">optional reason for the decoding failure</param>
@@ -35,12 +35,12 @@ public class ColumnDecodeError(
     /// <typeparam name="T">CLR decoding type</typeparam>
     /// <returns>exception instance that can be thrown</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ColumnDecodeError Create<T>(
+    public static ColumnDecodeException Create<T>(
         IColumnMetadata metadata,
         string reason = "",
         Exception? cause = null) where T : notnull
     {
-        return new ColumnDecodeError(
+        return new ColumnDecodeException(
             metadata.DataType,
             metadata.DataType.ToString(),
             metadata.FieldName,
@@ -51,7 +51,7 @@ public class ColumnDecodeError(
 
     /// <summary>
     /// Check a boolean condition and if that is false, create and throw a
-    /// <see cref="ColumnDecodeError"/> using the supplied information. This is a shorthand for:
+    /// <see cref="ColumnDecodeException"/> using the supplied information. This is a shorthand for:
     /// <code>
     /// if (!check)
     /// {
@@ -65,7 +65,7 @@ public class ColumnDecodeError(
     /// <param name="metadata">column metadata instance to extract column type data</param>
     /// <param name="reason">optional reason for the decoding failure</param>
     /// <typeparam name="T">CLR decoding type</typeparam>
-    /// <exception cref="ColumnDecodeError">if the check fails</exception>
+    /// <exception cref="ColumnDecodeException">if the check fails</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void CheckOrThrow<T>(
         [DoesNotReturnIf(false)] bool check,
@@ -80,7 +80,7 @@ public class ColumnDecodeError(
 
     /// <summary>
     /// Check a boolean condition and if that is false, create and throw a
-    /// <see cref="ColumnDecodeError"/> using the supplied information. This is a shorthand for:
+    /// <see cref="ColumnDecodeException"/> using the supplied information. This is a shorthand for:
     /// <code>
     /// if (!check)
     /// {
@@ -94,7 +94,7 @@ public class ColumnDecodeError(
     /// <param name="metadata">column metadata instance to extract column type data</param>
     /// <param name="reason">optional reason for the decoding failure</param>
     /// <typeparam name="T">CLR decoding type</typeparam>
-    /// <exception cref="ColumnDecodeError">if the check fails</exception>
+    /// <exception cref="ColumnDecodeException">if the check fails</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void CheckOrThrow<T>(
         [DoesNotReturnIf(false)] bool check,

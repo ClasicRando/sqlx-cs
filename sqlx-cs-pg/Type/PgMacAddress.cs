@@ -67,7 +67,7 @@ public readonly record struct PgMacAddress(
         var byteCount = value.Buffer.Remaining;
         if (byteCount != 6 && byteCount != 8)
         {
-            throw ColumnDecodeError.Create<PgMacAddress>(
+            throw ColumnDecodeException.Create<PgMacAddress>(
                 value.ColumnMetadata,
                 $"Expected 6 or 8 bytes. Found {byteCount}");
         }
@@ -89,7 +89,7 @@ public readonly record struct PgMacAddress(
         var splitCount = value.Chars.Split(splits, ':');
         if (splitCount != 6 && splitCount != 8)
         {
-            throw ColumnDecodeError.Create<PgMacAddress>(
+            throw ColumnDecodeException.Create<PgMacAddress>(
                 value.ColumnMetadata,
                 $"Expected 6 or 8 address hex characters. Found {splitCount}");
         }
@@ -100,7 +100,7 @@ public readonly record struct PgMacAddress(
             Range rng = splits[i];
             if (rng.End.Value - rng.Start.Value != 2)
             {
-                throw ColumnDecodeError.Create<PgMacAddress>(
+                throw ColumnDecodeException.Create<PgMacAddress>(
                     value.ColumnMetadata,
                     $"Could not parse network location bytes from '{value}'");
             }

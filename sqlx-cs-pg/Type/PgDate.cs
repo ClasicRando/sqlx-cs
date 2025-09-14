@@ -26,7 +26,7 @@ internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayTy
             return date;
         }
         
-        throw ColumnDecodeError.Create<DateOnly>(
+        throw ColumnDecodeException.Create<DateOnly>(
             value.ColumnMetadata,
             $"Cannot parse '{value}' as a DateOnly");
     }

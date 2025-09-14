@@ -63,7 +63,7 @@ public class PgInet : IPgDbType<PgInet>, IHasArrayType, IEquatable<PgInet>
         var remainingBytes = value.Buffer.Remaining;
         if (remainingBytes < 8)
         {
-            throw ColumnDecodeError.Create<PgInet>(
+            throw ColumnDecodeException.Create<PgInet>(
                 value.ColumnMetadata,
                 $"PgInet values must have at least 8 bytes available. Found {remainingBytes}");
         }
@@ -76,7 +76,7 @@ public class PgInet : IPgDbType<PgInet>, IHasArrayType, IEquatable<PgInet>
         {
             PgsqlAfInet when address.Length == 4 => new PgInet(address, prefix),
             PgsqlAfInet6 when address.Length == 16 => new PgInet(address, prefix),
-            _ => throw ColumnDecodeError.Create<PgInet>(value.ColumnMetadata),
+            _ => throw ColumnDecodeException.Create<PgInet>(value.ColumnMetadata),
         };
     }
 
@@ -90,7 +90,7 @@ public class PgInet : IPgDbType<PgInet>, IHasArrayType, IEquatable<PgInet>
         
         if (!IPAddress.TryParse(value.Chars[..mid], out IPAddress? ipAddress))
         {
-            throw ColumnDecodeError.Create<PgInet>(
+            throw ColumnDecodeException.Create<PgInet>(
                 value.ColumnMetadata,
                 $"Could not parse '{value}' into an PgInet");
         }
@@ -102,7 +102,7 @@ public class PgInet : IPgDbType<PgInet>, IHasArrayType, IEquatable<PgInet>
 
         if (byte.TryParse(value.Chars[(mid + 1)..], out var parsedPrefix))
         {
-            throw ColumnDecodeError.Create<PgInet>(
+            throw ColumnDecodeException.Create<PgInet>(
                 value.ColumnMetadata,
                 $"Could not parse '{value}' into an PgInet");
         }

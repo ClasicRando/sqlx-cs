@@ -21,7 +21,7 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
     {
         if (!TimeOnly.TryParse(value, null, out TimeOnly time))
         {
-            throw ColumnDecodeError.Create<TimeOnly>(
+            throw ColumnDecodeException.Create<TimeOnly>(
                 value.ColumnMetadata,
                 $"Could not parse '{value}' into a time value");
         }
