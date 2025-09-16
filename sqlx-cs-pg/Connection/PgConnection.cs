@@ -15,6 +15,11 @@ using Sqlx.Postgres.Stream;
 
 namespace Sqlx.Postgres.Connection;
 
+/// <summary>
+/// <see cref="IConnection"/> implementation for a Postgresql database connection. Beyond default
+/// connection implementations, other Postgresql specific functionality is implemented such as
+/// <c>LISTEN/NOTIFY</c> and the <c>COPY</c> protocol.
+/// </summary>
 public sealed partial class PgConnection : IConnection
 {
     private const string BeginQuery = "BEGIN;";
@@ -94,7 +99,7 @@ public sealed partial class PgConnection : IConnection
 
     public async Task<bool> IsValidAsync(CancellationToken cancellationToken = default)
     {
-        ThrowIfNotReady();
+        ThrowIfBrokenOrClosed();
         try
         {
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -191,21 +196,39 @@ public sealed partial class PgConnection : IConnection
         }
     }
 
+    /// <exception cref="PgException">
+    /// If the <see cref="Status"/> value is <see cref="ConnectionStatus.Broken"/> or
+    /// <see cref="ConnectionStatus.Closed"/>
+    /// </exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfNotReady()
+    private void ThrowIfBrokenOrClosed()
     {
-        if (Status is not ConnectionStatus.Idle)
+        if (Status is ConnectionStatus.Broken or ConnectionStatus.Closed)
         {
             throw new PgException(
                 "Attempted to perform operation with a connection that is not idle");
         }
     }
 
+    /// <summary>
+    /// Execute the desired transaction command. If an error occurs trying to commiting a
+    /// transaction, a <c>ROLLBACK</c> command will be tried as a last effort to resolve the
+    /// transaction state, avoid locks and keep consistency.
+    /// </summary>
+    /// <param name="transactionCommand">Transaction command</param>
+    /// <param name="cancellationToken">Token to cancel the async operation</param>
+    /// <exception cref="UnexpectedTransactionState">
+    /// If the transaction command would create an inconsistent state, such as attempting to:
+    /// <list type="bullet">
+    ///     <item>begin a new transaction while already within a transaction</item>
+    ///     <item>commit or rollback a transaction while not within a transaction</item>
+    /// </list>
+    /// </exception>
     private async Task ExecuteTransactionCommand(
         TransactionCommand transactionCommand,
         CancellationToken cancellationToken)
     {
-        ThrowIfNotReady();
+        ThrowIfBrokenOrClosed();
         try
         {
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -244,7 +267,7 @@ public sealed partial class PgConnection : IConnection
             {
                 await _pgStream.SendQueryMessage(RollbackQuery, cancellationToken)
                     .ConfigureAwait(false);
-                await _pgStream.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)
+                await _pgStream.WaitForOrError<ReadyForQueryMessage>(cancellationToken)
                     .ConfigureAwait(false);
             }
             catch
@@ -259,15 +282,25 @@ public sealed partial class PgConnection : IConnection
         }
     }
 
+    /// <summary>
+    /// Keep pulling messages from the connection stream until all pending
+    /// <see cref="ReadyForQueryMessage"/>s have been processed
+    /// </summary>
+    /// <param name="cancellationToken">token to cancel the async operation</param>
     private async Task WaitUntilReady(CancellationToken cancellationToken)
     {
         while (_pendingReadyForQuery > 0)
         {
-            ReadyForQueryMessage message = await _pgStream.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken).ConfigureAwait(false);
+            ReadyForQueryMessage message = await _pgStream.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)
+                .ConfigureAwait(false);
             HandleReadyForQuery(message);
         }
     }
 
+    /// <summary>
+    /// Decrement <see cref="_pendingReadyForQuery"/> and inspect the supplied message
+    /// </summary>
+    /// <param name="readyForQuery">message from server</param>
     private void HandleReadyForQuery(ReadyForQueryMessage readyForQuery)
     {
         if (--_pendingReadyForQuery < 0)

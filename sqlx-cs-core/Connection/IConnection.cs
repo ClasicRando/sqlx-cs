@@ -21,9 +21,10 @@ public interface IConnection : IQueryExecutor, IAsyncDisposable
     bool InTransaction { get; }
 
     /// <summary>
-    /// Open the connection to execute future queries. If this method is called upon an already open
-    /// connection, that physical connection will be closed and a new physical connection will be
-    /// created.
+    /// Open the connection to execute future queries. If this method is called by a connection that
+    /// is already <see cref="ConnectionStatus.Idle"/>, then this method will not change the
+    /// connection state. Otherwise, the physical connection will be closed and a new physical
+    /// connection will be created.
     /// </summary>
     /// <param name="cancellationToken">token to signal a cancellation</param>
     Task OpenAsync(CancellationToken cancellationToken = default);

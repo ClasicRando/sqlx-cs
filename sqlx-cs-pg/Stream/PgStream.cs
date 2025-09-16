@@ -161,8 +161,7 @@ internal sealed partial class PgStream : IAsyncDisposable
                 OnNegotiateProtocolVersion(negotiateProtocolVersion);
                 return null;
             case ErrorResponseMessage errorResponse:
-                if (throwOnError) throw new PgException(errorResponse);
-                return message;
+                return throwOnError ? throw new PgException(errorResponse) : message;
             default:
                 return message;
         }
