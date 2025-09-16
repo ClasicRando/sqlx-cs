@@ -198,7 +198,7 @@ public partial class PgConnection
             UnnamedPortal,
             preparedStatement.StatementName,
             parameterBuffer.ParameterCount,
-            parameterBuffer.Memory);
+            parameterBuffer.Span);
         _pgStream.WriteExecuteMessage(UnnamedPortal, 0);
         _pgStream.WriteCloseMessage(MessageTarget.Portal, UnnamedPortal);
         return sendSync ? WriteSync(cancellationToken) : Task.CompletedTask;

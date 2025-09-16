@@ -5,6 +5,9 @@ using Sqlx.Postgres.Message.Backend;
 
 namespace Sqlx.Postgres.Exceptions;
 
+/// <summary>
+/// Specialized <see cref="SqlxException"/> for Postgres related errors.
+/// </summary>
 public class PgException : SqlxException
 {
     internal PgException(string message, Exception exception) : base(message, exception) {}

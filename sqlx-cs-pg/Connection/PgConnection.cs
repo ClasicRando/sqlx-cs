@@ -196,7 +196,7 @@ public sealed partial class PgConnection : IConnection
         }
     }
 
-    /// <exception cref="PgException">
+    /// <exception cref="InvalidOperationException">
     /// If the <see cref="Status"/> value is <see cref="ConnectionStatus.Broken"/> or
     /// <see cref="ConnectionStatus.Closed"/>
     /// </exception>
@@ -205,7 +205,7 @@ public sealed partial class PgConnection : IConnection
     {
         if (Status is ConnectionStatus.Broken or ConnectionStatus.Closed)
         {
-            throw new PgException(
+            throw new InvalidOperationException(
                 "Attempted to perform operation with a connection that is not idle");
         }
     }

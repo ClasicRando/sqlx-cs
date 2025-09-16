@@ -83,7 +83,7 @@ internal sealed partial class PgStream
         ReadOnlySpan<char> portal,
         ReadOnlySpan<char> statementName,
         short argumentsCount,
-        ReadOnlyMemory<byte> arguments)
+        ReadOnlySpan<byte> arguments)
     {
         _buffer.WriteCode(PgFrontendMessageType.Bind);
         var length = Charsets.Default.GetByteCount(portal) + sizeof(byte)

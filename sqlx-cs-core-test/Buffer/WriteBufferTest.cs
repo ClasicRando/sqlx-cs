@@ -156,19 +156,6 @@ public class WriteBufferTest
     }
 
     [Fact]
-    public void WriteToSpan_Should_MoveForwardReadableBytes()
-    {
-        using var buffer = new WriteBuffer();
-
-        var span = buffer.WriteToSpan(2);
-        span[0] = 1;
-        span[1] = 0;
-        
-        Assert.Equal(2, buffer.ReadableSpan.Length);
-        Assert.Equal([1, 0], buffer.ReadableSpan.ToArray());
-    }
-
-    [Fact]
     public void WriteString_Should_FillBufferWithUtf8Bytes()
     {
         using var buffer = new WriteBuffer();

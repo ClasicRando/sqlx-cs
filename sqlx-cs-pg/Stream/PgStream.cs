@@ -53,23 +53,24 @@ internal sealed partial class PgStream : IAsyncDisposable
                 // logged in!
                 break;
             case ClearTextPasswordAuthMessage:
+                ArgumentNullException.ThrowIfNull(ConnectOptions.Password);
                 await SimplePasswordAuthFlow(
                     ConnectOptions.Username,
-                    ConnectOptions.Password ?? throw new PgException("Cannot connect to database without Password property"),
+                    ConnectOptions.Password,
                     cancellationToken: cancellationToken).ConfigureAwait(false);
                 break;
             case MD5PasswordAuthMessage md5PasswordAuthMessage:
+                ArgumentNullException.ThrowIfNull(ConnectOptions.Password);
                 await SimplePasswordAuthFlow(
                     ConnectOptions.Username,
-                    ConnectOptions.Password ?? throw new PgException("Cannot connect to database without Password property"),
+                    ConnectOptions.Password,
                     salt: md5PasswordAuthMessage.Salt,
                     cancellationToken: cancellationToken).ConfigureAwait(false);
                 break;
             case SaslAuthMessage saslAuthMessage:
-                await SaslAuthFlow(
-                    ConnectOptions.Password ?? throw new PgException("Cannot connect to database without Password property"),
-                    saslAuthMessage,
-                    cancellationToken).ConfigureAwait(false);
+                ArgumentNullException.ThrowIfNull(ConnectOptions.Password);
+                await SaslAuthFlow(ConnectOptions.Password, saslAuthMessage, cancellationToken)
+                    .ConfigureAwait(false);
                 break;
             default:
                 throw new PgException($"Auth request type cannot be handled. {authentication}");

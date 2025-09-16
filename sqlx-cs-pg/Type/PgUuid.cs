@@ -1,6 +1,5 @@
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
-using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -9,11 +8,12 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
 {
     public static void Encode(Guid value, WriteBuffer buffer)
     {
-        var span = buffer.WriteToSpan(16);
+        var span = buffer.GetSpan(16);
         if (!value.TryWriteBytes(span))
         {
-            throw new PgException("Failed to write Guid bytes to buffer");
+            throw ColumnEncodeException.Create<Guid>(DbType, "Failed to write Guid bytes to buffer");
         }
+        buffer.Advance(16);
     }
 
     public static Guid DecodeBytes(PgBinaryValue value)

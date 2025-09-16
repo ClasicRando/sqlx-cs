@@ -23,7 +23,7 @@ public class ColumnDecodeException(
     Exception? cause = null) : SqlxException(
     $"Could not decode value into desired type. Actual type: {typeName}({dataTypeId}). " +
     $"Column: '{columnName}', Desired Output: {decodeType}" +
-    $"{(string.IsNullOrWhiteSpace(reason) ? string.Empty : reason)}",
+    $"{(string.IsNullOrWhiteSpace(reason) ? string.Empty : $"\n{reason}")}",
     cause)
 {
     /// <summary>

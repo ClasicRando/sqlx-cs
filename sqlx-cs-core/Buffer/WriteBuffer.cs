@@ -118,29 +118,6 @@ public sealed class WriteBuffer : IBufferWriter<byte>, IDisposable
         WriteBytes(bytes.Span);
     }
 
-    /// <summary>
-    /// <para>
-    /// Get a writeable <see cref="Span{T}"/> of the internal buffer for a specified length and move
-    /// the write position of the buffer to the index after the span.
-    /// </para>
-    /// <para>
-    /// Calls to this method must write new values to each index in the span or reset the index to
-    /// the default (0). This is due the shared nature of the underlining data and arrays returned
-    /// to the shared pool might not have been cleared beforehand. If no value is written to the
-    /// span's index, the previous value would be preserved and possibly disrupt your intended
-    /// value.
-    /// </para>
-    /// </summary>
-    /// <param name="length">span length to get for writing</param>
-    /// <returns><see cref="Span{T}"/> over the underlining buffer with the desired length</returns>
-    public Span<byte> WriteToSpan(int length)
-    {
-        CheckBound(length);
-        var span = _buffer.AsSpan(_writePosition, length);
-        _writePosition += length;
-        return span;
-    }
-
     public void WriteString(ReadOnlySpan<char> value)
     {
         CheckBound(Encoding.GetByteCount(value));

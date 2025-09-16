@@ -97,4 +97,6 @@ public readonly record struct PgType(int TypeOid)
     public static readonly PgType XmlArray = new(143);
     public static readonly PgType Void = new(2278);
     public static readonly PgType Unspecified = new(0);
+
+    public static implicit operator int(PgType pgType) => pgType.TypeOid;
 }

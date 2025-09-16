@@ -1,4 +1,5 @@
 using Sqlx.Core.Buffer;
+using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Result;
 
@@ -117,7 +118,9 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
                     isFractionalSecond = true;
                     break;
                 default:
-                    throw new PgException($"Unexpected character in interval. Interval: '{value}', char: '{currentChar}'");
+                    throw ColumnDecodeException.Create<PgInterval>(
+                        value.ColumnMetadata,
+                        $"Unexpected character in interval. Interval: '{value}', char: '{currentChar}'");
             }
         }
 

@@ -53,7 +53,7 @@ public sealed class AsyncStream : IAsyncStream
 
                 if (i == endPoints.Length - 1)
                 {
-                    throw new SqlxException("Could not connect to host", e);
+                    throw new IOException("Could not connect to host", e);
                 }
             }
         }
@@ -98,7 +98,7 @@ public sealed class AsyncStream : IAsyncStream
                 .ConfigureAwait(false);
             if (bytesRead == 0)
             {
-                throw new SqlxException("Stream closed unexpectedly");
+                throw new IOException("Stream closed unexpectedly");
             }
             count -= bytesRead;
             _bufferLength += bytesRead;
