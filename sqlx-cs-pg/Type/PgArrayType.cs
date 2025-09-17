@@ -121,7 +121,9 @@ public abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
                 buffer.WriteInt(-1);
                 continue;
             }
-            buffer.WriteLengthPrefixed(false, buf => TType.Encode(element, buf));
+            buffer.StartWritingLengthPrefixed();
+            TType.Encode(element, buffer);
+            buffer.FinishWritingLengthPrefixed(includeLength: false);
         }
     }
 
@@ -203,7 +205,9 @@ public abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?[]
                 buffer.WriteInt(-1);
                 continue;
             }
-            buffer.WriteLengthPrefixed(false, buf => TType.Encode(element.Value, buf));
+            buffer.StartWritingLengthPrefixed();
+            TType.Encode(element.Value, buffer);
+            buffer.FinishWritingLengthPrefixed(includeLength: false);
         }
     }
 

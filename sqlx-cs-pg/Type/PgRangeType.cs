@@ -32,7 +32,9 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
         {
             case BoundType.Included when value.Lower.Value is not null:
             case BoundType.Excluded when value.Lower.Value is not null:
-                buffer.WriteLengthPrefixed(false, buf => TType.Encode(value.Lower.Value, buf));
+                buffer.StartWritingLengthPrefixed();
+                TType.Encode(value.Lower.Value, buffer);
+                buffer.FinishWritingLengthPrefixed(includeLength: false);
                 break;
             case BoundType.Unbounded:
                 break;
@@ -44,7 +46,9 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
         {
             case BoundType.Included when value.Upper.Value is not null:
             case BoundType.Excluded when value.Upper.Value is not null:
-                buffer.WriteLengthPrefixed(false, buf => TType.Encode(value.Upper.Value, buf));
+                buffer.StartWritingLengthPrefixed();
+                TType.Encode(value.Upper.Value, buffer);
+                buffer.FinishWritingLengthPrefixed(includeLength: false);
                 break;
             case BoundType.Unbounded:
                 break;

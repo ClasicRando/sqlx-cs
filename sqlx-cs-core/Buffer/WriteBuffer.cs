@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 
+[assembly: InternalsVisibleTo("sqlx-cs-pg")]
+[assembly: InternalsVisibleTo("sqlx-cs-core-test")]
 namespace Sqlx.Core.Buffer;
 
 /// <summary>
@@ -21,6 +23,7 @@ public sealed class WriteBuffer : IBufferWriter<byte>, IDisposable
     
     private byte[] _buffer;
     private int _writePosition;
+    private int _writeLengthPrefixedMark = -1;
 
     public WriteBuffer(int capacity = DefaultCapacity)
     {
@@ -39,6 +42,26 @@ public sealed class WriteBuffer : IBufferWriter<byte>, IDisposable
 
     /// <summary><see cref="ReadOnlySpan{T}"/> of the bytes written to this buffer</summary>
     public ReadOnlySpan<byte> ReadableSpan => _buffer.AsSpan(0, _writePosition);
+
+    internal void StartWritingLengthPrefixed()
+    {
+        _writeLengthPrefixedMark = _writePosition;
+        WriteInt(0);
+    }
+
+    internal void FinishWritingLengthPrefixed(bool includeLength)
+    {
+        if (_writeLengthPrefixedMark < 0)
+        {
+            return;
+        }
+        var previousWritePosition = _writePosition;
+        var length = _writePosition - _writeLengthPrefixedMark - (includeLength ? 0 : 4);
+        _writePosition = _writeLengthPrefixedMark;
+        WriteInt(length);
+        _writePosition = previousWritePosition;
+        _writeLengthPrefixedMark = -1;
+    }
 
     public void WriteByte(byte value)
     {
@@ -148,36 +171,18 @@ public sealed class WriteBuffer : IBufferWriter<byte>, IDisposable
         }
     }
 
-    /// <summary>
-    /// Perform a Write action against this buffer where the byte count written by the action is
-    /// encoded before the write action.
-    /// </summary>
-    /// <param name="includeLength">
-    /// true if the length integer written before the action includes the length size (4), false if
-    /// the number of bytes written is the total size
-    /// </param>
-    /// <param name="action">arbitrary write action performed against this buffer</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void WriteLengthPrefixed(bool includeLength, Action<WriteBuffer> action)
-    {
-        var start = _writePosition;
-        WriteInt(0);
-        action(this);
-        var size = _writePosition - start - (includeLength ? 0 : 4);
-        Unsafe.WriteUnaligned(
-            ref _buffer[start],
-            BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(size) : size);
-    }
-
     public void Reset()
     {
         _writePosition = 0;
+        _writeLengthPrefixedMark = -1;
     }
 
     public void Dispose()
     {
         ArrayPool.Return(_buffer);
         _buffer = [];
+        _writePosition = -1;
+        _writeLengthPrefixedMark = -1;
     }
     
     // IBufferWriter<byte> implementation

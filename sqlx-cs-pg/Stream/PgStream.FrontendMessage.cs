@@ -38,22 +38,7 @@ internal sealed partial class PgStream
         var extractFloatPointsStr = options.ExtraFloatPoints.ToString();
         var queryTimeout = int.Max((int)options.QueryTimeout.TotalMilliseconds, 0);
         var queryTimeoutStr = queryTimeout.ToString();
-        var length = sizeof(short)
-            + sizeof(short)
-            + UserProperty.Length + sizeof(byte)
-            + Charsets.Default.GetByteCount(options.Username) + sizeof(byte)
-            + (options.Database is not null ? DatabaseProperty.Length + sizeof(byte) + Charsets.Default.GetByteCount(options.Database) + sizeof(byte) : 0)
-            + ExtraFloatDigitsProperty.Length + sizeof(byte)
-            + extractFloatPointsStr.Length + sizeof(byte)
-            + (options.CurrentSchema is not null ? SearchPathProperty.Length + sizeof(byte) + Charsets.Default.GetByteCount(options.CurrentSchema) + sizeof(byte) : 0)
-            + ApplicationNameProperty.Length + sizeof(byte)
-            + Charsets.Default.GetByteCount(options.ApplicationName) + sizeof(byte)
-            + StatementTimeoutProperty.Length + sizeof(byte)
-            + queryTimeoutStr.Length + sizeof(byte)
-            + DefaultProperties.Length
-            + sizeof(byte)
-            + sizeof(int);
-        _buffer.WriteInt(length);
+        _buffer.StartWritingLengthPrefixed();
         _buffer.WriteShort(MajorVersionNo);
         _buffer.WriteShort(MinorVersionNo);
         _buffer.WriteCString(UserProperty);
@@ -76,6 +61,7 @@ internal sealed partial class PgStream
         _buffer.WriteCString(queryTimeoutStr);
         _buffer.WriteBytes(DefaultProperties.AsSpan());
         _buffer.WriteByte(0);
+        _buffer.FinishWritingLengthPrefixed(includeLength: true);
         return Flush(cancellationToken);
     }
     
@@ -86,16 +72,7 @@ internal sealed partial class PgStream
         ReadOnlySpan<byte> arguments)
     {
         _buffer.WriteCode(PgFrontendMessageType.Bind);
-        var length = Charsets.Default.GetByteCount(portal) + sizeof(byte)
-            + Charsets.Default.GetByteCount(statementName) + sizeof(byte)
-            + sizeof(short)
-            + sizeof(short)
-            + sizeof(short)
-            + arguments.Length
-            + sizeof(short)
-            + sizeof(short)
-            + sizeof(int);
-        _buffer.WriteInt(length);
+        _buffer.StartWritingLengthPrefixed();
         _buffer.WriteCString(portal);
         _buffer.WriteCString(statementName);
         _buffer.WriteShort(1);
@@ -104,6 +81,7 @@ internal sealed partial class PgStream
         _buffer.WriteBytes(arguments);
         _buffer.WriteShort(1);
         _buffer.WriteShort(1);
+        _buffer.FinishWritingLengthPrefixed(includeLength: true);
     }
 
     private Task SendSaslInitialMessage(
@@ -149,23 +127,19 @@ internal sealed partial class PgStream
     public void WriteExecuteMessage(ReadOnlySpan<char> portalName, int maxRowCount)
     {
         _buffer.WriteCode(PgFrontendMessageType.Execute);
-        var length = Charsets.Default.GetByteCount(portalName) + sizeof(byte)
-            + sizeof(int)
-            + sizeof(int);
-        _buffer.WriteInt(length);
+        _buffer.StartWritingLengthPrefixed();
         _buffer.WriteCString(portalName);
         _buffer.WriteInt(maxRowCount);
+        _buffer.FinishWritingLengthPrefixed(includeLength: true);
     }
 
     public void WriteCloseMessage(MessageTarget messageTarget, ReadOnlySpan<char> targetName)
     {
         _buffer.WriteCode(PgFrontendMessageType.Close);
-        var length = sizeof(byte)
-            + Charsets.Default.GetByteCount(targetName) + sizeof(byte)
-            + sizeof(int);
-        _buffer.WriteInt(length);
+        _buffer.StartWritingLengthPrefixed();
         _buffer.WriteByte((byte)messageTarget);
         _buffer.WriteCString(targetName);
+        _buffer.FinishWritingLengthPrefixed(includeLength: true);
     }
 
     public void WriteParseMessage(
@@ -174,12 +148,7 @@ internal sealed partial class PgStream
         IReadOnlyList<PgType> pgTypes)
     {
         _buffer.WriteCode(PgFrontendMessageType.Parse);
-        var length = Charsets.Default.GetByteCount(preparedStatementName) + sizeof(byte)
-            + Charsets.Default.GetByteCount(query) + sizeof(byte)
-            + sizeof(short)
-            + (sizeof(int) * pgTypes.Count)
-            + sizeof(int);
-        _buffer.WriteInt(length);
+        _buffer.StartWritingLengthPrefixed();
         _buffer.WriteCString(preparedStatementName);
         _buffer.WriteCString(query);
         _buffer.WriteShort((short)pgTypes.Count);
@@ -187,6 +156,7 @@ internal sealed partial class PgStream
         {
             _buffer.WriteInt(pgType.TypeOid);
         }
+        _buffer.FinishWritingLengthPrefixed(includeLength: true);
     }
 
     public void WriteDescribeMessage(
@@ -194,20 +164,18 @@ internal sealed partial class PgStream
         ReadOnlySpan<char> preparedStatementName)
     {
         _buffer.WriteCode(PgFrontendMessageType.Describe);
-        var length = sizeof(byte)
-            + Charsets.Default.GetByteCount(preparedStatementName) + sizeof(byte)
-            + sizeof(int);
-        _buffer.WriteInt(length);
+        _buffer.StartWritingLengthPrefixed();
         _buffer.WriteByte((byte)messageTarget);
         _buffer.WriteCString(preparedStatementName);
+        _buffer.FinishWritingLengthPrefixed(includeLength: true);
     }
 
     public Task SendQueryMessage(ReadOnlySpan<char> query, CancellationToken cancellationToken)
     {
         _buffer.WriteCode(PgFrontendMessageType.Query);
-        var length = Charsets.Default.GetByteCount(query) + sizeof(byte) + sizeof(int);
-        _buffer.WriteInt(length);
+        _buffer.StartWritingLengthPrefixed();
         _buffer.WriteCString(query);
+        _buffer.FinishWritingLengthPrefixed(includeLength: true);
         return Flush(cancellationToken);
     }
 

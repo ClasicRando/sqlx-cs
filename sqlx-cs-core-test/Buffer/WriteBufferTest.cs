@@ -181,13 +181,13 @@ public class WriteBufferTest
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void WriteLengthPrefixed_Should_PerformBufferActionsThenWriteFullLength(bool includeLength)
+    public void WriteLengthPrefixed_Should_AllowForWritingToBufferWithALengthPrefix(bool includeLength)
     {
         using var buffer = new WriteBuffer();
         
-        buffer.WriteLengthPrefixed(
-            includeLength,
-            buf => buf.WriteByte(1));
+        buffer.StartWritingLengthPrefixed();
+        buffer.WriteByte(1);
+        buffer.FinishWritingLengthPrefixed(includeLength);
 
         var bytes = buffer.ReadableSpan.ToArray();
         var readBuffer = new ReadBuffer(bytes.AsSpan());
