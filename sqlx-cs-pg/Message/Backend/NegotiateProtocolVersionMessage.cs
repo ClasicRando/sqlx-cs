@@ -2,11 +2,16 @@ using Sqlx.Core.Buffer;
 
 namespace Sqlx.Postgres.Message.Backend;
 
-internal sealed class NegotiateProtocolVersionMessage(int minProtocolVersion, string[] protocolOptionsNotRecognized) : IPgBackendMessage, IPgBackendMessageDecoder<NegotiateProtocolVersionMessage>
+/// <summary>
+/// Message sent by the server to signal that the intended minor protocol version is too high or
+/// unsupported protocol options were supplied. This message is always followed by an
+/// <see cref="ErrorResponseMessage"/> since the login attempt failed.
+/// </summary>
+internal record NegotiateProtocolVersionMessage(
+    int NewestMinorProtocolVersion,
+    string[] ProtocolOptionsNotRecognized)
+    : IPgBackendMessage, IPgBackendMessageDecoder<NegotiateProtocolVersionMessage>
 {
-    internal int MinProtocolVersion { get; } = minProtocolVersion;
-    internal string[] ProtocolOptionsNotRecognized { get; } = protocolOptionsNotRecognized;
-    
     public static NegotiateProtocolVersionMessage Decode(ReadBuffer buffer)
     {
         var newestMinorProtocol = buffer.ReadInt();

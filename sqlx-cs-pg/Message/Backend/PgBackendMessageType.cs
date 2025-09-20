@@ -15,7 +15,6 @@ internal enum PgBackendMessageType : byte
     DataRow = (byte)'D',
     EmptyQueryResponse = (byte)'I',
     ErrorResponse = (byte)'E',
-    FunctionCallResponse = (byte)'V',
     NegotiateProtocolVersion = (byte)'v',
     NoData = (byte)'n',
     NoticeResponse = (byte)'N',

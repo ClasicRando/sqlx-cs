@@ -2,12 +2,14 @@ using Sqlx.Core.Buffer;
 
 namespace Sqlx.Postgres.Message.Backend;
 
-internal sealed class NotificationResponseMessage(int processId, string channelName, string payload) : IPgBackendMessage, IPgBackendMessageDecoder<NotificationResponseMessage>
+/// <summary>
+/// Message sent by the server when an asynchronous notification is sent. This message will only be
+/// sent if the connection is listening to the <see cref="ChannelName"/> that is associated with the
+/// notification.
+/// </summary>
+internal record NotificationResponseMessage(int ProcessId, string ChannelName, string Payload)
+    : IPgBackendMessage, IPgBackendMessageDecoder<NotificationResponseMessage>
 {
-    internal int ProcessId { get; } = processId;
-    internal string ChannelName { get; } = channelName;
-    internal string Payload { get; } = payload;
-    
     public static NotificationResponseMessage Decode(ReadBuffer buffer)
     {
         return new NotificationResponseMessage(

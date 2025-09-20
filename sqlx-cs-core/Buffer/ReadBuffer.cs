@@ -31,7 +31,6 @@ public ref struct ReadBuffer
     /// </summary>
     /// <param name="count">number of bytes to skip</param>
     /// <returns>a range of the skipped indexes</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Range Skip(int count)
     {
         CheckBound(count);
@@ -40,7 +39,6 @@ public ref struct ReadBuffer
         return new Range(start, _position);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public byte ReadByte()
     {
         CheckBound(sizeof(byte));
@@ -49,7 +47,6 @@ public ref struct ReadBuffer
         return result;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public short ReadShort()
     {
         CheckBound(sizeof(short));
@@ -58,7 +55,6 @@ public ref struct ReadBuffer
         return BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(result) : result;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int ReadInt()
     {
         CheckBound(sizeof(int));
@@ -67,7 +63,6 @@ public ref struct ReadBuffer
         return BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(result) : result;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public long ReadLong()
     {
         CheckBound(sizeof(long));
@@ -76,7 +71,6 @@ public ref struct ReadBuffer
         return BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(result) : result;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float ReadFloat()
     {
         CheckBound(sizeof(float));
@@ -87,7 +81,6 @@ public ref struct ReadBuffer
         return result;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public double ReadDouble()
     {
         CheckBound(sizeof(double));
@@ -101,7 +94,6 @@ public ref struct ReadBuffer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> ReadBytesAsSpan() => ReadBytesAsSpan(Remaining);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> ReadBytesAsSpan(int length)
     {
         CheckBound(length);
@@ -113,7 +105,6 @@ public ref struct ReadBuffer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public byte[] ReadBytes() => ReadBytes(Remaining);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public byte[] ReadBytes(int length)
     {
         CheckBound(length);
@@ -133,7 +124,6 @@ public ref struct ReadBuffer
     /// </summary>
     /// <param name="length">number of bytes to convert to a string</param>
     /// <returns>UTF-8 character string</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string ReadText(int length)
     {
         CheckBound(length);
@@ -147,7 +137,6 @@ public ref struct ReadBuffer
     /// buffer is the string, but it does not end with a null terminator then the method will fail.
     /// </summary>
     /// <returns>next available null terminated string from the buffer</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string ReadCString()
     {
         var index = _position;

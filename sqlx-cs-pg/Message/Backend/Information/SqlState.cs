@@ -1,5 +1,11 @@
 namespace Sqlx.Postgres.Message.Backend.Information;
 
+/// <summary>
+/// <para>
+/// State of a Notice or Error response from the database backend
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/errcodes-appendix.html">docs</a>
+/// </summary>
 public enum SqlState
 {
     SuccessfulCompletion,

@@ -3,7 +3,6 @@ using System.Text;
 using Sqlx.Core;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Message.Auth;
-using Sqlx.Postgres.Message.Backend;
 
 namespace Sqlx.Postgres.Stream;
 
@@ -92,10 +91,9 @@ internal partial class PgStream
 
     private async Task<SaslContinueAuthMessage> ReceiveContinueMessage(CancellationToken cancellationToken)
     {
-        var authentication = await ReceiveNextMessageAs<AuthenticationMessage>(cancellationToken)
+        var authentication = await ReceiveNextMessageAs<IAuthMessage>(cancellationToken)
             .ConfigureAwait(false);
-        return PgException.CheckIfIs<IAuthMessage, SaslContinueAuthMessage>(
-            authentication.AuthMessage);
+        return PgException.CheckIfIs<IAuthMessage, SaslContinueAuthMessage>(authentication);
     }
     
     private async Task<byte[]> SendClientFinalMessage(
@@ -188,10 +186,9 @@ internal partial class PgStream
 
     private async Task<SaslFinalAuthMessage> ReceiveFinalAuthMessage(CancellationToken cancellationToken)
     {
-        var authentication = await ReceiveNextMessageAs<AuthenticationMessage>(cancellationToken)
+        var authentication = await ReceiveNextMessageAs<IAuthMessage>(cancellationToken)
             .ConfigureAwait(false);
-        return PgException.CheckIfIs<IAuthMessage, SaslFinalAuthMessage>(
-            authentication.AuthMessage);
+        return PgException.CheckIfIs<IAuthMessage, SaslFinalAuthMessage>(authentication);
     }
 
     private static string ValidateServerFinalMessage(SaslFinalAuthMessage finalAuthMessage)
@@ -217,8 +214,8 @@ internal partial class PgStream
 
     private async Task ReceiveOkAuthMessage(CancellationToken cancellationToken)
     {
-        var authentication = await ReceiveNextMessageAs<AuthenticationMessage>(cancellationToken)
+        var authentication = await ReceiveNextMessageAs<IAuthMessage>(cancellationToken)
             .ConfigureAwait(false);
-        PgException.CheckIfIs<IAuthMessage, OkAuthMessage>(authentication.AuthMessage);
+        PgException.CheckIfIs<IAuthMessage, OkAuthMessage>(authentication);
     }
 }

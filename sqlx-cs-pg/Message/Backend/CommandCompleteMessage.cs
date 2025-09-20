@@ -2,7 +2,16 @@ using Sqlx.Core.Buffer;
 
 namespace Sqlx.Postgres.Message.Backend;
 
-internal sealed class CommandCompleteMessage(long rowCount, string message) : IPgBackendMessage, IPgBackendMessageDecoder<CommandCompleteMessage>
+/// <summary>
+/// <para>
+/// Message sent to signal that a command was completed and no more rows for that command will be
+/// sent. The actual message contains a CString describing the operations outcome but the number of
+/// rows impacted is parsed from the message (if a count can be extracted).
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-COMMANDCOMPLETE">docs</a>
+/// </summary>
+internal sealed class CommandCompleteMessage(long rowCount, string message)
+    : IPgBackendMessage, IPgBackendMessageDecoder<CommandCompleteMessage>
 {
     internal long RowCount { get; } = rowCount;
     internal string Message { get; } = message;
@@ -10,29 +19,28 @@ internal sealed class CommandCompleteMessage(long rowCount, string message) : IP
     public static CommandCompleteMessage Decode(ReadBuffer buffer)
     {
         var message = buffer.ReadCString();
-        var words = message.Split(' ');
-        var rowCount = ExtractRowCount(words);
+        var rowCount = ExtractRowCount(message);
         return new CommandCompleteMessage(rowCount, message);
     }
 
-    private static long ExtractRowCount(string[] words)
+    /// <summary>
+    /// Messages are in a format of a command keyword, followed by the rows count (except for INSERT
+    /// which always has 0 before the row count) to extract the row count iterate backwards until
+    /// we find a non-digit character and parse that span.
+    /// </summary>
+    /// <param name="message">Message to parse</param>
+    /// <returns>Row count or -1 if parsing fails</returns>
+    private static long ExtractRowCount(ReadOnlySpan<char> message)
     {
-        if (words.Length <= 1)
+        var i = message.Length - 1;
+        for (; i >= 0; i--)
         {
-            return 0;
+            if (char.IsDigit(message[i])) continue;
+            
+            i++;
+            break;
         }
 
-        long rowCount;
-        if (words[0] != "INSERT")
-        {
-            return long.TryParse(words[1], out rowCount) ? 0 : rowCount;
-        }
-        
-        if (words.Length < 3 || long.TryParse(words[2], out rowCount))
-        {
-            return 0;
-        }
-        return rowCount;
-
+        return long.TryParse(message[i..], out var rowCount) ? rowCount : -1;
     }
 }

@@ -68,7 +68,7 @@ internal sealed class PgParameterBuffer : IDisposable
     /// <summary>
     /// Specialized method for encoding a raw span of chars
     /// </summary>
-    /// <param name="chars"></param>
+    /// <param name="chars">Chars to encode</param>
     public void EncodeChars(ReadOnlySpan<char> chars)
     {
         _buffer.WriteInt(Charsets.Default.GetByteCount(chars));

@@ -4,10 +4,14 @@ using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Message.Backend;
 
-internal sealed class RowDescriptionMessage(PgColumnMetadata[] columnMetadata) : IPgBackendMessage, IPgBackendMessageDecoder<RowDescriptionMessage>
+/// <summary>
+/// Message sent by the backend to describe the rows returned by a simple query or prepared
+/// statement. This message is sent in response to a describe request of a prepared statement sent
+/// by the client or packaged into the response of a simple query to describe the result. 
+/// </summary>
+internal record RowDescriptionMessage(PgColumnMetadata[] ColumnMetadata)
+    : IPgBackendMessage, IPgBackendMessageDecoder<RowDescriptionMessage>
 {
-    internal PgColumnMetadata[] ColumnMetadata { get; } = columnMetadata;
-    
     public static RowDescriptionMessage Decode(ReadBuffer buffer)
     {
         var columnCount = buffer.ReadShort();

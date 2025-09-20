@@ -3,22 +3,17 @@ using Sqlx.Postgres.Copy;
 
 namespace Sqlx.Postgres.Message.Backend;
 
-internal sealed class CopyResponse(CopyFormat copyFormat, short columnCount, List<CopyFormat> copyFormats)
+/// <summary>
+/// <c>COPY</c> command response specifying the overall format of the copied data and the number of
+/// columns. Technically the contents of the message also contain the format of each column but that
+/// will not deviate from the overall format so keeping that data in the message is not important.
+/// </summary>
+internal readonly struct CopyResponse(CopyFormat CopyFormat, short ColumnCount)
 {
-    internal CopyFormat CopyFormat { get; } = copyFormat;
-    internal short ColumnCount { get; } = columnCount;
-    internal IReadOnlyList<CopyFormat> CopyFormats { get; } = copyFormats;
-    
     internal static CopyResponse Decode(ReadBuffer buffer)
     {
         CopyFormat copyFormat = CopyFormatExtensions.FromByte(buffer.ReadByte());
         var columnCount = buffer.ReadShort();
-        List<CopyFormat> copyFormats = [];
-        for (var i = 1; i < columnCount; i++)
-        {
-            copyFormats.Add(CopyFormatExtensions.FromByte(buffer.ReadByte()));
-        }
-
-        return new CopyResponse(copyFormat, columnCount, copyFormats);
+        return new CopyResponse(copyFormat, columnCount);
     }
 }

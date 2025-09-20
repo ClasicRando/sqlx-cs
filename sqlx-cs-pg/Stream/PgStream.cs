@@ -45,9 +45,9 @@ internal sealed partial class PgStream : IAsyncDisposable
     
     private async Task HandleAuthFlow(CancellationToken cancellationToken)
     {
-        var authentication = await ReceiveNextMessageAs<AuthenticationMessage>(cancellationToken)
+        var authentication = await ReceiveNextMessageAs<IAuthMessage>(cancellationToken)
             .ConfigureAwait(false);
-        switch (authentication.AuthMessage)
+        switch (authentication)
         {
             case OkAuthMessage:
                 // logged in!
@@ -194,7 +194,7 @@ internal sealed partial class PgStream : IAsyncDisposable
     {
         _logger.LogNegotiateProtocolVersion(
             SqlxConfig.DetailedLoggingLevel,
-            message.MinProtocolVersion,
+            message.NewestMinorProtocolVersion,
             message.ProtocolOptionsNotRecognized);
     }
 
@@ -255,7 +255,6 @@ internal sealed partial class PgStream : IAsyncDisposable
             PgBackendMessageType.EmptyQueryResponse => throw new PgException(
                 "Empty query response packet should never be received"),
             PgBackendMessageType.ErrorResponse => ErrorResponseMessage.Decode(buffer),
-            PgBackendMessageType.FunctionCallResponse => FunctionCallResponseMessage.Decode(buffer),
             PgBackendMessageType.NegotiateProtocolVersion =>
                 NegotiateProtocolVersionMessage.Decode(buffer),
             PgBackendMessageType.NoData => NoDataMessage.Instance,

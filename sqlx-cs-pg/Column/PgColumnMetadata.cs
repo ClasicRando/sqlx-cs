@@ -5,6 +5,7 @@ namespace Sqlx.Postgres.Column;
 
 /// <summary>
 /// Column metadata from a postgres query description
+/// TODO change to struct
 /// </summary>
 /// <param name="FieldName">Field name</param>
 /// <param name="TableOid">OID of the table (0 if the field is not part of a table)</param>

@@ -3,37 +3,45 @@ using Sqlx.Core;
 
 namespace Sqlx.Postgres.Message.Frontend;
 
+/// <summary>
+/// Helper class for handling password message creation as either simple and MD5 hashed passwords.
+/// </summary>
 internal static class PasswordHelper
 {
-    internal static byte[] CreateSimplePassword(string username, string password, byte[]? salt)
+    /// <summary>
+    /// Perform an MD5 hash digest on the username, password and salt. Resulting bytes are written
+    /// to the final <paramref name="hexDigest"/> parameter.
+    /// </summary>
+    /// <param name="username">Username used for authentication</param>
+    /// <param name="password">Password used for authentication</param>
+    /// <param name="salt">Salt sent by the server for MD5 hashing</param>
+    /// <param name="hexDigest">Output buffer to write final digest bytes to</param>
+    public static void CreateMd5HashedPassword(
+        ReadOnlySpan<char> username,
+        ReadOnlySpan<char> password,
+        ReadOnlySpan<byte> salt,
+        Span<byte> hexDigest)
     {
-        return salt is null
-            ? Charsets.Default.GetBytes(password)
-            : CreateMd5HashedPassword(username, password, salt);
-    }
-
-    private static byte[] CreateMd5HashedPassword(string username, string password, byte[] salt)
-    {
-        var usernameBytes = Charsets.Default.GetBytes(username);
-        var passwordBytes = Charsets.Default.GetBytes(password);
-        var hexDigest = new byte[35];
+        Span<byte> usernameBytes = stackalloc byte[Charsets.Default.GetByteCount(username)];
+        Charsets.Default.GetBytes(username, usernameBytes);
+        Span<byte> passwordBytes = stackalloc byte[Charsets.Default.GetByteCount(password)];
+        Charsets.Default.GetBytes(password, passwordBytes);
 
         // Initial Digest
-        var digestBuffer = new byte[usernameBytes.Length + passwordBytes.Length];
-        passwordBytes.CopyTo(digestBuffer.AsSpan());
-        usernameBytes.CopyTo(digestBuffer.AsSpan(passwordBytes.Length));
+        Span<byte> digestBuffer = stackalloc byte[usernameBytes.Length + passwordBytes.Length];
+        passwordBytes.CopyTo(digestBuffer);
+        usernameBytes.CopyTo(digestBuffer[passwordBytes.Length..]);
         Md5BytesToHex(MD5.HashData(digestBuffer), hexDigest, 0);
 
         // Second digest with salt
-        digestBuffer = new byte[32 + salt.Length];
-        hexDigest.AsSpan(0, 32).CopyTo(digestBuffer.AsSpan());
-        salt.CopyTo(digestBuffer.AsSpan(32));
+        digestBuffer = stackalloc byte[32 + salt.Length];
+        hexDigest[..32].CopyTo(digestBuffer);
+        salt.CopyTo(digestBuffer[32..]);
         Md5BytesToHex(MD5.HashData(digestBuffer), hexDigest, 3);
 
         hexDigest[0] = (byte)'m';
         hexDigest[1] = (byte)'d';
         hexDigest[2] = (byte)'5';
-        return hexDigest;
     }
 
     private static ReadOnlySpan<byte> Lookup => "0123456789abcdef"u8;
@@ -45,7 +53,7 @@ internal static class PasswordHelper
     /// <param name="md5Bytes">bytes returned from an MD5 digest</param>
     /// <param name="hexDigest">output buffer for the resulting hex character bytes</param>
     /// <param name="offset">offset within the <paramref name="hexDigest"/> buffer to start at</param>
-    private static void Md5BytesToHex(byte[] md5Bytes, byte[] hexDigest, int offset)
+    private static void Md5BytesToHex(Span<byte> md5Bytes, Span<byte> hexDigest, int offset)
     {
         var pos = offset;
         var i = 0;
