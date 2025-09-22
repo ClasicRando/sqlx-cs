@@ -229,7 +229,7 @@ public partial class PgConnection
                 .ConfigureAwait(false);
             IPgBackendMessage? postProcessMessage = await _pgStream.ApplyStandardMessageProcessing(
                 backendMessage,
-                cancellationToken: cancellationToken)
+                cancellationToken)
                 .ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
             switch (postProcessMessage)
@@ -329,7 +329,7 @@ public partial class PgConnection
                 .ConfigureAwait(false);
             IPgBackendMessage? postProcessMessage = await _pgStream.ApplyStandardMessageProcessing(
                 backendMessage,
-                cancellationToken: cancellationToken)
+                cancellationToken)
                 .ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
             switch (postProcessMessage)

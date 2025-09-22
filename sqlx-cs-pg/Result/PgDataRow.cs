@@ -182,7 +182,7 @@ internal sealed class PgDataRow : IDataRow
             throw new SqlxException($"Expected field #{index} to be non-null but found null");
         }
         
-        if (TType.DbType != columnData.ColumnMetadata.PgType
+        if (TType.DbType.TypeOid != columnData.ColumnMetadata.PgType.TypeOid
             && !TType.IsCompatible(columnData.ColumnMetadata.PgType))
         {
             throw ColumnDecodeException.Create<TResult>(columnData.ColumnMetadata);

@@ -8,7 +8,6 @@ using Sqlx.Core.Stream;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Logging;
-using Sqlx.Postgres.Message;
 using Sqlx.Postgres.Message.Auth;
 using Sqlx.Postgres.Message.Backend;
 using Sqlx.Postgres.Notify;
@@ -85,12 +84,12 @@ internal sealed partial class PgStream : IAsyncDisposable
                 .ConfigureAwait(false);
             IPgBackendMessage? postProcessMessage = await ApplyStandardMessageProcessing(
                 backendMessage,
-                handleNotification: false,
-                cancellationToken: cancellationToken)
+                cancellationToken,
+                handleNotification: false)
                 .ConfigureAwait(false);
-            if (postProcessMessage is NotificationResponseMessage result)
+            if (postProcessMessage is PgNotification result)
             {
-                return new PgNotification(result.ProcessId, result.ChannelName, result.Payload);
+                return result;
             }
             
             _logger.LogIgnoreUnexpectedMessage(
@@ -119,8 +118,8 @@ internal sealed partial class PgStream : IAsyncDisposable
                 .ConfigureAwait(false);
             IPgBackendMessage? postProcessMessage = await ApplyStandardMessageProcessing(
                 backendMessage,
-                throwOnError: false,
-                cancellationToken: cancellationToken)
+                cancellationToken,
+                throwOnError: false)
                 .ConfigureAwait(false);
             switch (postProcessMessage)
             {
@@ -139,18 +138,18 @@ internal sealed partial class PgStream : IAsyncDisposable
 
     internal async Task<IPgBackendMessage?> ApplyStandardMessageProcessing(
         IPgBackendMessage message,
+        CancellationToken cancellationToken,
         bool throwOnError = true,
-        bool handleNotification = true,
-        CancellationToken cancellationToken = default)
+        bool handleNotification = true)
     {
         switch (message)
         {
             case NoticeResponseMessage noticeResponse:
                 OnNotice(noticeResponse);
                 return null;
-            case NotificationResponseMessage notificationResponse:
-                if (!handleNotification) return notificationResponse;
-                await OnNotification(notificationResponse, cancellationToken).ConfigureAwait(false);
+            case PgNotification notification:
+                if (!handleNotification) return notification;
+                await OnNotification(notification, cancellationToken).ConfigureAwait(false);
                 return null;
             case BackendDataKeyMessage backendDataKey:
                 OnBackendDataKey(backendDataKey);
@@ -173,9 +172,10 @@ internal sealed partial class PgStream : IAsyncDisposable
         _logger.LogNotice(SqlxConfig.DetailedLoggingLevel, noticeResponse);
     }
 
-    private ValueTask OnNotification(NotificationResponseMessage message, CancellationToken cancellationToken)
+    private ValueTask OnNotification(
+        PgNotification notification,
+        CancellationToken cancellationToken)
     {
-        PgNotification notification = new(message.ProcessId, message.ChannelName, message.Payload);
         return _notifications.Writer.WriteAsync(notification, cancellationToken);
     }
 
@@ -259,7 +259,7 @@ internal sealed partial class PgStream : IAsyncDisposable
                 NegotiateProtocolVersionMessage.Decode(buffer),
             PgBackendMessageType.NoData => NoDataMessage.Instance,
             PgBackendMessageType.NoticeResponse => NoticeResponseMessage.Decode(buffer),
-            PgBackendMessageType.NotificationResponse => NotificationResponseMessage.Decode(buffer),
+            PgBackendMessageType.NotificationResponse => PgNotification.Decode(buffer),
             PgBackendMessageType.ParameterDescription => ParameterDescriptionMessage.Decode(buffer),
             PgBackendMessageType.ParameterStatus => ParameterStatusMessage.Decode(buffer),
             PgBackendMessageType.ParseComplete => ParseCompleteMessage.Instance,
