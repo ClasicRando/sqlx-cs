@@ -4,10 +4,16 @@ using Sqlx.Core;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Exceptions;
+using Sqlx.Postgres.Generator.Query;
 using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Query;
 
+/// <summary>
+/// <see cref="IExecutableQuery"/> implementation for Postgres. Parameters are encoded into a
+/// <see cref="PgParameterBuffer"/> and the query is executed using the <see cref="IQueryExecutor"/>
+/// supplied to the constructor.
+/// </summary>
 internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IExecutableQuery
 {
     private IQueryExecutor? _queryExecutor = queryExecutor;
@@ -148,14 +154,6 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
         return value is null ? EncodeNull() : Encode<TValue, TType>(value);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal PgExecutableQuery EncodeNullableStruct<TValue, TType>(TValue? value)
-        where TType : IPgDbType<TValue>
-        where TValue : struct
-    {
-        return value.HasValue ? Encode<TValue, TType>(value.Value) : EncodeNull();
-    }
-
     private PgExecutableQuery EncodeNull()
     {
         ParameterBuffer.EncodeNull();
@@ -163,223 +161,497 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
     }
 }
 
+/// <summary>
+/// Extensions class for Postgres specific binding to an <see cref="IQuery"/> instance. These
+/// extension methods are included when you include the Postgres module and assume your
+/// <see cref="IQuery"/> instance is a <see cref="PgExecutableQuery"/>.
+/// </summary>
 public static partial class ExecutableQueryExtensions
 {
-    public static IQuery Bind(this IQuery query, PgTimeTz value)
-    {
-        return BindPg<PgTimeTz, PgTimeTz>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgTimeTz"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the Postgres specific <c>TIME WITH TIME ZONE</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Timezone aware time value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgTimeTz value);
     
-    public static IQuery Bind(this IQuery query, PgTimeTz? value)
-    {
-        return BindPgNullableStruct<PgTimeTz, PgTimeTz>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, PgPoint value)
-    {
-        return BindPg<PgPoint, PgPoint>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgTimeTz"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the Postgres specific <c>TIME WITH TIME ZONE</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Timezone aware time value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgTimeTz? value);
     
-    public static IQuery Bind(this IQuery query, PgPoint? value)
-    {
-        return BindPgNullableStruct<PgPoint, PgPoint>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, PgLine value)
-    {
-        return BindPg<PgLine, PgLine>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgPoint"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the PostGIS specific <c>POINT</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Point value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgPoint value);
     
-    public static IQuery Bind(this IQuery query, PgLine? value)
-    {
-        return BindPgNullableStruct<PgLine, PgLine>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, PgLineSegment value)
-    {
-        return BindPg<PgLineSegment, PgLineSegment>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgPoint"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the PostGIS specific <c>POINT</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Point value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgPoint? value);
     
-    public static IQuery Bind(this IQuery query, PgLineSegment? value)
-    {
-        return BindPgNullableStruct<PgLineSegment, PgLineSegment>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, PgBox value)
-    {
-        return BindPg<PgBox, PgBox>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgLine"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the PostGIS specific <c>LINE</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Line value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgLine value);
     
-    public static IQuery Bind(this IQuery query, PgBox? value)
-    {
-        return BindPgNullableStruct<PgBox, PgBox>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, PgPath value)
-    {
-        return BindPg<PgPath, PgPath>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgLine"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the PostGIS specific <c>LINE</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Line value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgLine? value);
     
-    public static IQuery Bind(this IQuery query, PgPath? value)
-    {
-        return BindPgNullableStruct<PgPath, PgPath>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, PgPolygon value)
-    {
-        return BindPg<PgPolygon, PgPolygon>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgLineSegment"/> parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This maps to the PostGIS specific <c>LSEG</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Line segment value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgLineSegment value);
     
-    public static IQuery Bind(this IQuery query, PgPolygon? value)
-    {
-        return BindPgNullableStruct<PgPolygon, PgPolygon>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, PgCircle value)
-    {
-        return BindPg<PgCircle, PgCircle>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgLineSegment"/> parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This maps to the PostGIS specific <c>LSEG</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Line segment value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgLineSegment? value);
     
-    public static IQuery Bind(this IQuery query, PgCircle? value)
-    {
-        return BindPgNullableStruct<PgCircle, PgCircle>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, PgInterval value)
-    {
-        return BindPg<PgInterval, PgInterval>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgBox"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the PostGIS specific <c>BOX</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Box value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgBox value);
     
-    public static IQuery Bind(this IQuery query, PgInterval? value)
-    {
-        return BindPgNullableStruct<PgInterval, PgInterval>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, PgMacAddress value)
-    {
-        return BindPg<PgMacAddress, PgMacAddress>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgBox"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the PostGIS specific <c>BOX</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Box value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgBox? value);
     
-    public static IQuery Bind(this IQuery query, PgMacAddress? value)
-    {
-        return BindPgNullableStruct<PgMacAddress, PgMacAddress>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, PgMoney value)
-    {
-        return BindPg<PgMoney, PgMoney>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgPath"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the PostGIS specific <c>PATH</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Path value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgPath value);
     
-    public static IQuery Bind(this IQuery query, PgMoney? value)
-    {
-        return BindPgNullableStruct<PgMoney, PgMoney>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgPath"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the PostGIS specific <c>PATH</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Path value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgPath? value);
     
-    public static IQuery Bind(this IQuery query, PgInet? value)
-    {
-        return BindPgNullableClass<PgInet, PgInet>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, PgRange<long>? value)
-    {
-        return BindPgNullableClass<PgRange<long>, PgRangeType<long, PgLong>>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgPolygon"/> parameter to query. This puts that value as the nth parameter
+    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
+    /// to the PostGIS specific <c>POLYGON</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Polygon value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgPolygon value);
     
-    public static IQuery Bind(this IQuery query, PgRange<int>? value)
-    {
-        return BindPgNullableClass<PgRange<int>, PgRangeType<int, PgInt>>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, PgRange<DateOnly>? value)
-    {
-        return BindPgNullableClass<PgRange<DateOnly>, PgRangeType<DateOnly, PgDate>>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, PgRange<DateTime>? value)
-    {
-        return BindPgNullableClass<PgRange<DateTime>, PgRangeType<DateTime, PgDateTime>>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, PgRange<DateTimeOffset>? value)
-    {
-        return BindPgNullableClass<PgRange<DateTimeOffset>, PgRangeType<DateTimeOffset, PgDateTimeOffset>>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgPolygon"/> parameter to query. This puts that value as the nth parameter
+    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
+    /// to the PostGIS specific <c>POLYGON</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Polygon value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgPolygon? value);
     
-    public static IQuery Bind(this IQuery query, PgRange<decimal>? value)
-    {
-        return BindPgNullableClass<PgRange<decimal>, PgRangeType<decimal, PgDecimal>>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, bool?[]? value)
-    {
-        return BindPgArrayStruct<bool, PgBool>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, short?[]? value)
-    {
-        return BindPgArrayStruct<short, PgShort>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgCircle"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the PostGIS specific <c>CIRCLE</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Circle value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgCircle value);
     
-    public static IQuery Bind(this IQuery query, int?[]? value)
-    {
-        return BindPgArrayStruct<int, PgInt>(query, value);
-    }
+    /// <summary>
+    /// Bind <see cref="PgCircle"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the PostGIS specific <c>CIRCLE</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Circle value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgCircle? value);
+    
+    /// <summary>
+    /// Bind <see cref="PgInterval"/> parameter to query. This puts that value as the nth parameter
+    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
+    /// to the Postgres specific <c>INTERVAL</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Interval value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgInterval value);
+    
+    /// <summary>
+    /// Bind <see cref="PgInterval"/> parameter to query. This puts that value as the nth parameter
+    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
+    /// to the Postgres specific <c>INTERVAL</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Interval value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgInterval? value);
+    
+    /// <summary>
+    /// Bind <see cref="PgMacAddress"/> parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This maps to the Postgres specific <c>MACADDRESS</c> and <c>MACADDRESS8</c> types.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">MAC Address value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgMacAddress value);
+    
+    /// <summary>
+    /// Bind <see cref="PgMacAddress"/> parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This maps to the Postgres specific <c>MACADDRESS</c> and <c>MACADDRESS8</c> types.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">MAC Address value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgMacAddress? value);
+    
+    /// <summary>
+    /// Bind <see cref="PgMoney"/> parameter to query. This puts that value as the nth parameter
+    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
+    /// to the Postgres specific <c>MONEY</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Money value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgMoney value);
+    
+    /// <summary>
+    /// Bind <see cref="PgMoney"/> parameter to query. This puts that value as the nth parameter
+    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
+    /// to the Postgres specific <c>MONEY</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Money value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgMoney? value);
+    
+    /// <summary>
+    /// Bind <see cref="PgInet"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the Postgres specific <c>INET</c> and <c>CIDR</c> types.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Network address value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgInet? value);
+    
+    /// <summary>
+    /// Bind <see cref="PgRange{T}"/> of <see cref="long"/> parameter to query. This puts that value
+    /// as the nth parameter in the parameterized query, where n is the current parameter as a
+    /// 1-based index. This maps to the Postgres specific <c>INT8RANGE</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Long range value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgRangeType<long, PgLong>))]
+    public static partial IQuery Bind(this IQuery query, PgRange<long>? value);
+    
+    /// <summary>
+    /// Bind <see cref="PgRange{T}"/> of <see cref="int"/> parameter to query. This puts that value
+    /// as the nth parameter in the parameterized query, where n is the current parameter as a
+    /// 1-based index. This maps to the Postgres specific <c>INT4RANGE</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Int range value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgRangeType<int, PgInt>))]
+    public static partial IQuery Bind(this IQuery query, PgRange<int>? value);
+    
+    /// <summary>
+    /// Bind <see cref="PgRange{T}"/> of <see cref="DateOnly"/> parameter to query. This puts that
+    /// value as the nth parameter in the parameterized query, where n is the current parameter as a
+    /// 1-based index. This maps to the Postgres specific <c>DATERANGE</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Date range value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgRangeType<DateOnly, PgDate>))]
+    public static partial IQuery Bind(this IQuery query, PgRange<DateOnly>? value);
+    
+    /// <summary>
+    /// Bind <see cref="PgRange{T}"/> of <see cref="DateTime"/> parameter to query. This puts that
+    /// value as the nth parameter in the parameterized query, where n is the current parameter as a
+    /// 1-based index. This maps to the Postgres specific <c>TSRANGE</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Datetime range value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgRangeType<DateTime, PgDateTime>))]
+    public static partial IQuery Bind(this IQuery query, PgRange<DateTime>? value);
+    
+    /// <summary>
+    /// Bind <see cref="PgRange{T}"/> of <see cref="DateTimeOffset"/> parameter to query. This puts
+    /// that value as the nth parameter in the parameterized query, where n is the current parameter
+    /// as a 1-based index. This maps to the Postgres specific <c>TSTZRANGE</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Datetime offset range value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgRangeType<DateTimeOffset, PgDateTimeOffset>))]
+    public static partial IQuery Bind(this IQuery query, PgRange<DateTimeOffset>? value);
+    
+    /// <summary>
+    /// Bind <see cref="PgRange{T}"/> of <see cref="decimal"/> parameter to query. This puts that
+    /// value as the nth parameter in the parameterized query, where n is the current parameter as a
+    /// 1-based index. This maps to the Postgres specific <c>NUMRANGE</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Decimal range value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgRangeType<decimal, PgDecimal>))]
+    public static partial IQuery Bind(this IQuery query, PgRange<decimal>? value);
+    
+    /// <summary>
+    /// Bind <see cref="bool"/> array parameter to query. This puts that value as the nth parameter
+    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
+    /// to the Postgres specific <c>BOOLEAN[]</c> types.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Boolean array value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgBool))]
+    public static partial IQuery Bind(this IQuery query, bool?[]? value);
+    
+    /// <summary>
+    /// Bind <see cref="short"/> array parameter to query. This puts that value as the nth parameter
+    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
+    /// to the Postgres specific <c>SMALLINT[]</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Short array value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgShort))]
+    public static partial IQuery Bind(this IQuery query, short?[]? value);
+    
+    /// <summary>
+    /// Bind <see cref="int"/> array parameter to query. This puts that value as the nth parameter
+    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
+    /// to the Postgres specific <c>INT[]</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Int array value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgInt))]
+    public static partial IQuery Bind(this IQuery query, int?[]? value);
+    
+    /// <summary>
+    /// Bind <see cref="long"/> array parameter to query. This puts that value as the nth parameter
+    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
+    /// to the Postgres specific <c>BIGINT[]</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Long array value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgLong))]
+    public static partial IQuery Bind(this IQuery query, long?[]? value);
+    
+    /// <summary>
+    /// Bind <see cref="float"/> array parameter to query. This puts that value as the nth parameter
+    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
+    /// to the Postgres specific <c>REAL[]</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Float array value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgFloat))]
+    public static partial IQuery Bind(this IQuery query, float?[]? value);
+    
+    /// <summary>
+    /// Bind <see cref="double"/> array parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This maps to the Postgres specific <c>DOUBLE PRECISION[]</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Double array value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgDouble))]
+    public static partial IQuery Bind(this IQuery query, double?[]? value);
+    
+    /// <summary>
+    /// Bind <see cref="TimeOnly"/> array parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This maps to the Postgres specific <c>TIME[]</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Time array value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgTime))]
+    public static partial IQuery Bind(this IQuery query, TimeOnly?[]? value);
+    
+    /// <summary>
+    /// Bind <see cref="DateOnly"/> array parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This maps to the Postgres specific <c>DATE[]</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Date array value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgDate))]
+    public static partial IQuery Bind(this IQuery query, DateOnly?[]? value);
+    
+    /// <summary>
+    /// Bind <see cref="DateTime"/> array parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This maps to the Postgres specific <c>TIMESTAMP[]</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Datetime array value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgDate))]
+    public static partial IQuery Bind(this IQuery query, DateTime?[]? value);
+    
+    /// <summary>
+    /// Bind <see cref="DateTimeOffset"/> array parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This maps to the Postgres specific <c>TIMESTAMP WITH TIME ZONE[]</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Datetime offset array value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgDateTimeOffset))]
+    public static partial IQuery Bind(this IQuery query, DateTimeOffset?[]? value);
+    
+    /// <summary>
+    /// Bind <see cref="decimal"/> array parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This maps to the Postgres specific <c>DECIMAL[]</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Decimal array value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgDecimal))]
+    public static partial IQuery Bind(this IQuery query, decimal?[]? value);
+    
+    /// <summary>
+    /// Bind <see cref="byte"/> array parameter to query. This puts that value as the nth parameter
+    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
+    /// to the Postgres specific <c>BYTEA[]</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Byte array value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgBytea))]
+    public static partial IQuery Bind(this IQuery query, byte[]?[]? value);
+    
+    /// <summary>
+    /// Bind <see cref="string"/> array parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This maps to the Postgres specific <c>TEXT[]</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">String array value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgString))]
+    public static partial IQuery Bind(this IQuery query, string?[]? value);
+    
+    /// <summary>
+    /// Bind <see cref="Guid"/> array parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This maps to the Postgres specific <c>UUID[]</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Guid array value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgUuid))]
+    public static partial IQuery Bind(this IQuery query, Guid?[]? value);
 
-    public static IQuery Bind(this IQuery query, long?[]? value)
-    {
-        return BindPgArrayStruct<long, PgLong>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, float?[]? value)
-    {
-        return BindPgArrayStruct<float, PgFloat>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, double?[]? value)
-    {
-        return BindPgArrayStruct<double, PgDouble>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, TimeOnly?[]? value)
-    {
-        return BindPgArrayStruct<TimeOnly, PgTime>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, DateOnly?[]? value)
-    {
-        return BindPgArrayStruct<DateOnly, PgDate>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, DateTime?[]? value)
-    {
-        return BindPgArrayStruct<DateTime, PgDateTime>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, DateTimeOffset?[]? value)
-    {
-        return BindPgArrayStruct<DateTimeOffset, PgDateTimeOffset>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, decimal?[]? value)
-    {
-        return BindPgArrayStruct<decimal, PgDecimal>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, byte[]?[]? value)
-    {
-        return BindPgArrayClass<byte[], PgBytea>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, string?[]? value)
-    {
-        return BindPgArrayClass<string, PgString>(query, value);
-    }
-
-    public static IQuery Bind(this IQuery query, Guid?[]? value)
-    {
-        return BindPgArrayStruct<Guid, PgUuid>(query, value);
-    }
-
+    /// <summary>
+    /// Bind <typeparamref name="TValue"/> parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This allows for any value that can be encoded using the type definition of
+    /// <typeparamref name="TType"/> to be bound to a query.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Value to bind to the query</param>
+    /// <typeparam name="TValue">Value type to bind</typeparam>
+    /// <typeparam name="TType">DB Type definition to allow for encoding the value</typeparam>
+    /// <returns>This query instance for method chaining</returns>
     public static IQuery BindPg<TValue, TType>(this IQuery query, TValue value)
         where TType : IPgDbType<TValue>
         where TValue : notnull
@@ -388,26 +660,23 @@ public static partial class ExecutableQueryExtensions
         return pgExecutableQuery.Encode<TValue, TType>(value);
     }
 
-    public static IQuery BindPgNullableStruct<TValue, TType>(
-        this IQuery query,
-        TValue? value)
-        where TType : IPgDbType<TValue>
-        where TValue : struct
-    {
-        var pgExecutableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
-        return pgExecutableQuery.EncodeNullableStruct<TValue, TType>(value);
-    }
-
-    public static IQuery BindPgNullableClass<TValue, TType>(
-        this IQuery query,
-        TValue? value)
-        where TType : IPgDbType<TValue>
-        where TValue : class
-    {
-        var pgExecutableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
-        return pgExecutableQuery.EncodeNullableClass<TValue, TType>(value);
-    }
-
+    /// <summary>
+    /// <para>
+    /// Bind <typeparamref name="TElement"/> array parameter to query. This puts that value as the
+    /// nth parameter in the parameterized query, where n is the current parameter as a 1-based
+    /// index. This allows for any array value that can be encoded using the type definition of
+    /// <typeparamref name="TType"/> to be bound to a query.
+    /// </para>
+    /// <para>
+    /// This differs from <see cref="BindPgArrayClass"/> because the element type must be a struct
+    /// so that nullable vs default semantics can be handled correctly.
+    /// </para>
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Array value to bind</param>
+    /// <typeparam name="TElement">Array element type</typeparam>
+    /// <typeparam name="TType">DB Type definition to allow for encoding the value</typeparam>
+    /// <returns>This query instance for method chaining</returns>
     public static IQuery BindPgArrayStruct<TElement, TType>(
         this IQuery query,
         TElement?[]? value)
@@ -418,6 +687,23 @@ public static partial class ExecutableQueryExtensions
         return pgExecutableQuery.EncodeNullableClass<TElement?[], PgArrayTypeStruct<TElement, TType>>(value);
     }
 
+    /// <summary>
+    /// <para>
+    /// Bind <typeparamref name="TElement"/> array parameter to query. This puts that value as the
+    /// nth parameter in the parameterized query, where n is the current parameter as a 1-based
+    /// index. This allows for any array value that can be encoded using the type definition of
+    /// <typeparamref name="TType"/> to be bound to a query.
+    /// </para>
+    /// <para>
+    /// This differs from <see cref="BindPgArrayStruct"/> because the element type must be a class
+    /// so that nullable vs default semantics can be handled correctly.
+    /// </para>
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Array value to bind</param>
+    /// <typeparam name="TElement">Array element type</typeparam>
+    /// <typeparam name="TType">DB Type definition to allow for encoding the value</typeparam>
+    /// <returns>This query instance for method chaining</returns>
     public static IQuery BindPgArrayClass<TElement, TType>(
         this IQuery query,
         TElement?[]? value)

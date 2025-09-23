@@ -46,17 +46,17 @@ internal class PgDataRowDecoderGenerator : IIncrementalGenerator
             static (spc, source) => Execute(source, spc));
     }
     
-    private static MethodToGenerate? GetTargetForGeneration(
+    private static DecodeMethodToGenerate? GetTargetForGeneration(
         SemanticModel semanticModel,
         SyntaxNode syntax)
     {
         return semanticModel.GetDeclaredSymbol(syntax) is not IMethodSymbol methodSymbol
             ? null
-            : new MethodToGenerate(methodSymbol);
+            : new DecodeMethodToGenerate(methodSymbol);
     }
 
     private static void Execute(
-        ImmutableArray<MethodToGenerate?> methodsToGenerate,
+        ImmutableArray<DecodeMethodToGenerate?> methodsToGenerate,
         SourceProductionContext context)
     {
         if (methodsToGenerate.IsDefaultOrEmpty) return;
@@ -75,7 +75,7 @@ internal class PgDataRowDecoderGenerator : IIncrementalGenerator
             public static partial class DataRowExtensions
             {
             """);
-        foreach (MethodToGenerate? methodToGenerate in methodsToGenerate)
+        foreach (DecodeMethodToGenerate? methodToGenerate in methodsToGenerate)
         {
             context.CancellationToken.ThrowIfCancellationRequested();
             if (methodToGenerate is null)
@@ -105,16 +105,16 @@ internal class PgDataRowDecoderGenerator : IIncrementalGenerator
             SourceText.From(builder.ToString(), Encoding.UTF8));
     }
 
-    private static string GenerateDecodeMethod(MethodToGenerate methodToGenerate)
+    private static string GenerateDecodeMethod(DecodeMethodToGenerate decodeMethodToGenerate)
     {
-        var resultTypeName = methodToGenerate.ReturnType.ToDisplayString();
+        var resultTypeName = decodeMethodToGenerate.ReturnType.ToDisplayString();
         string decoderTypeName;
-        if (methodToGenerate.IsArrayReturn)
+        if (decodeMethodToGenerate.IsArrayReturn)
         {
             ITypeSymbol resultTypeElement = SourceGenerationHelper.NotNullType(
-                ((IArrayTypeSymbol)methodToGenerate.ReturnType).ElementType);
+                ((IArrayTypeSymbol)decodeMethodToGenerate.ReturnType).ElementType);
             var resultTypeElementName = resultTypeElement.ToDisplayString();
-            var tempDecoderTypeName = methodToGenerate.DecoderType?.ToDisplayString()
+            var tempDecoderTypeName = decodeMethodToGenerate.DecoderType?.ToDisplayString()
                                       ?? resultTypeElementName;
             decoderTypeName = resultTypeElement.IsValueType
                 ? $"PgArrayTypeStruct<{resultTypeElementName}, {tempDecoderTypeName}>"
@@ -122,13 +122,13 @@ internal class PgDataRowDecoderGenerator : IIncrementalGenerator
         }
         else
         {
-            decoderTypeName = methodToGenerate.DecoderType?.ToDisplayString() ?? resultTypeName;
+            decoderTypeName = decodeMethodToGenerate.DecoderType?.ToDisplayString() ?? resultTypeName;
         }
         
-        var indexerName = methodToGenerate.IndexerParameterName;
-        var indexerIsString = methodToGenerate.IndexerParameterType.ToDisplayString() is "string";
-        var signature = $"public static partial {resultTypeName}{(methodToGenerate.IsReturnNullable ? '?' : string.Empty)} {methodToGenerate.Name}(this IDataRow dataRow, {methodToGenerate.IndexerParameterType.ToDisplayString()} {indexerName})";
-        if (methodToGenerate.IsReturnNullable)
+        var indexerName = decodeMethodToGenerate.IndexerParameterName;
+        var indexerIsString = decodeMethodToGenerate.IndexerParameterType.ToDisplayString() is "string";
+        var signature = $"public static partial {resultTypeName}{(decodeMethodToGenerate.IsReturnNullable ? '?' : string.Empty)} {decodeMethodToGenerate.Name}(this IDataRow dataRow, {decodeMethodToGenerate.IndexerParameterType.ToDisplayString()} {indexerName})";
+        if (decodeMethodToGenerate.IsReturnNullable)
         {
             return indexerIsString
                 ? $$"""

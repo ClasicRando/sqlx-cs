@@ -2,24 +2,8 @@ using Microsoft.CodeAnalysis;
 
 namespace Sqlx.Postgres.Generator.Result;
 
-public class MethodToGenerate
+public class DecodeMethodToGenerate
 {
-    private static readonly DiagnosticDescriptor MethodIsNotPartial =
-        new(
-            "SQLxPG001",
-            "Annotated method is not partial",
-            "'{0}' must be partial to allow for adding a method body",
-            "sqlx-cs-pg Generation",
-            DiagnosticSeverity.Error,
-            true);
-    private static readonly DiagnosticDescriptor MethodIsNotExtensionTemplate =
-        new(
-            "SQLxPG002",
-            "Annotated method is not an extension method",
-            "'{0}' must be an extension method",
-            "sqlx-cs-pg Generation",
-            DiagnosticSeverity.Error,
-            true);
     private static readonly DiagnosticDescriptor MethodIsNotDecodeTemplate =
         new(
             "SQLxPG003",
@@ -30,7 +14,7 @@ public class MethodToGenerate
             true);
     private readonly IMethodSymbol _templateMethod;
     
-    public MethodToGenerate(IMethodSymbol templateMethod)
+    public DecodeMethodToGenerate(IMethodSymbol templateMethod)
     {
         _templateMethod = templateMethod;
         DecoderType = _templateMethod.GetAttributes()
@@ -62,14 +46,14 @@ public class MethodToGenerate
         if (!_templateMethod.IsPartialDefinition)
         {
             context.ReportDiagnostic(
-                Diagnostic.Create(MethodIsNotPartial, Location.None, Name));
+                Diagnostic.Create(SourceGenerationHelper.MethodIsNotPartial, Location.None, Name));
             return false;
         }
         
         if (!_templateMethod.IsExtensionMethod)
         {
             context.ReportDiagnostic(
-                Diagnostic.Create(MethodIsNotExtensionTemplate, Location.None, Name));
+                Diagnostic.Create(SourceGenerationHelper.MethodIsNotExtension, Location.None, Name));
             return false;
         }
 
