@@ -22,7 +22,7 @@ namespace Sqlx.Postgres.Column;
 /// Will be -1 when the type does not need <c>atttypmod</c>
 /// </param>
 /// <param name="FormatCode">Format code of the field</param>
-public record PgColumnMetadata(
+public readonly record struct PgColumnMetadata(
     string FieldName,
     int TableOid,
     int ColumnAttribute,

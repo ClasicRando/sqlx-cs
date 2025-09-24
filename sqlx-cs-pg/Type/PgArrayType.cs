@@ -144,10 +144,11 @@ public abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
                 result[i] = null;
                 continue;
             }
-            
+
+            var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary);
             var binaryValue = new PgBinaryValue(
                 value.Buffer.Slice(elementLength),
-                PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary));
+                ref columnMetadata);
             result[i] = TType.DecodeBytes(binaryValue);
         }
 
@@ -169,9 +170,8 @@ public abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
             }
 
             var slice = value.Chars[rng.Value];
-            var elementValue = new PgTextValue(
-                slice,
-                PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Text));
+            var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Text);
+            var elementValue = new PgTextValue(slice, ref columnMetadata);
             result[index] = TType.DecodeText(elementValue);
         }
 
@@ -228,10 +228,11 @@ public abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?[]
                 result[i] = null;
                 continue;
             }
-            
+
+            var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary);
             var binaryValue = new PgBinaryValue(
                 value.Buffer.Slice(elementLength),
-                PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary));
+                ref columnMetadata);
             result[i] = TType.DecodeBytes(binaryValue);
         }
 
@@ -253,9 +254,8 @@ public abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?[]
             }
 
             var slice = value.Chars[rng.Value];
-            var elementValue = new PgTextValue(
-                slice,
-                PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Text));
+            var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Text);
+            var elementValue = new PgTextValue(slice, ref columnMetadata);
             result[index] = TType.DecodeText(elementValue);
         }
 

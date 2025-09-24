@@ -140,11 +140,11 @@ internal sealed class PgDataRow : IDataRow
             case PgFormatCode.Text:
                 Span<char> chars = stackalloc char[Charsets.Default.GetCharCount(bytes)];
                 Charsets.Default.GetChars(bytes, chars);
-                PgTextValue textValue = new(chars, columnData.ColumnMetadata);
+                PgTextValue textValue = new(chars, ref columnData.ColumnMetadata);
                 return PgJson<T>.DecodeText(textValue, jsonTypeInfo);
             case PgFormatCode.Binary:
                 var buffer = new ReadBuffer(bytes);
-                PgBinaryValue binaryValue = new(buffer, columnData.ColumnMetadata);
+                PgBinaryValue binaryValue = new(buffer, ref columnData.ColumnMetadata);
                 return PgJson<T>.DecodeBytes(binaryValue, jsonTypeInfo);
             default:
                 throw ColumnDecodeException.Create<T>(
@@ -156,20 +156,20 @@ internal sealed class PgDataRow : IDataRow
     private readonly ref struct ColumnData(
         bool isNull,
         Range range,
-        PgColumnMetadata columnMetadata)
+        ref PgColumnMetadata columnMetadata)
     {
-        public bool IsNull { get; } = isNull;
-        public Range Range { get; } = range;
-        public PgColumnMetadata ColumnMetadata { get; } = columnMetadata;
+        public readonly bool IsNull = isNull;
+        public readonly Range Range = range;
+        public readonly ref PgColumnMetadata ColumnMetadata = ref columnMetadata;
     }
 
     private ColumnData GetColumnData(int index)
     {
-        PgColumnMetadata columnMetadata = _statementMetadata[index];
+        ref PgColumnMetadata columnMetadata = ref _statementMetadata[index];
         var sliceItem = _columnValueSlices[index];
         return sliceItem is not {} slice
-            ? new ColumnData(true, new Range(), columnMetadata)
-            : new ColumnData(false, slice, columnMetadata);
+            ? new ColumnData(true, new Range(), ref columnMetadata)
+            : new ColumnData(false, slice, ref columnMetadata);
     }
 
     internal TResult DecodeNotNull<TResult, TType>(int index)
@@ -194,10 +194,10 @@ internal sealed class PgDataRow : IDataRow
             case PgFormatCode.Text:
                 Span<char> chars = stackalloc char[Charsets.Default.GetCharCount(bytes)];
                 Charsets.Default.GetChars(bytes, chars);
-                return TType.DecodeText(new PgTextValue(chars, columnData.ColumnMetadata));
+                return TType.DecodeText(new PgTextValue(chars, ref columnData.ColumnMetadata));
             case PgFormatCode.Binary:
                 var buffer = new ReadBuffer(bytes);
-                return TType.DecodeBytes(new PgBinaryValue(buffer, columnData.ColumnMetadata));
+                return TType.DecodeBytes(new PgBinaryValue(buffer, ref columnData.ColumnMetadata));
             default:
                 throw ColumnDecodeException.Create<TResult>(
                     columnData.ColumnMetadata,

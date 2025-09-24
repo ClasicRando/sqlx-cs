@@ -170,7 +170,7 @@ public partial class PgConnection
         statement = await ExecuteStatementPrepare(sql, parameterTypes, cancellationToken)
             .ConfigureAwait(false);
         
-        var removedEntry = _statementCache.Put(sql, statement);
+        var removedEntry = _statementCache.Put(statement.Sql, statement);
         if (removedEntry is not null)
         {
             await ReleasePreparedStatement(removedEntry.Value.Item2, cancellationToken)

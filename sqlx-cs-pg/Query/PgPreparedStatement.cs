@@ -2,10 +2,11 @@ using Sqlx.Postgres.Column;
 
 namespace Sqlx.Postgres.Query;
 
-internal class PgPreparedStatement(string sql, int statementId)
+/// <summary>
+/// Postgres representation of a prepared statement
+/// </summary>
+internal record PgPreparedStatement(string Sql, int StatementId)
 {
-    public string Sql { get; } = sql;
-    public int StatementId { get; } = statementId;
-    public string StatementName { get;  } = statementId.ToString();
+    public string StatementName { get; } = StatementId.ToString();
     public PgColumnMetadata[] ColumnMetadata { get; set; } = [];
 }

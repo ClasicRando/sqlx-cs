@@ -583,7 +583,7 @@ public static partial class ExecutableQueryExtensions
     /// <param name="query">Query to bind against</param>
     /// <param name="value">Datetime array value</param>
     /// <returns>This query instance for method chaining</returns>
-    [GeneratePgBindMethod(Encoder = typeof(PgDate))]
+    [GeneratePgBindMethod(Encoder = typeof(PgDateTime))]
     public static partial IQuery Bind(this IQuery query, DateTime?[]? value);
     
     /// <summary>

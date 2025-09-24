@@ -16,7 +16,7 @@ internal class PgStatementMetadata
         }
     }
 
-    public PgColumnMetadata this[int index] => _columns[index];
+    public ref PgColumnMetadata this[int index] => ref _columns[index];
 
     public int IndexOfFieldName(string name)
     {
