@@ -25,7 +25,6 @@ public sealed class AsyncStream : IAsyncStream
 
     public async Task OpenAsync(string host, ushort port, CancellationToken cancellationToken)
     {
-        await CloseAsync(cancellationToken);
         var endPoints = await GetIpEndpoints(host, port, cancellationToken);
         for (var i = 0; i < endPoints.Length; i++)
         {
@@ -130,13 +129,29 @@ public sealed class AsyncStream : IAsyncStream
         _bufferPosition += buffer.Length;
     }
 
-    public async ValueTask CloseAsync(CancellationToken cancellationToken)
+    private static async Task<IPEndPoint[]> GetIpEndpoints(
+        string host,
+        ushort port,
+        CancellationToken cancellationToken)
+    {
+        var ipAddresses = await Dns.GetHostAddressesAsync(host, cancellationToken)
+            .ConfigureAwait(false);
+        var ipEndPoints = new IPEndPoint[ipAddresses.Length];
+        for (var i = 0; i < ipAddresses.Length; i++)
+        {
+            ipEndPoints[i] = new IPEndPoint(ipAddresses[i], port);
+        }
+
+        return ipEndPoints;
+    }
+
+    public void Dispose()
     {
         if (_stream is SslStream sslStream)
         {
             try
             {
-                await sslStream.ShutdownAsync();
+                sslStream.ShutdownAsync().GetAwaiter().GetResult();
             }
             catch
             {
@@ -155,10 +170,7 @@ public sealed class AsyncStream : IAsyncStream
 
         try
         {
-            if (_stream is not null)
-            {
-                await _stream.DisposeAsync();
-            }
+            _stream?.Dispose();
         }
         catch
         {
@@ -169,7 +181,7 @@ public sealed class AsyncStream : IAsyncStream
         {
             try
             {
-                await Task.Run(() => _socket.Dispose(), cancellationToken);
+                _socket.Dispose();
             }
             catch
             {
@@ -177,29 +189,10 @@ public sealed class AsyncStream : IAsyncStream
             }
         }
 
+        _stream = null;
+        _socket = null;
         _bufferLength = 0;
         _bufferPosition = 0;
-    }
-
-    private static async Task<IPEndPoint[]> GetIpEndpoints(
-        string host,
-        ushort port,
-        CancellationToken cancellationToken)
-    {
-        var ipAddresses = await Dns.GetHostAddressesAsync(host, cancellationToken)
-            .ConfigureAwait(false);
-        var ipEndPoints = new IPEndPoint[ipAddresses.Length];
-        for (var i = 0; i < ipAddresses.Length; i++)
-        {
-            ipEndPoints[i] = new IPEndPoint(ipAddresses[i], port);
-        }
-
-        return ipEndPoints;
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await CloseAsync(CancellationToken.None);
         ArrayPool.Return(_innerBuffer);
         _innerBuffer = [];
     }

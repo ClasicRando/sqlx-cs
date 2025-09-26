@@ -19,7 +19,7 @@ public static class ConnectionPoolExtensions
         IConnection? connection = null;
         try
         {
-            connection = await connectionPool.Acquire(cancellationToken).ConfigureAwait(false);
+            connection = connectionPool.CreateConnection();
             if (connection.Status is ConnectionStatus.Closed)
             {
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
@@ -36,23 +36,19 @@ public static class ConnectionPoolExtensions
     }
 
     /// <summary>
-    /// Acquire a connection from the pool and attempt to unwrap that connection as
+    /// Create a connection from the pool and attempt to unwrap that connection as
     /// <typeparamref name="TConnection"/>. Equivalent to:
     /// <code>
-    /// IConnection connection = await connectionPool.Acquire();
+    /// IConnection connection = connectionPool.CreateConnection();
     /// return connection.Unwrap&lt;TConnection&gt;();
     /// </code>
     /// </summary>
     /// <param name="connectionPool">connection pool to fetch a connection from</param>
-    /// <param name="cancellationToken">optional cancellation token</param>
     /// <typeparam name="TConnection">desired output connection type</typeparam>
-    /// <returns>a rented connection from the pool as the desired type</returns>
-    public static async Task<TConnection> AcquireAs<TConnection>(
-        this IConnectionPool connectionPool,
-        CancellationToken cancellationToken = default)
+    /// <returns>a connection from the pool as the desired type</returns>
+    public static TConnection CreateConnectionAs<TConnection>(this IConnectionPool connectionPool)
         where TConnection : IConnection
     {
-        return (await connectionPool.Acquire(cancellationToken).ConfigureAwait(false))
-            .Unwrap<TConnection>();
+        return connectionPool.CreateConnection().Unwrap<TConnection>();
     }
 }

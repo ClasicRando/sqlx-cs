@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
+using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Message.Backend;
+using Sqlx.Postgres.Stream;
 
 namespace Sqlx.Postgres.Logging;
 
@@ -16,7 +18,7 @@ internal static partial class PgLog
     /// <param name="noticeResponse">Notice message</param>
     [LoggerMessage(Message = "Notice -> {@NoticeResponse}")]
     internal static partial void LogNotice(
-        this ILogger logger,
+        this ILogger<PgStream> logger,
         LogLevel logLevel,
         NoticeResponseMessage noticeResponse);
     
@@ -28,7 +30,7 @@ internal static partial class PgLog
     /// <param name="name">Parameter's name</param>
     [LoggerMessage(Message = "Parameter updated. Name: {Name}")]
     internal static partial void LogParameterStatus(
-        this ILogger logger,
+        this ILogger<PgStream> logger,
         LogLevel logLevel,
         string name);
 
@@ -40,7 +42,7 @@ internal static partial class PgLog
     /// <param name="processId">Process ID that sent the message</param>
     [LoggerMessage(Message = "Got backend key data. Process ID: {ProcessId}")]
     internal static partial void LogBackendDataKey(
-        this ILogger logger,
+        this ILogger<PgStream> logger,
         LogLevel logLevel,
         int processId);
     
@@ -56,7 +58,7 @@ internal static partial class PgLog
     /// </param>
     [LoggerMessage(Message = "Server does not support protocol version 3.0. Min Protocol Support: {MinProtocolVersion}, Unknown Options: {ProtocolOptionsNotRecognized}")]
     internal static partial void LogNegotiateProtocolVersion(
-        this ILogger logger,
+        this ILogger<PgStream> logger,
         LogLevel logLevel,
         int minProtocolVersion,
         string[] protocolOptionsNotRecognized);
@@ -70,7 +72,7 @@ internal static partial class PgLog
     /// <param name="message">Backend message received from the database server</param>
     [LoggerMessage(Message = "Ignoring {message} since it's not an error or the desired type")]
     internal static partial void LogIgnoreUnexpectedMessage(
-        this ILogger logger,
+        this ILogger<PgStream> logger,
         LogLevel logLevel,
         IPgBackendMessage message);
 }

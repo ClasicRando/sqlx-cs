@@ -11,12 +11,16 @@ using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Result;
 
+/// <summary>
+/// <see cref="IDataRow"/> implementation for Postgres. Represents the bytes sent by the database
+/// backend, the statement's metadata and the slices into the bytes that represent each column.
+/// </summary>
 internal sealed class PgDataRow : IDataRow
 {
     private readonly byte[] _rowData;
     private readonly PgStatementMetadata _statementMetadata;
     private readonly Range?[] _columnValueSlices;
-    
+
     public PgDataRow(byte[] rowData, PgStatementMetadata statementMetadata)
     {
         _rowData = rowData;

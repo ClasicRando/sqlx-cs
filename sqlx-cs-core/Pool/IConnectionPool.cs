@@ -14,11 +14,12 @@ namespace Sqlx.Core.Pool;
 public interface IConnectionPool : IQueryExecutor, IAsyncDisposable
 {
     /// <summary>
-    /// Rent a connection for use in querying the database. Make sure to close the connection
-    /// instance to return it to the pool for reuse (preferably using the
-    /// <see cref="IAsyncDisposable"/> interface's language construct).
+    /// Create a connection for use in querying this pool's database. The created connection is
+    /// closed until <see cref="IConnection.OpenAsync"/> is called and that method will wait for
+    /// this pool to have an available physical connection free. Make sure to close the connection
+    /// instance to return it's underlining physical connection to the pool for reuse (preferably
+    /// using the <see cref="IAsyncDisposable"/> interface's language construct).
     /// </summary>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    Task<IConnection> Acquire(CancellationToken cancellationToken = default);
+    /// <returns>A connection rented from this pool</returns>
+    IConnection CreateConnection();
 }

@@ -1,14 +1,9 @@
-using System.Runtime.CompilerServices;
-using Microsoft.Extensions.Logging;
 using Sqlx.Core;
-using Sqlx.Core.Cache;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Pool;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
-using Sqlx.Postgres.Exceptions;
-using Sqlx.Postgres.Message.Backend;
 using Sqlx.Postgres.Pool;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Stream;
@@ -20,193 +15,79 @@ namespace Sqlx.Postgres.Connection;
 /// connection implementations, other Postgresql specific functionality is implemented such as
 /// <c>LISTEN/NOTIFY</c> and the <c>COPY</c> protocol.
 /// </summary>
-public sealed partial class PgConnection : IConnection
+public sealed class PgConnection : AbstractConnection
 {
-    private const string BeginQuery = "BEGIN;";
-    private const string CommitQuery = "COMMIT;";
-    private const string RollbackQuery = "ROLLBACK;";
-    
-    private readonly PgStream _pgStream;
-    internal PgConnectionPool? Pool;
-    private readonly ILogger _logger;
-    private long _inTransaction;
-    private int _pendingReadyForQuery;
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    internal PgConnection(PgStream pgStream, PgConnectionPool pool)
+    private bool _disposed;
+    private PgStream? _pgStream;
+    private readonly PgConnectionPool _pool;
+
+    internal PgConnection(PgConnectionPool pool)
     {
-        _pgStream = pgStream;
-        Pool = pool;
-        _logger = pgStream.ConnectOptions.LoggerFactory.CreateLogger<PgConnection>();
-        _statementCache = new LruCache<string, PgPreparedStatement>(
-            _pgStream.ConnectOptions.StatementCacheCapacity);
+        _pool = pool;
     }
 
-    public ConnectionStatus Status { get; private set; } = ConnectionStatus.Closed;
+    public override ConnectionStatus Status => _pgStream?.Status ?? ConnectionStatus.Closed;
     
-    public bool InTransaction
-    {
-        get => Interlocked.Read(ref _inTransaction) == 1;
-        private set => Interlocked.Exchange(ref _inTransaction, value ? 1 : 0);
-    }
+    public override bool InTransaction => _pgStream?.InTransaction ?? false;
 
-    public async Task OpenAsync(CancellationToken cancellationToken = default)
+    public override async Task OpenAsync(CancellationToken cancellationToken = default)
     {
+        CheckClosed();
+        PgStream stream = await _pool.AcquireStream().ConfigureAwait(false);
         try
         {
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-            if (Status == ConnectionStatus.Idle)
-            {
-                return;
-            }
-            
-            Status = ConnectionStatus.Connecting;
-            await _pgStream.OpenAsync(cancellationToken).ConfigureAwait(false);
-            Status = ConnectionStatus.Idle;
+            await stream.OpenAsync(cancellationToken).ConfigureAwait(false);
+            _pgStream = stream;
         }
-        catch (SqlxException)
+        catch
         {
-            Status = ConnectionStatus.Broken;
+            await _pool.Return(stream, cancellationToken).ConfigureAwait(false);
             throw;
         }
-        finally
-        {
-            _semaphore.Release();
-        }
     }
 
-    private enum TransactionCommand
+    public override IExecutableQuery CreateQuery(string query)
     {
-        Begin = 0,
-        Commit = 1,
-        Rollback = 2,
-    }
-
-    public Task BeginAsync(CancellationToken cancellationToken = default)
-    {
-        return ExecuteTransactionCommand(TransactionCommand.Begin, cancellationToken);
-    }
-
-    public Task CommitAsync(CancellationToken cancellationToken = default)
-    {
-        return ExecuteTransactionCommand(TransactionCommand.Commit, cancellationToken);
-    }
-
-    public Task RollbackAsync(CancellationToken cancellationToken = default)
-    {
-        return ExecuteTransactionCommand(TransactionCommand.Rollback, cancellationToken);
-    }
-
-    public async Task<bool> IsValidAsync(CancellationToken cancellationToken = default)
-    {
-        ThrowIfBrokenOrClosed();
-        try
-        {
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-            await WaitUntilReady(cancellationToken).ConfigureAwait(false);
-            await _pgStream.SendQueryMessage("SELECT 1;", cancellationToken).ConfigureAwait(false);
-            var result = await _pgStream.WaitForOrError<ReadyForQueryMessage>(cancellationToken)
-                .ConfigureAwait(false);
-            if (result is Either<ReadyForQueryMessage, ErrorResponseMessage>.Right)
-            {
-                Status = ConnectionStatus.Broken;
-                return false;
-            }
-        }
-        catch (SqlxException)
-        {
-            Status = ConnectionStatus.Broken;
-            return false;
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-
-        return true;
-    }
-
-    public IExecutableQuery CreateQuery(string query)
-    {
-        
         return new PgExecutableQuery(query, this);
     }
 
-    public IQueryBatch CreateQueryBatch()
+    public override IQueryBatch CreateQueryBatch()
     {
         throw new NotImplementedException();
     }
 
-    public async Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
+    public override Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
         IQuery query,
         CancellationToken cancellationToken)
     {
-        PgExecutableQuery executableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
-        await ConnectIfClosed(cancellationToken);
-        var results = executableQuery.ParameterBuffer.ParameterCount == 0
-            ? SendSimpleQuery(executableQuery.Query, cancellationToken)
-            : SendExtendedQuery(executableQuery.Query, executableQuery.ParameterBuffer, cancellationToken);
-        return results;
+        CheckDisposed();
+        return _pgStream!.ExecuteQuery(query, cancellationToken);
     }
 
-    public Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQueryBatch(
+    public override Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQueryBatch(
         IQueryBatch query,
         CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        CheckDisposed();
+        return _pgStream!.ExecuteQueryBatch(query, cancellationToken);
     }
 
-    private async ValueTask ConnectIfClosed(CancellationToken cancellationToken)
+    public override async Task CloseAsync(CancellationToken cancellationToken = default)
     {
-        if (Status is not ConnectionStatus.Closed)
-        {
-            return;
-        }
-
-        await OpenAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    internal ValueTask ReleaseResources(CancellationToken cancellationToken)
-    {
-        Status = ConnectionStatus.Closed;
-        return _pgStream.CloseAsync(cancellationToken);
-    }
-
-    public async Task CloseAsync(CancellationToken cancellationToken = default)
-    {
+        CheckDisposed();
         try
         {
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-            if (Pool is not null
-                && await Pool.GiveBack(this, cancellationToken).ConfigureAwait(false))
+            if (_pgStream!.Status is ConnectionStatus.Closed or ConnectionStatus.Broken)
             {
                 return;
             }
 
-            await ReleaseResources(cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception)
-        {
-            Status = ConnectionStatus.Broken;
-            throw;
+            await _pool.Return(_pgStream!, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
-            _semaphore.Release();
-        }
-    }
-
-    /// <exception cref="InvalidOperationException">
-    /// If the <see cref="Status"/> value is <see cref="ConnectionStatus.Broken"/> or
-    /// <see cref="ConnectionStatus.Closed"/>
-    /// </exception>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfBrokenOrClosed()
-    {
-        if (Status is ConnectionStatus.Broken or ConnectionStatus.Closed)
-        {
-            throw new InvalidOperationException(
-                "Attempted to perform operation with a connection that is not idle");
+            _pgStream = null;
         }
     }
 
@@ -224,99 +105,37 @@ public sealed partial class PgConnection : IConnection
     ///     <item>commit or rollback a transaction while not within a transaction</item>
     /// </list>
     /// </exception>
-    private async Task ExecuteTransactionCommand(
+    protected override Task ExecuteTransactionCommand(
         TransactionCommand transactionCommand,
         CancellationToken cancellationToken)
     {
-        ThrowIfBrokenOrClosed();
-        try
-        {
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-            switch (transactionCommand)
-            {
-                case TransactionCommand.Begin when InTransaction:
-                    throw new UnexpectedTransactionState(false);
-                case TransactionCommand.Commit or TransactionCommand.Rollback when !InTransaction:
-                    throw new UnexpectedTransactionState(true);
-            }
+        CheckDisposed();
+        return _pgStream!.ExecuteTransactionCommand(transactionCommand, cancellationToken);
+    }
 
-            var sql = transactionCommand switch
-            {
-                TransactionCommand.Begin => BeginQuery,
-                TransactionCommand.Commit => CommitQuery,
-                TransactionCommand.Rollback => RollbackQuery,
-                _ => throw PgException.EnumOutOfRange(transactionCommand),
-            };
-            await _pgStream.SendQueryMessage(sql, cancellationToken).ConfigureAwait(false);
-            await _pgStream.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken).ConfigureAwait(false);
-            InTransaction = transactionCommand is TransactionCommand.Begin;
-        }
-        catch (OutOfMemoryException)
+    private void CheckClosed()
+    {
+        CheckDisposed();
+
+        if (Status is not (ConnectionStatus.Closed or ConnectionStatus.Broken))
         {
-            throw;
-        }
-        catch (UnexpectedTransactionState)
-        {
-            throw;
-        }
-        catch
-        {
-            if (transactionCommand is not TransactionCommand.Commit) throw;
-            
-            try
-            {
-                await _pgStream.SendQueryMessage(RollbackQuery, cancellationToken)
-                    .ConfigureAwait(false);
-                await _pgStream.WaitForOrError<ReadyForQueryMessage>(cancellationToken)
-                    .ConfigureAwait(false);
-            }
-            catch
-            {
-                // ignored
-            }
-            throw;
-        }
-        finally
-        {
-            _semaphore.Release();
+            throw new InvalidOperationException("Connection is already open");
         }
     }
 
-    /// <summary>
-    /// Keep pulling messages from the connection stream until all pending
-    /// <see cref="ReadyForQueryMessage"/>s have been processed
-    /// </summary>
-    /// <param name="cancellationToken">token to cancel the async operation</param>
-    private async Task WaitUntilReady(CancellationToken cancellationToken)
+    private void CheckDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+
+    protected override void Dispose(bool disposing)
     {
-        while (_pendingReadyForQuery > 0)
-        {
-            ReadyForQueryMessage message = await _pgStream.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)
-                .ConfigureAwait(false);
-            HandleReadyForQuery(message);
-        }
+        if (_disposed) return;
+        if (disposing) CloseAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+        _disposed = true;
     }
 
-    /// <summary>
-    /// Decrement <see cref="_pendingReadyForQuery"/> and inspect the supplied message
-    /// </summary>
-    /// <param name="readyForQuery">message from server</param>
-    private void HandleReadyForQuery(ReadyForQueryMessage readyForQuery)
+    protected override async ValueTask DisposeAsyncCore()
     {
-        if (--_pendingReadyForQuery < 0)
-        {
-            _logger.LogWarning("Received more ReadyForQuery messages than expected");
-            _pendingReadyForQuery = 0;
-        }
-
-        if (readyForQuery.TransactionStatus is TransactionStatus.FailedTransaction)
-        {
-            _logger.LogWarning("Server reported failed transaction");
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
+        if (_disposed) return;
         await CloseAsync().ConfigureAwait(false);
+        _disposed = true;
     }
 }

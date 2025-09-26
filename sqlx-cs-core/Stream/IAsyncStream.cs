@@ -4,7 +4,7 @@ namespace Sqlx.Core.Stream;
 /// Base interface for async stream operations. Provides the basic read and write operations against
 /// an underlining stream.
 /// </summary>
-public interface IAsyncStream : IAsyncDisposable
+public interface IAsyncStream : IDisposable
 {
     /// <summary>
     /// True if the underlining stream is connected to the host
@@ -46,12 +46,4 @@ public interface IAsyncStream : IAsyncDisposable
     /// <param name="buffer">buffer to copy bytes into</param>
     /// <param name="cancellationToken">token to cancel the operation</param>
     ValueTask ReadBuffer(Memory<byte> buffer, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Close this stream's connection to the host. Does nothing if not already connected using
-    /// <see cref="OpenAsync"/>. Although the connection is closed. It can be reopened by calling
-    /// <see cref="OpenAsync"/> again.
-    /// </summary>
-    /// <param name="cancellationToken">token to cancel the operation</param>
-    ValueTask CloseAsync(CancellationToken cancellationToken);
 }

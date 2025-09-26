@@ -57,15 +57,6 @@ public interface IConnection : IQueryExecutor, IAsyncDisposable
     Task RollbackAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Check if the current connection is valid. This method is intended for use by the internal
-    /// components of the library so users should avoid using it. The assumption is that connections
-    /// returned from a pool are already valid.
-    /// </summary>
-    /// <param name="cancellationToken">token to signal a cancellation</param>
-    /// <returns>true if the connection is valid and usable, otherwise false</returns>
-    Task<bool> IsValidAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Close the connection
     /// </summary>
     /// <param name="cancellationToken">token to signal a cancellation</param>
