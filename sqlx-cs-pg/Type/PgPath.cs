@@ -5,7 +5,7 @@ using Sqlx.Postgres.Result;
 namespace Sqlx.Postgres.Type;
 
 public readonly record struct PgPath(bool IsClosed, PgPoint[] Points)
-    : IPgDbType<PgPath>, IPostGisType, IHasArrayType
+    : IPgDbType<PgPath>, IGeometryType, IHasArrayType
 {
     private readonly Lazy<string> _postGisLiteral = new(() =>
     {
@@ -18,13 +18,13 @@ public readonly record struct PgPath(bool IsClosed, PgPoint[] Points)
             {
                 builder.Append(',');
             }
-            builder.Append(point.PostGisLiteral);
+            builder.Append(point.GeometryLiteral);
         }
         builder.Append(IsClosed ? ')' : ']');
         return builder.ToString();
     });
 
-    public string PostGisLiteral => _postGisLiteral.Value;
+    public string GeometryLiteral => _postGisLiteral.Value;
 
     public static void Encode(PgPath value, WriteBuffer buffer)
     {
@@ -52,12 +52,11 @@ public readonly record struct PgPath(bool IsClosed, PgPoint[] Points)
     {
         var isClosed = value.Chars[0] == '(';
         PgTextValue pointChars = value.Slice(1..^1);
-        var indexPairs = GeometryUtils.ExtractPointIndexes(pointChars);
-        var points = new PgPoint[indexPairs.Count];
+        var indexPairs = GeometryUtils.ExtractPointRanges(pointChars);
+        var points = new PgPoint[indexPairs.Length];
         for (var i = 0; i < points.Length; i++)
         {
-            var (pointStart, pointEnd) = indexPairs[i];
-            points[i] = PgPoint.DecodeText(pointChars.Slice(pointStart..pointEnd));
+            points[i] = PgPoint.DecodeText(pointChars.Slice(indexPairs[i]));
         }
         return new PgPath(isClosed, points);
     }

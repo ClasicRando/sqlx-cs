@@ -12,6 +12,23 @@ internal partial class PgStream
     private const string CbindFlag = "n";
     private const string Cbind = "biws";
     
+    /// <summary>
+    /// Perform SASL authentication flow. This involves multiple back and forths with the server
+    /// to fully authenticate and should resolve with an OK auth message.
+    /// </summary>
+    /// <param name="password">Password to authenticate the user</param>
+    /// <param name="saslAuthMessage">
+    /// Initial SASL message sent by the server specifying the auth mechanisms
+    /// </param>
+    /// <param name="cancellationToken">Token to cancel async operation</param>
+    /// <exception cref="PgException">
+    /// <list type="bullet">
+    ///     <item>The server does not support SCRAM-SHA-256</item>
+    ///     <item>The received message is not the expected type for the flow</item>
+    ///     <item>The server sent nonce does not match to the client nonce</item>
+    ///     <item>The server sent data does not contain a required field</item>
+    /// </list>
+    /// </exception>
     private async Task SaslAuthFlow(
         string password,
         SaslAuthMessage saslAuthMessage,
@@ -19,7 +36,7 @@ internal partial class PgStream
     {
         var clientNonce = await SendScramInit(saslAuthMessage, cancellationToken)
             .ConfigureAwait(false);
-        SaslContinueAuthMessage continueAuthMessage = await ReceiveContinueMessage(cancellationToken)
+        SaslContinueAuthMessage continueAuthMessage = await ReceiveNextMessageAs<SaslContinueAuthMessage>(cancellationToken)
             .ConfigureAwait(false);
         var serverSignature = await SendClientFinalMessage(
                 continueAuthMessage,
@@ -27,7 +44,7 @@ internal partial class PgStream
                 password,
                 cancellationToken)
             .ConfigureAwait(false);
-        SaslFinalAuthMessage finalAuthMessage = await ReceiveFinalAuthMessage(cancellationToken)
+        SaslFinalAuthMessage finalAuthMessage = await ReceiveNextMessageAs<SaslFinalAuthMessage>(cancellationToken)
             .ConfigureAwait(false);
         var finalServerSignature = ValidateServerFinalMessage(finalAuthMessage);
 
@@ -36,10 +53,12 @@ internal partial class PgStream
             throw new PgException("Unable to verify server signature");
         }
 
-        await ReceiveOkAuthMessage(cancellationToken).ConfigureAwait(false);
+        await ReceiveNextMessageAs<OkAuthMessage>(cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<string> SendScramInit(SaslAuthMessage saslAuthMessage, CancellationToken cancellationToken)
+    private async Task<string> SendScramInit(
+        SaslAuthMessage saslAuthMessage,
+        CancellationToken cancellationToken)
     {
         var serverSupportsSha256 = saslAuthMessage.AuthMechanisms.Contains("SCRAM-SHA-256");
         // var allowSha256 = serverSupportsSha256 &&
@@ -80,6 +99,9 @@ internal partial class PgStream
         return clientNonce;
     }
 
+    /// <summary>
+    /// Generate a nonce value as 18 random bytes converted to a Base64 string 
+    /// </summary>
     private static string GetNonce()
     {
         using var rngProvider = RandomNumberGenerator.Create();
@@ -87,13 +109,6 @@ internal partial class PgStream
         
         rngProvider.GetBytes(nonceBytes);
         return Convert.ToBase64String(nonceBytes);
-    }
-
-    private async Task<SaslContinueAuthMessage> ReceiveContinueMessage(CancellationToken cancellationToken)
-    {
-        var authentication = await ReceiveNextMessageAs<IAuthMessage>(cancellationToken)
-            .ConfigureAwait(false);
-        return PgException.CheckIfIs<IAuthMessage, SaslContinueAuthMessage>(authentication);
     }
     
     private async Task<byte[]> SendClientFinalMessage(
@@ -112,7 +127,7 @@ internal partial class PgStream
         var saltedPassword =
             Hi(password.Normalize(NormalizationForm.FormKC), saltBytes, iterations);
 
-        var clientKey = Hmac(saltedPassword, "Client Key");
+        var clientKey = Hmac(saltedPassword, "Client Key"u8);
         var storedKey = SHA256.HashData(clientKey);
         var clientFirstMessageBare = $"n=*,r={clientNonce}";
         var serverFirstMessage = $"r={serverNonce},s={salt},i={iterations}";
@@ -124,7 +139,7 @@ internal partial class PgStream
         Xor(clientKey, clientSignature);
         var clientProof = Convert.ToBase64String(clientKey);
 
-        var serverKey = Hmac(saltedPassword, "Server Key");
+        var serverKey = Hmac(saltedPassword, "Server Key"u8);
         var serverSignature = Hmac(serverKey, authMessage);
 
         var messageStr = $"{clientFinalMessageWithoutProof},p={clientProof}";
@@ -134,22 +149,22 @@ internal partial class PgStream
     }
 
     private static (string Nonce, string Salt, int Iteration) ParseSaslContinueData(
-        ReadOnlySpan<byte> saslContinueData)
+        ReadOnlySpan<char> saslContinueData)
     {
-        var data = Charsets.Default.GetString(saslContinueData);
         string? nonce = null;
         string? salt = null;
         var iteration = -1;
 
-        foreach (var part in data.Split(','))
+        foreach (Range range in saslContinueData.Split(','))
         {
+            var part = saslContinueData[range];
             if (part.StartsWith("r=", StringComparison.Ordinal))
             {
-                nonce = part[2..];
+                nonce = part[2..].ToString();
             }
             else if (part.StartsWith("s=", StringComparison.Ordinal))
             {
-                salt = part[2..];
+                salt = part[2..].ToString();
             }
             else if (part.StartsWith("i=", StringComparison.Ordinal))
             {
@@ -163,16 +178,18 @@ internal partial class PgStream
         
         PgException.ThrowIfNull(nonce);
         PgException.ThrowIfNull(salt);
-        if (iteration == -1)
-        {
-            throw new PgException("Could not find iteration value within SASL continue message");
-        }
-        return (nonce, salt, iteration);
+        return iteration == -1
+            ? throw new PgException("Could not find iteration value within SASL continue message")
+            : (nonce, salt, iteration);
     }
 
     private static byte[] Hi(ReadOnlySpan<char> str, ReadOnlySpan<byte> salt, int count)
         => Rfc2898DeriveBytes.Pbkdf2(str, salt, count, HashAlgorithmName.SHA256, 256 / 8);
 
+    /// <summary>
+    /// XOR the bytes in-place for each index in the first buffer. The second buffer must contain at
+    /// least as many bytes as the first buffer.
+    /// </summary>
     private static void Xor(Span<byte> buf1, Span<byte> buf2)
     {
         for (var i = 0; i < buf1.Length; i++)
@@ -181,26 +198,23 @@ internal partial class PgStream
         }
     }
 
-    private static byte[] Hmac(ReadOnlySpan<byte> key, string data)
-        => HMACSHA256.HashData(key, Charsets.Default.GetBytes(data));
+    private static byte[] Hmac(ReadOnlySpan<byte> key, ReadOnlySpan<byte> data)
+        => HMACSHA256.HashData(key, data);
 
-    private async Task<SaslFinalAuthMessage> ReceiveFinalAuthMessage(CancellationToken cancellationToken)
-    {
-        var authentication = await ReceiveNextMessageAs<IAuthMessage>(cancellationToken)
-            .ConfigureAwait(false);
-        return PgException.CheckIfIs<IAuthMessage, SaslFinalAuthMessage>(authentication);
-    }
+    private static byte[] Hmac(ReadOnlySpan<byte> key, string data)
+        => Hmac(key, Charsets.Default.GetBytes(data));
 
     private static string ValidateServerFinalMessage(SaslFinalAuthMessage finalAuthMessage)
     {
-        var data = Charsets.Default.GetString(finalAuthMessage.SaslData);
+        var data = finalAuthMessage.SaslData.AsSpan();
         string? serverSignature = null;
 
-        foreach (var part in data.Split(','))
+        foreach (Range range in data.Split(','))
         {
-            if (part.StartsWith("v=", StringComparison.Ordinal))
+            var span = data[range];
+            if (span.StartsWith("v=", StringComparison.Ordinal))
             {
-                serverSignature = part[2..];
+                serverSignature = span[2..].ToString();
             }
             else
             {
@@ -210,12 +224,5 @@ internal partial class PgStream
         
         PgException.ThrowIfNull(serverSignature);
         return serverSignature;
-    }
-
-    private async Task ReceiveOkAuthMessage(CancellationToken cancellationToken)
-    {
-        var authentication = await ReceiveNextMessageAs<IAuthMessage>(cancellationToken)
-            .ConfigureAwait(false);
-        PgException.CheckIfIs<IAuthMessage, OkAuthMessage>(authentication);
     }
 }

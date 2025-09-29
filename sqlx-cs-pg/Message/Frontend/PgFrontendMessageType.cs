@@ -14,5 +14,5 @@ internal enum PgFrontendMessageType : byte
     Password = (byte)'p',
     Query = (byte)'Q',
     Sync = (byte)'S',
-    // Terminate = (byte)'X',
+    Terminate = (byte)'X',
 }

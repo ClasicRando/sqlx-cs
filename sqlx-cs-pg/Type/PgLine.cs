@@ -5,11 +5,11 @@ using Sqlx.Postgres.Result;
 namespace Sqlx.Postgres.Type;
 
 public readonly record struct PgLine(double A, double B, double C)
-    : IPgDbType<PgLine>, IPostGisType, IHasArrayType
+    : IPgDbType<PgLine>, IGeometryType, IHasArrayType
 {
     private readonly Lazy<string> _postGisLiteral = new(() => $"{{{A},{B},{C}}}");
 
-    public string PostGisLiteral => _postGisLiteral.Value;
+    public string GeometryLiteral => _postGisLiteral.Value;
 
     public static void Encode(PgLine value, WriteBuffer buffer)
     {

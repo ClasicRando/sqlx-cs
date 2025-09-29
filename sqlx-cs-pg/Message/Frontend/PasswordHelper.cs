@@ -22,19 +22,20 @@ internal static class PasswordHelper
         ReadOnlySpan<byte> salt,
         Span<byte> hexDigest)
     {
-        Span<byte> usernameBytes = stackalloc byte[Charsets.Default.GetByteCount(username)];
-        Charsets.Default.GetBytes(username, usernameBytes);
-        Span<byte> passwordBytes = stackalloc byte[Charsets.Default.GetByteCount(password)];
-        Charsets.Default.GetBytes(password, passwordBytes);
+        var usernameByteCount = Charsets.Default.GetByteCount(username);
+        var passwordByteCount = Charsets.Default.GetByteCount(password);
 
         // Initial Digest
-        Span<byte> digestBuffer = stackalloc byte[usernameBytes.Length + passwordBytes.Length];
-        passwordBytes.CopyTo(digestBuffer);
-        usernameBytes.CopyTo(digestBuffer[passwordBytes.Length..]);
+        var digestBufferSize = usernameByteCount + passwordByteCount;
+        var digestBuffer = digestBufferSize < 255
+            ? stackalloc byte[digestBufferSize]
+            : new byte[digestBufferSize];
+        Charsets.Default.GetBytes(password, digestBuffer[..passwordByteCount]);
+        Charsets.Default.GetBytes(username, digestBuffer[passwordByteCount..]);
         Md5BytesToHex(MD5.HashData(digestBuffer), hexDigest, 0);
 
-        // Second digest with salt
-        digestBuffer = stackalloc byte[32 + salt.Length];
+        // Second digest with salt (salt length is always 4)
+        digestBuffer = stackalloc byte[32 + 4];
         hexDigest[..32].CopyTo(digestBuffer);
         salt.CopyTo(digestBuffer[32..]);
         Md5BytesToHex(MD5.HashData(digestBuffer), hexDigest, 3);

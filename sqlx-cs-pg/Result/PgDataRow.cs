@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core;
@@ -17,6 +18,9 @@ namespace Sqlx.Postgres.Result;
 /// </summary>
 internal sealed class PgDataRow : IDataRow
 {
+    private const int MaxStackSize = 256 / (sizeof(char) / sizeof(byte));
+    private static readonly ArrayPool<char> CharArrayPool = ArrayPool<char>.Shared;
+    
     private readonly byte[] _rowData;
     private readonly PgStatementMetadata _statementMetadata;
     private readonly Range?[] _columnValueSlices;
@@ -142,10 +146,25 @@ internal sealed class PgDataRow : IDataRow
         switch (columnData.ColumnMetadata.FormatCode)
         {
             case PgFormatCode.Text:
-                Span<char> chars = stackalloc char[Charsets.Default.GetCharCount(bytes)];
-                Charsets.Default.GetChars(bytes, chars);
-                PgTextValue textValue = new(chars, ref columnData.ColumnMetadata);
-                return PgJson<T>.DecodeText(textValue, jsonTypeInfo);
+                char[]? rentedFromPool = null;
+                var characterCount = Charsets.Default.GetCharCount(bytes);
+                var chars = characterCount >= MaxStackSize
+                    ? (rentedFromPool = CharArrayPool.Rent(characterCount))
+                    : stackalloc char[characterCount];
+                chars = chars[..characterCount];
+                try
+                {
+                    Charsets.Default.GetChars(bytes, chars);
+                    PgTextValue textValue = new(chars, ref columnData.ColumnMetadata);
+                    return PgJson<T>.DecodeText(textValue, jsonTypeInfo);
+                }
+                finally
+                {
+                    if (rentedFromPool is not null)
+                    {
+                        CharArrayPool.Return(rentedFromPool);
+                    }
+                }
             case PgFormatCode.Binary:
                 var buffer = new ReadBuffer(bytes);
                 PgBinaryValue binaryValue = new(buffer, ref columnData.ColumnMetadata);
@@ -196,9 +215,25 @@ internal sealed class PgDataRow : IDataRow
         switch (columnData.ColumnMetadata.FormatCode)
         {
             case PgFormatCode.Text:
-                Span<char> chars = stackalloc char[Charsets.Default.GetCharCount(bytes)];
-                Charsets.Default.GetChars(bytes, chars);
-                return TType.DecodeText(new PgTextValue(chars, ref columnData.ColumnMetadata));
+                char[]? rentedFromPool = null;
+                var characterCount = Charsets.Default.GetCharCount(bytes);
+                var chars = characterCount >= MaxStackSize
+                    ? (rentedFromPool = CharArrayPool.Rent(characterCount))
+                    : stackalloc char[characterCount];
+                chars = chars[..characterCount];
+                try
+                {
+                    Charsets.Default.GetChars(bytes, chars);
+                    PgTextValue textValue = new(chars, ref columnData.ColumnMetadata);
+                    return TType.DecodeText(textValue);
+                }
+                finally
+                {
+                    if (rentedFromPool is not null)
+                    {
+                        CharArrayPool.Return(rentedFromPool);
+                    }
+                }
             case PgFormatCode.Binary:
                 var buffer = new ReadBuffer(bytes);
                 return TType.DecodeBytes(new PgBinaryValue(buffer, ref columnData.ColumnMetadata));

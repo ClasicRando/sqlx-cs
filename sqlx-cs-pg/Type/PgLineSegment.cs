@@ -5,11 +5,11 @@ using Sqlx.Postgres.Result;
 namespace Sqlx.Postgres.Type;
 
 public readonly record struct PgLineSegment(PgPoint Point1, PgPoint Point2)
-    : IPgDbType<PgLineSegment>, IPostGisType, IHasArrayType
+    : IPgDbType<PgLineSegment>, IGeometryType, IHasArrayType
 {
-    private readonly Lazy<string> _postGisLiteral = new(() => $"({Point1.PostGisLiteral},{Point2.PostGisLiteral})");
+    private readonly Lazy<string> _postGisLiteral = new(() => $"({Point1.GeometryLiteral},{Point2.GeometryLiteral})");
 
-    public string PostGisLiteral => _postGisLiteral.Value;
+    public string GeometryLiteral => _postGisLiteral.Value;
 
     public static void Encode(PgLineSegment value, WriteBuffer buffer)
     {
@@ -25,18 +25,16 @@ public readonly record struct PgLineSegment(PgPoint Point1, PgPoint Point2)
     public static PgLineSegment DecodeText(PgTextValue value)
     {
         PgTextValue pointChars = value.Slice(1..^1);
-        var indexPairs = GeometryUtils.ExtractPointIndexes(pointChars);
-        if (indexPairs.Count == 2)
+        var indexPairs = GeometryUtils.ExtractPointRanges(pointChars);
+        if (indexPairs.Length == 2)
         {
             throw ColumnDecodeException.Create<PgLineSegment>(
                 value.ColumnMetadata,
                 $"Line segments must have exactly 2 points. Found '{value.Chars}'");
         }
 
-        var (firstPointStart, firstPointEnd) = indexPairs[0];
-        PgPoint point1 = PgPoint.DecodeText(pointChars.Slice(firstPointStart..firstPointEnd));
-        var (secondPointStart, secondPointEnd) = indexPairs[1];
-        PgPoint point2 = PgPoint.DecodeText(pointChars.Slice(secondPointStart..secondPointEnd));
+        PgPoint point1 = PgPoint.DecodeText(pointChars.Slice(indexPairs[0]));
+        PgPoint point2 = PgPoint.DecodeText(pointChars.Slice(indexPairs[1]));
         return new PgLineSegment(point1, point2);
     }
     

@@ -5,7 +5,7 @@ using Sqlx.Postgres.Result;
 namespace Sqlx.Postgres.Type;
 
 public readonly record struct PgPolygon(PgPoint[] Points)
-    : IPgDbType<PgPolygon>, IPostGisType, IHasArrayType
+    : IPgDbType<PgPolygon>, IGeometryType, IHasArrayType
 {
     private readonly Lazy<PgBox> _boundingBox = new(() => MakeBoundingBox(Points));
 
@@ -22,13 +22,13 @@ public readonly record struct PgPolygon(PgPoint[] Points)
             {
                 builder.Append(',');
             }
-            builder.Append(point.PostGisLiteral);
+            builder.Append(point.GeometryLiteral);
         }
         builder.Append(')');
         return builder.ToString();
     });
 
-    public string PostGisLiteral => _postGisLiteral.Value;
+    public string GeometryLiteral => _postGisLiteral.Value;
 
     public static void Encode(PgPolygon value, WriteBuffer buffer)
     {
@@ -53,12 +53,11 @@ public readonly record struct PgPolygon(PgPoint[] Points)
     public static PgPolygon DecodeText(PgTextValue value)
     {
         PgTextValue pointChars = value.Slice(1..^1);
-        var indexPairs = GeometryUtils.ExtractPointIndexes(pointChars);
-        var points = new PgPoint[indexPairs.Count];
+        var indexPairs = GeometryUtils.ExtractPointRanges(pointChars);
+        var points = new PgPoint[indexPairs.Length];
         for (var i = 0; i < points.Length; i++)
         {
-            var (pointStart, pointEnd) = indexPairs[i];
-            points[i] = PgPoint.DecodeText(pointChars.Slice(pointStart..pointEnd));
+            points[i] = PgPoint.DecodeText(pointChars.Slice(indexPairs[i]));
         }
         return new PgPolygon(points);
     }

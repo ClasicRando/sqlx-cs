@@ -1,8 +1,17 @@
 namespace Sqlx.Postgres.Type;
 
+/// <summary>
+/// Helper class for geometry related methods
+/// </summary>
 public static class GeometryUtils
 {
-    public static List<(int StartIndex, int EndIndex)> ExtractPointIndexes(
+    /// <summary>
+    /// Extract the ranges within the specified chars that contain a point. This assumes that points
+    /// are written as <c>(x,y)</c> so points are separated by '),'.
+    /// </summary>
+    /// <param name="chars">Characters that contain zero or more points</param>
+    /// <returns>Array of ranges spanning the points within the characters</returns>
+    public static Range[] ExtractPointRanges(
         ReadOnlySpan<char> chars)
     {
         if (chars.Length == 0)
@@ -10,24 +19,16 @@ public static class GeometryUtils
             return [];
         }
 
-        List<(int, int)> result = [];
-        var previousChar = chars[0];
-        var start = 0;
+        var capacity = ((chars.Count(',') - 1) / 2) + 1;
+        var result = new Range[capacity];
+        var index = 0;
 
-        for (var i = 1; i < chars.Length; i++)
+        foreach (Range rng in chars.Split("),"))
         {
-            if (previousChar == ')' && chars[i] == ',')
-            {
-                result.Add((start, i));
-                start = i + 1;
-                continue;
-            }
-            previousChar = chars[i];
-        }
-
-        if (result[^1].Item2 != chars.Length - 1)
-        {
-            result.Add((start, chars.Length));
+            Range finalRange = rng.End.Value == chars.Length
+                ? rng
+                : new Range(rng.Start, rng.End.Value + 1);
+            result[index++] = finalRange;
         }
 
         return result;

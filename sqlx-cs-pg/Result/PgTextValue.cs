@@ -22,7 +22,7 @@ public readonly ref struct PgTextValue(
     /// <see cref="Chars"/> as well as copying the <see cref="ColumnMetadata"/> reference.
     /// </summary>
     /// <param name="range"></param>
-    /// <returns></returns>
+    /// <returns>A sliced subset of this text value with the same column metadata</returns>
     public PgTextValue Slice(Range range) => new(Chars[range], ref ColumnMetadata);
 
     public static implicit operator ReadOnlySpan<char>(PgTextValue value) => value.Chars;

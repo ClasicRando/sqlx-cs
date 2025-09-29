@@ -39,7 +39,9 @@ public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<P
 
     public static PgMoney DecodeText(PgTextValue value)
     {
-        Span<char> tempSpan = stackalloc char[value.Chars.Length];
+        var tempSpan = value.Chars.Length > 256
+            ? new char[value.Chars.Length]
+            : stackalloc char[value.Chars.Length];
         var charCount = 0;
         foreach (var chr in value.Chars)
         {

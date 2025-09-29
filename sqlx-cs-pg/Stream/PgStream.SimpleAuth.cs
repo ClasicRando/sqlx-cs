@@ -7,6 +7,14 @@ namespace Sqlx.Postgres.Stream;
 
 internal partial class PgStream
 {
+    /// <summary>
+    /// Handle simple password auth flow. This sends the password as a simple message of bytes
+    /// optionally MD5 hashed if a salt is specified.
+    /// </summary>
+    /// <param name="username">Username to include in the MD5 hash (if needed)</param>
+    /// <param name="password">Password to encode/hash</param>
+    /// <param name="salt">Optional salt if MD5 hash is required</param>
+    /// <param name="cancellationToken">Token to cancel async operation</param>
     private async Task SimplePasswordAuthFlow(
         string username,
         string password,
@@ -15,7 +23,9 @@ internal partial class PgStream
     {
         var isSimplePassword = salt is null;
         var bufferSize = isSimplePassword ? Charsets.Default.GetByteCount(password) : 35;
-        Span<byte> passwordBytes = stackalloc byte[bufferSize];
+        var passwordBytes = bufferSize > 256
+            ? new byte[bufferSize]
+            : stackalloc byte[bufferSize];
         if (isSimplePassword)
         {
             Charsets.Default.GetBytes(password, passwordBytes);

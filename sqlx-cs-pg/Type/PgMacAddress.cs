@@ -1,7 +1,6 @@
 using System.Net.NetworkInformation;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
-using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -105,7 +104,7 @@ public readonly record struct PgMacAddress(
                     $"Could not parse network location bytes from '{value}'");
             }
 
-            bytes[i] = (byte)HexUtils.CharsToDigit<PgColumnMetadata>(
+            bytes[i] = (byte)HexUtils.CharsToDigit<PgMacAddress>(
                 value.Chars[rng],
                 value.ColumnMetadata);
         }

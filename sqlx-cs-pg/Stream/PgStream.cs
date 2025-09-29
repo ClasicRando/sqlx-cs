@@ -23,18 +23,22 @@ using Sqlx.Postgres.Query;
 
 namespace Sqlx.Postgres.Stream;
 
+/// <summary>
+/// Underlining connection to a Postgres database backend. Performs all the IO operations through an
+/// <see cref="IAsyncStream"/>.
+/// </summary>
 internal sealed partial class PgStream : IDisposable
 {
     private const string BeginQuery = "BEGIN;";
     private const string CommitQuery = "COMMIT;";
     private const string RollbackQuery = "ROLLBACK;";
     
+    private static readonly ArrayPool<byte> ArrayPool = ArrayPool<byte>.Shared;
     private bool _disposed;
     private readonly IAsyncStream _asyncStream;
     private PgConnectionPool? _pool;
     private readonly ILogger<PgStream> _logger;
-    private readonly WriteBuffer _buffer = new();
-    private readonly ArrayPool<byte> _arrayPool = ArrayPool<byte>.Shared;
+    private readonly WriteBuffer _writeBuffer = new();
     private readonly Channel<PgNotification> _notifications = Channel.CreateUnbounded<PgNotification>();
     private BackendDataKeyMessage? _backendDataKey;
     private long _inTransaction;
@@ -56,6 +60,10 @@ internal sealed partial class PgStream : IDisposable
     
     public bool InTransaction => Interlocked.Read(ref _inTransaction) == 1;
     
+    /// <summary>
+    /// Open the underlining stream and initiate the connection with the database backend 
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel async operation</param>
     internal async Task OpenAsync(CancellationToken cancellationToken)
     {
         CheckDisposed();
@@ -85,6 +93,14 @@ internal sealed partial class PgStream : IDisposable
         }
     }
     
+    /// <summary>
+    /// Receive the next message as an <see cref="IAuthMessage"/> which instructs the client on the
+    /// auth mechanism/flow to follow.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the async operation</param>
+    /// <exception cref="PgException">
+    /// If the auth flow specified by the database is not supported
+    /// </exception>
     private async Task HandleAuthFlow(CancellationToken cancellationToken)
     {
         var authentication = await ReceiveNextMessageAs<IAuthMessage>(cancellationToken)
@@ -119,6 +135,13 @@ internal sealed partial class PgStream : IDisposable
         }
     }
 
+    /// <summary>
+    /// Check if the current connection is valid. Issues a simple query that should always succeed
+    /// unless the connection is broken. If an exception is thrown or the query result is an error,
+    /// the <see cref="Status"/> property will be updated to <see cref="ConnectionStatus.Broken"/>.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the async operation</param>
+    /// <returns>True if the connection can query the database, otherwise false</returns>
     public async Task<bool> IsValidAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfNotOpen();
@@ -148,13 +171,24 @@ internal sealed partial class PgStream : IDisposable
         return true;
     }
 
+    /// <summary>
+    /// Execute the query as either a simple query or extended query based upon the checks performed
+    /// in <see cref="IsSimpleQuery"/>.
+    /// </summary>
+    /// <param name="query">Query to execute</param>
+    /// <param name="cancellationToken">Token to cancel async operation</param>
+    /// <returns></returns>
+    /// <exception cref="PgException">
+    /// If the supplied query is not a <see cref="PgExecutableQuery"/> or the connection is closed
+    /// or broken.
+    /// </exception>
     public async Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
         IQuery query,
         CancellationToken cancellationToken)
     {
         PgExecutableQuery executableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
         await ConnectIfClosed(cancellationToken);
-        var results = executableQuery.ParameterBuffer.ParameterCount == 0
+        var results = IsSimpleQuery(executableQuery)
             ? SendSimpleQuery(executableQuery.Query, cancellationToken)
             : SendExtendedQuery(executableQuery.Query, executableQuery.ParameterBuffer, cancellationToken);
         return results;
@@ -167,6 +201,10 @@ internal sealed partial class PgStream : IDisposable
         throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Call <see cref="OpenAsync"/> is the connection is closed.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the async operation</param>
     private async ValueTask ConnectIfClosed(CancellationToken cancellationToken)
     {
         if (Status is not ConnectionStatus.Closed)
@@ -214,6 +252,7 @@ internal sealed partial class PgStream : IDisposable
         try
         {
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await WaitUntilReady(cancellationToken).ConfigureAwait(false);
             switch (transactionCommand)
             {
                 case AbstractConnection.TransactionCommand.Begin when InTransaction:
@@ -321,7 +360,16 @@ internal sealed partial class PgStream : IDisposable
         }
     }
 
-    private async Task<T> WaitForOrThrowError<T>(CancellationToken cancellationToken) where T : IPgBackendMessage
+    /// <summary>
+    /// Process messages until <typeparamref name="T"/> is parsed or an error is sent by the
+    /// database backend. Defers to <see cref="WaitForOrError"/> and checks the result for an error.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel async operation</param>
+    /// <typeparam name="T">Message type to wait for</typeparam>
+    /// <returns>The message if received before an error</returns>
+    /// <exception cref="PgException">If an error message is sent by the backend</exception>
+    private async Task<T> WaitForOrThrowError<T>(CancellationToken cancellationToken)
+        where T : IPgBackendMessage
     {
         var result = await WaitForOrError<T>(cancellationToken)
             .ConfigureAwait(false);
@@ -333,7 +381,18 @@ internal sealed partial class PgStream : IDisposable
         };
     }
 
-    private async Task<Either<T, ErrorResponseMessage>> WaitForOrError<T>(CancellationToken cancellationToken) where T : IPgBackendMessage
+    /// <summary>
+    /// Receives messages until the message is of the desired type <typeparamref name="T"/> or an
+    /// error. Other messages are filtered through <see cref="ApplyStandardMessageProcessing"/> and
+    /// any other message retained after that is discarded. <see cref="ErrorResponseMessage"/>s are
+    /// not immediately thrown but returned for the caller to handle.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the async operation</param>
+    /// <typeparam name="T">Message type to wait for</typeparam>
+    /// <returns>One of the message if received before an error or that error</returns>
+    private async Task<Either<T, ErrorResponseMessage>> WaitForOrError<T>(
+        CancellationToken cancellationToken)
+        where T : IPgBackendMessage
     {
         while (true)
         {
@@ -346,6 +405,8 @@ internal sealed partial class PgStream : IDisposable
                 .ConfigureAwait(false);
             switch (postProcessMessage)
             {
+                case null:
+                    continue;
                 case ErrorResponseMessage errorResponse:
                     return new Either<T, ErrorResponseMessage>.Right(errorResponse);
                 case T result:
@@ -359,6 +420,21 @@ internal sealed partial class PgStream : IDisposable
         }
     }
 
+    /// <summary>
+    /// Handle standard messages and return null when the message was handled. This generally
+    /// applies to asynchronous messages that should be handled when sent out of order from the
+    /// database backend.
+    /// </summary>
+    /// <param name="message">Message to optionally process</param>
+    /// <param name="cancellationToken">Token to cancel async operation</param>
+    /// <param name="throwOnError">True if <see cref="ErrorResponseMessage"/> should throw</param>
+    /// <param name="handleNotification">
+    /// True if <see cref="PgNotification"/>s should be sent to <see cref="OnNotification"/>
+    /// </param>
+    /// <returns>The message if not processed, otherwise null</returns>
+    /// <exception cref="PgException">
+    /// If <paramref name="throwOnError"/> is true and the message was an error response
+    /// </exception>
     private async Task<IPgBackendMessage?> ApplyStandardMessageProcessing(
         IPgBackendMessage message,
         CancellationToken cancellationToken,
@@ -390,11 +466,20 @@ internal sealed partial class PgStream : IDisposable
         }
     }
 
+    /// <summary>
+    /// Log <c>NOTICE</c>
+    /// </summary>
+    /// <param name="noticeResponse"></param>
     private void OnNotice(NoticeResponseMessage noticeResponse)
     {
         _logger.LogNotice(SqlxConfig.DetailedLoggingLevel, noticeResponse);
     }
 
+    /// <summary>
+    /// Add notification to notifications channel
+    /// </summary>
+    /// <param name="notification">Notification sent from database backend</param>
+    /// <param name="cancellationToken">Token to cancel async operation</param>
     private ValueTask OnNotification(
         PgNotification notification,
         CancellationToken cancellationToken)
@@ -402,17 +487,26 @@ internal sealed partial class PgStream : IDisposable
         return _notifications.Writer.WriteAsync(notification, cancellationToken);
     }
 
+    /// <summary>
+    /// Capture the backend data key message for future usage
+    /// </summary>
     private void OnBackendDataKey(BackendDataKeyMessage message)
     {
         _logger.LogBackendDataKey(SqlxConfig.DetailedLoggingLevel, message.ProcessId);
         _backendDataKey = message;
     }
 
+    /// <summary>
+    /// Log parameter status update
+    /// </summary>
     private void OnParameterStatus(ParameterStatusMessage message)
     {
         _logger.LogParameterStatus(SqlxConfig.DetailedLoggingLevel, message.Name);
     }
 
+    /// <summary>
+    /// Log protocol negotiation message
+    /// </summary>
     private void OnNegotiateProtocolVersion(NegotiateProtocolVersionMessage message)
     {
         _logger.LogNegotiateProtocolVersion(
@@ -421,11 +515,17 @@ internal sealed partial class PgStream : IDisposable
             message.ProtocolOptionsNotRecognized);
     }
 
+    /// <summary>
+    /// Receive the next backend message as a <see cref="IPgBackendMessage"/>. We must use the
+    /// interface because the backend might send asynchronous messages that we need to handle.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the async operation</param>
+    /// <returns>The next message sent by the backend</returns>
     private async Task<IPgBackendMessage> ReceiveNextMessage(CancellationToken cancellationToken)
     {
         var format = (PgBackendMessageType)await _asyncStream.ReadByteAsync(cancellationToken).ConfigureAwait(false);
         var size = await _asyncStream.ReadIntAsync(cancellationToken).ConfigureAwait(false) - 4;
-        var contents = _arrayPool.Rent(size);
+        var contents = ArrayPool.Rent(size);
         try
         {
             await _asyncStream.ReadBuffer(contents.AsMemory(0, size), cancellationToken).ConfigureAwait(false);
@@ -433,10 +533,19 @@ internal sealed partial class PgStream : IDisposable
         }
         finally
         {
-            _arrayPool.Return(contents);
+            ArrayPool.Return(contents);
         }
     }
 
+    /// <summary>
+    /// Call <see cref="ReceiveNextMessage"/> and check that the message is of the desired type.
+    /// This is most applicable to auth processing since a defined flow is expected without
+    /// asynchronous messages.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the async operation</param>
+    /// <typeparam name="T">Desired message type</typeparam>
+    /// <returns>The next message sent by the backend as <typeparamref name="T"/></returns>
+    /// <exception cref="PgException">If the message is an error or not the desired type</exception>
     private async Task<T> ReceiveNextMessageAs<T>(CancellationToken cancellationToken)
         where T : IPgBackendMessage
     {
@@ -450,12 +559,24 @@ internal sealed partial class PgStream : IDisposable
         };
     }
 
+    /// <summary>
+    /// Write all content in <see cref="_writeBuffer"/> to the <see cref="_asyncStream"/> and reset
+    /// the <see cref="_writeBuffer"/> for future writes.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the async operation</param>
     private async Task Flush(CancellationToken cancellationToken)
     {
-        await _asyncStream.WriteAsync(_buffer.ReadableMemory, cancellationToken);
-        _buffer.Reset();
+        await _asyncStream.WriteAsync(_writeBuffer.ReadableMemory, cancellationToken);
+        _writeBuffer.Reset();
     }
 
+    /// <summary>
+    /// Parse the current message contents based upon the <see cref="PgBackendMessageType"/>
+    /// </summary>
+    /// <param name="messageType">Message type</param>
+    /// <param name="contents">Message contents to parse (could be empty)</param>
+    /// <returns>Backend message parsed</returns>
+    /// <exception cref="PgException">If the message type is not supported or exepcted</exception>
     private static IPgBackendMessage ParseMessage(
         PgBackendMessageType messageType,
         Span<byte> contents)
@@ -495,6 +616,11 @@ internal sealed partial class PgStream : IDisposable
     
     private void CheckDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
+    /// <summary>
+    /// Clean up the stream for future usage. This is called by the connection pool to prepare the
+    /// connection for usage by another caller.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the async operation</param>
     internal ValueTask CleanUp(CancellationToken cancellationToken)
     {
         return ValueTask.CompletedTask;
@@ -502,8 +628,23 @@ internal sealed partial class PgStream : IDisposable
 
     public void Dispose()
     {
+        if (_disposed) return;
+        
         _pool = null;
-        _buffer.Dispose();
+        // If we can send messages to the server, sent the terminate command before closing
+        if (Status is ConnectionStatus.Idle)
+        {
+            try
+            {
+                _writeBuffer.Reset();
+                SendTerminate().GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error closing PgStream");
+            }
+        }
+        _writeBuffer.Dispose();
         _asyncStream.Dispose();
         _disposed = true;
     }

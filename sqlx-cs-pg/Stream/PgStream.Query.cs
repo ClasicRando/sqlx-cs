@@ -20,6 +20,33 @@ internal partial class PgStream
     private const string UnnamedPortal = "";
     private readonly LruCache<string, PgPreparedStatement> _statementCache;
     private int _nextStatementId = 1;
+
+    /// <summary>
+    /// True if this query must be executed using the simple protocol. This depends on if there are
+    /// any parameters bound to the query, if the connection options allow for using the extended
+    /// protocol for simple queries and if the query itself would be a valid extended query.
+    /// </summary>
+    /// <param name="executableQuery">Query to check</param>
+    /// <returns>True if the query must be executed using the simple protocol</returns>
+    private bool IsSimpleQuery(PgExecutableQuery executableQuery)
+    {
+        if (executableQuery.ParameterBuffer.ParameterCount > 0)
+        {
+            return false;
+        }
+
+        if (!ConnectOptions.UseExtendedProtocolForSimpleQueries)
+        {
+            return true;
+        }
+
+        if (executableQuery.Query.Contains('$'))
+        {
+            return true;
+        }
+
+        return QueryUtils.QueryCount(executableQuery.Query) != 1;
+    }
     
     /// <summary>
     /// <para>
@@ -50,20 +77,6 @@ internal partial class PgStream
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sql);
         ThrowIfNotOpen();
-
-        if (ConnectOptions.UseExtendedProtocolForSimpleQueries && !sql.Contains('$'))
-        {
-            if (QueryUtils.QueryCount(sql) == 1)
-            {
-                using var buffer = new PgParameterBuffer();
-                var items = SendExtendedQuery(sql, buffer, cancellationToken)
-                    .ConfigureAwait(false);
-                await foreach (var item in items)
-                {
-                    yield return item;
-                }
-            }
-        }
 
         try
         {

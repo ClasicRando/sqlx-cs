@@ -5,8 +5,25 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
+/// <summary>
+/// Helper class for Postgres array type encoding and decoding
+/// </summary>
 internal static class PgArrayTypeUtils
 {
+    /// <summary>
+    /// Encode initial metadata fields for the binary encoded array value. This writes
+    /// <list type="number">
+    ///     <item>The number of dimensions (always 1)</item>
+    ///     <item>Array header flags (not used so always 0)</item>
+    ///     <item>The OID of the element type</item>
+    ///     <item>The number of items in the array</item>
+    ///     <item>The lower bound of the array (always 1)</item>
+    /// </list>
+    /// </summary>
+    /// <param name="length">Number of elements in the array</param>
+    /// <param name="buffer">Buffer to write the metadata to</param>
+    /// <typeparam name="TElement">Array element type</typeparam>
+    /// <typeparam name="TType">Array element's <see cref="IPgDbType{T}"/></typeparam>
     public static void EncodeMetaFields<TElement, TType>(int length, WriteBuffer buffer)
         where TType : IPgDbType<TElement>, IHasArrayType
         where TElement : notnull
@@ -18,6 +35,13 @@ internal static class PgArrayTypeUtils
         buffer.WriteInt(1);
     }
 
+    /// <summary>
+    /// Decode the initial metadata fields from the value buffer
+    /// </summary>
+    /// <param name="value">Binary encoded value</param>
+    /// <typeparam name="TElement">Array element type</typeparam>
+    /// <typeparam name="TType">Array element's <see cref="IPgDbType{T}"/></typeparam>
+    /// <returns>Number of items in the array</returns>
     public static int DecodeMetaFields<TElement, TType>(PgBinaryValue value)
         where TType : IPgDbType<TElement>
         where TElement : notnull
@@ -52,6 +76,12 @@ internal static class PgArrayTypeUtils
         return length;
     }
 
+    /// <summary>
+    /// Gather the ranges of characters inside the character buffer that represent each element of
+    /// the array. 
+    /// </summary>
+    /// <param name="value">Text encoded value</param>
+    /// <returns>List of ranges for each array element in buffer</returns>
     public static List<Range?> DecodeTextRanges(PgTextValue value)
     {
         if (value.Chars is "{}")
@@ -107,10 +137,26 @@ internal static class PgArrayTypeUtils
     }
 }
 
-public abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
+/// <summary>
+/// Array type decoder for reference types. Functionally similar to
+/// <see cref="PgArrayTypeStruct{TElement,TType}"/> but in both cases we need to account for nulls
+/// in arrays which is handled differently by the semantics of each type group.
+/// </summary>
+/// <typeparam name="TElement">Array element type</typeparam>
+/// <typeparam name="TType">Array element's <see cref="IPgDbType{T}"/></typeparam>
+internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
     where TType : IPgDbType<TElement>, IHasArrayType
     where TElement : class
 {
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// <para>
+    /// Encode an array of elements into the supplied buffer. This writes the metadata fields using
+    /// <see cref="PgArrayTypeUtils.EncodeMetaFields"/> followed by each item encoded into the
+    /// buffer (length prefixed if not null).
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/d57b7cc3338e9d9aa1d7c5da1b25a17c5a72dcce/src/backend/utils/adt/arrayfuncs.c#L1272">pg source code</a>
+    /// </summary>
     public static void Encode(TElement?[] value, WriteBuffer buffer)
     {
         PgArrayTypeUtils.EncodeMetaFields<TElement, TType>(value.Length, buffer);
@@ -127,6 +173,16 @@ public abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
         }
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// <para>
+    /// Decode an array of element from the supplied binary encoded buffer. This reads the metadata
+    /// fields using <see cref="PgArrayTypeUtils.DecodeMetaFields"/> followed by each item decoded
+    /// from the buffer. Items are length prefixed to know how much data an element includes where
+    /// a length of -1 means a null value.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/d57b7cc3338e9d9aa1d7c5da1b25a17c5a72dcce/src/backend/utils/adt/arrayfuncs.c#L1549">pg source code</a>
+    /// </summary>
     public static TElement?[] DecodeBytes(PgBinaryValue value)
     {
         var length = PgArrayTypeUtils.DecodeMetaFields<TElement, TType>(value);
@@ -145,16 +201,23 @@ public abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
                 continue;
             }
 
-            var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary);
-            var binaryValue = new PgBinaryValue(
-                value.Buffer.Slice(elementLength),
-                ref columnMetadata);
-            result[i] = TType.DecodeBytes(binaryValue);
+            result[i] = TType.DecodeBytes(value.Slice(elementLength));
         }
 
         return result;
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// <para>
+    /// Message is a text representation of the array (also called an array literal). Must be
+    /// wrapped in curly braces and each item is separated by a comma. This utilizes a method
+    /// <see cref="PgArrayTypeUtils.DecodeTextRanges"/> that scans the character buffer for each
+    /// element's range. With all the ranges found, the characters buffer is sliced for each range
+    /// and that slice is passed to the element types decoder. 
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1842">pg source code</a>
+    /// </summary>
     public static TElement?[] DecodeText(PgTextValue value)
     {
         var ranges = PgArrayTypeUtils.DecodeTextRanges(value);
@@ -169,10 +232,7 @@ public abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
                 continue;
             }
 
-            var slice = value.Chars[rng.Value];
-            var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Text);
-            var elementValue = new PgTextValue(slice, ref columnMetadata);
-            result[index] = TType.DecodeText(elementValue);
+            result[index] = TType.DecodeText(value.Slice(rng.Value));
         }
 
         return result;
@@ -191,10 +251,28 @@ public abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
     }
 }
 
-public abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?[]>
+/// <summary>
+/// Array type decoder for value types. Functionally similar to
+/// <see cref="PgArrayTypeClass{TElement,TType}"/> but in both cases we need to account for nulls
+/// in arrays which is handled differently by the semantics of each type group. In this class, we
+/// can not use <c>default</c> since that means an empty struct, not a database null which should be
+/// the actual value.
+/// </summary>
+/// <typeparam name="TElement">Array element type</typeparam>
+/// <typeparam name="TType">Array element's <see cref="IPgDbType{T}"/></typeparam>
+internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?[]>
     where TType : IPgDbType<TElement>, IHasArrayType
     where TElement : struct
 {
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// <para>
+    /// Encode an array of elements into the supplied buffer. This writes the metadata fields using
+    /// <see cref="PgArrayTypeUtils.EncodeMetaFields"/> followed by each item encoded into the
+    /// buffer (length prefixed if not null).
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/d57b7cc3338e9d9aa1d7c5da1b25a17c5a72dcce/src/backend/utils/adt/arrayfuncs.c#L1272">pg source code</a>
+    /// </summary>
     public static void Encode(TElement?[] value, WriteBuffer buffer)
     {
         PgArrayTypeUtils.EncodeMetaFields<TElement, TType>(value.Length, buffer);
@@ -211,6 +289,16 @@ public abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?[]
         }
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// <para>
+    /// Decode an array of element from the supplied binary encoded buffer. This reads the metadata
+    /// fields using <see cref="PgArrayTypeUtils.DecodeMetaFields"/> followed by each item decoded
+    /// from the buffer. Items are length prefixed to know how much data an element includes where
+    /// a length of -1 means a null value.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/d57b7cc3338e9d9aa1d7c5da1b25a17c5a72dcce/src/backend/utils/adt/arrayfuncs.c#L1549">pg source code</a>
+    /// </summary>
     public static TElement?[] DecodeBytes(PgBinaryValue value)
     {
         var length = PgArrayTypeUtils.DecodeMetaFields<TElement, TType>(value);
@@ -239,6 +327,17 @@ public abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?[]
         return result;
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// <para>
+    /// Message is a text representation of the array (also called an array literal). Must be
+    /// wrapped in curly braces and each item is separated by a comma. This utilizes a method
+    /// <see cref="PgArrayTypeUtils.DecodeTextRanges"/> that scans the character buffer for each
+    /// element's range. With all the ranges found, the characters buffer is sliced for each range
+    /// and that slice is passed to the element types decoder. 
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1842">pg source code</a>
+    /// </summary>
     public static TElement?[] DecodeText(PgTextValue value)
     {
         var ranges = PgArrayTypeUtils.DecodeTextRanges(value);

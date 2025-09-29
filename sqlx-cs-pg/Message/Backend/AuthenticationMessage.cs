@@ -35,9 +35,9 @@ internal abstract class AuthenticationMessage : IPgBackendMessage, IPgBackendMes
                 }
                 return new SaslAuthMessage(authMechanisms);
             case 11:
-                return new SaslContinueAuthMessage(buffer.ReadBytes());
+                return new SaslContinueAuthMessage(buffer.ReadText());
             case 12:
-                return new SaslFinalAuthMessage(buffer.ReadBytes());
+                return new SaslFinalAuthMessage(buffer.ReadText());
             default:
                 throw new PgException($"Unknown authentication method: {authMethod}");
         }
