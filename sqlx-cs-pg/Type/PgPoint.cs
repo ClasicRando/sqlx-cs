@@ -13,9 +13,9 @@ namespace Sqlx.Postgres.Type;
 public readonly record struct PgPoint(double X, double Y)
     : IPgDbType<PgPoint>, IGeometryType, IHasArrayType
 {
-    private readonly Lazy<string> _postGisLiteral = new(() => $"({X},{Y})");
+    private readonly Lazy<string> _geometryLiteral = new(() => $"({X},{Y})");
 
-    public string GeometryLiteral => _postGisLiteral.Value;
+    public string GeometryLiteral => _geometryLiteral.Value;
 
     public static PgPoint operator +(PgPoint p1, PgPoint p2) => new(p1.X + p2.X, p1.Y + p2.Y);
 

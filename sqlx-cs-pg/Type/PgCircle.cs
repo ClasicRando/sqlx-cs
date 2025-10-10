@@ -13,9 +13,9 @@ namespace Sqlx.Postgres.Type;
 public readonly record struct PgCircle(PgPoint Center, double Radius)
     : IPgDbType<PgCircle>, IGeometryType, IHasArrayType
 {
-    private readonly Lazy<string> _postGisLiteral = new(() => $"<{Center.GeometryLiteral},{Radius}>");
+    private readonly Lazy<string> _geometryLiteral = new(() => $"<{Center.GeometryLiteral},{Radius}>");
 
-    public string GeometryLiteral => _postGisLiteral.Value;
+    public string GeometryLiteral => _geometryLiteral.Value;
 
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>

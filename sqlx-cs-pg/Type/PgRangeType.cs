@@ -6,10 +6,24 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
+/// <summary>
+/// <see cref="IPgDbType{T}"/> for <see cref="PgRange{T}"/> values. Maps to any database type that
+/// has a range and the CLR type must implement <see cref="IHasRangeType"/>.
+/// </summary>
 internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>, IHasArrayType
     where TType : IPgDbType<TValue>, IHasRangeType
     where TValue : notnull
 {
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// <para>
+    /// Writes the range flags as a single Byte, followed by the <see cref="PgRange{T}.Lower"/> and
+    /// <see cref="PgRange{T}.Upper"/> if either value is not unbounded. Range flags are a bitmap
+    /// <see cref="RangeFlag"/> value including bits if the upper/lower bounds are inclusive or
+    /// infinite (i.e. unbounded).
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/rangetypes.c#L177">pg source code</a>
+    /// </summary>
     public static void Encode(PgRange<TValue> value, WriteBuffer buffer)
     {
         var flags = RangeFlag.Zero;
@@ -57,6 +71,37 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
         }
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// <para>
+    /// Steps to decode a generic range:
+    /// <list type="number">
+    ///     <item>Initialize the bounds as Bound.Unbounded since that is the default value.</item>
+    ///     <item>
+    ///     Read a Single Byte as the range flags. If the flags value contains the
+    ///     <see cref="RangeFlag.EmptyRange"/> then the start and end are unbounded and the decode
+    ///     method exits, returning a <see cref="PgRange{T}"/> with those bounds
+    ///     </item>
+    ///     <item>
+    ///     Check if the flags value contains the <see cref="RangeFlag.LowerBoundInfinite"/>. If not
+    ///     then use appropriate slice of the byte buffer to decode a value of T to use as the
+    ///     starting bound. Next, check the flags value to see if it contains the
+    ///     <see cref="RangeFlag.LowerBoundInclusive"/>. If yes, then lower bound is
+    ///     <see cref="Bound{T}.Included"/>. Otherwise, the lower bound is
+    ///     <see cref="Bound{T}.Excluded"/>.
+    ///     </item>
+    ///     <item>
+    ///     Check if the flags value contains the <see cref="RangeFlag.UpperBoundInfinite"/>. If not
+    ///     then use appropriate slice of the byte buffer to decode a value of T to use as the
+    ///     final bound. Next, check the flags value to see if it contains the
+    ///     <see cref="RangeFlag.UpperBoundInclusive"/>. If yes, then upper bound is
+    ///     <see cref="Bound{T}.Included"/>. Otherwise, the upper bound is
+    ///     <see cref="Bound{T}.Excluded"/>.
+    ///     </item>
+    /// </list>
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/rangetypes.c#L261">pg source code</a>
+    /// </summary>
     [SuppressMessage("ReSharper", "InvertIf")]
     public static PgRange<TValue> DecodeBytes(PgBinaryValue value)
     {
@@ -98,6 +143,21 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
         return new PgRange<TValue>(start, end);
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// <para>
+    /// Strip the bound characters from the character buffer and provide that resulting value to
+    /// <see cref="FindRangeSeparatorIndex"/> to get the index of the range separator character.
+    /// The characters are then sliced for bound of the range and passed to the inner type
+    /// <typeparamref name="TType"/> to decode and interpret as an inclusive or exclusive bound.
+    /// If either range value is empty/null, default to <see cref="Bound{T}.Unbounded"/>. After the
+    /// 2 bounds have been decoded, combine into a new <see cref="PgRange{T}"/> instance.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/rangetypes.c#L137">pg source code</a>
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the number of bounds in the range literal is > 2 or decoding a bound value fails
+    /// </exception>
     [SuppressMessage("ReSharper", "InvertIf")]
     public static PgRange<TValue> DecodeText(PgTextValue value)
     {
@@ -185,6 +245,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
     }
 }
 
+// https://github.com/postgres/postgres/blob/master/src/include/utils/rangetypes.h#L38-L45
 [Flags]
 public enum RangeFlag : byte
 {

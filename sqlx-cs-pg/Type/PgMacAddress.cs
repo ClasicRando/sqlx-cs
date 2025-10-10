@@ -5,6 +5,13 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
+/// <summary>
+/// <para>
+/// Postgres <c>MACADDR</c> and <c>MACADDR8</c> type represented as a pair of coordinates in a two-dimensional space
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/datatype-net-types.html#DATATYPE-MACADDR">macaddr docs</a>
+/// <a href="https://www.postgresql.org/docs/current/datatype-net-types.html#DATATYPE-MACADDR8">macaddr8 docs</a>
+/// </summary>
 public readonly record struct PgMacAddress(
     byte A,
     byte B,
@@ -46,6 +53,16 @@ public readonly record struct PgMacAddress(
         return $"{A:X2}:{B:X2}:{C:X2}:{D:X2}:{E:X2}:{F:X2}:{G:X2}:{H:X2}";
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// <para>
+    /// Writes all the bytes of the <see cref="PgMacAddress"/> unless
+    /// <see cref="PgMacAddress.IsMacAddress8"/> returns true, in which case only the first and last
+    /// 3 bytes are written.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/mac.c#L140">pg source code - macaddr</a>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/mac8.c#L253">pg source code - macaddr8</a>
+    /// </summary>
     public static void Encode(PgMacAddress value, WriteBuffer buffer)
     {
         buffer.WriteByte(value.A);
@@ -61,6 +78,19 @@ public readonly record struct PgMacAddress(
         buffer.WriteByte(value.H);
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// <para>
+    /// Check the number of available bytes in the buffer to confirm it either has 6 or 8
+    /// <see cref="byte"/>s. If the buffer has 6 bytes then the 4th and 5th bytes that are required
+    /// for a <see cref="PgMacAddress"/> are filled in as 0xFF and 0xFE (follows the postgresql
+    /// internal behaviour).
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/mac.c#L161">pg source code</a>
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the number of available bytes is not 6 or 8
+    /// </exception>
     public static PgMacAddress DecodeBytes(PgBinaryValue value)
     {
         var byteCount = value.Buffer.Remaining;
@@ -82,6 +112,18 @@ public readonly record struct PgMacAddress(
             value.Buffer.ReadByte());
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// <para>
+    /// Splits the characters by ':' to get each hex value of the MacAddress. Each hex literal is
+    /// then converted using <see cref="HexUtils.CharsToDigit"/> and all the bytes captures in a new
+    /// instance of <see cref="PgMacAddress"/>.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/mac.c#L121">pg source code</a>
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the characters do not match the expected format of a Postgres MacAddress literal
+    /// </exception>
     public static PgMacAddress DecodeText(PgTextValue value)
     {
         Span<Range> splits = stackalloc Range[8];
@@ -114,8 +156,8 @@ public readonly record struct PgMacAddress(
             bytes[index++],
             bytes[index++],
             bytes[index++],
-            bytes.Length == 8 ? bytes[index++] : DefaultD,
-            bytes.Length == 8 ? bytes[index++] : DefaultE,
+            splitCount == 8 ? bytes[index++] : DefaultD,
+            splitCount == 8 ? bytes[index++] : DefaultE,
             bytes[index++],
             bytes[index++],
             bytes[index]);

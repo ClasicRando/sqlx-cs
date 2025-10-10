@@ -4,8 +4,16 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
+/// <summary>
+/// <para>
+/// Postgres <c>MONEY</c> type represented as a 64-bit integer. This covers monetary values without
+/// using floating point or decimal values.
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/datatype-money.html">docs</a>
+/// </summary>
 public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<PgMoney>
 {
+    private static readonly System.Buffers.SearchValues<char> SearchValues = System.Buffers.SearchValues.Create("0123456789.-");
     private readonly long _inner;
     
     private PgMoney(long integer)
@@ -27,34 +35,71 @@ public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<P
 
     public PgMoney(double value) : this(Convert.ToDecimal(value)) {}
 
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// <para>
+    /// Writes the money value as a <see cref="long"/>
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/cash.c#L513">pg source code</a>
+    /// </summary>
     public static void Encode(PgMoney value, WriteBuffer buffer)
     {
         buffer.WriteLong(value._inner);
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// <para>
+    /// Reads a <see cref="long"/> value to use as the inner value of a <see cref="PgMoney"/>
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/cash.c#L524">pg source code</a>
+    /// </summary>
     public static PgMoney DecodeBytes(PgBinaryValue value)
     {
         return new PgMoney(value.Buffer.ReadLong());
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// <para>
+    /// Parses the characters to extract only digits, minus signs and decimal places. Any character
+    /// such as '$' will be ignored while parsing. Extracts to a <see cref="decimal"/> value that is
+    /// later converted to a <see cref="long"/> value with 0 scale.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/cash.c#L310">pg source code</a>
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the characters cannot be parsed into a decimal value
+    /// </exception>
     public static PgMoney DecodeText(PgTextValue value)
     {
-        var tempSpan = value.Chars.Length > 256
-            ? new char[value.Chars.Length]
-            : stackalloc char[value.Chars.Length];
-        var charCount = 0;
-        foreach (var chr in value.Chars)
+        if (value.Chars.ContainsAnyExcept(SearchValues))
         {
-            if (char.IsDigit(chr) || chr == '.')
+            var tempSpan = value.Chars.Length > 128
+                ? new char[value.Chars.Length]
+                : stackalloc char[value.Chars.Length];
+            var charCount = 0;
+            foreach (var chr in value.Chars)
             {
-                tempSpan[charCount++] = chr;
+                if (char.IsDigit(chr) || chr == '.')
+                {
+                    tempSpan[charCount++] = chr;
+                }
+            }
+            
+            if (decimal.TryParse(tempSpan[..charCount], null, out var result))
+            {
+                return new PgMoney(result);
+            }
+        }
+        else
+        {
+            if (decimal.TryParse(value.Chars, null, out var result))
+            {
+                return new PgMoney(result);
             }
         }
             
-        if (decimal.TryParse(tempSpan[..charCount], null, out var result))
-        {
-            return new PgMoney(result);
-        }
         throw ColumnDecodeException.Create<PgMoney>(
             value.ColumnMetadata,
             $"Could not parse '{value}' into a money value");

@@ -2,6 +2,16 @@ using System.Text;
 
 namespace Sqlx.Postgres.Type;
 
+/// <summary>
+/// <para>
+/// Postgres <c>RANGE</c> types represented as a lower and upper bound over a type
+/// <typeparamref name="T"/>
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/rangetypes.html">docs</a>
+/// </summary>
+/// <param name="Lower">Lower bound of the range</param>
+/// <param name="Upper">Upper bound of the range</param>
+/// <typeparam name="T">Range type</typeparam>
 public record PgRange<T>(Bound<T> Lower, Bound<T> Upper) where T : notnull
 {
     private readonly Lazy<string> _postgresLiteral = new(
@@ -50,7 +60,14 @@ public record PgRange<T>(Bound<T> Lower, Bound<T> Upper) where T : notnull
     public string PostgresLiteral => _postgresLiteral.Value;
 }
 
-public class Bound<T> : IEquatable<Bound<T>> where T : notnull
+/// <summary>
+/// Bound description of a <see cref="PgRange{T}"/>. You cannot directly construct an instance of
+/// this type. Rather, there are static factory methods <see cref="Included"/>,
+/// <see cref="Excluded"/> and <see cref="Unbounded"/> that create an instance of the desired
+/// <see cref="BoundType"/>. This ensures the consistency of the instances of this class. 
+/// </summary>
+/// <typeparam name="T">Range type</typeparam>
+public sealed class Bound<T> : IEquatable<Bound<T>> where T : notnull
 {
     public T? Value { get; }
     public BoundType Type { get; }
@@ -61,16 +78,31 @@ public class Bound<T> : IEquatable<Bound<T>> where T : notnull
         Type = type;
     }
 
+    /// <summary>
+    /// Create a new instance with value specified as an inclusive bound (range includes this value)
+    /// </summary>
+    /// <param name="value">Range bound value</param>
+    /// <returns>Inclusive range bound</returns>
     public static Bound<T> Included(T value)
     {
         return new Bound<T>(value, BoundType.Included);
     }
 
+    /// <summary>
+    /// Create a new instance with value specified as an exclusive bound (range does not include
+    /// this value)
+    /// </summary>
+    /// <param name="value">Range bound value</param>
+    /// <returns>Exclusive range bound</returns>
     public static Bound<T> Excluded(T value)
     {
         return new Bound<T>(value, BoundType.Excluded);
     }
 
+    /// <summary>
+    /// Create a new undefined/infinite bound on a range
+    /// </summary>
+    /// <returns>Unbounded range bound</returns>
     public static Bound<T> Unbounded()
     {
         return new Bound<T>(default, BoundType.Unbounded);

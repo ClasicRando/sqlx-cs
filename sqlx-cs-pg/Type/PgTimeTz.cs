@@ -5,24 +5,61 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
+/// <summary>
+/// <para>
+/// Postgres <c>TIMETZ</c> type represented as a <see cref="TimeOnly"/> and the offset in seconds
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-TIMEZONES">docs</a>
+/// </summary>
+/// <param name="Time">Scalar time in the day</param>
+/// <param name="OffsetSeconds">
+/// Time zone offset in seconds. Negative offsets indicates timezones west of UTC
+/// </param>
 public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
     : IPgDbType<PgTimeTz>, IHasArrayType
 {
     private const int OffsetStart = 8;
     
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// <para>
+    /// Writes the number of microseconds since the start of the day followed by the number of
+    /// seconds offset from UTC.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L2335">pg source code</a>
+    /// </summary>
     public static void Encode(PgTimeTz value, WriteBuffer buffer)
     {
         PgTime.Encode(value.Time, buffer);
         buffer.WriteInt(value.OffsetSeconds);
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// <para>
+    /// Extracts a <see cref="TimeOnly"/> using <see cref="PgTime.DecodeBytes"/> then reads an
+    /// <see cref="int"/> to get the offset in seconds.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L2371">pg source code</a>
+    /// </summary>
     public static PgTimeTz DecodeBytes(PgBinaryValue value)
     {
         TimeOnly time = PgTime.DecodeBytes(value);
-        var offsetSeconds = value.Buffer.ReadInt() * -1;
+        var offsetSeconds = value.Buffer.ReadInt();
         return new PgTimeTz(time, offsetSeconds);
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// <para>
+    /// Parses the characters up to the offset start index using <see cref="PgTime.DecodeText"/> to
+    /// get the time, then parses the offset and return the composite type.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L2314">pg source code</a>
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the offset cannot be parsed or a time value cannot be extracted
+    /// </exception>
     public static PgTimeTz DecodeText(PgTextValue value)
     {
         var offsetSeconds = FindOffset(value, value.ColumnMetadata);
@@ -44,7 +81,7 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
         return DbType;
     }
 
-    private static int FindOffset(ReadOnlySpan<char> chars, PgColumnMetadata columnMetadata)
+    private static int FindOffset(ReadOnlySpan<char> chars, in PgColumnMetadata columnMetadata)
     {
         if (chars.Length < OffsetStart)
         {

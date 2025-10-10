@@ -5,8 +5,21 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
+/// <summary>
+/// Helper class for reading integer values
+/// </summary>
 internal static class PgInteger
 {
+    /// <summary>
+    /// Extract a <see cref="long"/> value from the buffer, up casting values to a long if the
+    /// number of remaining bytes does not equal 8
+    /// </summary>
+    /// <param name="value">Binary encoded value</param>
+    /// <typeparam name="T">Integer type</typeparam>
+    /// <returns><see cref="long"/> value from the buffer</returns>
+    /// <exception cref="ColumnDecodeException">
+    /// If the number of bytes is not 2, 4 or 8
+    /// </exception>
     public static long ExtractInteger<T>(this PgBinaryValue value) where T : notnull
     {
         return value.Buffer.Remaining switch
@@ -20,6 +33,15 @@ internal static class PgInteger
         };
     }
     
+    /// <summary>
+    /// Extract a <see cref="long"/> value from the characters
+    /// </summary>
+    /// <param name="value">Text encode value</param>
+    /// <typeparam name="T">Integer type</typeparam>
+    /// <returns><see cref="long"/> value from the characters</returns>
+    /// <exception cref="ColumnDecodeException">
+    /// If the characters are not a valid <see cref="long"/> value
+    /// </exception>
     public static long ExtractInteger<T>(this PgTextValue value) where T : notnull
     {
         if (!long.TryParse(value, null, out var parseResult))
@@ -39,18 +61,36 @@ internal static class PgInteger
     }
 }
 
+/// <summary>
+/// <see cref="IPgDbType{T}"/> for <see cref="long"/> values. Maps to the <c>BIGINT</c> type.
+/// </summary>
 internal abstract class PgLong : IPgDbType<long>, IHasRangeType, IHasArrayType
 {
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// Writes the <see cref="long"/> value to the buffer
+    /// </summary>
     public static void Encode(long value, WriteBuffer buffer)
     {
         buffer.WriteLong(value);
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// Read a <see cref="long"/> value from the buffer
+    /// </summary>
     public static long DecodeBytes(PgBinaryValue value)
     {
         return value.ExtractInteger<long>();
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// Parse the characters to a <see cref="long"/> value
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the characters are not a <see cref="long"/> value
+    /// </exception>
     public static long DecodeText(PgTextValue value)
     {
         return value.ExtractInteger<long>();
@@ -75,19 +115,42 @@ internal abstract class PgLong : IPgDbType<long>, IHasRangeType, IHasArrayType
     }
 }
 
+/// <summary>
+/// <see cref="IPgDbType{T}"/> for <see cref="int"/> values. Maps to the <c>INTEGER</c> type.
+/// </summary>
 internal abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
 {
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// Writes the <see cref="int"/> value to the buffer
+    /// </summary>
     public static void Encode(int value, WriteBuffer buffer)
     {
         buffer.WriteInt(value);
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// Read an <see cref="int"/> value from the buffer. Down casts if the actual value is a
+    /// <see cref="long"/> but can be safely fit within an <see cref="int"/>.
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the integer value is outside a valid <see cref="int"/>
+    /// </exception>
     public static int DecodeBytes(PgBinaryValue value)
     {
         var integer = value.ExtractInteger<int>();
         return Integers.ValidateInt(integer, value.ColumnMetadata);
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// Parse the characters to an <see cref="int"/> value. Down casts if the actual value is a
+    /// <see cref="long"/> but can be safely fit within an <see cref="int"/>.
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the characters are not an <see cref="int"/> value
+    /// </exception>
     public static int DecodeText(PgTextValue value)
     {
         var integer = value.ExtractInteger<int>();
@@ -113,19 +176,42 @@ internal abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
     }
 }
 
+/// <summary>
+/// <see cref="IPgDbType{T}"/> for <see cref="short"/> values. Maps to the <c>SMALLINT</c> type.
+/// </summary>
 internal abstract class PgShort : IPgDbType<short>, IHasArrayType
 {
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// Writes the <see cref="short"/> value to the buffer
+    /// </summary>
     public static void Encode(short value, WriteBuffer buffer)
     {
         buffer.WriteShort(value);
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// Read a <see cref="short"/> value from the buffer. Down casts if the actual value is a
+    /// <see cref="long"/> or <see cref="int"/> but can be safely fit within a <see cref="short"/>.
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the integer value is outside a valid <see cref="short"/>
+    /// </exception>
     public static short DecodeBytes(PgBinaryValue value)
     {
         var integer = value.ExtractInteger<short>();
         return Integers.ValidateShort(integer, value.ColumnMetadata);
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// Parse the characters to a <see cref="short"/> value. Down casts if the actual value is a
+    /// <see cref="long"/> or <see cref="int"/> but can be safely fit within a <see cref="short"/>.
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the characters are not a <see cref="short"/> value
+    /// </exception>
     public static short DecodeText(PgTextValue value)
     {
         var integer = value.ExtractInteger<short>();

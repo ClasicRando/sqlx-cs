@@ -4,13 +4,25 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
+/// <summary>
+/// <para>Postgres <c>LINE</c> type represented as a linear equation:</para>
+/// <para><see cref="A"/>x + <see cref="B"/>y + <see cref="C"/> = 0</para>
+/// <a href="https://www.postgresql.org/docs/current/datatype-geometric.html#DATATYPE-LINE">docs</a>
+/// </summary>
 public readonly record struct PgLine(double A, double B, double C)
     : IPgDbType<PgLine>, IGeometryType, IHasArrayType
 {
-    private readonly Lazy<string> _postGisLiteral = new(() => $"{{{A},{B},{C}}}");
+    private readonly Lazy<string> _geometryLiteral = new(() => $"{{{A},{B},{C}}}");
 
-    public string GeometryLiteral => _postGisLiteral.Value;
+    public string GeometryLiteral => _geometryLiteral.Value;
 
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// <para>
+    /// Writes all 3 <see cref="double"/> values in alphabetic order
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1038">pg source code</a>
+    /// </summary>
     public static void Encode(PgLine value, WriteBuffer buffer)
     {
         buffer.WriteDouble(value.A);
@@ -18,6 +30,13 @@ public readonly record struct PgLine(double A, double B, double C)
         buffer.WriteDouble(value.C);
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// <para>
+    /// Read all 3 <see cref="double"/> values in alphabetic order
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1061">pg source code</a>
+    /// </summary>
     public static PgLine DecodeBytes(PgBinaryValue value)
     {
         return new PgLine(
@@ -26,10 +45,21 @@ public readonly record struct PgLine(double A, double B, double C)
             value.Buffer.ReadDouble());
     }
 
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// <para>
+    /// Extracts 3 Double values from the characters assuming the format is <c>({a},{b},{c})</c>.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1023">pg source code</a>
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the characters do not match the expected format or any part of the line cannot be
+    /// converted to a <see cref="double"/>
+    /// </exception>
     public static PgLine DecodeText(PgTextValue value)
     {
         var commaIndex = value.Chars.IndexOf(',');
-        var firstPointSpan = value.Chars.Slice(1, commaIndex - 1);
+        var firstPointSpan = value.Chars[1..commaIndex];
         if (!double.TryParse(firstPointSpan, out var a))
         {
             throw ColumnDecodeException.Create<PgLine>(

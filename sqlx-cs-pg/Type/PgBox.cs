@@ -11,9 +11,9 @@ namespace Sqlx.Postgres.Type;
 public readonly record struct PgBox(PgPoint High, PgPoint Low)
     : IPgDbType<PgBox>, IGeometryType, IHasArrayType
 {
-    private readonly Lazy<string> _postGisLiteral = new(() => $"{High.GeometryLiteral},{Low.GeometryLiteral}");
+    private readonly Lazy<string> _geometryLiteral = new(() => $"{High.GeometryLiteral},{Low.GeometryLiteral}");
 
-    public string GeometryLiteral => _postGisLiteral.Value;
+    public string GeometryLiteral => _geometryLiteral.Value;
 
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
