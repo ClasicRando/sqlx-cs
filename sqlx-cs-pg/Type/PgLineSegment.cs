@@ -10,10 +10,14 @@ namespace Sqlx.Postgres.Type;
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-geometric.html#DATATYPE-LSEG">docs</a>
 /// </summary>
-public readonly record struct PgLineSegment(PgPoint Point1, PgPoint Point2)
-    : IPgDbType<PgLineSegment>, IGeometryType, IHasArrayType
+public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
+    : IPgDbType<PgLineSegment>, IGeometryType, IHasArrayType, IEquatable<PgLineSegment>
 {
-    private readonly Lazy<string> _geometryLiteral = new(() => $"({Point1.GeometryLiteral},{Point2.GeometryLiteral})");
+    private readonly Lazy<string> _geometryLiteral = new(() => $"({point1.GeometryLiteral},{point2.GeometryLiteral})");
+
+    public PgPoint Point1 { get; } = point1;
+
+    public PgPoint Point2 { get; } = point2;
 
     public string GeometryLiteral => _geometryLiteral.Value;
 
@@ -37,9 +41,9 @@ public readonly record struct PgLineSegment(PgPoint Point1, PgPoint Point2)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L2111">pg source code</a>
     /// </summary>
-    public static PgLineSegment DecodeBytes(PgBinaryValue value)
+    public static PgLineSegment DecodeBytes(ref PgBinaryValue value)
     {
-        return new PgLineSegment(PgPoint.DecodeBytes(value), PgPoint.DecodeBytes(value));
+        return new PgLineSegment(PgPoint.DecodeBytes(ref value), PgPoint.DecodeBytes(ref value));
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -59,15 +63,17 @@ public readonly record struct PgLineSegment(PgPoint Point1, PgPoint Point2)
     {
         PgTextValue pointChars = value.Slice(1..^1);
         var indexPairs = GeometryUtils.ExtractPointRanges(pointChars);
-        if (indexPairs.Length == 2)
+        if (indexPairs.Length != 2)
         {
             throw ColumnDecodeException.Create<PgLineSegment>(
                 value.ColumnMetadata,
                 $"Line segments must have exactly 2 points. Found '{value.Chars}'");
         }
 
-        PgPoint point1 = PgPoint.DecodeText(pointChars.Slice(indexPairs[0]));
-        PgPoint point2 = PgPoint.DecodeText(pointChars.Slice(indexPairs[1]));
+        PgTextValue slice1 = pointChars.Slice(indexPairs[0]);
+        PgPoint point1 = GeometryUtils.DecodePoint<PgLineSegment>(slice1);
+        PgTextValue slice2 = pointChars.Slice(indexPairs[1]);
+        PgPoint point2 = GeometryUtils.DecodePoint<PgLineSegment>(slice2);
         return new PgLineSegment(point1, point2);
     }
     
@@ -77,11 +83,41 @@ public readonly record struct PgLineSegment(PgPoint Point1, PgPoint Point2)
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(PgLineSegment value)
     {
         return DbType;
+    }
+
+    public bool Equals(PgLineSegment other)
+    {
+        return Point1.Equals(other.Point1) && Point2.Equals(other.Point2);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is PgLineSegment other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Point1, Point2);
+    }
+    
+    public static bool operator ==(PgLineSegment left, PgLineSegment right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(PgLineSegment left, PgLineSegment right)
+    {
+        return !(left == right);
+    }
+
+    public override string ToString()
+    {
+        return $"{nameof(PgLineSegment)} {{ {nameof(Point1)} = {Point1}, {nameof(Point2)} = {Point2} }}";
     }
 }

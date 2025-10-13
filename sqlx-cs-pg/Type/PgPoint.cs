@@ -1,5 +1,4 @@
 using Sqlx.Core.Buffer;
-using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -10,10 +9,14 @@ namespace Sqlx.Postgres.Type;
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-geometric.html#DATATYPE-GEOMETRIC-POINTS">docs</a>
 /// </summary>
-public readonly record struct PgPoint(double X, double Y)
-    : IPgDbType<PgPoint>, IGeometryType, IHasArrayType
+public readonly struct PgPoint(double x, double y)
+    : IPgDbType<PgPoint>, IGeometryType, IHasArrayType, IEquatable<PgPoint>
 {
-    private readonly Lazy<string> _geometryLiteral = new(() => $"({X},{Y})");
+    private readonly Lazy<string> _geometryLiteral = new(() => $"({x},{y})");
+
+    public double X { get; } = x;
+    
+    public double Y { get; } = y;
 
     public string GeometryLiteral => _geometryLiteral.Value;
 
@@ -42,32 +45,16 @@ public readonly record struct PgPoint(double X, double Y)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1868">pg source code</a>
     /// </summary>
-    public static PgPoint DecodeBytes(PgBinaryValue value)
+    public static PgPoint DecodeBytes(ref PgBinaryValue value)
     {
         return new PgPoint(value.Buffer.ReadDouble(), value.Buffer.ReadDouble());
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
-    /// <summary>
-    /// <para>
-    /// Extracts 2 <see cref="double"/> values for the <see cref="PgPoint.X"/> and
-    /// <see cref="PgPoint.Y"/> coordinates from the characters assuming the format is '({x},{y})'
-    /// </para>
-    /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1842">pg source code</a>
-    /// </summary>
-    /// <exception cref="ColumnDecodeException">
-    /// If either coordinate cannot be parsed from the characters
-    /// </exception>
+    /// <seealso cref="GeometryUtils.DecodePoint"/>
     public static PgPoint DecodeText(PgTextValue value)
     {
-        var commaIndex = value.Chars.IndexOf(',');
-        if (!double.TryParse(value.Chars[1..commaIndex], out var x))
-        {
-            throw ColumnDecodeException.Create<PgPoint>(value.ColumnMetadata, "Could not parse X coordinate");
-        }
-        return !double.TryParse(value.Chars.Slice(commaIndex + 1, value.Chars.Length - commaIndex - 2), out var y)
-            ? throw ColumnDecodeException.Create<PgPoint>(value.ColumnMetadata, "Could not parse Y coordinate")
-            : new PgPoint(x, y);
+        return GeometryUtils.DecodePoint<PgPoint>(value);
     }
     
     public static PgType DbType => PgType.Point;
@@ -76,11 +63,41 @@ public readonly record struct PgPoint(double X, double Y)
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(PgPoint value)
     {
         return DbType;
+    }
+
+    public bool Equals(PgPoint other)
+    {
+        return X.Equals(other.X) && Y.Equals(other.Y);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is PgPoint other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(X, Y);
+    }
+    
+    public static bool operator ==(PgPoint left, PgPoint right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(PgPoint left, PgPoint right)
+    {
+        return !(left == right);
+    }
+
+    public override string ToString()
+    {
+        return $"PgPoint {{ {nameof(X)} = {X}, {nameof(Y)} = {Y} }}";
     }
 }

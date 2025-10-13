@@ -61,7 +61,7 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/timestamp.c#L1032">pg source code</a>
     /// </summary>
-    public static PgInterval DecodeBytes(PgBinaryValue value)
+    public static PgInterval DecodeBytes(ref PgBinaryValue value)
     {
         var microSeconds = value.Buffer.ReadLong();
         var days = value.Buffer.ReadInt();
@@ -235,7 +235,7 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(PgInterval value)

@@ -24,7 +24,7 @@ public interface IPgDbType<T> where T : notnull
     /// <returns>
     /// A new instance of <typeparamref name="T"/> decoded from the binary encoded value
     /// </returns>
-    static abstract T DecodeBytes(PgBinaryValue value);
+    static abstract T DecodeBytes(ref PgBinaryValue value);
 
     /// <param name="value">Text encoded value sent from the database</param>
     /// <returns>

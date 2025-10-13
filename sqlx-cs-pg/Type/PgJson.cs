@@ -54,16 +54,16 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// <summary>
     /// <para>
     /// Decode a value of type <typeparamref name="T"/> as JSON by deferring to
-    /// <see cref="DecodeBytes(PgBinaryValue, JsonTypeInfo{T})"/>. This method always uses runtime
-    /// JSON serialization which is slower and uses more memory when compared to JSON serialization
-    /// with source generation.
+    /// <see cref="DecodeBytes(ref PgBinaryValue, JsonTypeInfo{T})"/>. This method always uses
+    /// runtime JSON serialization which is slower and uses more memory when compared to JSON
+    /// serialization with source generation.
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/jsonb.c#L128">pg source code</a>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/json.c#L136">pg source code</a>
     /// </summary>
-    public static T DecodeBytes(PgBinaryValue value)
+    public static T DecodeBytes(ref PgBinaryValue value)
     {
-        return DecodeBytes(value, null);
+        return DecodeBytes(ref value, null);
     }
 
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
@@ -83,9 +83,9 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/json.c#L136">pg source code</a>
     /// </summary>
     [SuppressMessage("ReSharper", "InvertIf")]
-    public static T DecodeBytes(PgBinaryValue value, JsonTypeInfo<T>? typeInfo)
+    public static T DecodeBytes(ref PgBinaryValue value, JsonTypeInfo<T>? typeInfo)
     {
-        if (value.ColumnMetadata.PgType.TypeOid == PgType.Jsonb.TypeOid)
+        if (value.ColumnMetadata.PgType == PgType.Jsonb)
         {
             var versionCode = value.Buffer.ReadByte();
             if (versionCode != JsonBVersion)
@@ -136,7 +136,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     public static T DecodeText(PgTextValue value, JsonTypeInfo<T>? typeInfo)
     {
         var chars = value.Chars;
-        if (value.ColumnMetadata.PgType.TypeOid == PgType.Jsonb.TypeOid)
+        if (value.ColumnMetadata.PgType == PgType.Jsonb)
         {
             var versionCode = value.Chars[0];
             if (versionCode != JsonBVersion)
@@ -157,7 +157,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid || dbType.TypeOid == PgType.Json.TypeOid;
+        return dbType == DbType || dbType == PgType.Json;
     }
 
     public static PgType GetActualType(T value)

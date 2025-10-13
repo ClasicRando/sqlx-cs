@@ -137,7 +137,8 @@ internal sealed class PgDataRow : IDataRow
             throw new SqlxException($"Expected field #{index} to be non-null but found null");
         }
         
-        if (PgJson<T>.DbType != columnData.ColumnMetadata.PgType && !PgJson<T>.IsCompatible(columnData.ColumnMetadata.PgType))
+        if (PgJson<T>.DbType != columnData.ColumnMetadata.PgType
+            && !PgJson<T>.IsCompatible(columnData.ColumnMetadata.PgType))
         {
             throw ColumnDecodeException.Create<T>(columnData.ColumnMetadata);
         }
@@ -168,7 +169,7 @@ internal sealed class PgDataRow : IDataRow
             case PgFormatCode.Binary:
                 var buffer = new ReadBuffer(bytes);
                 PgBinaryValue binaryValue = new(buffer, ref columnData.ColumnMetadata);
-                return PgJson<T>.DecodeBytes(binaryValue, jsonTypeInfo);
+                return PgJson<T>.DecodeBytes(ref binaryValue, jsonTypeInfo);
             default:
                 throw ColumnDecodeException.Create<T>(
                     columnData.ColumnMetadata,
@@ -205,7 +206,7 @@ internal sealed class PgDataRow : IDataRow
             throw new SqlxException($"Expected field #{index} to be non-null but found null");
         }
         
-        if (TType.DbType.TypeOid != columnData.ColumnMetadata.PgType.TypeOid
+        if (TType.DbType != columnData.ColumnMetadata.PgType
             && !TType.IsCompatible(columnData.ColumnMetadata.PgType))
         {
             throw ColumnDecodeException.Create<TResult>(columnData.ColumnMetadata);
@@ -236,7 +237,8 @@ internal sealed class PgDataRow : IDataRow
                 }
             case PgFormatCode.Binary:
                 var buffer = new ReadBuffer(bytes);
-                return TType.DecodeBytes(new PgBinaryValue(buffer, ref columnData.ColumnMetadata));
+                var value = new PgBinaryValue(buffer, ref columnData.ColumnMetadata);
+                return TType.DecodeBytes(ref value);
             default:
                 throw ColumnDecodeException.Create<TResult>(
                     columnData.ColumnMetadata,

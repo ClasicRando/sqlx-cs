@@ -5,7 +5,10 @@ using Sqlx.Postgres.Result;
 namespace Sqlx.Postgres.Type;
 
 /// <summary>
+/// <para>
 /// <see cref="IPgDbType{T}"/> for <see cref="sbyte"/> values. Maps to the <c>"CHAR"</c> type.
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER-SPECIAL-TABLE">docs</a>
 /// </summary>
 internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
 {
@@ -25,7 +28,7 @@ internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/char.c#L105">pg source code</a>
     /// </summary>
-    public static sbyte DecodeBytes(PgBinaryValue value)
+    public static sbyte DecodeBytes(ref PgBinaryValue value)
     {
         return value.Buffer.Remaining == 0 ? (sbyte)0 : (sbyte)value.Buffer.ReadByte();
     }
@@ -54,22 +57,22 @@ internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
     {
         return value.Chars.Length switch
         {
-            4 => (sbyte)(((byte)value.Chars[1] << 6) | ((byte)value.Chars[2] << 3) | (byte)value.Chars[3]),
+            4 => (sbyte)(((value.Chars[1] - '0') << 6) | ((value.Chars[2] - '0') << 3) | (value.Chars[3] - '0')),
             1 => (sbyte)value.Chars[0],
             0 => 0,
-            _ => throw ColumnDecodeException.Create<byte>(
+            _ => throw ColumnDecodeException.Create<sbyte>(
                 value.ColumnMetadata,
                 $"Received invalid \"char\" text, {value}"),
         };
     }
-    
+
     public static PgType DbType => PgType.Char;
 
     public static PgType ArrayDbType => PgType.CharArray;
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(sbyte value)

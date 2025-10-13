@@ -1,3 +1,4 @@
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core;
@@ -420,6 +421,17 @@ public static partial class ExecutableQueryExtensions
     /// <returns>This query instance for method chaining</returns>
     [GeneratePgBindMethod]
     public static partial IQuery Bind(this IQuery query, PgInet? value);
+    
+    /// <summary>
+    /// Bind <see cref="IPNetwork"/> parameter to query. This puts that value as the nth parameter
+    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
+    /// to the Postgres specific <c>INET</c> and <c>CIDR</c> types.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Network address value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgIpNetwork))]
+    public static partial IQuery Bind(this IQuery query, IPNetwork? value);
     
     /// <summary>
     /// Bind <see cref="PgRange{T}"/> of <see cref="long"/> parameter to query. This puts that value

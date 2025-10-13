@@ -8,10 +8,15 @@ namespace Sqlx.Postgres.Type;
 /// <para>Postgres <c>BOX</c> type represented as a pair of points</para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-geometric.html#DATATYPE-GEOMETRIC-BOXES">docs</a>
 /// </summary>
-public readonly record struct PgBox(PgPoint High, PgPoint Low)
-    : IPgDbType<PgBox>, IGeometryType, IHasArrayType
+public readonly struct PgBox(PgPoint high, PgPoint low)
+    : IPgDbType<PgBox>, IGeometryType, IHasArrayType, IEquatable<PgBox>
 {
-    private readonly Lazy<string> _geometryLiteral = new(() => $"{High.GeometryLiteral},{Low.GeometryLiteral}");
+    private readonly Lazy<string> _geometryLiteral =
+        new(() => $"{high.GeometryLiteral},{low.GeometryLiteral}");
+
+    public PgPoint High { get; } = high;
+
+    public PgPoint Low { get; } = low;
 
     public string GeometryLiteral => _geometryLiteral.Value;
 
@@ -35,9 +40,9 @@ public readonly record struct PgBox(PgPoint High, PgPoint Low)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L501">pg source code</a>
     /// </summary>
-    public static PgBox DecodeBytes(PgBinaryValue value)
+    public static PgBox DecodeBytes(ref PgBinaryValue value)
     {
-        return new PgBox(PgPoint.DecodeBytes(value), PgPoint.DecodeBytes(value));
+        return new PgBox(PgPoint.DecodeBytes(ref value), PgPoint.DecodeBytes(ref value));
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -55,29 +60,61 @@ public readonly record struct PgBox(PgPoint High, PgPoint Low)
     public static PgBox DecodeText(PgTextValue value)
     {
         var indexPairs = GeometryUtils.ExtractPointRanges(value);
-        if (indexPairs.Length == 2)
+        if (indexPairs.Length != 2)
         {
             throw ColumnDecodeException.Create<PgBox>(
                 value.ColumnMetadata,
-                $"Box geoms must have exactly 2 points. Found '{value.Chars}'");
+                $"Box geoms must have exactly 2 points. Found {indexPairs.Length} in '{value.Chars}'");
         }
 
-        PgPoint point1 = PgPoint.DecodeText(value.Slice(indexPairs[0]));
-        PgPoint point2 = PgPoint.DecodeText(value.Slice(indexPairs[1]));
+        PgTextValue slice1 = value.Slice(indexPairs[0]);
+        PgPoint point1 = GeometryUtils.DecodePoint<PgBox>(slice1);
+        PgTextValue slice2 = value.Slice(indexPairs[1]);
+        PgPoint point2 = GeometryUtils.DecodePoint<PgBox>(slice2);
         return new PgBox(point1, point2);
     }
-    
+
     public static PgType DbType => PgType.Box;
 
     public static PgType ArrayDbType => PgType.BoxArray;
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(PgBox value)
     {
         return DbType;
+    }
+
+    public bool Equals(PgBox other)
+    {
+        return High.Equals(other.High) && Low.Equals(other.Low);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is PgBox other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(High, Low);
+    }
+
+    public static bool operator ==(PgBox left, PgBox right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(PgBox left, PgBox right)
+    {
+        return !(left == right);
+    }
+
+    public override string ToString()
+    {
+        return $"{nameof(PgBox)} {{ {nameof(High)} = {High}, {nameof(Low)} {Low} }}";
     }
 }

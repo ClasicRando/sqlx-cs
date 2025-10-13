@@ -5,7 +5,10 @@ using Sqlx.Postgres.Result;
 namespace Sqlx.Postgres.Type;
 
 /// <summary>
+/// <para>
 /// <see cref="IPgDbType{T}"/> for <see cref="bool"/> values. Maps to the <c>BOOLEAN</c> type.
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/datatype-boolean.html">docs</a>
 /// </summary>
 internal abstract class PgBool : IPgDbType<bool>, IHasArrayType
 {
@@ -28,7 +31,7 @@ internal abstract class PgBool : IPgDbType<bool>, IHasArrayType
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/a6c21887a9f0251fa2331ea3ad0dd20b31c4d11d/src/backend/utils/adt/bool.c#L187">pg source code</a>
     /// </summary>
-    public static bool DecodeBytes(PgBinaryValue value)
+    public static bool DecodeBytes(ref PgBinaryValue value)
     {
         return value.Buffer.ReadByte() != 0;
     }
@@ -59,7 +62,7 @@ internal abstract class PgBool : IPgDbType<bool>, IHasArrayType
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(bool value)

@@ -12,7 +12,7 @@ namespace Sqlx.Postgres.Type;
 internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArrayType
 {
     private const int DecimalBits = 4;
-    
+
     private const ushort SignNan = 0xc000;
     private const ushort SignPositive = 0x0000;
     private const ushort SignNegative = 0x4000;
@@ -42,7 +42,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
 
     private const int MaxUInt32Scale = 9;
     private const int MaxUInt16Scale = 4;
-    
+
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
     /// <para>
@@ -77,7 +77,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
     ///     <item><see cref="short"/> - scale of the number</item>
     ///     <item>
     ///         <c>DYNAMIC</c> - all digits encoded as <see cref="short"/> values in base 10_000,
-    ///         count must match the first encoded value 
+    ///         count must match the first encoded value
     ///     </item>
     /// </list>
     /// Those components are then used to build a <see cref="decimal"/> using
@@ -85,7 +85,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/a6c21887a9f0251fa2331ea3ad0dd20b31c4d11d/src/backend/utils/adt/numeric.c#L1153">pg source code</a>
     /// </summary>
-    public static decimal DecodeBytes(PgBinaryValue value)
+    public static decimal DecodeBytes(ref PgBinaryValue value)
     {
         var digitCount = value.Buffer.ReadShort();
         var weight = value.Buffer.ReadShort();
@@ -107,6 +107,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
         {
             digits[i] = value.Buffer.ReadShort();
         }
+
         return CreateDecimal(digits, weight, sign, scale, value.ColumnMetadata);
     }
 
@@ -127,9 +128,8 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
         throw ColumnDecodeException.Create<decimal>(
             value.ColumnMetadata,
             $"Cannot convert '{value}' to a decimal value");
-
     }
-    
+
     public static PgType DbType => PgType.Numeric;
 
     public static PgType ArrayDbType => PgType.NumericArray;
@@ -140,14 +140,14 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(decimal value)
     {
         return DbType;
     }
-    
+
     /// <summary>
     /// Conversion method from Postgres numeric value to a <see cref="decimal"/>. Code is taken
     /// mostly as is from the npgsql repo with some small changes since there is no wrapper type,
@@ -202,13 +202,13 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
             {
                 SignPositive or SignNegative => decimal.Zero * scaleFactor,
                 SignNan => throw ColumnDecodeException.Create<decimal>(
-                    columnMetadata, 
+                    columnMetadata,
                     "Numeric value of NaN is not supported by decimal"),
                 SignPinf => throw ColumnDecodeException.Create<decimal>(
-                    columnMetadata, 
+                    columnMetadata,
                     "Numeric value of Infinity is not supported by decimal"),
                 SignNinf => throw ColumnDecodeException.Create<decimal>(
-                    columnMetadata, 
+                    columnMetadata,
                     "Numeric value of -Infinity is not supported by decimal"),
                 _ => throw ColumnDecodeException.Create<decimal>(
                     columnMetadata,
@@ -262,7 +262,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
         result *= scaleFactor;
         return (ushort)sign == SignNegative ? -result : result;
     }
-    
+
     /// <summary>
     /// Encoding method to write a <see cref="decimal"/> value in Postgres numeric format. Code is
     /// taken mostly as is from the npgsql repo with some small changes since there is no wrapper
@@ -288,22 +288,30 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
     /// </p>
     /// </summary>
     /// <a href="https://github.com/npgsql/npgsql/blob/19f466e3e12106b9e7a81e67d07c4df56467a861/src/Npgsql/Internal/Converters/Primitive/PgNumeric.cs#L295"></a>
-    /// <param name="value"></param>
-    /// <param name="buffer"></param>
+    /// <param name="value">value to encode as a postgres base 10000 set of digits</param>
+    /// <param name="buffer">buffer to encode the decimal value into</param>
     private static void EncodeDecimal(decimal value, WriteBuffer buffer)
     {
+        if (value == decimal.Zero)
+        {
+            buffer.WriteLong(0);
+            return;
+        }
+        
         Span<uint> bits = stackalloc uint[DecimalBits];
         decimal.GetBits(value, MemoryMarshal.Cast<uint, int>(bits));
         bits = bits[..(DecimalBits - 1)];
-        const int bitsUpperBound = ((DecimalBits - 1) * (MaxUInt32Scale + 1) + MaxUInt16Scale - 1) / MaxUInt16Scale + 1;
-        
+        const int bitsUpperBound = ((DecimalBits - 1) * (MaxUInt32Scale + 1) + MaxUInt16Scale - 1) /
+            MaxUInt16Scale + 1;
+
         Span<short> digits = stackalloc short[bitsUpperBound];
         short scale = value.Scale;
 
         var digitCount = 0;
         var digitWeight = -scale / NumericBaseLog10 - 1;
         var scaleRemainder = scale % NumericBaseLog10;
-        if (scaleRemainder > 0 && DivideInPlace(bits, UIntPowers10[scaleRemainder], out var remainder))
+        if (scaleRemainder > 0
+            && DivideInPlace(bits, UIntPowers10[scaleRemainder], out var remainder))
         {
             remainder *= UIntPowers10[NumericBaseLog10 - scaleRemainder];
             digitWeight--;
@@ -326,7 +334,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
         var weight = (short)(digitWeight + digitCount);
         var sign = value < 0 ? SignNegative : SignPositive;
         digits = digits[^digitCount..];
-        
+
         buffer.WriteShort((short)digits.Length);
         buffer.WriteShort(weight);
         buffer.WriteShort((short)sign);

@@ -9,10 +9,16 @@ namespace Sqlx.Postgres.Type;
 /// <para><see cref="A"/>x + <see cref="B"/>y + <see cref="C"/> = 0</para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-geometric.html#DATATYPE-LINE">docs</a>
 /// </summary>
-public readonly record struct PgLine(double A, double B, double C)
-    : IPgDbType<PgLine>, IGeometryType, IHasArrayType
+public readonly struct PgLine(double a, double b, double c)
+    : IPgDbType<PgLine>, IGeometryType, IHasArrayType, IEquatable<PgLine>
 {
-    private readonly Lazy<string> _geometryLiteral = new(() => $"{{{A},{B},{C}}}");
+    private readonly Lazy<string> _geometryLiteral = new(() => $"{{{a},{b},{c}}}");
+
+    public double A { get; } = a;
+
+    public double B { get; } = b;
+
+    public double C { get; } = c;
 
     public string GeometryLiteral => _geometryLiteral.Value;
 
@@ -37,7 +43,7 @@ public readonly record struct PgLine(double A, double B, double C)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1061">pg source code</a>
     /// </summary>
-    public static PgLine DecodeBytes(PgBinaryValue value)
+    public static PgLine DecodeBytes(ref PgBinaryValue value)
     {
         return new PgLine(
             value.Buffer.ReadDouble(),
@@ -95,11 +101,41 @@ public readonly record struct PgLine(double A, double B, double C)
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(PgLine value)
     {
         return PgType.Line;
+    }
+
+    public bool Equals(PgLine other)
+    {
+        return A.Equals(other.A) && B.Equals(other.B) && C.Equals(other.C);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is PgLine other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(A, B, C);
+    }
+    
+    public static bool operator ==(PgLine left, PgLine right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(PgLine left, PgLine right)
+    {
+        return !(left == right);
+    }
+
+    public override string ToString()
+    {
+        return $"{nameof(PgLine)} {{ {nameof(A)} = {A}, {nameof(B)} = {B}, {nameof(C)} = {C} }}";
     }
 }

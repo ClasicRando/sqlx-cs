@@ -7,7 +7,7 @@ namespace Sqlx.Postgres.Type;
 
 /// <summary>
 /// <para>
-/// Postgres <c>MACADDR</c> and <c>MACADDR8</c> type represented as a pair of coordinates in a two-dimensional space
+/// Postgres <c>MACADDR</c> and <c>MACADDR8</c> type represented the bytes of a MacAddress
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-net-types.html#DATATYPE-MACADDR">macaddr docs</a>
 /// <a href="https://www.postgresql.org/docs/current/datatype-net-types.html#DATATYPE-MACADDR8">macaddr8 docs</a>
@@ -53,6 +53,37 @@ public readonly record struct PgMacAddress(
         return $"{A:X2}:{B:X2}:{C:X2}:{D:X2}:{E:X2}:{F:X2}:{G:X2}:{H:X2}";
     }
 
+    internal static PgMacAddress FromBytes(ReadOnlySpan<byte> bytes)
+    {
+        return bytes switch
+        {
+            [var a, var b, var c, var d, var e, var f, var g, var h] => new PgMacAddress(
+                a,
+                b,
+                c,
+                d,
+                e,
+                f,
+                g,
+                h),
+            [var a, var b, var c, var f, var g, var h] => new PgMacAddress(
+                a,
+                b,
+                c,
+                f,
+                g,
+                h),
+            _ => throw new ArgumentException(
+                "Invalid number of bytes supplied to MacAddr",
+                nameof(bytes)),
+        };
+    }
+    
+    public static implicit operator PgMacAddress(PhysicalAddress address)
+        => FromBytes(address.GetAddressBytes());
+
+    public static implicit operator PhysicalAddress(PgMacAddress address) => address.ToPhysicalAddress();
+
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
     /// <para>
@@ -91,7 +122,7 @@ public readonly record struct PgMacAddress(
     /// <exception cref="ColumnDecodeException">
     /// If the number of available bytes is not 6 or 8
     /// </exception>
-    public static PgMacAddress DecodeBytes(PgBinaryValue value)
+    public static PgMacAddress DecodeBytes(ref PgBinaryValue value)
     {
         var byteCount = value.Buffer.Remaining;
         if (byteCount != 6 && byteCount != 8)
@@ -101,15 +132,8 @@ public readonly record struct PgMacAddress(
                 $"Expected 6 or 8 bytes. Found {byteCount}");
         }
 
-        return new PgMacAddress(
-            value.Buffer.ReadByte(),
-            value.Buffer.ReadByte(),
-            value.Buffer.ReadByte(),
-            byteCount == 8 ? value.Buffer.ReadByte() : DefaultD,
-            byteCount == 8 ? value.Buffer.ReadByte() : DefaultE,
-            value.Buffer.ReadByte(),
-            value.Buffer.ReadByte(),
-            value.Buffer.ReadByte());
+        var bytes = value.Buffer.ReadBytesAsSpan();
+        return FromBytes(bytes);
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -135,7 +159,7 @@ public readonly record struct PgMacAddress(
                 $"Expected 6 or 8 address hex characters. Found {splitCount}");
         }
 
-        Span<byte> bytes = stackalloc byte[splitCount];
+        Span<byte> bytes = stackalloc byte[8];
         for (var i = 0; i < splitCount; i++)
         {
             Range rng = splits[i];
@@ -151,16 +175,8 @@ public readonly record struct PgMacAddress(
                 value.ColumnMetadata);
         }
 
-        var index = 0;
-        return new PgMacAddress(
-            bytes[index++],
-            bytes[index++],
-            bytes[index++],
-            splitCount == 8 ? bytes[index++] : DefaultD,
-            splitCount == 8 ? bytes[index++] : DefaultE,
-            bytes[index++],
-            bytes[index++],
-            bytes[index]);
+        bytes = bytes[..splitCount];
+        return FromBytes(bytes);
     }
 
     public static PgType DbType => PgType.Macaddr;
@@ -169,7 +185,7 @@ public readonly record struct PgMacAddress(
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid || dbType.TypeOid == PgType.Macaddr8.TypeOid;
+        return dbType == DbType || dbType == PgType.Macaddr8;
     }
 
     public static PgType GetActualType(PgMacAddress value)

@@ -30,7 +30,7 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
     /// <summary>
     /// Read the all available bytes as a new <see cref="Guid"/>
     /// </summary>
-    public static Guid DecodeBytes(PgBinaryValue value)
+    public static Guid DecodeBytes(ref PgBinaryValue value)
     {
         return new Guid(value.Buffer.ReadBytesAsSpan());
     }
@@ -45,7 +45,7 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
     /// </exception>
     public static Guid DecodeText(PgTextValue value)
     {
-        if (!Guid.TryParse(value, null, out Guid guid))
+        if (!Guid.TryParse(value, out Guid guid))
         {
             throw ColumnDecodeException.Create<Guid>(
                 value.ColumnMetadata,
@@ -61,7 +61,7 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(Guid value)

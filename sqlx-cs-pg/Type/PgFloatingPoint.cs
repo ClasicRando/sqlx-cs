@@ -10,7 +10,7 @@ namespace Sqlx.Postgres.Type;
 /// </summary>
 internal static class PgFloatingPoint
 {
-    public static double ExtractFloat<T>(this PgBinaryValue value) where T : notnull
+    public static double ExtractFloat<T>(ref this PgBinaryValue value) where T : notnull
     {
         return value.Buffer.Remaining switch
         {
@@ -22,21 +22,20 @@ internal static class PgFloatingPoint
         };
     }
     
-    public static double ExtractFloat<T>(this PgTextValue value) where T : notnull
+    public static double ExtractFloat<T>(ref this PgTextValue value) where T : notnull
     {
         if (!double.TryParse(value, null, out var parseResult))
         {
             throw ColumnDecodeException.Create<T>(
                 value.ColumnMetadata,
-                $"Could not convert {value} into {typeof(T)}");
+                $"Could not convert '{value}' into {typeof(T)}");
         }
         return parseResult;
     }
     
     public static bool IsFloatCompatible(PgType dbType)
     {
-        return dbType.TypeOid == PgType.Float4.TypeOid
-               || dbType.TypeOid == PgType.Float8.TypeOid;
+        return dbType == PgType.Float4 || dbType == PgType.Float8;
     }
 }
 
@@ -58,9 +57,9 @@ internal abstract class PgDouble : IPgDbType<double>, IHasArrayType
     /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
     /// <summary>
     /// Read the bytes available to get a floating point number. If the underlining value is a
-    /// <see cref="float"/> it's casted to a <see cref="double"/>.
+    /// <see cref="float"/> it's cast to a <see cref="double"/>.
     /// </summary>
-    public static double DecodeBytes(PgBinaryValue value)
+    public static double DecodeBytes(ref PgBinaryValue value)
     {
         return value.ExtractFloat<double>();
     }
@@ -114,7 +113,7 @@ internal abstract class PgFloat : IPgDbType<float>, IHasArrayType
     /// <exception cref="ColumnDecodeException">
     /// If the <see cref="double"/> value extracted is not a valid float
     /// </exception>
-    public static float DecodeBytes(PgBinaryValue value)
+    public static float DecodeBytes(ref PgBinaryValue value)
     {
         return ValidateFloat(value.ExtractFloat<float>(), value.ColumnMetadata);
     }

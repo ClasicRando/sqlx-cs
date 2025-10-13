@@ -1,6 +1,5 @@
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
-using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -18,8 +17,6 @@ namespace Sqlx.Postgres.Type;
 public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
     : IPgDbType<PgTimeTz>, IHasArrayType
 {
-    private const int OffsetStart = 8;
-    
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
     /// <para>
@@ -42,9 +39,9 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L2371">pg source code</a>
     /// </summary>
-    public static PgTimeTz DecodeBytes(PgBinaryValue value)
+    public static PgTimeTz DecodeBytes(ref PgBinaryValue value)
     {
-        TimeOnly time = PgTime.DecodeBytes(value);
+        TimeOnly time = PgTime.DecodeBytes(ref value);
         var offsetSeconds = value.Buffer.ReadInt();
         return new PgTimeTz(time, offsetSeconds);
     }
@@ -62,8 +59,8 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
     /// </exception>
     public static PgTimeTz DecodeText(PgTextValue value)
     {
-        var offsetSeconds = FindOffset(value, value.ColumnMetadata);
-        TimeOnly time = PgTime.DecodeText(value.Slice(..OffsetStart));
+        var offsetSeconds = FindOffset(value, out var offsetStart);
+        TimeOnly time = PgTime.DecodeText(value.Slice(..offsetStart));
         return new PgTimeTz(time, offsetSeconds);
     }
 
@@ -73,7 +70,7 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(PgTimeTz value)
@@ -81,27 +78,23 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
         return DbType;
     }
 
-    private static int FindOffset(ReadOnlySpan<char> chars, in PgColumnMetadata columnMetadata)
+    private static int FindOffset(in PgTextValue value, out int offsetStart)
     {
-        if (chars.Length < OffsetStart)
+        offsetStart = value.Chars.IndexOfAny("Z+-");
+        if (offsetStart == -1)
         {
+            offsetStart = value.Chars.Length;
             return 0;
         }
         
-        var offsetChar = chars[OffsetStart];
+        var offsetChar = value.Chars[offsetStart];
         if (offsetChar is 'Z')
         {
             return 0;
         }
-        if (offsetChar is not ('+' or '-'))
-        {
-            throw ColumnDecodeException.Create<PgTimeTz>(
-                columnMetadata,
-                $"Invalid offset char: {chars}");
-        }
 
-        var offsetChars = chars[(OffsetStart + 1)..];
-        Span<Range> splits = stackalloc Range[3];
+        var offsetChars = value.Chars[(offsetStart + 1)..];
+        Span<Range> splits = stackalloc Range[2];
         var rangeCount = offsetChars.Split(splits, ':');
 
         var factor = offsetChar == '+' ? 1 : -1;
@@ -109,11 +102,11 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
         var digitMultiplier = 2;
         for (var i = 0; i < rangeCount; i++)
         {
-            if (!int.TryParse(offsetChars[splits[i]], null, out var result))
+            if (!int.TryParse(offsetChars[splits[i]], out var result))
             {
                 throw ColumnDecodeException.Create<PgTimeTz>(
-                    columnMetadata,
-                    $"Could not parse offset from '{chars}'");
+                    value.ColumnMetadata,
+                    $"Could not parse offset from '{value}'");
             }
             offset += result * (int)Math.Pow(60.0, digitMultiplier--);
         }

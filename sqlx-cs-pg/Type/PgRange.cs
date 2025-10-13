@@ -9,24 +9,25 @@ namespace Sqlx.Postgres.Type;
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/rangetypes.html">docs</a>
 /// </summary>
-/// <param name="Lower">Lower bound of the range</param>
-/// <param name="Upper">Upper bound of the range</param>
+/// <param name="lower">Lower bound of the range</param>
+/// <param name="upper">Upper bound of the range</param>
 /// <typeparam name="T">Range type</typeparam>
-public record PgRange<T>(Bound<T> Lower, Bound<T> Upper) where T : notnull
+public sealed class PgRange<T>(Bound<T> lower, Bound<T> upper) : IEquatable<PgRange<T>>
+    where T : notnull
 {
     private readonly Lazy<string> _postgresLiteral = new(
         () =>
         {
             var builder = new StringBuilder();
-            switch (Lower.Type)
+            switch (lower.Type)
             {
                 case BoundType.Included:
-                    builder.Append('(');
-                    builder.Append(Lower.Value);
+                    builder.Append('[');
+                    builder.Append(lower.Value);
                     break;
                 case BoundType.Excluded:
-                    builder.Append('[');
-                    builder.Append(Lower.Value);
+                    builder.Append('(');
+                    builder.Append(lower.Value);
                     break;
                 case BoundType.Unbounded:
                     builder.Append('(');
@@ -37,15 +38,15 @@ public record PgRange<T>(Bound<T> Lower, Bound<T> Upper) where T : notnull
 
             builder.Append(',');
             
-            switch (Upper.Type)
+            switch (upper.Type)
             {
                 case BoundType.Included:
-                    builder.Append(Upper.Value);
-                    builder.Append(')');
+                    builder.Append(upper.Value);
+                    builder.Append(']');
                     break;
                 case BoundType.Excluded:
-                    builder.Append(Upper.Value);
-                    builder.Append(']');
+                    builder.Append(upper.Value);
+                    builder.Append(')');
                     break;
                 case BoundType.Unbounded:
                     builder.Append(')');
@@ -57,7 +58,44 @@ public record PgRange<T>(Bound<T> Lower, Bound<T> Upper) where T : notnull
             return builder.ToString();
         });
 
+    /// <summary>
+    /// Lower bound of the range
+    /// </summary>
+    public Bound<T> Lower { get; } = lower;
+
+    /// <summary>
+    /// Upper bound of the range
+    /// </summary>
+    public Bound<T> Upper { get; } = upper;
+
     public string PostgresLiteral => _postgresLiteral.Value;
+
+    public bool Equals(PgRange<T>? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Lower.Equals(other.Lower) && Upper.Equals(other.Upper);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is PgRange<T> range && Equals(range);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Lower, Upper);
+    }
+
+    public static bool operator ==(PgRange<T>? left, PgRange<T>? right)
+    {
+        return Equals(left, right);
+    }
+
+    public static bool operator !=(PgRange<T>? left, PgRange<T>? right)
+    {
+        return !Equals(left, right);
+    }
 }
 
 /// <summary>

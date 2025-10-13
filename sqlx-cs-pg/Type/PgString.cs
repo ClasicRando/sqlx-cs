@@ -22,7 +22,7 @@ internal abstract class PgString : IPgDbType<string>, IHasArrayType
     /// <summary>
     /// Read the entire byte buffer as UTF8 encoded characters
     /// </summary>
-    public static string DecodeBytes(PgBinaryValue value)
+    public static string DecodeBytes(ref PgBinaryValue value)
     {
         return value.Buffer.ReadText();
     }
@@ -42,11 +42,11 @@ internal abstract class PgString : IPgDbType<string>, IHasArrayType
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid
-               || dbType.TypeOid == PgType.Varchar.TypeOid
-               || dbType.TypeOid == PgType.Xml.TypeOid
-               || dbType.TypeOid == PgType.Name.TypeOid
-               || dbType.TypeOid == PgType.Bpchar.TypeOid;
+        return dbType == DbType
+               || dbType == PgType.Varchar
+               || dbType == PgType.Xml
+               || dbType == PgType.Name
+               || dbType == PgType.Bpchar;
     }
 
     public static PgType GetActualType(string value)

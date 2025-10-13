@@ -13,6 +13,7 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
 {
     private const long PostgresEpochSeconds = 946_684_800;
     private const long PostgresEpochTicks = PostgresEpochSeconds * TimeSpan.TicksPerSecond;
+    private static readonly string[] Formats = ["yyyy-MM-dd HH:mm:ss", "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffffK"];
     
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -35,7 +36,7 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/timestamp.c#L292">pg source code</a>
     /// </summary>
-    public static DateTime DecodeBytes(PgBinaryValue value)
+    public static DateTime DecodeBytes(ref PgBinaryValue value)
     {
         return new DateTime(value.Buffer.ReadLong() * TimeSpan.TicksPerMicrosecond + PostgresEpochTicks);
     }
@@ -52,7 +53,7 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
     /// </exception>
     public static DateTime DecodeText(PgTextValue value)
     {
-        if (DateTime.TryParse(value, null, DateTimeStyles.RoundtripKind, out DateTime dateTime))
+        if (DateTime.TryParse(value, null, DateTimeStyles.AdjustToUniversal, out DateTime dateTime))
         {
             return dateTime;
         }
@@ -72,8 +73,7 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == PgType.Timestamp.TypeOid
-               || dbType.TypeOid == PgType.Timestamptz.TypeOid;
+        return dbType == PgType.Timestamp || dbType == PgType.Timestamptz;
     }
 
     public static PgType GetActualType(DateTime value)

@@ -1,7 +1,9 @@
 namespace Sqlx.Postgres.Type;
 
-public readonly record struct PgType(int TypeOid)
+public readonly struct PgType(int typeOid) : IEquatable<PgType>
 {
+    public int TypeOid { get; } = typeOid;
+    
     public static readonly PgType Bool = new(16);
     public static readonly PgType BoolArray = new(1000);
     public static readonly PgType Bytea = new(17);
@@ -99,4 +101,34 @@ public readonly record struct PgType(int TypeOid)
     public static readonly PgType Unspecified = new(0);
 
     public static implicit operator int(PgType pgType) => pgType.TypeOid;
+
+    public bool Equals(PgType other)
+    {
+        return TypeOid == other.TypeOid;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is PgType other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return TypeOid;
+    }
+
+    public override string ToString()
+    {
+        return $"{nameof(TypeOid)}: {TypeOid}";
+    }
+
+    public static bool operator ==(PgType left, PgType right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(PgType left, PgType right)
+    {
+        return !left.Equals(right);
+    }
 }

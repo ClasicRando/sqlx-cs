@@ -10,10 +10,14 @@ namespace Sqlx.Postgres.Type;
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-geometric.html#DATATYPE-GEOMETRIC-CIRCLE">docs</a>
 /// </summary>
-public readonly record struct PgCircle(PgPoint Center, double Radius)
-    : IPgDbType<PgCircle>, IGeometryType, IHasArrayType
+public readonly struct PgCircle(PgPoint center, double radius)
+    : IPgDbType<PgCircle>, IGeometryType, IHasArrayType, IEquatable<PgCircle>
 {
-    private readonly Lazy<string> _geometryLiteral = new(() => $"<{Center.GeometryLiteral},{Radius}>");
+    private readonly Lazy<string> _geometryLiteral = new(() => $"<{center.GeometryLiteral},{radius}>");
+
+    public PgPoint Center { get; } = center;
+
+    public double Radius { get; } = radius;
 
     public string GeometryLiteral => _geometryLiteral.Value;
 
@@ -37,9 +41,9 @@ public readonly record struct PgCircle(PgPoint Center, double Radius)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L4727">pg source code</a>
     /// </summary>
-    public static PgCircle DecodeBytes(PgBinaryValue value)
+    public static PgCircle DecodeBytes(ref PgBinaryValue value)
     {
-        return new PgCircle(PgPoint.DecodeBytes(value), value.Buffer.ReadDouble());
+        return new PgCircle(PgPoint.DecodeBytes(ref value), value.Buffer.ReadDouble());
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -55,9 +59,10 @@ public readonly record struct PgCircle(PgPoint Center, double Radius)
     /// </exception>
     public static PgCircle DecodeText(PgTextValue value)
     {
-        var midIndex = value.Chars.IndexOf("),");
-        PgPoint center = PgPoint.DecodeText(value.Slice(1..midIndex));
-        if (!double.TryParse(value.Chars[midIndex..^1], out var radius))
+        var midIndex = value.Chars.IndexOf("),") + 1;
+        PgTextValue pointSlice = value.Slice(1..midIndex);
+        PgPoint center = GeometryUtils.DecodePoint<PgCircle>(in pointSlice);
+        if (!double.TryParse(value.Chars[(midIndex + 1)..^1], out var radius))
         {
             throw ColumnDecodeException.Create<PgCircle>(
                 value.ColumnMetadata,
@@ -72,11 +77,41 @@ public readonly record struct PgCircle(PgPoint Center, double Radius)
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(PgCircle value)
     {
         return DbType;
+    }
+
+    public bool Equals(PgCircle other)
+    {
+        return Center.Equals(other.Center) && Radius.Equals(other.Radius);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is PgCircle other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Center, Radius);
+    }
+    
+    public static bool operator ==(PgCircle left, PgCircle right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(PgCircle left, PgCircle right)
+    {
+        return !(left == right);
+    }
+
+    public override string ToString()
+    {
+        return $"PgCircle {{ Center = {Center}, Radius = {Radius} }}";
     }
 }

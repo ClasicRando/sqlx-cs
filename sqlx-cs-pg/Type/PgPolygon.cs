@@ -9,19 +9,21 @@ namespace Sqlx.Postgres.Type;
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-geometric.html#DATATYPE-POLYGON">docs</a>
 /// </summary>
-public readonly record struct PgPolygon(PgPoint[] Points)
-    : IPgDbType<PgPolygon>, IGeometryType, IHasArrayType
+public readonly struct PgPolygon(PgPoint[] points)
+    : IPgDbType<PgPolygon>, IGeometryType, IHasArrayType, IEquatable<PgPolygon>
 {
-    private readonly Lazy<PgBox> _boundingBox = new(() => MakeBoundingBox(Points));
+    private readonly Lazy<PgBox> _boundingBox = new(() => MakeBoundingBox(points));
+    
+    private readonly Lazy<string> _geometryLiteral = new(
+        () => GeometryUtils.GeneratePointCollectionLiteral(points, true));
+
+    public PgPoint[] Points { get; } = points;
 
     /// <summary>
     /// The bounding box of the polygon. This is the smallest box object that fully covers the
     /// polygon area. 
     /// </summary>
     public PgBox BoundingBox => _boundingBox.Value;
-    
-    private readonly Lazy<string> _geometryLiteral = new(
-        () => GeometryUtils.GeneratePointCollectionLiteral(Points, true));
 
     public string GeometryLiteral => _geometryLiteral.Value;
 
@@ -40,20 +42,20 @@ public readonly record struct PgPolygon(PgPoint[] Points)
     /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
     /// <summary>
     /// <para>
-    /// Reads all points using <see cref="GeometryUtils.DecodePoints(PgBinaryValue)"/>.
+    /// Reads all points using <see cref="GeometryUtils.DecodePoints(ref PgBinaryValue)"/>.
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L3510">pg source code</a>
     /// </summary>
-    public static PgPolygon DecodeBytes(PgBinaryValue value)
+    public static PgPolygon DecodeBytes(ref PgBinaryValue value)
     {
-        return new PgPolygon(GeometryUtils.DecodePoints(value));
+        return new PgPolygon(GeometryUtils.DecodePoints(ref value));
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
     /// <summary>
     /// <para>
     /// extracts all points from the characters using
-    /// <see cref="GeometryUtils.DecodePoints(PgTextValue)"/>. The format is assumed to be
+    /// <see cref="GeometryUtils.DecodePoints{T}(in PgTextValue)"/>. The format is assumed to be
     /// <c>((x1,y1),...(xn,yn))</c>.
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L3459">pg source code</a>
@@ -63,7 +65,7 @@ public readonly record struct PgPolygon(PgPoint[] Points)
     /// </exception>
     public static PgPolygon DecodeText(PgTextValue value)
     {
-        return new PgPolygon(GeometryUtils.DecodePoints(value));
+        return new PgPolygon(GeometryUtils.DecodePoints<PgPolygon>(value));
     }
     
     public static PgType DbType => PgType.Polygon;
@@ -72,7 +74,7 @@ public readonly record struct PgPolygon(PgPoint[] Points)
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(PgPolygon value)
@@ -112,5 +114,35 @@ public readonly record struct PgPolygon(PgPoint[] Points)
         }
 
         return new PgBox(new PgPoint(x2, y2), new PgPoint(x1, y1));
+    }
+
+    public bool Equals(PgPolygon other)
+    {
+        return Points.AsSpan().SequenceEqual(other.Points);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is PgPolygon other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Points);
+    }
+    
+    public static bool operator ==(PgPolygon left, PgPolygon right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(PgPolygon left, PgPolygon right)
+    {
+        return !(left == right);
+    }
+
+    public override string ToString()
+    {
+        return $"{nameof(PgPolygon)} {{ {nameof(Points)} = [{string.Join(",", Points)}] }}";
     }
 }

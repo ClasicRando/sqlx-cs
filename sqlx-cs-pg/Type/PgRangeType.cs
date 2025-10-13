@@ -103,7 +103,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/rangetypes.c#L261">pg source code</a>
     /// </summary>
     [SuppressMessage("ReSharper", "InvertIf")]
-    public static PgRange<TValue> DecodeBytes(PgBinaryValue value)
+    public static PgRange<TValue> DecodeBytes(ref PgBinaryValue value)
     {
         var start = Bound<TValue>.Unbounded();
         var end = Bound<TValue>.Unbounded();
@@ -121,7 +121,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
             var lowerBoundValue = new PgBinaryValue(
                 value.Buffer.Slice(lowerBoundLength),
                 ref columnMetadata);
-            TValue lowerValue = TType.DecodeBytes(lowerBoundValue);
+            TValue lowerValue = TType.DecodeBytes(ref lowerBoundValue);
             start = flags.HasFlag(RangeFlag.LowerBoundInclusive)
                 ? Bound<TValue>.Included(lowerValue)
                 : Bound<TValue>.Excluded(lowerValue);
@@ -134,7 +134,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
             var upperBoundValue = new PgBinaryValue(
                 value.Buffer.Slice(upperBoundLength),
                 ref columnMetadata);
-            TValue upperValue = TType.DecodeBytes(upperBoundValue);
+            TValue upperValue = TType.DecodeBytes(ref upperBoundValue);
             end = flags.HasFlag(RangeFlag.UpperBoundInclusive)
                 ? Bound<TValue>.Included(upperValue)
                 : Bound<TValue>.Excluded(upperValue);
@@ -166,18 +166,25 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
         
         PgTextValue validChars = value.Slice(1..^1);
         var separatorIndex = FindRangeSeparatorIndex(validChars);
+        if (separatorIndex == -1)
+        {
+            throw ColumnDecodeException.Create<PgRange<TValue>>(
+                value.ColumnMetadata,
+                $"Could not find separator character in '{value}'");
+        }
+        
         if (separatorIndex != 0)
         {
-            PgTextValue startSlice = validChars.Slice(..(separatorIndex - 1));
+            PgTextValue startSlice = validChars.Slice(..separatorIndex);
             TValue lowerBoundValue = TType.DecodeText(startSlice);
             start = DecodeBound(value.Chars[0], lowerBoundValue, value.ColumnMetadata);
         }
 
-        if (separatorIndex != validChars.Chars.Length)
+        if (separatorIndex != validChars.Chars.Length - 1)
         {
             PgTextValue endSlice = validChars.Slice((separatorIndex + 1)..);
             TValue upperBoundValue = TType.DecodeText(endSlice);
-            end = DecodeBound(value.Chars[0], upperBoundValue, value.ColumnMetadata);
+            end = DecodeBound(value.Chars[^1], upperBoundValue, value.ColumnMetadata);
         }
         
         return new PgRange<TValue>(start, end);
@@ -189,7 +196,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(PgRange<TValue> value)
@@ -226,7 +233,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
                     return i;
             }
         }
-        return i;
+        return -1;
     }
 
     private static Bound<TValue> DecodeBound(

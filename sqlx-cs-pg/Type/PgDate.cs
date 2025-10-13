@@ -1,4 +1,3 @@
-using System.Globalization;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
@@ -32,7 +31,7 @@ internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayTy
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L231">pg source code</a>
     /// </summary>
-    public static DateOnly DecodeBytes(PgBinaryValue value)
+    public static DateOnly DecodeBytes(ref PgBinaryValue value)
     {
         return PostgresEpoch.AddDays(value.Buffer.ReadInt());
     }
@@ -49,7 +48,7 @@ internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayTy
     /// </exception>
     public static DateOnly DecodeText(PgTextValue value)
     {
-        if (DateOnly.TryParse(value, null, DateTimeStyles.RoundtripKind, out DateOnly date))
+        if (DateOnly.TryParseExact(value, "yyyy-MM-dd", out DateOnly date))
         {
             return date;
         }
@@ -69,7 +68,7 @@ internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayTy
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(DateOnly value)

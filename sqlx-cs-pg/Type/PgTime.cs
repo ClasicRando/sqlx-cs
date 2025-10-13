@@ -31,7 +31,7 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L1547">pg source code</a>
     /// </summary>
-    public static TimeOnly DecodeBytes(PgBinaryValue value)
+    public static TimeOnly DecodeBytes(ref PgBinaryValue value)
     {
         var microSeconds = value.Buffer.ReadLong();
         return new TimeOnly(microSeconds * TimeSpan.TicksPerMicrosecond);
@@ -49,7 +49,7 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
     /// </exception>
     public static TimeOnly DecodeText(PgTextValue value)
     {
-        if (!TimeOnly.TryParse(value, null, out TimeOnly time))
+        if (!TimeOnly.TryParse(value, out TimeOnly time))
         {
             throw ColumnDecodeException.Create<TimeOnly>(
                 value.ColumnMetadata,
@@ -65,7 +65,7 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(TimeOnly value)

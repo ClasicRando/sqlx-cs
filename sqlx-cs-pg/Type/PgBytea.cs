@@ -6,8 +6,11 @@ using Sqlx.Postgres.Result;
 namespace Sqlx.Postgres.Type;
 
 /// <summary>
+/// <para>
 /// <see cref="IPgDbType{T}"/> for an array of <see cref="byte"/> values. Maps to the <c>BYTEA</c>
 /// type.
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/datatype-binary.html">docs</a>
 /// </summary>
 internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
 {
@@ -30,7 +33,7 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/varlena.c#L490">pg source code</a>
     /// </summary>
-    public static byte[] DecodeBytes(PgBinaryValue value)
+    public static byte[] DecodeBytes(ref PgBinaryValue value)
     {
         return value.Buffer.ReadBytes();
     }
@@ -57,7 +60,7 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
 
     public static bool IsCompatible(PgType dbType)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return dbType == DbType;
     }
 
     public static PgType GetActualType(byte[] value)
@@ -80,14 +83,15 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
     /// <returns>A byte array that corresponds to the hex string</returns>
     private static byte[] DecodeWithPrefix(ReadOnlySpan<char> value, PgColumnMetadata metadata)
     {
-        var size = value.Length - HexStart.Length;
+        var hexCharCount = value.Length - HexStart.Length;
         ColumnDecodeException.CheckOrThrow<byte[]>(
-            (size & 0x01) == 0,
+            (hexCharCount & 0x01) == 0,
             metadata,
             "Hex encoded byte array must have an even number of elements");
 
+        var size = hexCharCount >> 1;
         var index = HexStart.Length;
-        var result = new byte[size >> 1];
+        var result = new byte[size];
         for (var i = 0; i < size; i++)
         {
             var currentByte = HexUtils.CharToDigit<byte[]>(value[index++], metadata) << 4;
