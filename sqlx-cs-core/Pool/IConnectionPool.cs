@@ -15,11 +15,13 @@ public interface IConnectionPool : IQueryExecutor, IAsyncDisposable
 {
     /// <summary>
     /// Create a connection for use in querying this pool's database. The created connection is
-    /// closed until <see cref="IConnection.OpenAsync"/> is called and that method will wait for
-    /// this pool to have an available physical connection free. Make sure to close the connection
-    /// instance to return it's underlining physical connection to the pool for reuse (preferably
-    /// using the <see cref="IAsyncDisposable"/> interface's language construct).
+    /// closed until <see cref="IConnection.OpenAsync"/> is called and this method will return
+    /// immediately with the created connection. However, it will wait for an available physical
+    /// connection to become available from the pool before <see cref="IConnection.OpenAsync"/>
+    /// returns. Make sure to close the connection instance to return it's underlining physical
+    /// connection to the pool for reuse (preferably using the <see cref="IAsyncDisposable"/>
+    /// interface's language construct).
     /// </summary>
-    /// <returns>A connection rented from this pool</returns>
+    /// <returns>A connection linked to this pool</returns>
     IConnection CreateConnection();
 }

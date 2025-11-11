@@ -41,6 +41,6 @@ internal sealed class CommandCompleteMessage(long rowCount, string message)
             break;
         }
 
-        return long.TryParse(message[i..], out var rowCount) ? rowCount : -1;
+        return long.TryParse(message[i..], out var rowCount) ? rowCount : 0;
     }
 }

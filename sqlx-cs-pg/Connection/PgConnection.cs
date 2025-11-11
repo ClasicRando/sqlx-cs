@@ -17,7 +17,6 @@ namespace Sqlx.Postgres.Connection;
 /// </summary>
 public sealed class PgConnection : AbstractConnection
 {
-
     private bool _disposed;
     private PgStream? _pgStream;
     private readonly PgConnectionPool _pool;
@@ -57,19 +56,21 @@ public sealed class PgConnection : AbstractConnection
         throw new NotImplementedException();
     }
 
-    public override Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
+    public override async Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
         IQuery query,
         CancellationToken cancellationToken)
     {
         CheckDisposed();
+        await ConnectIfClosed(cancellationToken);
         return _pgStream!.ExecuteQuery(query, cancellationToken);
     }
 
-    public override Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQueryBatch(
+    public override async Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQueryBatch(
         IQueryBatch query,
         CancellationToken cancellationToken)
     {
         CheckDisposed();
+        await ConnectIfClosed(cancellationToken);
         return _pgStream!.ExecuteQueryBatch(query, cancellationToken);
     }
 
@@ -78,7 +79,7 @@ public sealed class PgConnection : AbstractConnection
         CheckDisposed();
         try
         {
-            if (_pgStream!.Status is ConnectionStatus.Closed or ConnectionStatus.Broken)
+            if (Status is ConnectionStatus.Closed or ConnectionStatus.Broken)
             {
                 return;
             }
@@ -111,6 +112,20 @@ public sealed class PgConnection : AbstractConnection
     {
         CheckDisposed();
         return _pgStream!.ExecuteTransactionCommand(transactionCommand, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Call <see cref="OpenAsync"/> is the connection is closed.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the async operation</param>
+    private async ValueTask ConnectIfClosed(CancellationToken cancellationToken)
+    {
+        if (Status is not ConnectionStatus.Closed)
+        {
+            return;
+        }
+
+        await OpenAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private void CheckClosed()

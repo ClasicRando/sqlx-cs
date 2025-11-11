@@ -182,19 +182,18 @@ internal sealed partial class PgStream : IDisposable
     /// If the supplied query is not a <see cref="PgExecutableQuery"/> or the connection is closed
     /// or broken.
     /// </exception>
-    public async Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
+    public IAsyncEnumerable<Either<IDataRow, QueryResult>> ExecuteQuery(
         IQuery query,
         CancellationToken cancellationToken)
     {
         PgExecutableQuery executableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
-        await ConnectIfClosed(cancellationToken);
         var results = IsSimpleQuery(executableQuery)
             ? SendSimpleQuery(executableQuery.Query, cancellationToken)
             : SendExtendedQuery(executableQuery.Query, executableQuery.ParameterBuffer, cancellationToken);
         return results;
     }
 
-    public Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQueryBatch(
+    public IAsyncEnumerable<Either<IDataRow, QueryResult>> ExecuteQueryBatch(
         IQueryBatch query,
         CancellationToken cancellationToken)
     {
