@@ -101,11 +101,12 @@ public class PgArrayTypeStructTest
         expectedResult,
         PgArrayTypeStruct<int, PgInt>.IsCompatible(pgType));
 
-    public static IEnumerable<object[]> IsCompatibleCases()
+    public static IEnumerable<TheoryDataRow<PgType, bool>> IsCompatibleCases()
     {
-        yield return [PgType.Int4Array, true];
-        yield return [PgType.Int4, false];
-        yield return [PgType.TextArray, false];
+        return new TheoryData<PgType, bool>(
+            (PgType.Int4Array, true),
+            (PgType.Int4, false),
+            (PgType.TextArray, false));
     }
 
     [Theory]
@@ -114,9 +115,10 @@ public class PgArrayTypeStructTest
         expectedResult,
         PgArrayTypeStruct<int, PgInt>.GetActualType(value));
 
-    public static IEnumerable<object[]> GetActualTypeCases()
+    public static IEnumerable<TheoryDataRow<int?[], PgType>> GetActualTypeCases()
     {
-        yield return [Array.Empty<int?>(), PgType.Int4Array];
-        yield return [new int?[] { 1 }, PgType.Int4Array];
+        return new TheoryData<int?[], PgType>(
+            ([], PgType.Int4Array),
+            ([1], PgType.Int4Array));
     }
 }

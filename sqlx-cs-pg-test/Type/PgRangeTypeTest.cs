@@ -22,12 +22,23 @@ public class PgRangeTypeTest
         Assert.Equal(expectedBytes, actualBytes);
     }
 
-    public static IEnumerable<object[]> EncodeTestCases()
+    public static IEnumerable<TheoryDataRow<PgRange<int>, byte[]>> EncodeTestCases()
     {
-        yield return [new PgRange<int>(Bound<int>.Included(-1), Bound<int>.Excluded(11)), new byte[] { 0x02, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B }];
-        yield return [new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Included(11)), new byte[] { 0x04, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B }];
-        yield return [new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Unbounded()), new byte[] { 0x10, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF }];
-        yield return [new PgRange<int>(Bound<int>.Unbounded(), Bound<int>.Included(11)), new byte[] { 0x08 | 0x04, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B }];
+        return new TheoryData<PgRange<int>, byte[]>(
+            (new PgRange<int>(Bound<int>.Included(-1), Bound<int>.Excluded(11)),
+            [
+                0x02, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00,
+                0x00, 0x00, 0x0B,
+            ]),
+            (new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Included(11)),
+            [
+                0x04, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00,
+                0x00, 0x00, 0x0B,
+            ]),
+            (new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Unbounded()),
+                [0x10, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF]),
+            (new PgRange<int>(Bound<int>.Unbounded(), Bound<int>.Included(11)),
+                [0x08 | 0x04, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B]));
     }
 
     [Theory]
@@ -44,12 +55,17 @@ public class PgRangeTypeTest
         Assert.Equal(expectedValue, actualValue);
     }
 
-    public static IEnumerable<object[]> DecodeBytesTestCases()
+    public static IEnumerable<TheoryDataRow<byte[], PgRange<int>>> DecodeBytesTestCases()
     {
-        yield return [new byte[] { 0x02, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B }, new PgRange<int>(Bound<int>.Included(-1), Bound<int>.Excluded(11))];
-        yield return [new byte[] { 0x04, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B }, new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Included(11))];
-        yield return [new byte[] { 0x10, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF }, new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Unbounded())];
-        yield return [new byte[] { 0x08 | 0x04, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B }, new PgRange<int>(Bound<int>.Unbounded(), Bound<int>.Included(11))];
+        return new TheoryData<byte[], PgRange<int>>(
+            ([0x02, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B],
+                new PgRange<int>(Bound<int>.Included(-1), Bound<int>.Excluded(11))),
+            ([0x04, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B],
+                new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Included(11))),
+            ([0x10, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF],
+                new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Unbounded())),
+            ([0x08 | 0x04, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B],
+                new PgRange<int>(Bound<int>.Unbounded(), Bound<int>.Included(11))));
     }
 
     [Theory]
@@ -66,12 +82,13 @@ public class PgRangeTypeTest
         Assert.Equal(expectedValue, actualValue);
     }
 
-    public static IEnumerable<object[]> DecodeTextTestCases()
+    public static IEnumerable<TheoryDataRow<string, PgRange<int>>> DecodeTextTestCases()
     {
-        yield return ["[-1,11)", new PgRange<int>(Bound<int>.Included(-1), Bound<int>.Excluded(11))];
-        yield return ["(-1,11]", new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Included(11))];
-        yield return ["(-1,)", new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Unbounded())];
-        yield return ["(,11]", new PgRange<int>(Bound<int>.Unbounded(), Bound<int>.Included(11))];
+        return new TheoryData<string, PgRange<int>>(
+            ("[-1,11)", new PgRange<int>(Bound<int>.Included(-1), Bound<int>.Excluded(11))),
+            ("(-1,11]", new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Included(11))),
+            ("(-1,)", new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Unbounded())),
+            ("(,11]", new PgRange<int>(Bound<int>.Unbounded(), Bound<int>.Included(11))));
     }
 
     [Theory]
@@ -108,11 +125,12 @@ public class PgRangeTypeTest
         expectedResult,
         PgRangeType<int, PgInt>.IsCompatible(pgType));
 
-    public static IEnumerable<object[]> IsCompatibleCases()
+    public static IEnumerable<TheoryDataRow<PgType, bool>> IsCompatibleCases()
     {
-        yield return [PgType.Int4Range, true];
-        yield return [PgType.Text, false];
-        yield return [PgType.Int4RangeArray, false];
+        return new TheoryData<PgType, bool>(
+            (PgType.Int4Range, true),
+            (PgType.Text, false),
+            (PgType.Int4RangeArray, false));
     }
 
     [Fact]

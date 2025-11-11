@@ -12,10 +12,10 @@ public class PgUuidTest
     [Theory]
     [InlineData(
         "019a22a1-8d4c-7e71-8ac5-e31d330b866c",
-        new byte[] { 1, 154, 34, 161, 141, 76, 126, 113, 138, 197, 227, 29, 51, 11, 134, 108 })]
+        new byte[] { 161, 34, 154, 1, 76, 141, 113, 126, 138, 197, 227, 29, 51, 11, 134, 108 })]
     [InlineData(
         "019a22a1-c5bc-75c5-baf1-8199cfc9d061",
-        new byte[] { 1, 154, 34, 161, 197, 188, 117, 197, 186, 241, 129, 153, 207, 201, 208, 97 })]
+        new byte[] { 161, 34, 154, 1, 188, 197, 197, 117, 186, 241, 129, 153, 207, 201, 208, 97 })]
     public void Encode_Should_WriteGuid(string uuid, byte[] address)
     {
         Guid value = Guid.Parse(uuid);

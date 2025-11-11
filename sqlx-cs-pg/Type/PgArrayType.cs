@@ -181,9 +181,9 @@ internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[
                 buffer.WriteInt(-1);
                 continue;
             }
-            buffer.StartWritingLengthPrefixed();
+            var startPosition = buffer.StartWritingLengthPrefixed();
             TType.Encode(element, buffer);
-            buffer.FinishWritingLengthPrefixed(includeLength: false);
+            buffer.FinishWritingLengthPrefixed(startPosition, includeLength: false);
         }
     }
 
@@ -300,9 +300,9 @@ internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?
                 buffer.WriteInt(-1);
                 continue;
             }
-            buffer.StartWritingLengthPrefixed();
+            var startPosition = buffer.StartWritingLengthPrefixed();
             TType.Encode(element.Value, buffer);
-            buffer.FinishWritingLengthPrefixed(includeLength: false);
+            buffer.FinishWritingLengthPrefixed(startPosition, includeLength: false);
         }
     }
 

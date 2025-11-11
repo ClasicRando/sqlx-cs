@@ -5,20 +5,30 @@ using Sqlx.Postgres.Result;
 namespace Sqlx.Postgres.Type;
 
 /// <summary>
-/// <para>Postgres <c>BOX</c> type represented as a pair of points</para>
+/// <para>Postgres <c>BOX</c> type represented as a pair of <see cref="PgPoint"/></para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-geometric.html#DATATYPE-GEOMETRIC-BOXES">docs</a>
 /// </summary>
-public readonly struct PgBox(PgPoint high, PgPoint low)
-    : IPgDbType<PgBox>, IGeometryType, IHasArrayType, IEquatable<PgBox>
+public readonly struct PgBox : IPgDbType<PgBox>, IGeometryType, IHasArrayType, IEquatable<PgBox>
 {
-    private readonly Lazy<string> _geometryLiteral =
-        new(() => $"{high.GeometryLiteral},{low.GeometryLiteral}");
+    public PgPoint High { get; internal init; }
 
-    public PgPoint High { get; } = high;
+    public PgPoint Low { get; internal init; }
 
-    public PgPoint Low { get; } = low;
+    public string GeometryLiteral => $"{High.GeometryLiteral},{Low.GeometryLiteral}";
 
-    public string GeometryLiteral => _geometryLiteral.Value;
+    /// <summary>
+    /// Create a new box using the 2 points provided. These points are just used as reference since
+    /// there is no guarantee that the points with truly represent the opposite corners of the box.
+    /// This constructor will construct new points to ensure the <see cref="High"/> and
+    /// <see cref="Low"/> properties are correct.
+    /// </summary>
+    /// <param name="point1">First point of the box</param>
+    /// <param name="point2">Second point of the box</param>
+    public PgBox(in PgPoint point1, in PgPoint point2)
+    {
+        High = new PgPoint(double.Max(point1.X, point2.X), double.Max(point1.Y, point2.Y));
+        Low = new PgPoint(double.Min(point1.X, point2.X), double.Min(point1.Y, point2.Y));
+    }
 
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -42,7 +52,11 @@ public readonly struct PgBox(PgPoint high, PgPoint low)
     /// </summary>
     public static PgBox DecodeBytes(ref PgBinaryValue value)
     {
-        return new PgBox(PgPoint.DecodeBytes(ref value), PgPoint.DecodeBytes(ref value));
+        return new PgBox
+        {
+            High = PgPoint.DecodeBytes(ref value),
+            Low = PgPoint.DecodeBytes(ref value),
+        };
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -71,7 +85,11 @@ public readonly struct PgBox(PgPoint high, PgPoint low)
         PgPoint point1 = GeometryUtils.DecodePoint<PgBox>(slice1);
         PgTextValue slice2 = value.Slice(indexPairs[1]);
         PgPoint point2 = GeometryUtils.DecodePoint<PgBox>(slice2);
-        return new PgBox(point1, point2);
+        return new PgBox
+        {
+            High = point1,
+            Low = point2,
+        };
     }
 
     public static PgType DbType => PgType.Box;

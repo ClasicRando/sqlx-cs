@@ -23,7 +23,6 @@ public sealed class WriteBuffer : IBufferWriter<byte>, IDisposable
     
     private byte[] _buffer;
     private int _writePosition;
-    private int _writeLengthPrefixedMark = -1;
 
     public WriteBuffer(int capacity = DefaultCapacity)
     {
@@ -43,24 +42,20 @@ public sealed class WriteBuffer : IBufferWriter<byte>, IDisposable
     /// <summary><see cref="ReadOnlySpan{T}"/> of the bytes written to this buffer</summary>
     public ReadOnlySpan<byte> ReadableSpan => _buffer.AsSpan(0, _writePosition);
 
-    internal void StartWritingLengthPrefixed()
+    internal int StartWritingLengthPrefixed()
     {
-        _writeLengthPrefixedMark = _writePosition;
+        var lenghtPrefixStart = _writePosition;
         WriteInt(0);
+        return lenghtPrefixStart;
     }
 
-    internal void FinishWritingLengthPrefixed(bool includeLength)
+    internal void FinishWritingLengthPrefixed(int lenghtPrefixStart, bool includeLength)
     {
-        if (_writeLengthPrefixedMark < 0)
-        {
-            return;
-        }
         var previousWritePosition = _writePosition;
-        var length = _writePosition - _writeLengthPrefixedMark - (includeLength ? 0 : 4);
-        _writePosition = _writeLengthPrefixedMark;
+        var length = _writePosition - lenghtPrefixStart - (includeLength ? 0 : 4);
+        _writePosition = lenghtPrefixStart;
         WriteInt(length);
         _writePosition = previousWritePosition;
-        _writeLengthPrefixedMark = -1;
     }
 
     public void WriteByte(byte value)
@@ -174,7 +169,6 @@ public sealed class WriteBuffer : IBufferWriter<byte>, IDisposable
     public void Reset()
     {
         _writePosition = 0;
-        _writeLengthPrefixedMark = -1;
     }
 
     public void Dispose()
@@ -182,7 +176,6 @@ public sealed class WriteBuffer : IBufferWriter<byte>, IDisposable
         ArrayPool.Return(_buffer);
         _buffer = [];
         _writePosition = -1;
-        _writeLengthPrefixedMark = -1;
     }
     
     // IBufferWriter<byte> implementation

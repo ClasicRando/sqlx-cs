@@ -12,20 +12,15 @@ namespace Sqlx.Postgres.Type;
 public readonly struct PgPolygon(PgPoint[] points)
     : IPgDbType<PgPolygon>, IGeometryType, IHasArrayType, IEquatable<PgPolygon>
 {
-    private readonly Lazy<PgBox> _boundingBox = new(() => MakeBoundingBox(points));
-    
-    private readonly Lazy<string> _geometryLiteral = new(
-        () => GeometryUtils.GeneratePointCollectionLiteral(points, true));
-
     public PgPoint[] Points { get; } = points;
 
     /// <summary>
     /// The bounding box of the polygon. This is the smallest box object that fully covers the
     /// polygon area. 
     /// </summary>
-    public PgBox BoundingBox => _boundingBox.Value;
+    public PgBox BoundingBox => MakeBoundingBox(Points);
 
-    public string GeometryLiteral => _geometryLiteral.Value;
+    public string GeometryLiteral => GeometryUtils.GeneratePointCollectionLiteral(Points, true);
 
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -113,7 +108,11 @@ public readonly struct PgPolygon(PgPoint[] points)
             }
         }
 
-        return new PgBox(new PgPoint(x2, y2), new PgPoint(x1, y1));
+        return new PgBox
+        {
+            High = new PgPoint(x2, y2),
+            Low = new PgPoint(x1, y1),
+        };
     }
 
     public bool Equals(PgPolygon other)

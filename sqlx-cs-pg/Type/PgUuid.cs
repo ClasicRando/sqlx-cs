@@ -17,7 +17,7 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
     public static void Encode(Guid value, WriteBuffer buffer)
     {
         var span = buffer.GetSpan(16);
-        if (!value.TryWriteBytes(span, true, out _))
+        if (!value.TryWriteBytes(span, bigEndian: false, out _))
         {
             throw ColumnEncodeException.Create<Guid>(
                 DbType,

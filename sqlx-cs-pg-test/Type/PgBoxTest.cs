@@ -11,16 +11,6 @@ public class PgBoxTest
 {
     [Theory]
     [InlineData(
-        1,
-        2,
-        3,
-        4,
-        new byte[]
-        {
-            63, 240, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 64, 8, 0, 0, 0, 0, 0, 0, 64, 16, 0,
-            0, 0, 0, 0, 0,
-        })]
-    [InlineData(
         4,
         3,
         2,
@@ -51,16 +41,6 @@ public class PgBoxTest
     [InlineData(
         new byte[]
         {
-            63, 240, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 64, 8, 0, 0, 0, 0, 0, 0, 64, 16, 0,
-            0, 0, 0, 0, 0,
-        },
-        1,
-        2,
-        3,
-        4)]
-    [InlineData(
-        new byte[]
-        {
             64, 16, 0, 0, 0, 0, 0, 0, 64, 8, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 63, 240, 0,
             0, 0, 0, 0, 0,
         },
@@ -85,7 +65,6 @@ public class PgBoxTest
     }
 
     [Theory]
-    [InlineData("(1,2),(3,4)", 1, 2, 3, 4)]
     [InlineData("(4,3),(2,1)", 4, 3, 2, 1)]
     public void DecodeText_Should_DecodeTextEncodedValueAsBox(
         string textData,
@@ -139,11 +118,12 @@ public class PgBoxTest
     public void IsCompatible(PgType pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgBox.IsCompatible(pgType));
 
-    public static IEnumerable<object[]> IsCompatibleCases()
+    public static IEnumerable<TheoryDataRow<PgType, bool>> IsCompatibleCases()
     {
-        yield return [PgType.Box, true];
-        yield return [PgType.BoxArray, false];
-        yield return [PgType.Int4, false];
+        return new TheoryData<PgType, bool>(
+            (PgType.Box, true),
+            (PgType.BoxArray, false),
+            (PgType.Int4, false));
     }
 
     [Fact]

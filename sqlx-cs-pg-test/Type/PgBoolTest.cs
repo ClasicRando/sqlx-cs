@@ -90,21 +90,16 @@ public class PgBoolTest
     public void IsCompatible(PgType pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgBool.IsCompatible(pgType));
 
-    public static IEnumerable<object[]> IsCompatibleCases()
+    public static IEnumerable<TheoryDataRow<PgType, bool>> IsCompatibleCases()
     {
-        yield return [PgType.Bool, true];
-        yield return [PgType.BoolArray, false];
-        yield return [PgType.Int4, false];
+        return new TheoryData<PgType, bool>(
+            (PgType.Bool, true),
+            (PgType.BoolArray, false),
+            (PgType.Int4, false));
     }
 
     [Theory]
-    [MemberData(nameof(GetActualTypeCases))]
-    public void GetActualType(bool value, PgType expectedResult) =>
-        Assert.Equal(expectedResult, PgBool.GetActualType(value));
-
-    public static IEnumerable<object[]> GetActualTypeCases()
-    {
-        yield return [true, PgType.Bool];
-        yield return [false, PgType.Bool];
-    }
+    [InlineData(true)]
+    [InlineData(false)]
+    public void GetActualType(bool value) => Assert.Equal(PgType.Bool, PgBool.GetActualType(value));
 }

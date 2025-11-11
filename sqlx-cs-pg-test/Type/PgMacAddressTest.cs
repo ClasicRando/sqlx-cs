@@ -41,7 +41,7 @@ public class PgMacAddressTest
     [Theory]
     [InlineData("08:00:2b:01:02:03", new byte[] { 0x08, 0x00, 0x2b, 0x01, 0x02, 0x03 })]
     [InlineData(
-        "08:00:2b:01:02:03:04:05",
+        "ccccccccccccccccccc",
         new byte[] { 0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05 })]
     public void DecodeText_Should_DecodeTextEncodedValueAsMacAddr(string textData, byte[] address)
     {

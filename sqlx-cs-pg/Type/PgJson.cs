@@ -132,23 +132,9 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/jsonb.c#L128">pg source code</a>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/json.c#L136">pg source code</a>
     /// </summary>
-    [SuppressMessage("ReSharper", "InvertIf")]
     public static T DecodeText(PgTextValue value, JsonTypeInfo<T>? typeInfo)
     {
-        var chars = value.Chars;
-        if (value.ColumnMetadata.PgType == PgType.Jsonb)
-        {
-            var versionCode = value.Chars[0];
-            if (versionCode != JsonBVersion)
-            {
-                throw ColumnDecodeException.Create<T>(
-                    value.ColumnMetadata,
-                    $"Unsupported JSONB format version: {versionCode}. Only version 1 is supported");
-            }
-            chars = chars[1..];
-        }
-
-        return Json.FromChars(chars, typeInfo);
+        return Json.FromChars(value.Chars, typeInfo);
     }
     
     public static PgType DbType => PgType.Jsonb;

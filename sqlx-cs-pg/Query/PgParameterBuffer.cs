@@ -48,9 +48,9 @@ internal sealed class PgParameterBuffer : IDisposable
         where TValue : notnull
         where TPgType : IPgDbType<TValue>
     {
-        _buffer.StartWritingLengthPrefixed();
+        var startingPosition = _buffer.StartWritingLengthPrefixed();
         TPgType.Encode(value, _buffer);
-        _buffer.FinishWritingLengthPrefixed(includeLength: false);
+        _buffer.FinishWritingLengthPrefixed(startingPosition, includeLength: false);
         _pgTypes.Add(TPgType.GetActualType(value));
     }
 
@@ -84,9 +84,9 @@ internal sealed class PgParameterBuffer : IDisposable
     /// <typeparam name="T">Value type to encode</typeparam>
     public void EncodeJsonValue<T>(T value, JsonTypeInfo<T>? typeInfo) where T : notnull
     {
-        _buffer.StartWritingLengthPrefixed();
+        var startingPosition = _buffer.StartWritingLengthPrefixed();
         PgJson<T>.Encode(value, _buffer, typeInfo);
-        _buffer.FinishWritingLengthPrefixed(includeLength: false);
+        _buffer.FinishWritingLengthPrefixed(startingPosition, includeLength: false);
         _pgTypes.Add(PgJson<T>.DbType);
     }
 

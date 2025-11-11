@@ -9,37 +9,10 @@ namespace Sqlx.Postgres.Type;
 public class PgPathTest
 {
     [Theory]
-    [InlineData(
-        false,
-        new[] { 5.63, 8.59, 4.87, 2.8 },
-        new byte[]
-        {
-            0, 0, 0, 0, 2, 64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174,
-            64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102,
-        })]
-    [InlineData(
-        true,
-        new[] { 4.87, 2.8 },
-        new byte[]
-        {
-            1, 0, 0, 0, 1, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102,
-        })]
-    public void Encode_Should_WritePath(
-        bool isClosed,
-        double[] values,
-        byte[] expectedBytes)
+    [MemberData(nameof(EncodeCases))]
+    public void Encode_Should_WritePath(PgPath value, byte[] expectedBytes)
     {
         using var buffer = new WriteBuffer();
-        var points = new PgPoint[values.Length / 2];
-        var j = 0;
-        for (var i = 0; i < points.Length; i++)
-        {
-            var x = values[j++];
-            var y = values[j++];
-            points[i] = new PgPoint(x, y);
-        }
-
-        var value = new PgPath(isClosed, points);
 
         PgPath.Encode(value, buffer);
 
@@ -48,37 +21,19 @@ public class PgPathTest
         Assert.Equal(expectedBytes, actualBytes);
     }
 
+    public static IEnumerable<TheoryDataRow<PgPath, byte[]>> EncodeCases()
+    {
+        return new TheoryData<PgPath, byte[]>(
+            (new PgPath(false, [new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8)]), [0, 0, 0, 0, 2, 64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102]),
+            (new PgPath(true, [new PgPoint(4.87, 2.8)]), [1, 0, 0, 0, 1, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102]));
+    }
+
     [Theory]
-    [InlineData(
-        new byte[]
-        {
-            0, 0, 0, 0, 2, 64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174,
-            64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102,
-        },
-        false,
-        new[] { 5.63, 8.59, 4.87, 2.8 })]
-    [InlineData(
-        new byte[]
-        {
-            1, 0, 0, 0, 1, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102,
-        },
-        true,
-        new[] { 4.87, 2.8 })]
+    [MemberData(nameof(DecodeBytesCases))]
     public void DecodeBytes_Should_DecodeBinaryEncodedValueAsPath(
         byte[] binaryData,
-        bool isClosed,
-        double[] values)
+        PgPath expectedValue)
     {
-        var points = new PgPoint[values.Length / 2];
-        var j = 0;
-        for (var i = 0; i < points.Length; i++)
-        {
-            var x = values[j++];
-            var y = values[j++];
-            points[i] = new PgPoint(x, y);
-        }
-
-        var expectedValue = new PgPath(isClosed, points);
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
 
@@ -87,36 +42,32 @@ public class PgPathTest
         Assert.Equal(expectedValue, actualValue);
     }
 
+    public static IEnumerable<TheoryDataRow<byte[], PgPath>> DecodeBytesCases()
+    {
+        return new TheoryData<byte[], PgPath>(
+            ([0, 0, 0, 0, 2, 64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102], new PgPath(false, [new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8)])),
+            ([1, 0, 0, 0, 1, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102], new PgPath(true, [new PgPoint(4.87, 2.8)])));
+    }
+
     [Theory]
-    [InlineData(
-        "[(5.63,8.59),(4.87,2.8)]",
-        false,
-        new[] { 5.63, 8.59, 4.87, 2.8 })]
-    [InlineData(
-        "((5.63,8.59))",
-        true,
-        new[] { 5.63, 8.59 })]
+    [MemberData(nameof(DecodeTextCases))]
     public void DecodeText_Should_DecodeTextEncodedValueAsPath(
         string textData,
-        bool isClosed,
-        double[] values)
+        PgPath expectedValue)
     {
-        var points = new PgPoint[values.Length / 2];
-        var j = 0;
-        for (var i = 0; i < points.Length; i++)
-        {
-            var x = values[j++];
-            var y = values[j++];
-            points[i] = new PgPoint(x, y);
-        }
-
-        var expectedValue = new PgPath(isClosed, points);
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
 
         PgPath actualValue = PgPath.DecodeText(textValue);
 
         Assert.Equal(expectedValue, actualValue);
+    }
+
+    public static IEnumerable<TheoryDataRow<string, PgPath>> DecodeTextCases()
+    {
+        return new TheoryData<string, PgPath>(
+            ("[(5.63,8.59),(4.87,2.8)]", new PgPath(false, [new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8)])),
+            ("((4.87, 2.8))", new PgPath(true, [new PgPoint(4.87, 2.8)])));
     }
 
     [Fact]
@@ -131,13 +82,13 @@ public class PgPathTest
     public void IsCompatible(PgType pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgPath.IsCompatible(pgType));
 
-    public static IEnumerable<object[]> IsCompatibleCases()
+    public static IEnumerable<TheoryDataRow<PgType, bool>> IsCompatibleCases()
     {
-        yield return [PgType.Path, true];
-        yield return [PgType.PathArray, false];
-        yield return [PgType.Int4, false];
+        return new TheoryData<PgType, bool>(
+            (PgType.Path, true),
+            (PgType.PathArray, false),
+            (PgType.Int4, false));
     }
-
 
     [Fact]
     public void GetActualType()

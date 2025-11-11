@@ -185,9 +185,9 @@ public class WriteBufferTest
     {
         using var buffer = new WriteBuffer();
         
-        buffer.StartWritingLengthPrefixed();
+        var startingPosition = buffer.StartWritingLengthPrefixed();
         buffer.WriteByte(1);
-        buffer.FinishWritingLengthPrefixed(includeLength);
+        buffer.FinishWritingLengthPrefixed(startingPosition, includeLength);
 
         var bytes = buffer.ReadableSpan.ToArray();
         var readBuffer = new ReadBuffer(bytes.AsSpan());

@@ -121,11 +121,12 @@ public class PgArrayTypeClassTest
         expectedResult,
         PgArrayTypeClass<string, PgString>.IsCompatible(pgType));
 
-    public static IEnumerable<object[]> IsCompatibleCases()
+    public static IEnumerable<TheoryDataRow<PgType, bool>> IsCompatibleCases()
     {
-        yield return [PgType.TextArray, true];
-        yield return [PgType.Text, false];
-        yield return [PgType.Int4Array, false];
+        return new TheoryData<PgType, bool>(
+            (PgType.TextArray, true),
+            (PgType.Text, false),
+            (PgType.Int4Array, false));
     }
 
     [Theory]
@@ -134,9 +135,10 @@ public class PgArrayTypeClassTest
         expectedResult,
         PgArrayTypeClass<string, PgString>.GetActualType(value));
 
-    public static IEnumerable<object[]> GetActualTypeCases()
+    public static IEnumerable<TheoryDataRow<string[], PgType>> GetActualTypeCases()
     {
-        yield return [Array.Empty<string>(), PgType.TextArray];
-        yield return [new[] { "test" }, PgType.TextArray];
+        return new TheoryData<string[], PgType>(
+            ([], PgType.TextArray),
+            (["test"], PgType.TextArray));
     }
 }

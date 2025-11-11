@@ -95,7 +95,7 @@ public class PgJsonTest
     }
 
     [Theory]
-    [InlineData("\u0001{\"Id\":1,\"Name\":\"Test1\"}", true, 1, "Test1", true)]
+    [InlineData("{\"Id\":1,\"Name\":\"Test1\"}", true, 1, "Test1", true)]
     [InlineData("{\"Id\":2,\"Name\":\"Test2\"}", false, 2, "Test2", false)]
     public void DecodeText_Should_DecodeTextEncodedValueAsJson(
         string textData,
@@ -189,13 +189,14 @@ public class PgJsonTest
     [MemberData(nameof(IsCompatibleCases))]
     public void IsCompatible(PgType pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgJson<Inner>.IsCompatible(pgType));
-
-    public static IEnumerable<object[]> IsCompatibleCases()
+    
+    public static IEnumerable<TheoryDataRow<PgType, bool>> IsCompatibleCases()
     {
-        yield return [PgType.Json, true];
-        yield return [PgType.Jsonb, true];
-        yield return [PgType.JsonbArray, false];
-        yield return [PgType.Int4, false];
+        return new TheoryData<PgType, bool>(
+            (PgType.Json, true),
+            (PgType.Jsonb, true),
+            (PgType.JsonbArray, false),
+            (PgType.Int4, false));
     }
 
     [Fact]
