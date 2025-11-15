@@ -4,22 +4,45 @@ using Sqlx.Core.Result;
 
 namespace Sqlx.Postgres.Query;
 
-public sealed class PgQueryBatch : IQueryBatch
+/// <summary>
+/// <see cref="IQueryBatch"/> implementation for Postgres. <see cref="IQuery"/> instances returned
+/// are always <see cref="PgExecutableQuery"/> and the queries are executed using the
+/// <see cref="IQueryExecutor"/> supplied to the constructor.
+/// </summary>
+public sealed class PgQueryBatch(IQueryExecutor queryExecutor) : IQueryBatch
 {
+    private bool _disposed;
+    private IQueryExecutor? _queryExecutor = queryExecutor;
+    private readonly List<PgExecutableQuery> _queries = [];
+    
     public bool WrapBatchInTransaction { get; set; }
+
+    internal IEnumerable<PgExecutableQuery> Queries => _queries;
     
     public IQuery CreateQuery(string sql)
     {
-        throw new NotImplementedException();
+        CheckDisposed();
+        var query = new PgExecutableQuery(sql, _queryExecutor!);
+        _queries.Add(query);
+        return query;
     }
 
     public Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteBatch(CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        CheckDisposed();
+        return _queryExecutor!.ExecuteQueryBatch(this, cancellationToken);
     }
+
+    private void CheckDisposed() => ObjectDisposedException.ThrowIf(_disposed, typeof(PgQueryBatch));
     
     public void Dispose()
     {
-        throw new NotImplementedException();
+        _disposed = true;
+        _queryExecutor = null;
+        foreach (PgExecutableQuery query in _queries)
+        {
+            query.Dispose();
+        }
+        _queries.Clear();
     }
 }

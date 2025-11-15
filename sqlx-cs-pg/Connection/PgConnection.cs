@@ -53,7 +53,7 @@ public sealed class PgConnection : AbstractConnection
 
     public override IQueryBatch CreateQueryBatch()
     {
-        throw new NotImplementedException();
+        return new PgQueryBatch(this);
     }
 
     public override async Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
