@@ -59,17 +59,12 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
         return time;
     }
     
-    public static PgType DbType => PgType.Time;
+    public static PgTypeInfo DbType => PgTypeInfo.Time;
 
-    public static PgType ArrayDbType => PgType.TimeArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.TimeArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(TimeOnly value)
-    {
-        return DbType;
     }
 }

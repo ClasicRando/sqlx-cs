@@ -63,18 +63,13 @@ public readonly struct PgPolygon(PgPoint[] points)
         return new PgPolygon(GeometryUtils.DecodePoints<PgPolygon>(value));
     }
     
-    public static PgType DbType => PgType.Polygon;
+    public static PgTypeInfo DbType => PgTypeInfo.Polygon;
 
-    public static PgType ArrayDbType => PgType.PolygonArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.PolygonArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(PgPolygon value)
-    {
-        return DbType;
     }
 
     private static PgBox MakeBoundingBox(PgPoint[] points)

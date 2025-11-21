@@ -41,21 +41,16 @@ public abstract class PgDateTimeOffset : IPgDbType<DateTimeOffset>, IHasRangeTyp
         return new DateTimeOffset(PgDateTime.DecodeText(value), TimeSpan.Zero);
     }
     
-    public static PgType DbType => PgType.Timestamptz;
+    public static PgTypeInfo DbType => PgTypeInfo.Timestamptz;
 
-    public static PgType ArrayDbType => PgType.TimestamptzArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.TimestamptzArray;
 
-    public static PgType RangeType => PgType.Tstzrange;
+    public static PgTypeInfo RangeType => PgTypeInfo.Tstzrange;
 
-    public static PgType RangeArrayType => PgType.TstzrangeArray;
+    public static PgTypeInfo RangeArrayType => PgTypeInfo.TstzrangeArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return PgDateTime.IsCompatible(dbType);
-    }
-
-    public static PgType GetActualType(DateTimeOffset value)
-    {
-        return DbType;
     }
 }

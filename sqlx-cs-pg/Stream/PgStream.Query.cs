@@ -172,7 +172,7 @@ internal partial class PgStream
     /// <returns>The prepared statement to execute the desired query</returns>
     private async Task<PgPreparedStatement> GetOrPrepareStatement(
         string sql,
-        IReadOnlyList<PgType> parameterTypes,
+        IReadOnlyList<PgTypeInfo> parameterTypes,
         CancellationToken cancellationToken)
     {
         PgPreparedStatement? statement = _statementCache.Get(sql);
@@ -329,7 +329,7 @@ internal partial class PgStream
     /// </returns>
     private async Task<PgPreparedStatement> ExecuteStatementPrepare(
         string sql,
-        IReadOnlyList<PgType> parameterTypes,
+        IReadOnlyList<PgTypeInfo> parameterTypes,
         CancellationToken cancellationToken)
     {
         var statement = new PgPreparedStatement(sql, _nextStatementId++);

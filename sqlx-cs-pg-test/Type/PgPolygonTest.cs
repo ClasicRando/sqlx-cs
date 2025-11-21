@@ -111,29 +111,21 @@ public class PgPolygonTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnPolygonType() => Assert.Equal(PgPolygon.DbType, PgType.Polygon);
+    public void DbType_Should_ReturnPolygonType() => Assert.Equal(PgPolygon.DbType, PgTypeInfo.Polygon);
 
     [Fact]
     public void ArrayDbType_Should_ReturnPolygonType() =>
-        Assert.Equal(PgPolygon.ArrayDbType, PgType.PolygonArray);
+        Assert.Equal(PgPolygon.ArrayDbType, PgTypeInfo.PolygonArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgPolygon.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Polygon, true];
-        yield return [PgType.PolygonArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-
-    [Fact]
-    public void GetActualType()
-    {
-        var value = new PgPolygon();
-        Assert.Equal(PgType.Polygon, PgPolygon.GetActualType(value));
+        yield return [PgTypeInfo.Polygon, true];
+        yield return [PgTypeInfo.PolygonArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

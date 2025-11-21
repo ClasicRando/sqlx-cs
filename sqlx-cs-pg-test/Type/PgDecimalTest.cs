@@ -127,35 +127,29 @@ public class PgDecimalTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnNumericType() => Assert.Equal(PgDecimal.DbType, PgType.Numeric);
+    public void DbType_Should_ReturnNumericType() => Assert.Equal(PgDecimal.DbType, PgTypeInfo.Numeric);
 
     [Fact]
     public void ArrayDbType_Should_ReturnNumericType() =>
-        Assert.Equal(PgDecimal.ArrayDbType, PgType.NumericArray);
+        Assert.Equal(PgDecimal.ArrayDbType, PgTypeInfo.NumericArray);
 
     [Fact]
     public void RangeType_Should_ReturnNumericRangeType() =>
-        Assert.Equal(PgDecimal.RangeType, PgType.Numrange);
+        Assert.Equal(PgDecimal.RangeType, PgTypeInfo.Numrange);
 
     [Fact]
     public void RangeArrayType_Should_ReturnNumericRangeType() =>
-        Assert.Equal(PgDecimal.RangeArrayType, PgType.NumrangeArray);
+        Assert.Equal(PgDecimal.RangeArrayType, PgTypeInfo.NumrangeArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgDecimal.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Numeric, true];
-        yield return [PgType.NumericArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        Assert.Equal(PgType.Numeric, PgDecimal.GetActualType(decimal.Zero));
+        yield return [PgTypeInfo.Numeric, true];
+        yield return [PgTypeInfo.NumericArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

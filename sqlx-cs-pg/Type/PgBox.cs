@@ -92,18 +92,13 @@ public readonly struct PgBox : IPgDbType<PgBox>, IGeometryType, IHasArrayType, I
         };
     }
 
-    public static PgType DbType => PgType.Box;
+    public static PgTypeInfo DbType => PgTypeInfo.Box;
 
-    public static PgType ArrayDbType => PgType.BoxArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.BoxArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(PgBox value)
-    {
-        return DbType;
     }
 
     public bool Equals(PgBox other)

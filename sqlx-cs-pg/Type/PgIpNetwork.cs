@@ -45,17 +45,12 @@ internal abstract class PgIpNetwork : IPgDbType<IPNetwork>, IHasArrayType
         return new IPNetwork(address, prefix ?? NetworkUtils.GetDefaultNetworkMaskSize(address));
     }
 
-    public static PgType DbType => PgType.Cidr;
+    public static PgTypeInfo DbType => PgTypeInfo.Cidr;
 
-    public static PgType ArrayDbType => PgType.CidrArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.CidrArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return NetworkUtils.IsNetworkValueCompatible(dbType);
-    }
-
-    public static PgType GetActualType(IPNetwork value)
-    {
-        return DbType;
     }
 }

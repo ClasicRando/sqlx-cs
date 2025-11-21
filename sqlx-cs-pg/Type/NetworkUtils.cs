@@ -32,7 +32,7 @@ internal static class NetworkUtils
     public static void EncodeNetworkValue<T>(
         IPAddress value,
         byte prefix,
-        PgType dataType,
+        PgTypeInfo dataType,
         WriteBuffer buffer)
         where T : notnull
     {
@@ -40,20 +40,20 @@ internal static class NetworkUtils
         var bytesToWrite = isIpv6 ? 16 : 4;
         buffer.WriteByte(isIpv6 ? PgsqlAfInet6 : PgsqlAfInet);
         buffer.WriteByte(prefix);
-        buffer.WriteByte((byte)(dataType == PgType.Cidr ? 1 : 0));
+        buffer.WriteByte((byte)(dataType == PgTypeInfo.Cidr ? 1 : 0));
         buffer.WriteByte((byte)bytesToWrite);
         var span = buffer.GetSpan(bytesToWrite);
         if (!value.TryWriteBytes(span, out var written))
         {
             throw ColumnEncodeException.Create<T>(
-                dataType,
+                dataType.PgOid,
                 "Failed to write address bytes to buffer");
         }
 
         if (bytesToWrite != written)
         {
             throw ColumnEncodeException.Create<T>(
-                dataType,
+                dataType.PgOid,
                 "Wrote a different number of bytes to the parameter buffer than expected");
         }
         buffer.Advance(written);
@@ -156,10 +156,10 @@ internal static class NetworkUtils
     }
 
     /// <param name="dbType">database type to check for compatability</param>
-    /// <returns>True if the <see cref="PgType"/> is a network value type</returns>
-    public static bool IsNetworkValueCompatible(PgType dbType)
+    /// <returns>True if the <see cref="PgTypeInfo"/> is a network value type</returns>
+    public static bool IsNetworkValueCompatible(PgTypeInfo dbType)
     {
-        return dbType == PgType.Inet || dbType == PgType.Cidr;
+        return dbType == PgTypeInfo.Inet || dbType == PgTypeInfo.Cidr;
     }
 
     /// <returns>True if the address is an IPv6 address</returns>

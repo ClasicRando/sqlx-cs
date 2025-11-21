@@ -8,12 +8,12 @@ namespace Sqlx.Postgres.Query;
 /// <summary>
 /// Buffer storing binary encoded parameters. Parameters are added to an instance of this class and
 /// the encoded values can be accessed using <see cref="Span"/>. Along with the encoded values,
-/// the <see cref="PgType"/>s can be accessed for each parameter added.
+/// the <see cref="PgTypeInfo"/>s can be accessed for each parameter added.
 /// </summary>
 internal sealed class PgParameterBuffer : IDisposable
 {
     private readonly WriteBuffer _buffer = new();
-    private readonly List<PgType> _pgTypes = [];
+    private readonly List<PgTypeInfo> _pgTypes = [];
 
     /// <summary>
     /// Number of parameters encoded
@@ -24,18 +24,18 @@ internal sealed class PgParameterBuffer : IDisposable
     /// </summary>
     public ReadOnlySpan<byte> Span => _buffer.ReadableSpan;
     /// <summary>
-    /// <see cref="PgType"/>s encoded into this buffer (in order of encoding)
+    /// <see cref="PgTypeInfo"/>s encoded into this buffer (in order of encoding)
     /// </summary>
-    public IReadOnlyList<PgType> PgTypes => _pgTypes;
+    public IReadOnlyList<PgTypeInfo> PgTypes => _pgTypes;
 
     /// <summary>
     /// Encode a null value. Currently, this specifies the parameter type as
-    /// <see cref="PgType.Unspecified"/>.
+    /// <see cref="PgTypeInfo.Unspecified"/>.
     /// </summary>
     public void EncodeNull()
     {
         _buffer.WriteInt(-1);
-        _pgTypes.Add(PgType.Unspecified);
+        _pgTypes.Add(PgTypeInfo.Unspecified);
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ internal sealed class PgParameterBuffer : IDisposable
         var startingPosition = _buffer.StartWritingLengthPrefixed();
         TPgType.Encode(value, _buffer);
         _buffer.FinishWritingLengthPrefixed(startingPosition, includeLength: false);
-        _pgTypes.Add(TPgType.GetActualType(value));
+        _pgTypes.Add(TPgType.DbType);
     }
 
     /// <summary>

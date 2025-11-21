@@ -82,28 +82,21 @@ public class PgLineSegmentTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnLineType() => Assert.Equal(PgLineSegment.DbType, PgType.Lseg);
+    public void DbType_Should_ReturnLineType() => Assert.Equal(PgLineSegment.DbType, PgTypeInfo.Lseg);
 
     [Fact]
     public void ArrayDbType_Should_ReturnLineArrayType() =>
-        Assert.Equal(PgLineSegment.ArrayDbType, PgType.LsegArray);
+        Assert.Equal(PgLineSegment.ArrayDbType, PgTypeInfo.LsegArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgLineSegment.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Lseg, true];
-        yield return [PgType.LsegArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        var value = new PgLineSegment(new PgPoint(), new PgPoint());
-        Assert.Equal(PgType.Lseg, PgLineSegment.GetActualType(value));
+        yield return [PgTypeInfo.Lseg, true];
+        yield return [PgTypeInfo.LsegArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

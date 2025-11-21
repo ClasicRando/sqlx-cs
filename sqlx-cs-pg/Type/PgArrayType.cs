@@ -31,7 +31,7 @@ internal static class PgArrayTypeUtils
     {
         buffer.WriteInt(1);
         buffer.WriteInt(0);
-        buffer.WriteInt(TType.DbType.TypeOid);
+        buffer.WriteInt(TType.DbType.PgOid);
         buffer.WriteInt(length);
         buffer.WriteInt(1);
     }
@@ -62,9 +62,9 @@ internal static class PgArrayTypeUtils
 
         var elementTypeOid = value.Buffer.ReadInt();
         ColumnDecodeException.CheckOrThrow<TElement[]>(
-            elementTypeOid == TType.DbType.TypeOid,
+            elementTypeOid == TType.DbType.PgOid,
             value.ColumnMetadata,
-            $"Attempted to read an array with another element type. Expected {TType.DbType.TypeOid} but found {elementTypeOid}");
+            $"Attempted to read an array with another element type. Expected {TType.DbType.PgOid} but found {elementTypeOid}");
         
         var length = value.Buffer.ReadInt();
         var lowerBound = value.Buffer.ReadInt();
@@ -255,16 +255,17 @@ internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[
         return result;
     }
     
-    public static PgType DbType => TType.ArrayDbType;
+    public static PgTypeInfo DbType => TType.ArrayDbType;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
-    }
+        if (typeInfo == DbType)
+        {
+            return true;
+        }
 
-    public static PgType GetActualType(TElement?[] value)
-    {
-        return DbType;
+        return typeInfo.TypeKind is ArrayType arrayType
+               && TType.IsCompatible(arrayType.ElementType);
     }
 }
 
@@ -334,11 +335,8 @@ internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?
                 continue;
             }
 
-            var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary);
-            var binaryValue = new PgBinaryValue(
-                value.Buffer.Slice(elementLength),
-                ref columnMetadata);
-            result[i] = TType.DecodeBytes(ref binaryValue);
+            PgBinaryValue slice = value.Slice(elementLength);
+            result[i] = TType.DecodeBytes(ref slice);
         }
 
         return result;
@@ -377,15 +375,16 @@ internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?
         return result;
     }
     
-    public static PgType DbType => TType.ArrayDbType;
+    public static PgTypeInfo DbType => TType.ArrayDbType;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
-    }
+        if (typeInfo == DbType)
+        {
+            return true;
+        }
 
-    public static PgType GetActualType(TElement?[] value)
-    {
-        return DbType;
+        return typeInfo.TypeKind is ArrayType arrayType
+               && TType.IsCompatible(arrayType.ElementType);
     }
 }

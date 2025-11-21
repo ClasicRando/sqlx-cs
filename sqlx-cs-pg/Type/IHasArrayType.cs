@@ -9,7 +9,7 @@ namespace Sqlx.Postgres.Type;
 public interface IHasArrayType
 {
     /// <summary>
-    /// <see cref="PgType"/> for the array super type of another database type.
+    /// <see cref="PgTypeInfo"/> for the array super type of another database type.
     /// </summary>
-    static abstract PgType ArrayDbType { get; }
+    static abstract PgTypeInfo ArrayDbType { get; }
 }

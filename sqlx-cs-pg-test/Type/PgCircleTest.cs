@@ -84,28 +84,21 @@ public class PgCircleTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnCircleType() => Assert.Equal(PgCircle.DbType, PgType.Circle);
+    public void DbType_Should_ReturnCircleType() => Assert.Equal(PgCircle.DbType, PgTypeInfo.Circle);
 
     [Fact]
     public void ArrayDbType_Should_ReturnCircleArrayType() =>
-        Assert.Equal(PgCircle.ArrayDbType, PgType.CircleArray);
+        Assert.Equal(PgCircle.ArrayDbType, PgTypeInfo.CircleArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgCircle.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Circle, true];
-        yield return [PgType.CircleArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        var value = new PgCircle(new PgPoint(0, 0), 0);
-        Assert.Equal(PgType.Circle, PgCircle.GetActualType(value));
+        yield return [PgTypeInfo.Circle, true];
+        yield return [PgTypeInfo.CircleArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

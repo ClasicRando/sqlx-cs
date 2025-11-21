@@ -33,21 +33,11 @@ public interface IPgDbType<T> where T : notnull
     static abstract T DecodeText(PgTextValue value);
     
     /// <summary>
-    /// <see cref="PgType"/> definition for this type 
+    /// <see cref="PgTypeInfo"/> definition for this type 
     /// </summary>
-    static abstract PgType DbType { get; }
+    static abstract PgTypeInfo DbType { get; }
 
-    /// <param name="dbType">Database type to check</param>
+    /// <param name="typeInfo">Database type to check</param>
     /// <returns>True if the provided type is compatible with this type for decoding</returns>
-    static abstract bool IsCompatible(PgType dbType);
-
-    /// <summary>
-    /// Get the actual <see cref="PgType"/> for the specified value. Generally this method returns
-    /// <see cref="DbType"/> but in some types such as <see cref="PgMacAddress"/> <c>MACADDRESS</c>
-    /// and <c>MACADDRESS8</c> are represented with the same CLR type and the contents of an
-    /// instance will inform the actual database type.
-    /// </summary>
-    /// <param name="value">Value to check for actual type</param>
-    /// <returns>The final type of the value</returns>
-    static abstract PgType GetActualType(T value);
+    static abstract bool IsCompatible(PgTypeInfo typeInfo);
 }

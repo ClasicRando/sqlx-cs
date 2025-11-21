@@ -145,16 +145,16 @@ internal sealed partial class PgStream
     private void WriteParseMessage(
         ReadOnlySpan<char> preparedStatementName,
         ReadOnlySpan<char> query,
-        IReadOnlyList<PgType> pgTypes)
+        IReadOnlyList<PgTypeInfo> pgTypes)
     {
         _writeBuffer.WriteCode(PgFrontendMessageType.Parse);
         var startingPosition = _writeBuffer.StartWritingLengthPrefixed();
         _writeBuffer.WriteCString(preparedStatementName);
         _writeBuffer.WriteCString(query);
         _writeBuffer.WriteShort((short)pgTypes.Count);
-        foreach (PgType pgType in pgTypes)
+        foreach (PgTypeInfo pgType in pgTypes)
         {
-            _writeBuffer.WriteInt(pgType.TypeOid);
+            _writeBuffer.WriteInt(pgType.PgOid.Inner);
         }
         _writeBuffer.FinishWritingLengthPrefixed(startingPosition, includeLength: true);
     }

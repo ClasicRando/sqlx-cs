@@ -70,17 +70,12 @@ public readonly record struct PgInet : IPgDbType<PgInet>, IHasArrayType
         return prefix.HasValue ? new PgInet(address, prefix.Value) : new PgInet(address);
     }
 
-    public static PgType DbType => PgType.Inet;
+    public static PgTypeInfo DbType => PgTypeInfo.Inet;
 
-    public static PgType ArrayDbType => PgType.InetArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.InetArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return NetworkUtils.IsNetworkValueCompatible(dbType);
-    }
-
-    public static PgType GetActualType(PgInet value)
-    {
-        return DbType;
     }
 }

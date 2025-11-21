@@ -79,27 +79,22 @@ public class PgBoolTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnBoolType() => Assert.Equal(PgBool.DbType, PgType.Bool);
+    public void DbType_Should_ReturnBoolType() => Assert.Equal(PgTypeInfo.Bool, PgBool.DbType);
 
     [Fact]
     public void ArrayDbType_Should_ReturnBoolArrayType() =>
-        Assert.Equal(PgBool.ArrayDbType, PgType.BoolArray);
+        Assert.Equal(PgTypeInfo.BoolArray, PgBool.ArrayDbType);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgBool.IsCompatible(pgType));
 
-    public static IEnumerable<TheoryDataRow<PgType, bool>> IsCompatibleCases()
+    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
     {
-        return new TheoryData<PgType, bool>(
-            (PgType.Bool, true),
-            (PgType.BoolArray, false),
-            (PgType.Int4, false));
+        return new TheoryData<PgTypeInfo, bool>(
+            (PgTypeInfo.Bool, true),
+            (PgTypeInfo.BoolArray, false),
+            (PgTypeInfo.Int4, false));
     }
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void GetActualType(bool value) => Assert.Equal(PgType.Bool, PgBool.GetActualType(value));
 }

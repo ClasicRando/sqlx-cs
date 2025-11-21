@@ -130,22 +130,17 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
             $"Cannot convert '{value}' to a decimal value");
     }
 
-    public static PgType DbType => PgType.Numeric;
+    public static PgTypeInfo DbType => PgTypeInfo.Numeric;
 
-    public static PgType ArrayDbType => PgType.NumericArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.NumericArray;
 
-    public static PgType RangeType => PgType.Numrange;
+    public static PgTypeInfo RangeType => PgTypeInfo.Numrange;
 
-    public static PgType RangeArrayType => PgType.NumrangeArray;
+    public static PgTypeInfo RangeArrayType => PgTypeInfo.NumrangeArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(decimal value)
-    {
-        return DbType;
     }
 
     /// <summary>

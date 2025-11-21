@@ -86,35 +86,29 @@ public class PgDateTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnDateType() => Assert.Equal(PgDate.DbType, PgType.Date);
+    public void DbType_Should_ReturnDateType() => Assert.Equal(PgDate.DbType, PgTypeInfo.Date);
 
     [Fact]
     public void ArrayDbType_Should_ReturnDateType() =>
-        Assert.Equal(PgDate.ArrayDbType, PgType.DateArray);
+        Assert.Equal(PgDate.ArrayDbType, PgTypeInfo.DateArray);
 
     [Fact]
     public void RangeType_Should_ReturnDateRangeType() =>
-        Assert.Equal(PgDate.RangeType, PgType.Daterange);
+        Assert.Equal(PgDate.RangeType, PgTypeInfo.Daterange);
 
     [Fact]
     public void RangeArrayType_Should_ReturnDateRangeType() =>
-        Assert.Equal(PgDate.RangeArrayType, PgType.DaterangeArray);
+        Assert.Equal(PgDate.RangeArrayType, PgTypeInfo.DaterangeArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgDate.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Date, true];
-        yield return [PgType.DateArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        Assert.Equal(PgType.Date, PgDate.GetActualType(DateOnly.MaxValue));
+        yield return [PgTypeInfo.Date, true];
+        yield return [PgTypeInfo.DateArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

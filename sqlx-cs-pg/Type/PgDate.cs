@@ -58,21 +58,16 @@ internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayTy
             $"Cannot parse '{value}' as a DateOnly");
     }
     
-    public static PgType DbType => PgType.Date;
+    public static PgTypeInfo DbType => PgTypeInfo.Date;
 
-    public static PgType ArrayDbType => PgType.DateArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.DateArray;
 
-    public static PgType RangeType => PgType.Daterange;
+    public static PgTypeInfo RangeType => PgTypeInfo.Daterange;
 
-    public static PgType RangeArrayType => PgType.DaterangeArray;
+    public static PgTypeInfo RangeArrayType => PgTypeInfo.DaterangeArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(DateOnly value)
-    {
-        return DbType;
     }
 }

@@ -93,32 +93,19 @@ public class PgArrayTypeStructTest
     [Fact]
     public void DbType_Should_ReturnArrayType() => Assert.Equal(
         PgArrayTypeStruct<int, PgInt>.DbType,
-        PgType.Int4Array);
+        PgTypeInfo.Int4Array);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) => Assert.Equal(
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) => Assert.Equal(
         expectedResult,
         PgArrayTypeStruct<int, PgInt>.IsCompatible(pgType));
 
-    public static IEnumerable<TheoryDataRow<PgType, bool>> IsCompatibleCases()
+    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
     {
-        return new TheoryData<PgType, bool>(
-            (PgType.Int4Array, true),
-            (PgType.Int4, false),
-            (PgType.TextArray, false));
-    }
-
-    [Theory]
-    [MemberData(nameof(GetActualTypeCases))]
-    public void GetActualType(int?[] value, PgType expectedResult) => Assert.Equal(
-        expectedResult,
-        PgArrayTypeStruct<int, PgInt>.GetActualType(value));
-
-    public static IEnumerable<TheoryDataRow<int?[], PgType>> GetActualTypeCases()
-    {
-        return new TheoryData<int?[], PgType>(
-            ([], PgType.Int4Array),
-            ([1], PgType.Int4Array));
+        return new TheoryData<PgTypeInfo, bool>(
+            (PgTypeInfo.Int4Array, true),
+            (PgTypeInfo.Int4, false),
+            (PgTypeInfo.TextArray, false));
     }
 }

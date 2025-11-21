@@ -81,7 +81,7 @@ public class PgJsonTest
             string.Empty,
             0,
             0,
-            isJsonB ? PgType.Jsonb : PgType.Json,
+            isJsonB ? PgTypeInfo.Jsonb : PgTypeInfo.Json,
             0,
             0,
             PgFormatCode.Binary);
@@ -109,7 +109,7 @@ public class PgJsonTest
             string.Empty,
             0,
             0,
-            isJsonB ? PgType.Jsonb : PgType.Json,
+            isJsonB ? PgTypeInfo.Jsonb : PgTypeInfo.Json,
             0,
             0,
             PgFormatCode.Binary);
@@ -179,30 +179,24 @@ public class PgJsonTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnJsonType() => Assert.Equal(PgJson<Inner>.DbType, PgType.Jsonb);
+    public void DbType_Should_ReturnJsonType() => Assert.Equal(PgJson<Inner>.DbType, PgTypeInfo.Jsonb);
 
     [Fact]
     public void ArrayDbType_Should_ReturnJsonType() =>
-        Assert.Equal(PgJson<Inner>.ArrayDbType, PgType.JsonbArray);
+        Assert.Equal(PgJson<Inner>.ArrayDbType, PgTypeInfo.JsonbArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgJson<Inner>.IsCompatible(pgType));
     
-    public static IEnumerable<TheoryDataRow<PgType, bool>> IsCompatibleCases()
+    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
     {
-        return new TheoryData<PgType, bool>(
-            (PgType.Json, true),
-            (PgType.Jsonb, true),
-            (PgType.JsonbArray, false),
-            (PgType.Int4, false));
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        Assert.Equal(PgType.Jsonb, PgJson<Inner>.GetActualType(new Inner(0, string.Empty)));
+        return new TheoryData<PgTypeInfo, bool>(
+            (PgTypeInfo.Json, true),
+            (PgTypeInfo.Jsonb, true),
+            (PgTypeInfo.JsonbArray, false),
+            (PgTypeInfo.Int4, false));
     }
 }
 

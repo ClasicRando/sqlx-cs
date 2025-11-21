@@ -71,18 +71,13 @@ public readonly struct PgCircle(PgPoint center, double radius)
         return new PgCircle(center, radius);
     }
     
-    public static PgType DbType => PgType.Circle;
+    public static PgTypeInfo DbType => PgTypeInfo.Circle;
 
-    public static PgType ArrayDbType => PgType.CircleArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.CircleArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(PgCircle value)
-    {
-        return DbType;
     }
 
     public bool Equals(PgCircle other)

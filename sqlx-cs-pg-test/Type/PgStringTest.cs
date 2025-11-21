@@ -57,31 +57,25 @@ public class PgStringTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnTextType() => Assert.Equal(PgString.DbType, PgType.Text);
+    public void DbType_Should_ReturnTextType() => Assert.Equal(PgString.DbType, PgTypeInfo.Text);
 
     [Fact]
     public void ArrayDbType_Should_ReturnTextType() =>
-        Assert.Equal(PgString.ArrayDbType, PgType.TextArray);
+        Assert.Equal(PgString.ArrayDbType, PgTypeInfo.TextArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgString.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Text, true];
-        yield return [PgType.Varchar, true];
-        yield return [PgType.Xml, true];
-        yield return [PgType.Name, true];
-        yield return [PgType.Bpchar, true];
-        yield return [PgType.TextArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        Assert.Equal(PgType.Text, PgString.GetActualType(string.Empty));
+        yield return [PgTypeInfo.Text, true];
+        yield return [PgTypeInfo.Varchar, true];
+        yield return [PgTypeInfo.Xml, true];
+        yield return [PgTypeInfo.Name, true];
+        yield return [PgTypeInfo.Bpchar, true];
+        yield return [PgTypeInfo.TextArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

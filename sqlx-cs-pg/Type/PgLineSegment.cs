@@ -77,18 +77,13 @@ public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
         return new PgLineSegment(point1, point2);
     }
     
-    public static PgType DbType => PgType.Lseg;
+    public static PgTypeInfo DbType => PgTypeInfo.Lseg;
 
-    public static PgType ArrayDbType => PgType.LsegArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.LsegArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(PgLineSegment value)
-    {
-        return DbType;
     }
 
     public bool Equals(PgLineSegment other)

@@ -190,18 +190,18 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
         return new PgRange<TValue>(start, end);
     }
 
-    public static PgType DbType => TType.RangeType;
+    public static PgTypeInfo DbType => TType.RangeType;
 
-    public static PgType ArrayDbType => TType.RangeArrayType;
+    public static PgTypeInfo ArrayDbType => TType.RangeArrayType;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
-        return dbType == DbType;
-    }
+        if (dbType == DbType)
+        {
+            return true;
+        }
 
-    public static PgType GetActualType(PgRange<TValue> value)
-    {
-        return DbType;
+        return dbType.TypeKind is RangeType rangeType && TType.IsCompatible(rangeType.RangeElement);
     }
 
     private static int FindRangeSeparatorIndex(ReadOnlySpan<char> chars)

@@ -117,26 +117,19 @@ public class PgRangeTypeTest
     [Fact]
     public void DbType_Should_ReturnRangeType() => Assert.Equal(
         PgRangeType<int, PgInt>.DbType,
-        PgType.Int4Range);
+        PgTypeInfo.Int4Range);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) => Assert.Equal(
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) => Assert.Equal(
         expectedResult,
         PgRangeType<int, PgInt>.IsCompatible(pgType));
 
-    public static IEnumerable<TheoryDataRow<PgType, bool>> IsCompatibleCases()
+    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
     {
-        return new TheoryData<PgType, bool>(
-            (PgType.Int4Range, true),
-            (PgType.Text, false),
-            (PgType.Int4RangeArray, false));
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        var value = new PgRange<int>(Bound<int>.Unbounded(), Bound<int>.Unbounded());
-        Assert.Equal(PgType.Int4Range, PgRangeType<int, PgInt>.GetActualType(value));
+        return new TheoryData<PgTypeInfo, bool>(
+            (PgTypeInfo.Int4Range, true),
+            (PgTypeInfo.Text, false),
+            (PgTypeInfo.Int4RangeArray, false));
     }
 }

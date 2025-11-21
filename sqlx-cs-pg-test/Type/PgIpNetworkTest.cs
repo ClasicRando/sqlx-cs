@@ -142,29 +142,22 @@ public class PgIpNetworkTest
 
     [Fact]
     public void DbType_Should_ReturnIpNetworkType() =>
-        Assert.Equal(PgIpNetwork.DbType, PgType.Cidr);
+        Assert.Equal(PgIpNetwork.DbType, PgTypeInfo.Cidr);
 
     [Fact]
     public void ArrayDbType_Should_ReturnIpNetworkType() =>
-        Assert.Equal(PgIpNetwork.ArrayDbType, PgType.CidrArray);
+        Assert.Equal(PgIpNetwork.ArrayDbType, PgTypeInfo.CidrArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgIpNetwork.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Cidr, true];
-        yield return [PgType.Inet, true];
-        yield return [PgType.CidrArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        var value = new IPNetwork(new IPAddress([192, 168, 0, 0]), 32);
-        Assert.Equal(PgType.Cidr, PgIpNetwork.GetActualType(value));
+        yield return [PgTypeInfo.Cidr, true];
+        yield return [PgTypeInfo.Inet, true];
+        yield return [PgTypeInfo.CidrArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

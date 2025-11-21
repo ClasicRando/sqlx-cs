@@ -107,29 +107,22 @@ public class PgBoxTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnBoxType() => Assert.Equal(PgBox.DbType, PgType.Box);
+    public void DbType_Should_ReturnBoxType() => Assert.Equal(PgTypeInfo.Box, PgBox.DbType);
 
     [Fact]
     public void ArrayDbType_Should_ReturnBoxType() =>
-        Assert.Equal(PgBox.ArrayDbType, PgType.BoxArray);
+        Assert.Equal(PgTypeInfo.BoxArray, PgBox.ArrayDbType);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgBox.IsCompatible(pgType));
 
-    public static IEnumerable<TheoryDataRow<PgType, bool>> IsCompatibleCases()
+    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
     {
-        return new TheoryData<PgType, bool>(
-            (PgType.Box, true),
-            (PgType.BoxArray, false),
-            (PgType.Int4, false));
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        var value = new PgBox(new PgPoint(1, 2), new PgPoint(3, 4));
-        Assert.Equal(PgType.Box, PgBox.GetActualType(value));
+        return new TheoryData<PgTypeInfo, bool>(
+            (PgTypeInfo.Box, true),
+            (PgTypeInfo.BoxArray, false),
+            (PgTypeInfo.Int4, false));
     }
 }

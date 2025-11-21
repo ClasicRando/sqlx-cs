@@ -229,18 +229,13 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
                 microsecond);
     }
 
-    public static PgType DbType => PgType.Interval;
+    public static PgTypeInfo DbType => PgTypeInfo.Interval;
 
-    public static PgType ArrayDbType => PgType.IntervalArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.IntervalArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(PgInterval value)
-    {
-        return DbType;
     }
 
     private const long MinutesPerHour = 60L;

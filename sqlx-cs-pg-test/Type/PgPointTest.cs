@@ -77,28 +77,21 @@ public class PgPointTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnPointType() => Assert.Equal(PgPoint.DbType, PgType.Point);
+    public void DbType_Should_ReturnPointType() => Assert.Equal(PgPoint.DbType, PgTypeInfo.Point);
 
     [Fact]
     public void ArrayDbType_Should_ReturnPointType() =>
-        Assert.Equal(PgPoint.ArrayDbType, PgType.PointArray);
+        Assert.Equal(PgPoint.ArrayDbType, PgTypeInfo.PointArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgPoint.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Point, true];
-        yield return [PgType.PointArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        var value = new PgPoint(0, 0);
-        Assert.Equal(PgType.Point, PgPoint.GetActualType(value));
+        yield return [PgTypeInfo.Point, true];
+        yield return [PgTypeInfo.PointArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

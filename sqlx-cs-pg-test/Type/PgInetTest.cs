@@ -108,29 +108,22 @@ public class PgInetTest
 
     [Fact]
     public void DbType_Should_ReturnInetType() =>
-        Assert.Equal(PgInet.DbType, PgType.Inet);
+        Assert.Equal(PgInet.DbType, PgTypeInfo.Inet);
 
     [Fact]
     public void ArrayDbType_Should_ReturnInetType() =>
-        Assert.Equal(PgInet.ArrayDbType, PgType.InetArray);
+        Assert.Equal(PgInet.ArrayDbType, PgTypeInfo.InetArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgInet.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Cidr, true];
-        yield return [PgType.Inet, true];
-        yield return [PgType.InetArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        var value = new PgInet(new IPAddress([192, 168, 0, 1]), 32);
-        Assert.Equal(PgType.Inet, PgInet.GetActualType(value));
+        yield return [PgTypeInfo.Cidr, true];
+        yield return [PgTypeInfo.Inet, true];
+        yield return [PgTypeInfo.InetArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

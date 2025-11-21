@@ -33,9 +33,9 @@ internal static class PgFloatingPoint
         return parseResult;
     }
     
-    public static bool IsFloatCompatible(PgType dbType)
+    public static bool IsFloatCompatible(PgTypeInfo dbType)
     {
-        return dbType == PgType.Float4 || dbType == PgType.Float8;
+        return dbType == PgTypeInfo.Float4 || dbType == PgTypeInfo.Float8;
     }
 }
 
@@ -76,18 +76,13 @@ internal abstract class PgDouble : IPgDbType<double>, IHasArrayType
         return value.ExtractFloat<double>();
     }
 
-    public static PgType DbType => PgType.Float8;
+    public static PgTypeInfo DbType => PgTypeInfo.Float8;
 
-    public static PgType ArrayDbType => PgType.Float8Array;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.Float8Array;
     
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return PgFloatingPoint.IsFloatCompatible(dbType);
-    }
-
-    public static PgType GetActualType(double value)
-    {
-        return DbType;
     }
 }
 
@@ -143,17 +138,12 @@ internal abstract class PgFloat : IPgDbType<float>, IHasArrayType
         return (float)floatingPoint;
     }
 
-    public static PgType DbType => PgType.Float4;
+    public static PgTypeInfo DbType => PgTypeInfo.Float4;
 
-    public static PgType ArrayDbType => PgType.Float4Array;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.Float4Array;
     
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return PgFloatingPoint.IsFloatCompatible(dbType);
-    }
-
-    public static PgType GetActualType(float value)
-    {
-        return DbType;
     }
 }

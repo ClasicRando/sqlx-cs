@@ -56,17 +56,12 @@ internal abstract class PgBool : IPgDbType<bool>, IHasArrayType
         };
     }
     
-    public static PgType DbType => PgType.Bool;
+    public static PgTypeInfo DbType => PgTypeInfo.Bool;
 
-    public static PgType ArrayDbType => PgType.BoolArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.BoolArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(bool value)
-    {
-        return DbType;
     }
 }

@@ -105,18 +105,13 @@ public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<P
             $"Could not parse '{value}' into a money value");
     }
 
-    public static PgType DbType => PgType.Money;
+    public static PgTypeInfo DbType => PgTypeInfo.Money;
 
-    public static PgType ArrayDbType => PgType.MoneyArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.MoneyArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(PgMoney value)
-    {
-        return DbType;
     }
 
     public override string ToString()

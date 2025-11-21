@@ -68,18 +68,13 @@ public readonly struct PgPath(bool isClosed, PgPoint[] points)
         return new PgPath(isClosed, GeometryUtils.DecodePoints<PgPath>(value));
     }
     
-    public static PgType DbType => PgType.Path;
+    public static PgTypeInfo DbType => PgTypeInfo.Path;
 
-    public static PgType ArrayDbType => PgType.PathArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.PathArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(PgPath value)
-    {
-        return DbType;
     }
 
     public bool Equals(PgPath other)

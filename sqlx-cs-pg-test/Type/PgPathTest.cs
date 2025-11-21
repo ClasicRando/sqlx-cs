@@ -71,29 +71,22 @@ public class PgPathTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnPathType() => Assert.Equal(PgPath.DbType, PgType.Path);
+    public void DbType_Should_ReturnPathType() => Assert.Equal(PgPath.DbType, PgTypeInfo.Path);
 
     [Fact]
     public void ArrayDbType_Should_ReturnPathType() =>
-        Assert.Equal(PgPath.ArrayDbType, PgType.PathArray);
+        Assert.Equal(PgPath.ArrayDbType, PgTypeInfo.PathArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgPath.IsCompatible(pgType));
 
-    public static IEnumerable<TheoryDataRow<PgType, bool>> IsCompatibleCases()
+    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
     {
-        return new TheoryData<PgType, bool>(
-            (PgType.Path, true),
-            (PgType.PathArray, false),
-            (PgType.Int4, false));
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        var value = new PgPath();
-        Assert.Equal(PgType.Path, PgPath.GetActualType(value));
+        return new TheoryData<PgTypeInfo, bool>(
+            (PgTypeInfo.Path, true),
+            (PgTypeInfo.PathArray, false),
+            (PgTypeInfo.Int4, false));
     }
 }

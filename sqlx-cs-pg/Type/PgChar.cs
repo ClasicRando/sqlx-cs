@@ -66,17 +66,12 @@ internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
         };
     }
 
-    public static PgType DbType => PgType.Char;
+    public static PgTypeInfo DbType => PgTypeInfo.Char;
 
-    public static PgType ArrayDbType => PgType.CharArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.CharArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(sbyte value)
-    {
-        return DbType;
     }
 }

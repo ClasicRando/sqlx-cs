@@ -134,8 +134,8 @@ internal sealed class PgDataRow : IDataRow
             throw new SqlxException($"Expected field #{index} to be non-null but found null");
         }
         
-        if (PgJson<T>.DbType != columnData.ColumnMetadata.PgType
-            && !PgJson<T>.IsCompatible(columnData.ColumnMetadata.PgType))
+        if (PgJson<T>.DbType != columnData.ColumnMetadata.PgTypeInfo
+            && !PgJson<T>.IsCompatible(columnData.ColumnMetadata.PgTypeInfo))
         {
             throw ColumnDecodeException.Create<T>(columnData.ColumnMetadata);
         }
@@ -203,8 +203,8 @@ internal sealed class PgDataRow : IDataRow
             throw new SqlxException($"Expected field #{index} to be non-null but found null");
         }
         
-        if (TType.DbType != columnData.ColumnMetadata.PgType
-            && !TType.IsCompatible(columnData.ColumnMetadata.PgType))
+        if (TType.DbType != columnData.ColumnMetadata.PgTypeInfo
+            && !TType.IsCompatible(columnData.ColumnMetadata.PgTypeInfo))
         {
             throw ColumnDecodeException.Create<TResult>(columnData.ColumnMetadata);
         }

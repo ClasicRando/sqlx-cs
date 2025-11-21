@@ -214,7 +214,7 @@ public static partial class ExecutableQueryExtensions
     /// <summary>
     /// Bind <see cref="PgMacAddress"/> parameter to query. This puts that value as the nth
     /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
-    /// This maps to the Postgres specific <c>MACADDRESS</c> and <c>MACADDRESS8</c> types.
+    /// This maps to the Postgres specific <c>MACADDRESS</c> types.
     /// </summary>
     /// <param name="query">Query to bind against</param>
     /// <param name="value">MAC Address value</param>
@@ -225,13 +225,35 @@ public static partial class ExecutableQueryExtensions
     /// <summary>
     /// Bind <see cref="PgMacAddress"/> parameter to query. This puts that value as the nth
     /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
-    /// This maps to the Postgres specific <c>MACADDRESS</c> and <c>MACADDRESS8</c> types.
+    /// This maps to the Postgres specific <c>MACADDRESS</c> types.
     /// </summary>
     /// <param name="query">Query to bind against</param>
     /// <param name="value">MAC Address value</param>
     /// <returns>This query instance for method chaining</returns>
     [GeneratePgBindMethod]
     public static partial IQuery Bind(this IQuery query, PgMacAddress? value);
+    
+    /// <summary>
+    /// Bind <see cref="PgMacAddress8"/> parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This maps to the Postgres specific <c>MACADDRESS8</c> types.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">MAC Address value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgMacAddress8 value);
+    
+    /// <summary>
+    /// Bind <see cref="PgMacAddress8"/> parameter to query. This puts that value as the nth
+    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+    /// This maps to the Postgres specific <c>MACADDRESS8</c> types.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">MAC Address value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgMacAddress8? value);
     
     /// <summary>
     /// Bind <see cref="PgMoney"/> parameter to query. This puts that value as the nth parameter

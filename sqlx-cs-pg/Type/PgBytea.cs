@@ -54,18 +54,13 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
             : DecodeWithoutPrefix(value);
     }
     
-    public static PgType DbType => PgType.Bytea;
+    public static PgTypeInfo DbType => PgTypeInfo.Bytea;
 
-    public static PgType ArrayDbType => PgType.ByteaArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.ByteaArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(byte[] value)
-    {
-        return DbType;
     }
 
     private const string HexStart = @"\x";

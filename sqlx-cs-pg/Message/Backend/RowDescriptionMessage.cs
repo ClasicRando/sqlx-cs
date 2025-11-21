@@ -22,7 +22,7 @@ internal record RowDescriptionMessage(PgColumnMetadata[] ColumnMetadata)
                 FieldName: buffer.ReadCString(),
                 TableOid: buffer.ReadInt(),
                 ColumnAttribute: buffer.ReadShort(),
-                PgType: new PgType(buffer.ReadInt()),
+                PgTypeInfo: PgTypeInfo.FromOid(buffer.ReadInt()),
                 DataTypeSize: buffer.ReadShort(),
                 TypeModifier: buffer.ReadInt(),
                 FormatCode: (PgFormatCode)buffer.ReadShort());

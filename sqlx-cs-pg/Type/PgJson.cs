@@ -85,7 +85,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     [SuppressMessage("ReSharper", "InvertIf")]
     public static T DecodeBytes(ref PgBinaryValue value, JsonTypeInfo<T>? typeInfo)
     {
-        if (value.ColumnMetadata.PgType == PgType.Jsonb)
+        if (value.ColumnMetadata.PgTypeInfo == PgTypeInfo.Jsonb)
         {
             var versionCode = value.Buffer.ReadByte();
             if (versionCode != JsonBVersion)
@@ -137,17 +137,12 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
         return Json.FromChars(value.Chars, typeInfo);
     }
     
-    public static PgType DbType => PgType.Jsonb;
+    public static PgTypeInfo DbType => PgTypeInfo.Jsonb;
 
-    public static PgType ArrayDbType => PgType.JsonbArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.JsonbArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
-        return dbType == DbType || dbType == PgType.Json;
-    }
-
-    public static PgType GetActualType(T value)
-    {
-        return DbType;
+        return dbType == DbType || dbType == PgTypeInfo.Json;
     }
 }

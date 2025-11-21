@@ -64,18 +64,13 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
         return new PgTimeTz(time, offsetSeconds);
     }
 
-    public static PgType DbType => PgType.Timetz;
+    public static PgTypeInfo DbType => PgTypeInfo.Timetz;
 
-    public static PgType ArrayDbType => PgType.TimetzArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.TimetzArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(PgTimeTz value)
-    {
-        return DbType;
     }
 
     private static int FindOffset(in PgTextValue value, out int offsetStart)

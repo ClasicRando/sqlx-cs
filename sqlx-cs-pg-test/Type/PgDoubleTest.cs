@@ -119,27 +119,21 @@ public class PgDoubleTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnFloatType() => Assert.Equal(PgDouble.DbType, PgType.Float8);
+    public void DbType_Should_ReturnFloatType() => Assert.Equal(PgDouble.DbType, PgTypeInfo.Float8);
 
     [Fact]
     public void ArrayDbType_Should_ReturnFloatType() =>
-        Assert.Equal(PgDouble.ArrayDbType, PgType.Float8Array);
+        Assert.Equal(PgDouble.ArrayDbType, PgTypeInfo.Float8Array);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgDouble.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Float8, true];
-        yield return [PgType.Float8Array, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        Assert.Equal(PgType.Float8, PgDouble.GetActualType(0));
+        yield return [PgTypeInfo.Float8, true];
+        yield return [PgTypeInfo.Float8Array, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

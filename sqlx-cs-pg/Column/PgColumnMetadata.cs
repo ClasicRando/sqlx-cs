@@ -12,7 +12,7 @@ namespace Sqlx.Postgres.Column;
 /// <param name="ColumnAttribute">
 /// Attribute number of the field (0 if the field not part of a table)
 /// </param>
-/// <param name="PgType">OID of the field's type</param>
+/// <param name="PgTypeInfo">Type info for the field</param>
 /// <param name="DataTypeSize">
 /// Size of the data type. Negative values denote a variables width type
 /// </param>
@@ -26,12 +26,12 @@ public readonly record struct PgColumnMetadata(
     string FieldName,
     int TableOid,
     int ColumnAttribute,
-    PgType PgType,
+    PgTypeInfo PgTypeInfo,
     short DataTypeSize,
     int TypeModifier,
     PgFormatCode FormatCode) : IColumnMetadata
 {
-    public int DataType { get; } = PgType.TypeOid;
+    public int DataType { get; } = PgTypeInfo.PgOid;
 
     /// <summary>
     /// Copies the current column metadata with binary format specified
@@ -43,7 +43,7 @@ public readonly record struct PgColumnMetadata(
             FieldName,
             TableOid,
             ColumnAttribute,
-            PgType,
+            PgTypeInfo,
             DataTypeSize,
             TypeModifier,
             PgFormatCode.Binary);
@@ -56,7 +56,7 @@ public readonly record struct PgColumnMetadata(
     /// <param name="pgType">Column data type</param>
     /// <param name="formatCode">Column data format code</param>
     /// <returns>new metadata with specified values and defaults</returns>
-    public static PgColumnMetadata CreateMinimal(PgType pgType, PgFormatCode formatCode)
+    public static PgColumnMetadata CreateMinimal(PgTypeInfo pgType, PgFormatCode formatCode)
     {
         return new PgColumnMetadata("", 0, 0, pgType, 0, 0, formatCode);
     }

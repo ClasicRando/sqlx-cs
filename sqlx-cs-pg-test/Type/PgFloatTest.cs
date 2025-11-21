@@ -141,27 +141,21 @@ public class PgFloatTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnFloatType() => Assert.Equal(PgFloat.DbType, PgType.Float4);
+    public void DbType_Should_ReturnFloatType() => Assert.Equal(PgFloat.DbType, PgTypeInfo.Float4);
 
     [Fact]
     public void ArrayDbType_Should_ReturnFloatType() =>
-        Assert.Equal(PgFloat.ArrayDbType, PgType.Float4Array);
+        Assert.Equal(PgFloat.ArrayDbType, PgTypeInfo.Float4Array);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgFloat.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Float4, true];
-        yield return [PgType.Float4Array, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        Assert.Equal(PgType.Float4, PgFloat.GetActualType(0));
+        yield return [PgTypeInfo.Float4, true];
+        yield return [PgTypeInfo.Float4Array, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

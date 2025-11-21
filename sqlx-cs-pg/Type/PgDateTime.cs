@@ -13,7 +13,6 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
 {
     private const long PostgresEpochSeconds = 946_684_800;
     private const long PostgresEpochTicks = PostgresEpochSeconds * TimeSpan.TicksPerSecond;
-    private static readonly string[] Formats = ["yyyy-MM-dd HH:mm:ss", "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffffK"];
     
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -63,21 +62,16 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
             $"Cannot parse '{value}' as a DateTime");
     }
     
-    public static PgType DbType => PgType.Timestamp;
+    public static PgTypeInfo DbType => PgTypeInfo.Timestamp;
 
-    public static PgType ArrayDbType => PgType.TimestampArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.TimestampArray;
 
-    public static PgType RangeType => PgType.Tsrange;
+    public static PgTypeInfo RangeType => PgTypeInfo.Tsrange;
 
-    public static PgType RangeArrayType => PgType.TsrangeArray;
+    public static PgTypeInfo RangeArrayType => PgTypeInfo.TsrangeArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
-        return dbType == PgType.Timestamp || dbType == PgType.Timestamptz;
-    }
-
-    public static PgType GetActualType(DateTime value)
-    {
-        return DbType;
+        return dbType == DbType || dbType == PgTypeInfo.Timestamptz;
     }
 }

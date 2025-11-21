@@ -11,7 +11,6 @@ public class PgMacAddressTest
 {
     [Theory]
     [InlineData(new byte[] { 0x08, 0x00, 0x2b, 0x01, 0x02, 0x03 })]
-    [InlineData(new byte[] { 0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05 })]
     public void Encode_Should_WriteMacAddr(byte[] address)
     {
         PgMacAddress value = PgMacAddress.FromBytes(address);
@@ -26,7 +25,6 @@ public class PgMacAddressTest
 
     [Theory]
     [InlineData(new byte[] { 0x08, 0x00, 0x2b, 0x01, 0x02, 0x03 })]
-    [InlineData(new byte[] { 0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05 })]
     public void DecodeBytes_Should_DecodeBinaryEncodedValueAsMacAddr(byte[] binaryData)
     {
         PgMacAddress expectedValue = PgMacAddress.FromBytes(binaryData);
@@ -40,9 +38,6 @@ public class PgMacAddressTest
 
     [Theory]
     [InlineData("08:00:2b:01:02:03", new byte[] { 0x08, 0x00, 0x2b, 0x01, 0x02, 0x03 })]
-    [InlineData(
-        "ccccccccccccccccccc",
-        new byte[] { 0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05 })]
     public void DecodeText_Should_DecodeTextEncodedValueAsMacAddr(string textData, byte[] address)
     {
         PgMacAddress expectedValue = PgMacAddress.FromBytes(address);
@@ -55,7 +50,7 @@ public class PgMacAddressTest
     }
 
     [Theory]
-    [InlineData("01:01:01:01:01", "Expected 6 or 8 address hex characters")]
+    [InlineData("01:01:01:01:01", "Expected 6 address hex characters")]
     [InlineData("01:01:01:01:1:01", "Could not parse network location bytes from")]
     public void DecodeText_Should_Fail_When_InvalidPgMacAddress(string textData, string contains)
     {
@@ -80,32 +75,21 @@ public class PgMacAddressTest
 
     [Fact]
     public void DbType_Should_ReturnMacAddrType() =>
-        Assert.Equal(PgMacAddress.DbType, PgType.Macaddr);
+        Assert.Equal(PgMacAddress.DbType, PgTypeInfo.Macaddr);
 
     [Fact]
     public void ArrayDbType_Should_ReturnMacAddrType() =>
-        Assert.Equal(PgMacAddress.ArrayDbType, PgType.MacaddrArray);
+        Assert.Equal(PgMacAddress.ArrayDbType, PgTypeInfo.MacaddrArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgMacAddress.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Macaddr, true];
-        yield return [PgType.Macaddr8, true];
-        yield return [PgType.Macaddr8Array, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Theory]
-    [InlineData(new byte[] { 1, 1, 1, 1, 1, 1, 1, 1 }, true)]
-    [InlineData(new byte[] { 1, 1, 1, 1, 1, 1 }, false)]
-    public void GetActualType(byte[] address, bool isMacAddr8)
-    {
-        Assert.Equal(
-            isMacAddr8 ? PgType.Macaddr8 : PgType.Macaddr,
-            PgMacAddress.GetActualType(PgMacAddress.FromBytes(address)));
+        yield return [PgTypeInfo.Macaddr, true];
+        yield return [PgTypeInfo.MacaddrArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

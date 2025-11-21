@@ -36,21 +36,16 @@ internal abstract class PgString : IPgDbType<string>, IHasArrayType
         return new string(value.Chars);
     }
     
-    public static PgType DbType => PgType.Text;
+    public static PgTypeInfo DbType => PgTypeInfo.Text;
 
-    public static PgType ArrayDbType => PgType.TextArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.TextArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType
-               || dbType == PgType.Varchar
-               || dbType == PgType.Xml
-               || dbType == PgType.Name
-               || dbType == PgType.Bpchar;
-    }
-
-    public static PgType GetActualType(string value)
-    {
-        return DbType;
+               || dbType == PgTypeInfo.Varchar
+               || dbType == PgTypeInfo.Xml
+               || dbType == PgTypeInfo.Name
+               || dbType == PgTypeInfo.Bpchar;
     }
 }

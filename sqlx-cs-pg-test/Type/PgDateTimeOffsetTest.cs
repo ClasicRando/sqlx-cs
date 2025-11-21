@@ -136,36 +136,30 @@ public class PgDateTimeOffsetTest
 
     [Fact]
     public void DbType_Should_ReturnTimestampType() =>
-        Assert.Equal(PgDateTimeOffset.DbType, PgType.Timestamptz);
+        Assert.Equal(PgDateTimeOffset.DbType, PgTypeInfo.Timestamptz);
 
     [Fact]
     public void ArrayDbType_Should_ReturnTimestampType() =>
-        Assert.Equal(PgDateTimeOffset.ArrayDbType, PgType.TimestamptzArray);
+        Assert.Equal(PgDateTimeOffset.ArrayDbType, PgTypeInfo.TimestamptzArray);
 
     [Fact]
     public void RangeType_Should_ReturnTimestampRangeType() =>
-        Assert.Equal(PgDateTimeOffset.RangeType, PgType.Tstzrange);
+        Assert.Equal(PgDateTimeOffset.RangeType, PgTypeInfo.Tstzrange);
 
     [Fact]
     public void RangeArrayType_Should_ReturnTimestampRangeType() =>
-        Assert.Equal(PgDateTimeOffset.RangeArrayType, PgType.TstzrangeArray);
+        Assert.Equal(PgDateTimeOffset.RangeArrayType, PgTypeInfo.TstzrangeArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgDateTimeOffset.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Timestamp, true];
-        yield return [PgType.Timestamptz, true];
-        yield return [PgType.TimestampArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        Assert.Equal(PgType.Timestamptz, PgDateTimeOffset.GetActualType(DateTimeOffset.MaxValue));
+        yield return [PgTypeInfo.Timestamp, true];
+        yield return [PgTypeInfo.Timestamptz, true];
+        yield return [PgTypeInfo.TimestampArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

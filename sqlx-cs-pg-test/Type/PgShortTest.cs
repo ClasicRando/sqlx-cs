@@ -140,28 +140,22 @@ public class PgShortTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnShortType() => Assert.Equal(PgShort.DbType, PgType.Int2);
+    public void DbType_Should_ReturnShortType() => Assert.Equal(PgShort.DbType, PgTypeInfo.Int2);
 
     [Fact]
     public void ArrayDbType_Should_ReturnShortType() =>
-        Assert.Equal(PgShort.ArrayDbType, PgType.Int2Array);
+        Assert.Equal(PgShort.ArrayDbType, PgTypeInfo.Int2Array);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgShort.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Int8, true];
-        yield return [PgType.Int2Array, false];
-        yield return [PgType.Int4, true];
-        yield return [PgType.Int2, true];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        Assert.Equal(PgType.Int2, PgShort.GetActualType(0));
+        yield return [PgTypeInfo.Int8, true];
+        yield return [PgTypeInfo.Int2Array, false];
+        yield return [PgTypeInfo.Int4, true];
+        yield return [PgTypeInfo.Int2, true];
     }
 }

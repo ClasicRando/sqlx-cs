@@ -95,18 +95,13 @@ public readonly struct PgLine(double a, double b, double c)
         return new PgLine(a, b, c);
     }
 
-    public static PgType DbType => PgType.Line;
+    public static PgTypeInfo DbType => PgTypeInfo.Line;
 
-    public static PgType ArrayDbType => PgType.LineArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.LineArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(PgLine value)
-    {
-        return PgType.Line;
     }
 
     public bool Equals(PgLine other)

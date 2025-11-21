@@ -102,27 +102,21 @@ public class PgTimeTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnDateType() => Assert.Equal(PgTime.DbType, PgType.Time);
+    public void DbType_Should_ReturnDateType() => Assert.Equal(PgTime.DbType, PgTypeInfo.Time);
 
     [Fact]
     public void ArrayDbType_Should_ReturnDateType() =>
-        Assert.Equal(PgTime.ArrayDbType, PgType.TimeArray);
+        Assert.Equal(PgTime.ArrayDbType, PgTypeInfo.TimeArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgTime.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Time, true];
-        yield return [PgType.TimeArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        Assert.Equal(PgType.Time, PgTime.GetActualType(TimeOnly.MaxValue));
+        yield return [PgTypeInfo.Time, true];
+        yield return [PgTypeInfo.TimeArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

@@ -53,9 +53,9 @@ internal static class PgInteger
         return parseResult;
     }
     
-    public static bool IsIntegerCompatible(PgType dbType)
+    public static bool IsIntegerCompatible(PgTypeInfo dbType)
     {
-        return dbType == PgType.Int8 || dbType == PgType.Int4 || dbType == PgType.Int2;
+        return dbType == PgTypeInfo.Int8 || dbType == PgTypeInfo.Int4 || dbType == PgTypeInfo.Int2;
     }
 }
 
@@ -94,22 +94,17 @@ internal abstract class PgLong : IPgDbType<long>, IHasRangeType, IHasArrayType
         return value.ExtractInteger<long>();
     }
 
-    public static PgType DbType => PgType.Int8;
+    public static PgTypeInfo DbType => PgTypeInfo.Int8;
 
-    public static PgType ArrayDbType => PgType.Int8Array;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.Int8Array;
 
-    public static PgType RangeType => PgType.Int8Range;
+    public static PgTypeInfo RangeType => PgTypeInfo.Int8Range;
 
-    public static PgType RangeArrayType => PgType.Int8RangeArray;
+    public static PgTypeInfo RangeArrayType => PgTypeInfo.Int8RangeArray;
     
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return PgInteger.IsIntegerCompatible(dbType);
-    }
-
-    public static PgType GetActualType(long value)
-    {
-        return DbType;
     }
 }
 
@@ -155,22 +150,17 @@ internal abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
         return Integers.ValidateInt(integer, value.ColumnMetadata);
     }
 
-    public static PgType DbType => PgType.Int4;
+    public static PgTypeInfo DbType => PgTypeInfo.Int4;
 
-    public static PgType ArrayDbType => PgType.Int4Array;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.Int4Array;
 
-    public static PgType RangeType => PgType.Int4Range;
+    public static PgTypeInfo RangeType => PgTypeInfo.Int4Range;
 
-    public static PgType RangeArrayType => PgType.Int4RangeArray;
+    public static PgTypeInfo RangeArrayType => PgTypeInfo.Int4RangeArray;
     
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return PgInteger.IsIntegerCompatible(dbType);
-    }
-
-    public static PgType GetActualType(int value)
-    {
-        return DbType;
     }
 }
 
@@ -216,17 +206,12 @@ internal abstract class PgShort : IPgDbType<short>, IHasArrayType
         return Integers.ValidateShort(integer, value.ColumnMetadata);
     }
 
-    public static PgType DbType => PgType.Int2;
+    public static PgTypeInfo DbType => PgTypeInfo.Int2;
 
-    public static PgType ArrayDbType => PgType.Int2Array;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.Int2Array;
     
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return PgInteger.IsIntegerCompatible(dbType);
-    }
-
-    public static PgType GetActualType(short value)
-    {
-        return DbType;
     }
 }

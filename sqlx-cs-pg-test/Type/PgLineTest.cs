@@ -85,28 +85,21 @@ public class PgLineTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnLineType() => Assert.Equal(PgLine.DbType, PgType.Line);
+    public void DbType_Should_ReturnLineType() => Assert.Equal(PgLine.DbType, PgTypeInfo.Line);
 
     [Fact]
     public void ArrayDbType_Should_ReturnLineArrayType() =>
-        Assert.Equal(PgLine.ArrayDbType, PgType.LineArray);
+        Assert.Equal(PgLine.ArrayDbType, PgTypeInfo.LineArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgLine.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Line, true];
-        yield return [PgType.LineArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        var value = new PgLine(0, 0, 0);
-        Assert.Equal(PgType.Line, PgLine.GetActualType(value));
+        yield return [PgTypeInfo.Line, true];
+        yield return [PgTypeInfo.LineArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

@@ -8,12 +8,12 @@ namespace Sqlx.Postgres.Type;
 internal interface IHasRangeType
 {
     /// <summary>
-    /// <see cref="PgType"/> of this type's range
+    /// <see cref="PgTypeInfo"/> of this type's range
     /// </summary>
-    static abstract PgType RangeType { get; }
+    static abstract PgTypeInfo RangeType { get; }
     
     /// <summary>
-    /// <see cref="PgType"/> of this type's array range
+    /// <see cref="PgTypeInfo"/> of this type's array range
     /// </summary>
-    static abstract PgType RangeArrayType { get; }
+    static abstract PgTypeInfo RangeArrayType { get; }
 }

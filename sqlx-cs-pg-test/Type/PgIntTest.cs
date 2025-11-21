@@ -144,28 +144,22 @@ public class PgIntTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnIntType() => Assert.Equal(PgInt.DbType, PgType.Int4);
+    public void DbType_Should_ReturnIntType() => Assert.Equal(PgInt.DbType, PgTypeInfo.Int4);
 
     [Fact]
     public void ArrayDbType_Should_ReturnIntType() =>
-        Assert.Equal(PgInt.ArrayDbType, PgType.Int4Array);
+        Assert.Equal(PgInt.ArrayDbType, PgTypeInfo.Int4Array);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgInt.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Int8, true];
-        yield return [PgType.Int4Array, false];
-        yield return [PgType.Int4, true];
-        yield return [PgType.Int2, true];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        Assert.Equal(PgType.Int4, PgInt.GetActualType(0));
+        yield return [PgTypeInfo.Int8, true];
+        yield return [PgTypeInfo.Int4Array, false];
+        yield return [PgTypeInfo.Int4, true];
+        yield return [PgTypeInfo.Int2, true];
     }
 }

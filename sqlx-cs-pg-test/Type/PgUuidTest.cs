@@ -85,27 +85,21 @@ public class PgUuidTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnUuidType() => Assert.Equal(PgUuid.DbType, PgType.Uuid);
+    public void DbType_Should_ReturnUuidType() => Assert.Equal(PgUuid.DbType, PgTypeInfo.Uuid);
 
     [Fact]
     public void ArrayDbType_Should_ReturnUuidType() =>
-        Assert.Equal(PgUuid.ArrayDbType, PgType.UuidArray);
+        Assert.Equal(PgUuid.ArrayDbType, PgTypeInfo.UuidArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgUuid.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Uuid, true];
-        yield return [PgType.UuidArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        Assert.Equal(PgType.Uuid, PgUuid.GetActualType(Guid.Empty));
+        yield return [PgTypeInfo.Uuid, true];
+        yield return [PgTypeInfo.UuidArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

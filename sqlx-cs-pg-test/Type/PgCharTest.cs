@@ -84,33 +84,21 @@ public class PgCharTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnCharType() => Assert.Equal(PgChar.DbType, PgType.Char);
+    public void DbType_Should_ReturnCharType() => Assert.Equal(PgChar.DbType, PgTypeInfo.Char);
 
     [Fact]
     public void ArrayDbType_Should_ReturnCharType() =>
-        Assert.Equal(PgChar.ArrayDbType, PgType.CharArray);
+        Assert.Equal(PgChar.ArrayDbType, PgTypeInfo.CharArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgChar.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Char, true];
-        yield return [PgType.CharArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Theory]
-    [MemberData(nameof(GetActualTypeCases))]
-    public void GetActualType(sbyte value, PgType expectedResult) =>
-        Assert.Equal(expectedResult, PgChar.GetActualType(value));
-
-    public static IEnumerable<object[]> GetActualTypeCases()
-    {
-        yield return [sbyte.MinValue, PgType.Char];
-        yield return [(sbyte)1, PgType.Char];
-        yield return [sbyte.MaxValue, PgType.Char];
+        yield return [PgTypeInfo.Char, true];
+        yield return [PgTypeInfo.CharArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

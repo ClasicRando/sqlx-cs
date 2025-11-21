@@ -119,28 +119,22 @@ public class PgLongTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnLongType() => Assert.Equal(PgLong.DbType, PgType.Int8);
+    public void DbType_Should_ReturnLongType() => Assert.Equal(PgLong.DbType, PgTypeInfo.Int8);
 
     [Fact]
     public void ArrayDbType_Should_ReturnLongType() =>
-        Assert.Equal(PgLong.ArrayDbType, PgType.Int8Array);
+        Assert.Equal(PgLong.ArrayDbType, PgTypeInfo.Int8Array);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgLong.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Int8, true];
-        yield return [PgType.Int8Array, false];
-        yield return [PgType.Int4, true];
-        yield return [PgType.Int2, true];
-    }
-
-    [Fact]
-    public void GetActualType()
-    {
-        Assert.Equal(PgType.Int8, PgLong.GetActualType(0));
+        yield return [PgTypeInfo.Int8, true];
+        yield return [PgTypeInfo.Int8Array, false];
+        yield return [PgTypeInfo.Int4, true];
+        yield return [PgTypeInfo.Int2, true];
     }
 }

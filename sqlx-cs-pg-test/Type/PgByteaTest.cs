@@ -50,32 +50,21 @@ public class PgByteaTest
     }
 
     [Fact]
-    public void DbType_Should_ReturnByteaType() => Assert.Equal(PgBytea.DbType, PgType.Bytea);
+    public void DbType_Should_ReturnByteaType() => Assert.Equal(PgBytea.DbType, PgTypeInfo.Bytea);
 
     [Fact]
     public void ArrayDbType_Should_ReturnByteaType() =>
-        Assert.Equal(PgBytea.ArrayDbType, PgType.ByteaArray);
+        Assert.Equal(PgBytea.ArrayDbType, PgTypeInfo.ByteaArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) =>
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
         Assert.Equal(expectedResult, PgBytea.IsCompatible(pgType));
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
-        yield return [PgType.Bytea, true];
-        yield return [PgType.ByteaArray, false];
-        yield return [PgType.Int4, false];
-    }
-
-    [Theory]
-    [MemberData(nameof(GetActualTypeCases))]
-    public void GetActualType(byte[] value, PgType expectedResult) =>
-        Assert.Equal(expectedResult, PgBytea.GetActualType(value));
-
-    public static IEnumerable<object[]> GetActualTypeCases()
-    {
-        yield return [Array.Empty<byte>(), PgType.Bytea];
-        yield return [new byte[] { 1, 2, 3 }, PgType.Bytea];
+        yield return [PgTypeInfo.Bytea, true];
+        yield return [PgTypeInfo.ByteaArray, false];
+        yield return [PgTypeInfo.Int4, false];
     }
 }

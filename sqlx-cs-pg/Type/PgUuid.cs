@@ -20,7 +20,7 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
         if (!value.TryWriteBytes(span, bigEndian: false, out _))
         {
             throw ColumnEncodeException.Create<Guid>(
-                DbType,
+                DbType.PgOid,
                 "Failed to write Guid bytes to buffer");
         }
         buffer.Advance(16);
@@ -55,17 +55,12 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
         return guid;
     }
 
-    public static PgType DbType => PgType.Uuid;
+    public static PgTypeInfo DbType => PgTypeInfo.Uuid;
 
-    public static PgType ArrayDbType => PgType.UuidArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.UuidArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(Guid value)
-    {
-        return DbType;
     }
 }

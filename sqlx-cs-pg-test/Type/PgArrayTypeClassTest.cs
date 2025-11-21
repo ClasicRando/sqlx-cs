@@ -113,32 +113,19 @@ public class PgArrayTypeClassTest
     [Fact]
     public void DbType_Should_ReturnArrayType() => Assert.Equal(
         PgArrayTypeClass<string, PgString>.DbType,
-        PgType.TextArray);
+        PgTypeInfo.TextArray);
 
     [Theory]
     [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgType pgType, bool expectedResult) => Assert.Equal(
+    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) => Assert.Equal(
         expectedResult,
         PgArrayTypeClass<string, PgString>.IsCompatible(pgType));
 
-    public static IEnumerable<TheoryDataRow<PgType, bool>> IsCompatibleCases()
+    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
     {
-        return new TheoryData<PgType, bool>(
-            (PgType.TextArray, true),
-            (PgType.Text, false),
-            (PgType.Int4Array, false));
-    }
-
-    [Theory]
-    [MemberData(nameof(GetActualTypeCases))]
-    public void GetActualType(string[] value, PgType expectedResult) => Assert.Equal(
-        expectedResult,
-        PgArrayTypeClass<string, PgString>.GetActualType(value));
-
-    public static IEnumerable<TheoryDataRow<string[], PgType>> GetActualTypeCases()
-    {
-        return new TheoryData<string[], PgType>(
-            ([], PgType.TextArray),
-            (["test"], PgType.TextArray));
+        return new TheoryData<PgTypeInfo, bool>(
+            (PgTypeInfo.TextArray, true),
+            (PgTypeInfo.Text, false),
+            (PgTypeInfo.Int4Array, false));
     }
 }

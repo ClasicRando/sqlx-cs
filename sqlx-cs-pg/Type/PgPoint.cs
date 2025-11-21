@@ -57,18 +57,13 @@ public readonly struct PgPoint(double x, double y)
         return GeometryUtils.DecodePoint<PgPoint>(value);
     }
     
-    public static PgType DbType => PgType.Point;
+    public static PgTypeInfo DbType => PgTypeInfo.Point;
 
-    public static PgType ArrayDbType => PgType.PointArray;
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.PointArray;
 
-    public static bool IsCompatible(PgType dbType)
+    public static bool IsCompatible(PgTypeInfo dbType)
     {
         return dbType == DbType;
-    }
-
-    public static PgType GetActualType(PgPoint value)
-    {
-        return DbType;
     }
 
     public bool Equals(PgPoint other)
