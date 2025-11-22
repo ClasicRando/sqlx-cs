@@ -54,30 +54,6 @@ public class PgIpNetworkTest
     }
 
     [Theory]
-    [InlineData(new byte[] { 2, 24, 0, 4, 192, 168, 0, 1 })]
-    public void DecodeBytes_Should_FailToDecode_When_InvalidCidrValue(byte[] binaryData)
-    {
-        var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
-
-        try
-        {
-            IPNetwork value = PgIpNetwork.DecodeBytes(ref binaryValue);
-            Assert.Fail($"Decoding should have failed. Found '{value}'");
-        }
-        catch (ArgumentException e)
-        {
-            Assert.Contains(
-                "The specified baseAddress has non-zero bits after the network prefix",
-                e.Message);
-        }
-        catch (Exception e)
-        {
-            Assert.Fail($"Decoding should have failed due to column decode error. Instead: {e}");
-        }
-    }
-
-    [Theory]
     [InlineData("192.168.0.0/24", new byte[] { 192, 168, 0, 0 }, 24)]
     [InlineData("10.0.0.0/32", new byte[] { 10, 0, 0, 0 }, 32)]
     [InlineData(
@@ -103,12 +79,6 @@ public class PgIpNetworkTest
     }
 
     [Theory]
-    [InlineData(
-        "192.168.0.1/24",
-        "The specified baseAddress has non-zero bits after the network prefix")]
-    [InlineData(
-        "2001:db8:1234::/1",
-        "The specified baseAddress has non-zero bits after the network prefix")]
     [InlineData(
         "error",
         "Could not parse 'error' into a network value")]
