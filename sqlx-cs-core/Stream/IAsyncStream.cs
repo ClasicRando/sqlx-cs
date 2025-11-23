@@ -45,5 +45,5 @@ public interface IAsyncStream : IDisposable
     /// </summary>
     /// <param name="buffer">buffer to copy bytes into</param>
     /// <param name="cancellationToken">token to cancel the operation</param>
-    ValueTask ReadBuffer(Memory<byte> buffer, CancellationToken cancellationToken);
+    ValueTask ReadBufferAsync(Memory<byte> buffer, CancellationToken cancellationToken);
 }

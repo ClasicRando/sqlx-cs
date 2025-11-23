@@ -13,7 +13,7 @@ namespace Sqlx.Core.Stream;
 public sealed class AsyncStream : IAsyncStream
 {
     private static readonly ArrayPool<byte> ArrayPool = ArrayPool<byte>.Shared;
-    private const int DefaultBufferSize = 1024 * 8;
+    internal const int DefaultBufferSize = 1024 * 8;
     private Socket? _socket;
     private System.IO.Stream? _stream;
 
@@ -22,6 +22,8 @@ public sealed class AsyncStream : IAsyncStream
     private int _bufferLength;
 
     public bool IsConnected => _socket?.Connected ?? false;
+
+    internal int InnerBufferSize => _innerBuffer.Length;
 
     public async Task OpenAsync(string host, ushort port, CancellationToken cancellationToken)
     {
@@ -80,11 +82,29 @@ public sealed class AsyncStream : IAsyncStream
             return;
         }
 
-        if (_bufferLength > 0)
+        switch (length + bytesRemaining)
         {
-            _innerBuffer.AsSpan()[_bufferPosition.._bufferLength]
-                .CopyTo(_innerBuffer);
-            _bufferLength = bytesRemaining;
+            case > DefaultBufferSize:
+            {
+                ReallocateInternalBuffer(length + bytesRemaining);
+                break;
+            }
+            case < DefaultBufferSize when _innerBuffer.Length > DefaultBufferSize:
+            {
+                ReallocateInternalBuffer(DefaultBufferSize);
+                break;
+            }
+            default:
+            {
+                if (_bufferLength > 0)
+                {
+                    _innerBuffer.AsSpan()[_bufferPosition.._bufferLength]
+                        .CopyTo(_innerBuffer);
+                    _bufferLength = bytesRemaining;
+                }
+
+                break;
+            }
         }
 
         _bufferPosition = 0;
@@ -101,6 +121,18 @@ public sealed class AsyncStream : IAsyncStream
             }
             count -= bytesRead;
             _bufferLength += bytesRead;
+        }
+
+        return;
+        
+        void ReallocateInternalBuffer(int newSize)
+        {
+            var tempBuffer = _innerBuffer;
+            _innerBuffer = ArrayPool.Rent(newSize);
+            tempBuffer.AsSpan()[_bufferPosition.._bufferLength]
+                .CopyTo(_innerBuffer);
+            ArrayPool.Return(tempBuffer);
+            _bufferLength = bytesRemaining;
         }
     }
 
@@ -121,7 +153,7 @@ public sealed class AsyncStream : IAsyncStream
         return result;
     }
 
-    public async ValueTask ReadBuffer(Memory<byte> buffer, CancellationToken cancellationToken)
+    public async ValueTask ReadBufferAsync(Memory<byte> buffer, CancellationToken cancellationToken)
     {
         SqlxException.ThrowIfNull(_stream);
         await FillBuffer(buffer.Length, cancellationToken).ConfigureAwait(false);

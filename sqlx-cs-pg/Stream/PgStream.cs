@@ -527,7 +527,7 @@ internal sealed partial class PgStream : IDisposable
         var contents = ArrayPool.Rent(size);
         try
         {
-            await _asyncStream.ReadBuffer(contents.AsMemory(0, size), cancellationToken).ConfigureAwait(false);
+            await _asyncStream.ReadBufferAsync(contents.AsMemory(0, size), cancellationToken).ConfigureAwait(false);
             return ParseMessage(format, contents.AsSpan(0, size));
         }
         finally
