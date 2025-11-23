@@ -32,14 +32,17 @@ internal sealed partial class PgStream : IDisposable
     private const string BeginQuery = "BEGIN;";
     private const string CommitQuery = "COMMIT;";
     private const string RollbackQuery = "ROLLBACK;";
-    
+
     private static readonly ArrayPool<byte> ArrayPool = ArrayPool<byte>.Shared;
     private bool _disposed;
     private readonly IAsyncStream _asyncStream;
     private PgConnectionPool? _pool;
     private readonly ILogger<PgStream> _logger;
     private readonly WriteBuffer _writeBuffer = new();
-    private readonly Channel<PgNotification> _notifications = Channel.CreateUnbounded<PgNotification>();
+
+    private readonly Channel<PgNotification> _notifications =
+        Channel.CreateUnbounded<PgNotification>();
+
     private BackendDataKeyMessage? _backendDataKey;
     private long _inTransaction;
     private int _pendingReadyForQuery;
@@ -57,9 +60,9 @@ internal sealed partial class PgStream : IDisposable
     private PgConnectOptions ConnectOptions => _pool!.ConnectOptions;
 
     public ConnectionStatus Status { get; private set; } = ConnectionStatus.Closed;
-    
+
     public bool InTransaction => Interlocked.Read(ref _inTransaction) == 1;
-    
+
     /// <summary>
     /// Open the underlining stream and initiate the connection with the database backend 
     /// </summary>
@@ -92,7 +95,7 @@ internal sealed partial class PgStream : IDisposable
             _semaphore.Release();
         }
     }
-    
+
     /// <summary>
     /// Receive the next message as an <see cref="IAuthMessage"/> which instructs the client on the
     /// auth mechanism/flow to follow.
@@ -189,7 +192,10 @@ internal sealed partial class PgStream : IDisposable
         PgExecutableQuery executableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
         var results = IsSimpleQuery(executableQuery)
             ? SendSimpleQuery(executableQuery.Query, cancellationToken)
-            : SendExtendedQuery(executableQuery.Query, executableQuery.ParameterBuffer, cancellationToken);
+            : SendExtendedQuery(
+                executableQuery.Query,
+                executableQuery.ParameterBuffer,
+                cancellationToken);
         return results;
     }
 
@@ -198,20 +204,6 @@ internal sealed partial class PgStream : IDisposable
         CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
-    }
-
-    /// <summary>
-    /// Call <see cref="OpenAsync"/> is the connection is closed.
-    /// </summary>
-    /// <param name="cancellationToken">Token to cancel the async operation</param>
-    private async ValueTask ConnectIfClosed(CancellationToken cancellationToken)
-    {
-        if (Status is not ConnectionStatus.Closed)
-        {
-            return;
-        }
-
-        await OpenAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <exception cref="InvalidOperationException">
@@ -256,7 +248,8 @@ internal sealed partial class PgStream : IDisposable
             {
                 case AbstractConnection.TransactionCommand.Begin when InTransaction:
                     throw new UnexpectedTransactionState(false);
-                case AbstractConnection.TransactionCommand.Commit or AbstractConnection.TransactionCommand.Rollback when !InTransaction:
+                case AbstractConnection.TransactionCommand.Commit
+                    or AbstractConnection.TransactionCommand.Rollback when !InTransaction:
                     throw new UnexpectedTransactionState(true);
             }
 
@@ -268,7 +261,8 @@ internal sealed partial class PgStream : IDisposable
                 _ => throw PgException.EnumOutOfRange(transactionCommand),
             };
             await SendQueryMessage(sql, cancellationToken).ConfigureAwait(false);
-            await WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken).ConfigureAwait(false);
+            await WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)
+                .ConfigureAwait(false);
             Interlocked.Exchange(
                 ref _inTransaction,
                 transactionCommand is AbstractConnection.TransactionCommand.Begin ? 1 : 0);
@@ -284,7 +278,7 @@ internal sealed partial class PgStream : IDisposable
         catch
         {
             if (transactionCommand is not AbstractConnection.TransactionCommand.Commit) throw;
-            
+
             try
             {
                 await SendQueryMessage(RollbackQuery, cancellationToken)
@@ -296,6 +290,7 @@ internal sealed partial class PgStream : IDisposable
             {
                 // ignored
             }
+
             throw;
         }
         finally
@@ -313,8 +308,9 @@ internal sealed partial class PgStream : IDisposable
     {
         while (_pendingReadyForQuery > 0)
         {
-            ReadyForQueryMessage message = await WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)
-                .ConfigureAwait(false);
+            ReadyForQueryMessage message =
+                await WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)
+                    .ConfigureAwait(false);
             HandleReadyForQuery(message);
         }
     }
@@ -337,22 +333,23 @@ internal sealed partial class PgStream : IDisposable
         }
     }
 
-    private async Task<PgNotification> WaitForNotificationOrError(CancellationToken cancellationToken)
+    private async Task<PgNotification> WaitForNotificationOrError(
+        CancellationToken cancellationToken)
     {
         while (true)
         {
             IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
                 .ConfigureAwait(false);
             IPgBackendMessage? postProcessMessage = await ApplyStandardMessageProcessing(
-                backendMessage,
-                cancellationToken,
-                handleNotification: false)
+                    backendMessage,
+                    cancellationToken,
+                    handleNotification: false)
                 .ConfigureAwait(false);
             if (postProcessMessage is PgNotification result)
             {
                 return result;
             }
-            
+
             _logger.LogIgnoreUnexpectedMessage(
                 SqlxConfig.DetailedLoggingLevel,
                 backendMessage);
@@ -398,9 +395,9 @@ internal sealed partial class PgStream : IDisposable
             IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
                 .ConfigureAwait(false);
             IPgBackendMessage? postProcessMessage = await ApplyStandardMessageProcessing(
-                backendMessage,
-                cancellationToken,
-                throwOnError: false)
+                    backendMessage,
+                    cancellationToken,
+                    throwOnError: false)
                 .ConfigureAwait(false);
             switch (postProcessMessage)
             {
@@ -522,17 +519,26 @@ internal sealed partial class PgStream : IDisposable
     /// <returns>The next message sent by the backend</returns>
     private async Task<IPgBackendMessage> ReceiveNextMessage(CancellationToken cancellationToken)
     {
-        var format = (PgBackendMessageType)await _asyncStream.ReadByteAsync(cancellationToken).ConfigureAwait(false);
+        var format =
+            (PgBackendMessageType)await _asyncStream.ReadByteAsync(cancellationToken)
+                .ConfigureAwait(false);
+        var doesOwnData = format.DoesOwnData;
         var size = await _asyncStream.ReadIntAsync(cancellationToken).ConfigureAwait(false) - 4;
-        var contents = ArrayPool.Rent(size);
+        var contents = doesOwnData ? new byte[size] : ArrayPool.Rent(size);
         try
         {
-            await _asyncStream.ReadBufferAsync(contents.AsMemory(0, size), cancellationToken).ConfigureAwait(false);
-            return ParseMessage(format, contents.AsSpan(0, size));
+            await _asyncStream.ReadBufferAsync(contents.AsMemory(0, size), cancellationToken)
+                .ConfigureAwait(false);
+            return doesOwnData
+                ? ConstructDataMessage(format, contents)
+                : ParseMessage(format, contents.AsSpan(0, size));
         }
         finally
         {
-            ArrayPool.Return(contents);
+            if (!doesOwnData)
+            {
+                ArrayPool.Return(contents);
+            }
         }
     }
 
@@ -548,7 +554,8 @@ internal sealed partial class PgStream : IDisposable
     private async Task<T> ReceiveNextMessageAs<T>(CancellationToken cancellationToken)
         where T : IPgBackendMessage
     {
-        IPgBackendMessage message = await ReceiveNextMessage(cancellationToken).ConfigureAwait(false);
+        IPgBackendMessage message =
+            await ReceiveNextMessage(cancellationToken).ConfigureAwait(false);
         return message switch
         {
             T result => result,
@@ -570,17 +577,40 @@ internal sealed partial class PgStream : IDisposable
     }
 
     /// <summary>
+    /// Pass the contents of the messages data to the constructor for each depending upon the
+    /// <see cref="PgBackendMessageType"/>
+    /// </summary>
+    /// <param name="messageType">Message type</param>
+    /// <param name="contents">Message contents</param>
+    /// <returns>Backend message parsed</returns>
+    /// <exception cref="PgException">If the message type is not supported or expected</exception>
+    private static IPgBackendDataMessage ConstructDataMessage(
+        PgBackendMessageType messageType,
+        byte[] contents)
+    {
+        // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+        return messageType switch
+        {
+            PgBackendMessageType.CopyData => new CopyDataMessage(contents),
+            PgBackendMessageType.DataRow => new DataRowMessage(contents),
+            _ => throw new PgException(
+                $"Expected backend message type that owns data but found '{messageType}'"),
+        };
+    }
+
+    /// <summary>
     /// Parse the current message contents based upon the <see cref="PgBackendMessageType"/>
     /// </summary>
     /// <param name="messageType">Message type</param>
     /// <param name="contents">Message contents to parse (could be empty)</param>
     /// <returns>Backend message parsed</returns>
-    /// <exception cref="PgException">If the message type is not supported or exepcted</exception>
+    /// <exception cref="PgException">If the message type is not supported or expected</exception>
     private static IPgBackendMessage ParseMessage(
         PgBackendMessageType messageType,
         Span<byte> contents)
     {
         ReadBuffer buffer = new(contents);
+        // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
         return messageType switch
         {
             PgBackendMessageType.Authentication => AuthenticationMessage.Decode(buffer),
@@ -588,13 +618,11 @@ internal sealed partial class PgStream : IDisposable
             PgBackendMessageType.BindComplete => BindCompleteMessage.Instance,
             PgBackendMessageType.CloseComplete => CloseCompleteMessage.Instance,
             PgBackendMessageType.CommandComplete => CommandCompleteMessage.Decode(buffer),
-            PgBackendMessageType.CopyData => CopyDataMessage.Decode(buffer),
             PgBackendMessageType.CopyDone => CopyDoneMessage.Instance,
             PgBackendMessageType.CopyInResponse => CopyInResponseMessage.Decode(buffer),
             PgBackendMessageType.CopyOutResponse => CopyOutResponseMessage.Decode(buffer),
             PgBackendMessageType.CopyBothResponse => throw new PgException(
                 "CopyBoth is not supported by this driver"),
-            PgBackendMessageType.DataRow => DataRowMessage.Decode(buffer),
             PgBackendMessageType.EmptyQueryResponse => throw new PgException(
                 "Empty query response packet should never be received"),
             PgBackendMessageType.ErrorResponse => ErrorResponseMessage.Decode(buffer),
@@ -609,10 +637,11 @@ internal sealed partial class PgStream : IDisposable
             PgBackendMessageType.PortalSuspend => PortalSuspendedMessage.Instance,
             PgBackendMessageType.ReadyForQuery => ReadyForQueryMessage.Decode(buffer),
             PgBackendMessageType.RowDescription => RowDescriptionMessage.Decode(buffer),
-            _ => throw new PgException($"Expected backend message type but found '{messageType}'"),
+            _ => throw new PgException(
+                $"Expected backend message type that does not own data but found '{messageType}'"),
         };
     }
-    
+
     private void CheckDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     /// <summary>
@@ -628,7 +657,7 @@ internal sealed partial class PgStream : IDisposable
     public void Dispose()
     {
         if (_disposed) return;
-        
+
         _pool = null;
         // If we can send messages to the server, sent the terminate command before closing
         if (Status is ConnectionStatus.Idle)
@@ -643,6 +672,7 @@ internal sealed partial class PgStream : IDisposable
                 _logger.LogError(e, "Error closing PgStream");
             }
         }
+
         _writeBuffer.Dispose();
         _asyncStream.Dispose();
         _disposed = true;
