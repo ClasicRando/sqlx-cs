@@ -98,13 +98,13 @@ public class PgTypeInfo : IEquatable<PgTypeInfo>
     private const int VoidOid = 2278;
     private const int UnspecifiedOid = 0;
     
-    public PgOid PgOid { get; }
+    public PgOid TypeOid { get; }
 
     public IPgTypeKind TypeKind { get; }
     
-    internal PgTypeInfo(int typeOid, IPgTypeKind typeKind)
+    internal PgTypeInfo(uint typeOid, IPgTypeKind typeKind)
     {
-        PgOid = new PgOid(typeOid);
+        TypeOid = new PgOid(typeOid);
         TypeKind = typeKind;
     }
     
@@ -206,7 +206,7 @@ public class PgTypeInfo : IEquatable<PgTypeInfo>
 
     public bool Equals(PgTypeInfo? other)
     {
-        return other is not null && PgOid == other.PgOid;
+        return other is not null && TypeOid == other.TypeOid;
     }
 
     public override bool Equals(object? obj)
@@ -216,7 +216,7 @@ public class PgTypeInfo : IEquatable<PgTypeInfo>
 
     public override int GetHashCode()
     {
-        return PgOid;
+        return HashCode.Combine(TypeOid);
     }
 
     public static bool operator ==(PgTypeInfo left, PgTypeInfo right)

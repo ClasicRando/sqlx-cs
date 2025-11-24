@@ -31,7 +31,7 @@ internal static class PgArrayTypeUtils
     {
         buffer.WriteInt(1);
         buffer.WriteInt(0);
-        buffer.WriteInt(TType.DbType.PgOid);
+        buffer.WriteUInt(TType.DbType.TypeOid.Inner);
         buffer.WriteInt(length);
         buffer.WriteInt(1);
     }
@@ -62,9 +62,9 @@ internal static class PgArrayTypeUtils
 
         var elementTypeOid = value.Buffer.ReadInt();
         ColumnDecodeException.CheckOrThrow<TElement[]>(
-            elementTypeOid == TType.DbType.PgOid,
+            elementTypeOid == TType.DbType.TypeOid.Inner,
             value.ColumnMetadata,
-            $"Attempted to read an array with another element type. Expected {TType.DbType.PgOid} but found {elementTypeOid}");
+            $"Attempted to read an array with another element type. Expected {TType.DbType.TypeOid} but found {elementTypeOid}");
         
         var length = value.Buffer.ReadInt();
         var lowerBound = value.Buffer.ReadInt();
@@ -97,7 +97,7 @@ internal static class PgArrayTypeUtils
         }
         
         List<string?> result = [];
-        ReadOnlySpan<char>.Enumerator chars = value.Chars[1..^1].GetEnumerator();
+        using ReadOnlySpan<char>.Enumerator chars = value.Chars[1..^1].GetEnumerator();
         var builder = new StringBuilder();
         var isDone = false;
         var inQuotes = false;

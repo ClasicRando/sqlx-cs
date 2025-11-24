@@ -18,7 +18,7 @@ public class IntegersTest
     public void ValidateInt_Should_ReturnValue_WhenInt(long value)
     {
         var columnMetadata = Substitute.For<IColumnMetadata>();
-        columnMetadata.DataType.Returns(0);
+        columnMetadata.DataType.Returns(0u);
         columnMetadata.FieldName.Returns("field");
         
         Assert.Equal((int)value, Integers.ValidateInt(value, columnMetadata));
@@ -32,7 +32,7 @@ public class IntegersTest
     public void ValidateInt_Should_Thrown_WhenOutsideOfInt(long value)
     {
         var columnMetadata = Substitute.For<IColumnMetadata>();
-        columnMetadata.DataType.Returns(0);
+        columnMetadata.DataType.Returns(0u);
         columnMetadata.FieldName.Returns("field");
         
         var e = Assert.Throws<ColumnDecodeException>(() => Integers.ValidateInt(value, columnMetadata));
@@ -49,7 +49,7 @@ public class IntegersTest
     public void ValidateShort_Should_ReturnValueWhenShort(long value)
     {
         var columnMetadata = Substitute.For<IColumnMetadata>();
-        columnMetadata.DataType.Returns(0);
+        columnMetadata.DataType.Returns(0u);
         columnMetadata.FieldName.Returns("field");
         
         Assert.Equal((short)value, Integers.ValidateShort(value, columnMetadata));
@@ -63,7 +63,7 @@ public class IntegersTest
     public void ValidateShort_Should_Thrown_WhenOutsideOfShort(long value)
     {
         var columnMetadata = Substitute.For<IColumnMetadata>();
-        columnMetadata.DataType.Returns(0);
+        columnMetadata.DataType.Returns(0u);
         columnMetadata.FieldName.Returns("field");
         
         var e = Assert.Throws<ColumnDecodeException>(() => Integers.ValidateShort(value, columnMetadata));
@@ -79,7 +79,7 @@ public class IntegersTest
     public void ValidateByte_Should_ReturnValueWhenByte(long value)
     {
         var columnMetadata = Substitute.For<IColumnMetadata>();
-        columnMetadata.DataType.Returns(0);
+        columnMetadata.DataType.Returns(0u);
         columnMetadata.FieldName.Returns("field");
         
         Assert.Equal((byte)value, Integers.ValidateByte(value, columnMetadata));
@@ -93,7 +93,7 @@ public class IntegersTest
     public void ValidateByte_Should_Thrown_WhenOutsideOfByte(long value)
     {
         var columnMetadata = Substitute.For<IColumnMetadata>();
-        columnMetadata.DataType.Returns(0);
+        columnMetadata.DataType.Returns(0u);
         columnMetadata.FieldName.Returns("field");
         
         var e = Assert.Throws<ColumnDecodeException>(() => Integers.ValidateByte(value, columnMetadata));

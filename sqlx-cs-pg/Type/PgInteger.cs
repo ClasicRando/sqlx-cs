@@ -25,6 +25,7 @@ internal static class PgInteger
         return value.Buffer.Remaining switch
         {
             2 => value.Buffer.ReadShort(),
+            4 when typeof(T) == typeof(uint) => value.Buffer.ReadUInt(),
             4 => value.Buffer.ReadInt(),
             8 => value.Buffer.ReadLong(),
             _ => throw ColumnDecodeException.Create<T>(
@@ -32,7 +33,7 @@ internal static class PgInteger
                 $"Could not extract integer from buffer. Number of bytes = {value.Buffer.Remaining}"),
         };
     }
-    
+
     /// <summary>
     /// Extract a <see cref="long"/> value from the characters
     /// </summary>
@@ -50,12 +51,16 @@ internal static class PgInteger
                 value.ColumnMetadata,
                 $"Could not convert '{value}' into {typeof(T)}");
         }
+
         return parseResult;
     }
-    
+
     public static bool IsIntegerCompatible(PgTypeInfo dbType)
     {
-        return dbType == PgTypeInfo.Int8 || dbType == PgTypeInfo.Int4 || dbType == PgTypeInfo.Int2;
+        return dbType == PgTypeInfo.Int8
+               || dbType == PgTypeInfo.Int4
+               || dbType == PgTypeInfo.Int2
+               || dbType == PgTypeInfo.Oid;
     }
 }
 
@@ -101,7 +106,7 @@ internal abstract class PgLong : IPgDbType<long>, IHasRangeType, IHasArrayType
     public static PgTypeInfo RangeType => PgTypeInfo.Int8Range;
 
     public static PgTypeInfo RangeArrayType => PgTypeInfo.Int8RangeArray;
-    
+
     public static bool IsCompatible(PgTypeInfo dbType)
     {
         return PgInteger.IsIntegerCompatible(dbType);
@@ -157,7 +162,7 @@ internal abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
     public static PgTypeInfo RangeType => PgTypeInfo.Int4Range;
 
     public static PgTypeInfo RangeArrayType => PgTypeInfo.Int4RangeArray;
-    
+
     public static bool IsCompatible(PgTypeInfo dbType)
     {
         return PgInteger.IsIntegerCompatible(dbType);
@@ -209,7 +214,7 @@ internal abstract class PgShort : IPgDbType<short>, IHasArrayType
     public static PgTypeInfo DbType => PgTypeInfo.Int2;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.Int2Array;
-    
+
     public static bool IsCompatible(PgTypeInfo dbType)
     {
         return PgInteger.IsIntegerCompatible(dbType);

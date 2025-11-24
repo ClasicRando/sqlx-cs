@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 namespace Sqlx.Core.Exceptions;
 
 public class ColumnEncodeException(
-    int dataTypeId,
+    uint dataTypeId,
     Type encodeType,
     string reason = "",
     Exception? cause = null) : SqlxException(
@@ -22,7 +22,7 @@ public class ColumnEncodeException(
     /// <returns>exception instance that can be thrown</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ColumnEncodeException Create<T>(
-        int dataTypeId,
+        uint dataTypeId,
         string reason = "",
         Exception? cause = null) where T : notnull
     {

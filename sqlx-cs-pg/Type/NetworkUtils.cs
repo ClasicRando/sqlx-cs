@@ -46,14 +46,14 @@ internal static class NetworkUtils
         if (!value.TryWriteBytes(span, out var written))
         {
             throw ColumnEncodeException.Create<T>(
-                dataType.PgOid,
+                dataType.TypeOid.Inner,
                 "Failed to write address bytes to buffer");
         }
 
         if (bytesToWrite != written)
         {
             throw ColumnEncodeException.Create<T>(
-                dataType.PgOid,
+                dataType.TypeOid.Inner,
                 "Wrote a different number of bytes to the parameter buffer than expected");
         }
         buffer.Advance(written);

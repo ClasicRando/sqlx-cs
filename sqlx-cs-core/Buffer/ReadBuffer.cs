@@ -63,6 +63,14 @@ public ref struct ReadBuffer
         return BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(result) : result;
     }
 
+    public uint ReadUInt()
+    {
+        CheckBound(sizeof(uint));
+        var result = Unsafe.ReadUnaligned<uint>(ref _inner[_position]);
+        _position += sizeof(uint);
+        return BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(result) : result;
+    }
+
     public long ReadLong()
     {
         CheckBound(sizeof(long));

@@ -22,6 +22,17 @@ public static partial class ExecutableQueryExtensions
     /// <param name="value">Timezone aware time value</param>
     /// <returns>This query instance for method chaining</returns>
     [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgOid value);
+
+    /// <summary>
+    /// Bind <see cref="PgTimeTz"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the Postgres specific <c>TIME WITH TIME ZONE</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Timezone aware time value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
     public static partial IQuery Bind(this IQuery query, PgTimeTz value);
     
     /// <summary>

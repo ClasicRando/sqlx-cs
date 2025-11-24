@@ -15,7 +15,7 @@ namespace Sqlx.Core.Exceptions;
 /// <param name="reason">optional reason for the decoding failure</param>
 /// <param name="cause">optional cause for the decoding failure</param>
 public class ColumnDecodeException(
-    int dataTypeId,
+    uint dataTypeId,
     string typeName,
     string columnName,
     Type decodeType,

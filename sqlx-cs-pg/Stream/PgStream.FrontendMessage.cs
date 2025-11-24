@@ -154,7 +154,7 @@ internal sealed partial class PgStream
         _writeBuffer.WriteShort((short)pgTypes.Count);
         foreach (PgTypeInfo pgType in pgTypes)
         {
-            _writeBuffer.WriteInt(pgType.PgOid.Inner);
+            _writeBuffer.WriteUInt(pgType.TypeOid.Inner);
         }
         _writeBuffer.FinishWritingLengthPrefixed(startingPosition, includeLength: true);
     }

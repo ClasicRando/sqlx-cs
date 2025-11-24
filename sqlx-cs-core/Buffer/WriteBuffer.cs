@@ -83,6 +83,15 @@ public sealed class WriteBuffer : IBufferWriter<byte>, IDisposable
         _writePosition += sizeof(int);
     }
 
+    public void WriteUInt(uint value)
+    {
+        CheckBound(sizeof(uint));
+        Unsafe.WriteUnaligned(
+            ref _buffer[_writePosition],
+            BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value);
+        _writePosition += sizeof(uint);
+    }
+
     public void WriteLong(long value)
     {
         CheckBound(sizeof(long));

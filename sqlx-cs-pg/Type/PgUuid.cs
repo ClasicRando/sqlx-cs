@@ -20,7 +20,7 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
         if (!value.TryWriteBytes(span, bigEndian: false, out _))
         {
             throw ColumnEncodeException.Create<Guid>(
-                DbType.PgOid,
+                DbType.TypeOid.Inner,
                 "Failed to write Guid bytes to buffer");
         }
         buffer.Advance(16);

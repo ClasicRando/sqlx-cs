@@ -13,5 +13,5 @@ public interface IColumnMetadata
     /// <summary>
     /// Database vendor specific code of the column's data type
     /// </summary>
-    int DataType { get; }
+    uint DataType { get; }
 }

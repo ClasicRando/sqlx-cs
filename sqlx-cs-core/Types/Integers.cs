@@ -6,6 +6,22 @@ namespace Sqlx.Core.Types;
 public static class Integers
 {
     /// <summary>
+    /// Check to see if this <see cref="long"/> value is a valid <see cref="uint"/>
+    /// </summary>
+    /// <param name="value">long value to check</param>
+    /// <param name="columnMetadata">column metadata to construct the exception</param>
+    /// <returns>the value cast to an uint</returns>
+    /// <exception cref="ColumnDecodeException">if the value is not a valid uint</exception>
+    public static uint ValidateUInt(long value, IColumnMetadata columnMetadata)
+    {
+        ColumnDecodeException.CheckOrThrow<uint>(
+            value is >= uint.MinValue and <= uint.MaxValue,
+            columnMetadata,
+            "Value is outside of valid uint");
+        return (uint)value;
+    }
+    
+    /// <summary>
     /// Check to see if this <see cref="long"/> value is a valid int
     /// </summary>
     /// <param name="value">long value to check</param>
