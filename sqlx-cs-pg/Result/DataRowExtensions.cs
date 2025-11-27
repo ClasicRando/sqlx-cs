@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Net;
 using System.Runtime.CompilerServices;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Exceptions;
@@ -185,6 +187,30 @@ public static partial class DataRowExtensions
     
     [GeneratePgDecodeMethod]
     public static partial PgInet GetPgInetNotNull(this IDataRow dataRow, string name);
+
+    [GeneratePgDecodeMethod(Decoder = typeof(PgIpNetwork))]
+    public static partial IPNetwork? GetPgIpNetwork(this IDataRow dataRow, int index);
+    
+    [GeneratePgDecodeMethod(Decoder = typeof(PgIpNetwork))]
+    public static partial IPNetwork GetPgIpNetworkNotNull(this IDataRow dataRow, int index);
+    
+    [GeneratePgDecodeMethod(Decoder = typeof(PgIpNetwork))]
+    public static partial IPNetwork? GetPgIpNetwork(this IDataRow dataRow, string name);
+    
+    [GeneratePgDecodeMethod(Decoder = typeof(PgIpNetwork))]
+    public static partial IPNetwork GetPgIpNetworkNotNull(this IDataRow dataRow, string name);
+
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBitString))]
+    public static partial BitArray? GetPgBitArray(this IDataRow dataRow, int index);
+    
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBitString))]
+    public static partial BitArray GetPgBitArrayNotNull(this IDataRow dataRow, int index);
+    
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBitString))]
+    public static partial BitArray? GetPgBitArray(this IDataRow dataRow, string name);
+    
+    [GeneratePgDecodeMethod(Decoder = typeof(PgBitString))]
+    public static partial BitArray GetPgBitArrayNotNull(this IDataRow dataRow, string name);
 
     [GeneratePgDecodeMethod(Decoder = typeof(PgRangeType<long, PgLong>))]
     public static partial PgRange<long>? GetPgRangeLong(this IDataRow dataRow, int index);

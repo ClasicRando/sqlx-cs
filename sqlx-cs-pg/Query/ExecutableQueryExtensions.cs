@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Net;
 using Sqlx.Core.Query;
 using Sqlx.Postgres.Exceptions;
@@ -309,6 +310,17 @@ public static partial class ExecutableQueryExtensions
     /// <returns>This query instance for method chaining</returns>
     [GeneratePgBindMethod(Encoder = typeof(PgIpNetwork))]
     public static partial IQuery Bind(this IQuery query, IPNetwork? value);
+    
+    /// <summary>
+    /// Bind <see cref="BitArray"/> parameter to query. This puts that value as the nth parameter
+    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
+    /// to the Postgres specific <c>VARBIT(n)</c> and <c>BIT(n)</c> types.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Network address value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod(Encoder = typeof(PgBitString))]
+    public static partial IQuery Bind(this IQuery query, BitArray? value);
     
     /// <summary>
     /// Bind <see cref="PgRange{T}"/> of <see cref="long"/> parameter to query. This puts that value
