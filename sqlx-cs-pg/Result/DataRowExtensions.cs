@@ -45,6 +45,18 @@ public static partial class DataRowExtensions
     }
 
     [GeneratePgDecodeMethod]
+    public static partial PgOid? GetPgOid(this IDataRow dataRow, int index);
+    
+    [GeneratePgDecodeMethod]
+    public static partial PgOid GetPgOidNotNull(this IDataRow dataRow, int index);
+
+    [GeneratePgDecodeMethod]
+    public static partial PgOid? GetPgOid(this IDataRow dataRow, string name);
+    
+    [GeneratePgDecodeMethod]
+    public static partial PgOid GetPgOidNotNull(this IDataRow dataRow, string name);
+
+    [GeneratePgDecodeMethod]
     public static partial PgTimeTz? GetPgTimeTz(this IDataRow dataRow, int index);
     
     [GeneratePgDecodeMethod]

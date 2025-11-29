@@ -4,7 +4,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
-[assembly: InternalsVisibleTo("sqlx-cs-pg-generator-test")]
+[assembly: InternalsVisibleTo("sqlx-cs-pg-internal-generator-test")]
 namespace Sqlx.Postgres.Generator.Query;
 
 [Generator]
@@ -72,7 +72,7 @@ internal class PgExecutableQueryBindGenerator : IIncrementalGenerator
             
             namespace Sqlx.Postgres.Query;
             
-            public static partial class ExecutableQueryExtensions
+            public static partial class Query
             {
             """);
         foreach (BindMethodToGenerate? methodToGenerate in methodsToGenerate)

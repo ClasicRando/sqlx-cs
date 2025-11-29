@@ -4,7 +4,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
-[assembly: InternalsVisibleTo("sqlx-cs-pg-generator-test")]
+[assembly: InternalsVisibleTo("sqlx-cs-pg-internal-generator-test")]
 namespace Sqlx.Postgres.Generator.Result;
 
 [Generator]

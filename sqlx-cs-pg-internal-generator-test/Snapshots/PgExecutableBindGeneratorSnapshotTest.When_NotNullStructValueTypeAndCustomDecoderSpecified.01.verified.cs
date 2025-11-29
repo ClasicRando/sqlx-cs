@@ -8,7 +8,7 @@ using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Query;
 
-public static partial class ExecutableQueryExtensions
+public static partial class Query
 {
     public static partial IQuery Bind(this IQuery query, System.Guid value) =>
         PgException.CheckIfIs<IQuery, PgExecutableQuery>(query)

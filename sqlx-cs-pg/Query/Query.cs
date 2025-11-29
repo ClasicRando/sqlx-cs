@@ -12,18 +12,29 @@ namespace Sqlx.Postgres.Query;
 /// extension methods are included when you include the Postgres module and assume your
 /// <see cref="IQuery"/> instance is a <see cref="PgExecutableQuery"/>.
 /// </summary>
-public static partial class ExecutableQueryExtensions
+public static partial class Query
 {
     /// <summary>
-    /// Bind <see cref="PgTimeTz"/> parameter to query. This puts that value as the nth parameter in
+    /// Bind <see cref="PgOid"/> parameter to query. This puts that value as the nth parameter in
     /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
-    /// the Postgres specific <c>TIME WITH TIME ZONE</c> type.
+    /// the Postgres specific <c>OID</c> type.
     /// </summary>
     /// <param name="query">Query to bind against</param>
-    /// <param name="value">Timezone aware time value</param>
+    /// <param name="value">Type identifier value</param>
     /// <returns>This query instance for method chaining</returns>
     [GeneratePgBindMethod]
     public static partial IQuery Bind(this IQuery query, PgOid value);
+    
+    /// <summary>
+    /// Bind <see cref="PgOid"/> parameter to query. This puts that value as the nth parameter in
+    /// the parameterized query, where n is the current parameter as a 1-based index. This maps to
+    /// the Postgres specific <c>OID</c> type.
+    /// </summary>
+    /// <param name="query">Query to bind against</param>
+    /// <param name="value">Type identifier value</param>
+    /// <returns>This query instance for method chaining</returns>
+    [GeneratePgBindMethod]
+    public static partial IQuery Bind(this IQuery query, PgOid? value);
 
     /// <summary>
     /// Bind <see cref="PgTimeTz"/> parameter to query. This puts that value as the nth parameter in
@@ -542,76 +553,72 @@ public static partial class ExecutableQueryExtensions
     [GeneratePgBindMethod(Encoder = typeof(PgUuid))]
     public static partial IQuery Bind(this IQuery query, Guid?[]? value);
 
-    /// <summary>
-    /// Bind <typeparamref name="TValue"/> parameter to query. This puts that value as the nth
-    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
-    /// This allows for any value that can be encoded using the type definition of
-    /// <typeparamref name="TType"/> to be bound to a query.
-    /// </summary>
-    /// <param name="query">Query to bind against</param>
-    /// <param name="value">Value to bind to the query</param>
-    /// <typeparam name="TValue">Value type to bind</typeparam>
-    /// <typeparam name="TType">DB Type definition to allow for encoding the value</typeparam>
-    /// <returns>This query instance for method chaining</returns>
-    public static IQuery BindPg<TValue, TType>(this IQuery query, TValue value)
-        where TType : IPgDbType<TValue>
-        where TValue : notnull
+    extension(IQuery query)
     {
-        var pgExecutableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
-        return pgExecutableQuery.Encode<TValue, TType>(value);
-    }
+        /// <summary>
+        /// Bind <typeparamref name="TValue"/> parameter to query. This puts that value as the nth
+        /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
+        /// This allows for any value that can be encoded using the type definition of
+        /// <typeparamref name="TType"/> to be bound to a query.
+        /// </summary>
+        /// <param name="value">Value to bind to the query</param>
+        /// <typeparam name="TValue">Value type to bind</typeparam>
+        /// <typeparam name="TType">DB Type definition to allow for encoding the value</typeparam>
+        /// <returns>This query instance for method chaining</returns>
+        public IQuery BindPg<TValue, TType>(TValue value)
+            where TType : IPgDbType<TValue>
+            where TValue : notnull
+        {
+            var pgExecutableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
+            return pgExecutableQuery.Encode<TValue, TType>(value);
+        }
 
-    /// <summary>
-    /// <para>
-    /// Bind <typeparamref name="TElement"/> array parameter to query. This puts that value as the
-    /// nth parameter in the parameterized query, where n is the current parameter as a 1-based
-    /// index. This allows for any array value that can be encoded using the type definition of
-    /// <typeparamref name="TType"/> to be bound to a query.
-    /// </para>
-    /// <para>
-    /// This differs from <see cref="BindPgArrayClass"/> because the element type must be a struct
-    /// so that nullable vs default semantics can be handled correctly.
-    /// </para>
-    /// </summary>
-    /// <param name="query">Query to bind against</param>
-    /// <param name="value">Array value to bind</param>
-    /// <typeparam name="TElement">Array element type</typeparam>
-    /// <typeparam name="TType">DB Type definition to allow for encoding the value</typeparam>
-    /// <returns>This query instance for method chaining</returns>
-    public static IQuery BindPgArrayStruct<TElement, TType>(
-        this IQuery query,
-        TElement?[]? value)
-        where TType : IPgDbType<TElement>, IHasArrayType
-        where TElement : struct
-    {
-        var pgExecutableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
-        return pgExecutableQuery.EncodeNullableClass<TElement?[], PgArrayTypeStruct<TElement, TType>>(value);
-    }
+        /// <summary>
+        /// <para>
+        /// Bind <typeparamref name="TElement"/> array parameter to query. This puts that value as the
+        /// nth parameter in the parameterized query, where n is the current parameter as a 1-based
+        /// index. This allows for any array value that can be encoded using the type definition of
+        /// <typeparamref name="TType"/> to be bound to a query.
+        /// </para>
+        /// <para>
+        /// This differs from <see cref="BindPgArrayClass"/> because the element type must be a struct
+        /// so that nullable vs default semantics can be handled correctly.
+        /// </para>
+        /// </summary>
+        /// <param name="value">Array value to bind</param>
+        /// <typeparam name="TElement">Array element type</typeparam>
+        /// <typeparam name="TType">DB Type definition to allow for encoding the value</typeparam>
+        /// <returns>This query instance for method chaining</returns>
+        public IQuery BindPgArrayStruct<TElement, TType>(TElement?[]? value)
+            where TType : IPgDbType<TElement>, IHasArrayType
+            where TElement : struct
+        {
+            var pgExecutableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
+            return pgExecutableQuery.EncodeNullableClass<TElement?[], PgArrayTypeStruct<TElement, TType>>(value);
+        }
 
-    /// <summary>
-    /// <para>
-    /// Bind <typeparamref name="TElement"/> array parameter to query. This puts that value as the
-    /// nth parameter in the parameterized query, where n is the current parameter as a 1-based
-    /// index. This allows for any array value that can be encoded using the type definition of
-    /// <typeparamref name="TType"/> to be bound to a query.
-    /// </para>
-    /// <para>
-    /// This differs from <see cref="BindPgArrayStruct"/> because the element type must be a class
-    /// so that nullable vs default semantics can be handled correctly.
-    /// </para>
-    /// </summary>
-    /// <param name="query">Query to bind against</param>
-    /// <param name="value">Array value to bind</param>
-    /// <typeparam name="TElement">Array element type</typeparam>
-    /// <typeparam name="TType">DB Type definition to allow for encoding the value</typeparam>
-    /// <returns>This query instance for method chaining</returns>
-    public static IQuery BindPgArrayClass<TElement, TType>(
-        this IQuery query,
-        TElement?[]? value)
-        where TType : IPgDbType<TElement>, IHasArrayType
-        where TElement : class
-    {
-        var pgExecutableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
-        return pgExecutableQuery.EncodeNullableClass<TElement?[], PgArrayTypeClass<TElement, TType>>(value);
+        /// <summary>
+        /// <para>
+        /// Bind <typeparamref name="TElement"/> array parameter to query. This puts that value as the
+        /// nth parameter in the parameterized query, where n is the current parameter as a 1-based
+        /// index. This allows for any array value that can be encoded using the type definition of
+        /// <typeparamref name="TType"/> to be bound to a query.
+        /// </para>
+        /// <para>
+        /// This differs from <see cref="BindPgArrayStruct"/> because the element type must be a class
+        /// so that nullable vs default semantics can be handled correctly.
+        /// </para>
+        /// </summary>
+        /// <param name="value">Array value to bind</param>
+        /// <typeparam name="TElement">Array element type</typeparam>
+        /// <typeparam name="TType">DB Type definition to allow for encoding the value</typeparam>
+        /// <returns>This query instance for method chaining</returns>
+        public IQuery BindPgArrayClass<TElement, TType>(TElement?[]? value)
+            where TType : IPgDbType<TElement>, IHasArrayType
+            where TElement : class
+        {
+            var pgExecutableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
+            return pgExecutableQuery.EncodeNullableClass<TElement?[], PgArrayTypeClass<TElement, TType>>(value);
+        }
     }
 }

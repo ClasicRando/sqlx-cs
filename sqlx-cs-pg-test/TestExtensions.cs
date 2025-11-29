@@ -2,8 +2,7 @@ using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
-using Sqlx.Postgres.Exceptions;
-using Sqlx.Postgres.Result;
+using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres;
@@ -32,45 +31,29 @@ public static class TestExtensions
         return result;
     }
 
-    public static async Task<TValue> ExecuteScalar<TDecode, TValue>(
-        this IExecutableQuery executableQuery)
-        where TDecode : IPgDbType<TValue>
-        where TValue : notnull
+    extension(IExecutableQuery executableQuery)
     {
-        var flow = await executableQuery.Execute(TestContext.Current.CancellationToken);
-        await foreach (var item in flow.WithCancellation(TestContext.Current.CancellationToken))
+        public Task<TValue> ExecuteScalar<TDecode, TValue>()
+            where TDecode : IPgDbType<TValue>
+            where TValue : notnull
         {
-            if (item is Either<IDataRow, QueryResult>.Left left)
-            {
-                return PgException.CheckIfIs<IDataRow, PgDataRow>(left.Value)
-                    .DecodeNotNull<TValue, TDecode>(0);
-            }
+            return executableQuery.ExecuteScalar<TDecode, TValue>(
+                TestContext.Current.CancellationToken);
         }
 
-        throw new Exception("Query returned no rows");
-    }
-
-    public static Task<TType> ExecuteScalarPg<TType>(this IExecutableQuery executableQuery)
-        where TType : IPgDbType<TType>
-    {
-        return ExecuteScalar<TType, TType>(executableQuery);
-    }
-
-    public static async Task<TValue> ExecuteScalarJson<TValue>(
-        this IExecutableQuery executableQuery,
-        JsonTypeInfo<TValue>? jsonTypeInfo = null)
-        where TValue : notnull
-    {
-        var flow = await executableQuery.Execute(TestContext.Current.CancellationToken);
-        await foreach (var item in flow.WithCancellation(TestContext.Current.CancellationToken))
+        public Task<TType> ExecuteScalarPg<TType>()
+            where TType : IPgDbType<TType>
         {
-            if (item is Either<IDataRow, QueryResult>.Left left)
-            {
-                return PgException.CheckIfIs<IDataRow, PgDataRow>(left.Value)
-                    .GetJsonNotNull(0, jsonTypeInfo);
-            }
+            return executableQuery.ExecuteScalar<TType, TType>(
+                TestContext.Current.CancellationToken);
         }
 
-        throw new Exception("Query returned no rows");
+        public Task<TValue> ExecuteScalarJson<TValue>(JsonTypeInfo<TValue>? jsonTypeInfo = null)
+            where TValue : notnull
+        {
+            return executableQuery.ExecuteScalarJson(
+                jsonTypeInfo,
+                TestContext.Current.CancellationToken);
+        }
     }
 }

@@ -8,13 +8,13 @@ using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Query;
 
-public static partial class ExecutableQueryExtensions
+public static partial class Query
 {
-    public static partial IQuery Bind(this IQuery query, PgTimeTz? value)
+    public static partial IQuery Bind(this IQuery query, System.Guid? value)
     {
         return !value.HasValue
-            ? query.BindNull<PgTimeTz>()
+            ? query.BindNull<System.Guid>()
             : PgException.CheckIfIs<IQuery, PgExecutableQuery>(query)
-                .Encode<PgTimeTz, PgTimeTz>(value.Value);
+                .Encode<System.Guid, PgUuid>(value.Value);
     }
 }

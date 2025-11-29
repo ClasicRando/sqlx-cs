@@ -6,7 +6,7 @@
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <RootNamespace>Sqlx.Postgres.Generator.Tests</RootNamespace>
-        <AssemblyName>sqlx-cs-pg-generator-test</AssemblyName>
+        <PackageId>sqlx-cs-pg-internal-generator-test</PackageId>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,7 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\sqlx-cs-pg-generator\sqlx-cs-pg-generator.csproj" />
+      <ProjectReference Include="..\sqlx-cs-pg-internal-generator\sqlx-cs-pg-internal-generator.csproj" />
     </ItemGroup>
 
     <ItemGroup>

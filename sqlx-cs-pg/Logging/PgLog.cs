@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Message.Backend;
 using Sqlx.Postgres.Stream;
 

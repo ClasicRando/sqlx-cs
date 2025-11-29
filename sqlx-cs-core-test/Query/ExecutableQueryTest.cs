@@ -36,7 +36,7 @@ public class ExecutableQueryTest
         query.Execute(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-        var rowCount = await query.ExecuteNonQuery();
+        var rowCount = await query.ExecuteNonQuery(TestContext.Current.CancellationToken);
         
         Assert.Equal(30, rowCount);
     }
@@ -51,7 +51,7 @@ public class ExecutableQueryTest
         query.Execute(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(results.ToAsyncEnumerable()));
 
-        var actualRows = await query.FetchAll<TestRow>();
+        var actualRows = await query.FetchAll<TestRow>(TestContext.Current.CancellationToken);
         
         Assert.Equal(expectedRowCount, actualRows.Count);
     }
@@ -103,7 +103,7 @@ public class ExecutableQueryTest
             query.Execute(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-            var error = await Assert.ThrowsAsync<SqlxException>(async () => await query.FetchFirst<TestRow>());
+            var error = await Assert.ThrowsAsync<SqlxException>(async () => await query.FetchFirst<TestRow>(TestContext.Current.CancellationToken));
         
             Assert.Equal("Expected at least 1 row but found 0", error.Message);
         }
@@ -119,7 +119,7 @@ public class ExecutableQueryTest
             query.Execute(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-            var row = await query.FetchFirst<TestRow>();
+            var row = await query.FetchFirst<TestRow>(TestContext.Current.CancellationToken);
         
             Assert.NotNull(row);
         }
@@ -138,7 +138,7 @@ public class ExecutableQueryTest
             query.Execute(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-            var row = await query.FetchFirst<TestRowStruct>();
+            var row = await query.FetchFirst<TestRowStruct>(TestContext.Current.CancellationToken);
         
             Assert.Equal(10, row.Id);
         }
@@ -157,7 +157,7 @@ public class ExecutableQueryTest
             query.Execute(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-            var row = await query.FetchFirstOrDefault<TestRow>();
+            var row = await query.FetchFirstOrDefault<TestRow>(TestContext.Current.CancellationToken);
         
             Assert.Null(row);
         }
@@ -173,7 +173,7 @@ public class ExecutableQueryTest
             query.Execute(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-            var row = await query.FetchFirstOrDefault<TestRowStruct>();
+            var row = await query.FetchFirstOrDefault<TestRowStruct>(TestContext.Current.CancellationToken);
         
             Assert.Equal(default, row);
         }
@@ -189,7 +189,7 @@ public class ExecutableQueryTest
             query.Execute(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-            var row = await query.FetchFirstOrDefault<TestRow>();
+            var row = await query.FetchFirstOrDefault<TestRow>(TestContext.Current.CancellationToken);
         
             Assert.NotNull(row);
         }
@@ -208,7 +208,7 @@ public class ExecutableQueryTest
             query.Execute(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-            var row = await query.FetchFirstOrDefault<TestRowStruct>();
+            var row = await query.FetchFirstOrDefault<TestRowStruct>(TestContext.Current.CancellationToken);
         
             Assert.Equal(10, row.Id);
         }
@@ -227,7 +227,7 @@ public class ExecutableQueryTest
             query.Execute(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-            var error = await Assert.ThrowsAsync<SqlxException>(async () => await query.FetchSingle<TestRow>());
+            var error = await Assert.ThrowsAsync<SqlxException>(async () => await query.FetchSingle<TestRow>(TestContext.Current.CancellationToken));
         
             Assert.Equal("Expected at least 1 row but found 0", error.Message);
         }
@@ -243,7 +243,7 @@ public class ExecutableQueryTest
             query.Execute(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-            var row = await query.FetchSingle<TestRow>();
+            var row = await query.FetchSingle<TestRow>(TestContext.Current.CancellationToken);
         
             Assert.NotNull(row);
         }
@@ -260,7 +260,7 @@ public class ExecutableQueryTest
             query.Execute(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-            var error = await Assert.ThrowsAsync<SqlxException>(async () => await query.FetchSingle<TestRow>());
+            var error = await Assert.ThrowsAsync<SqlxException>(async () => await query.FetchSingle<TestRow>(TestContext.Current.CancellationToken));
         
             Assert.Equal("Expected a single row but found multiple", error.Message);
         }
@@ -279,7 +279,7 @@ public class ExecutableQueryTest
             query.Execute(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-            var row = await query.FetchSingleOrDefault<TestRow>();
+            var row = await query.FetchSingleOrDefault<TestRow>(TestContext.Current.CancellationToken);
         
             Assert.Null(row);
         }
@@ -295,7 +295,7 @@ public class ExecutableQueryTest
             query.Execute(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-            var row = await query.FetchSingleOrDefault<TestRowStruct>();
+            var row = await query.FetchSingleOrDefault<TestRowStruct>(TestContext.Current.CancellationToken);
         
             Assert.Equal(default, row);
         }
@@ -311,7 +311,7 @@ public class ExecutableQueryTest
             query.Execute(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-            var row = await query.FetchSingleOrDefault<TestRow>();
+            var row = await query.FetchSingleOrDefault<TestRow>(TestContext.Current.CancellationToken);
         
             Assert.NotNull(row);
         }
@@ -328,7 +328,7 @@ public class ExecutableQueryTest
             query.Execute(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-            var error = await Assert.ThrowsAsync<SqlxException>(async () => await query.FetchSingleOrDefault<TestRow>());
+            var error = await Assert.ThrowsAsync<SqlxException>(async () => await query.FetchSingleOrDefault<TestRow>(TestContext.Current.CancellationToken));
         
             Assert.Equal("Expected a single row but found multiple", error.Message);
         }

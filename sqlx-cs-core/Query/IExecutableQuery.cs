@@ -8,6 +8,11 @@ namespace Sqlx.Core.Query;
 public interface IExecutableQuery : IQuery
 {
     /// <summary>
+    /// Raw query to submit for execution
+    /// </summary>
+    string Query { get; }
+
+    /// <summary>
     /// <para>
     /// Executes the query and returns an async generator of rows and query results. During normal
     /// query execution the database will return zero or more rows finalized with a query result

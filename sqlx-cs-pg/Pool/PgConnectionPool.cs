@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Sqlx.Core;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Pool;
@@ -11,8 +12,11 @@ using Sqlx.Postgres.Stream;
 
 namespace Sqlx.Postgres.Pool;
 
-public sealed class PgConnectionPool(PgConnectOptions options) : IConnectionPool
+public sealed partial class PgConnectionPool(PgConnectOptions options) : IConnectionPool
 {
+    private readonly ILogger<PgConnectionPool> _logger = options.LoggerFactory
+        .CreateLogger<PgConnectionPool>();
+    
     public PgConnectOptions ConnectOptions { get; } = options;
     
     public IConnection CreateConnection()

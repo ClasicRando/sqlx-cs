@@ -4,9 +4,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqlx-cs-core", "sqlx-cs-cor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqlx-cs-pg", "sqlx-cs-pg\sqlx-cs-pg.csproj", "{DB5284D7-0926-4A99-A077-8291B1983A55}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqlx-cs-pg-generator", "sqlx-cs-pg-generator\sqlx-cs-pg-generator.csproj", "{7A3420D3-5E81-4CB5-8EA0-7C29B69EA9F7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqlx-cs-pg-internal-generator", "sqlx-cs-pg-internal-generator\sqlx-cs-pg-internal-generator.csproj", "{7A3420D3-5E81-4CB5-8EA0-7C29B69EA9F7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqlx-cs-pg-generator-test", "sqlx-cs-pg-generator-test\sqlx-cs-pg-generator-test.csproj", "{253DFB1C-78D7-4EA6-9004-C8DC2883C4B6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqlx-cs-pg-internal-generator-test", "sqlx-cs-pg-internal-generator-test\sqlx-cs-pg-internal-generator-test.csproj", "{253DFB1C-78D7-4EA6-9004-C8DC2883C4B6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D3EED2DA-3993-4B4F-93F0-0194FBEC7BD7}"
 	ProjectSection(SolutionItems) = preProject

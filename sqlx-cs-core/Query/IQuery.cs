@@ -13,11 +13,6 @@ namespace Sqlx.Core.Query;
 public interface IQuery : IDisposable
 {
     /// <summary>
-    /// Raw query to submit for execution
-    /// </summary>
-    string Query { get; }
-
-    /// <summary>
     /// Bind boolean parameter to query. This puts that value as the nth parameter in the
     /// parameterized query, where n is the current parameter as a 1-based index. The <c>BOOLEAN</c>
     /// type is not consistent across all databases so the driver specific implementation might
@@ -179,7 +174,7 @@ public interface IQuery : IDisposable
     /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
     /// Some databases have a JSON specific field type but other database drivers will treat the
     /// JSON encoding as string or bytes. When using this method, it's recommended to supply the
-    /// <see cref="JsonTypeInfo{T}"/> parameter to aid serialization.
+    /// <see cref="JsonTypeInfo"/> parameter to aid serialization.
     /// </summary>
     /// <param name="value">Value to encode as JSON</param>
     /// <param name="typeInfo">Optional type metadata for JSON serialization</param>
