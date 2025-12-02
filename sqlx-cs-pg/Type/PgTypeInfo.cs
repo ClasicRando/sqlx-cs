@@ -102,105 +102,107 @@ public class PgTypeInfo : IEquatable<PgTypeInfo>
 
     public IPgTypeKind TypeKind { get; }
     
-    internal PgTypeInfo(uint typeOid, IPgTypeKind typeKind)
+    internal PgTypeInfo(uint typeOid, IPgTypeKind typeKind) : this(new PgOid(typeOid), typeKind) {}
+    
+    internal PgTypeInfo(PgOid typeOid, IPgTypeKind typeKind)
     {
-        TypeOid = new PgOid(typeOid);
+        TypeOid = typeOid;
         TypeKind = typeKind;
     }
     
     public static readonly PgTypeInfo Bool = new(BoolOid, new SimpleType());
-    public static readonly PgTypeInfo BoolArray = new(BoolArrayOid, new ArrayType(Bool));
+    public static readonly PgTypeInfo BoolArray = new(BoolArrayOid, new ArrayType { ElementType = Bool });
     public static readonly PgTypeInfo Bytea = new(ByteaOid, new SimpleType());
-    public static readonly PgTypeInfo ByteaArray = new(ByteaArrayOid, new ArrayType(Bytea));
+    public static readonly PgTypeInfo ByteaArray = new(ByteaArrayOid, new ArrayType { ElementType = Bytea });
     public static readonly PgTypeInfo Char = new(CharOid, new SimpleType());
-    public static readonly PgTypeInfo CharArray = new(CharArrayOid, new ArrayType(Char));
+    public static readonly PgTypeInfo CharArray = new(CharArrayOid, new ArrayType { ElementType = Char });
     public static readonly PgTypeInfo Name = new(NameOid, new SimpleType());
-    public static readonly PgTypeInfo NameArray = new(NameArrayOid, new ArrayType(Name));
+    public static readonly PgTypeInfo NameArray = new(NameArrayOid, new ArrayType { ElementType = Name });
     public static readonly PgTypeInfo Int2 = new(Int2Oid, new SimpleType());
-    public static readonly PgTypeInfo Int2Array = new(Int2ArrayOid, new ArrayType(Int2));
+    public static readonly PgTypeInfo Int2Array = new(Int2ArrayOid, new ArrayType { ElementType = Int2 });
     public static readonly PgTypeInfo Int4 = new(Int4Oid, new SimpleType());
-    public static readonly PgTypeInfo Int4Array = new(Int4ArrayOid, new ArrayType(Int4));
+    public static readonly PgTypeInfo Int4Array = new(Int4ArrayOid, new ArrayType { ElementType = Int4 });
     public static readonly PgTypeInfo Int8 = new(Int8Oid, new SimpleType());
-    public static readonly PgTypeInfo Int8Array = new(Int8ArrayOid, new ArrayType(Int8));
+    public static readonly PgTypeInfo Int8Array = new(Int8ArrayOid, new ArrayType { ElementType = Int8 });
     public static readonly PgTypeInfo Text = new(TextOid, new SimpleType());
-    public static readonly PgTypeInfo TextArray = new(TextArrayOid, new ArrayType(Text));
+    public static readonly PgTypeInfo TextArray = new(TextArrayOid, new ArrayType { ElementType = Text });
     public static readonly PgTypeInfo Oid = new(OidOid, new SimpleType());
-    public static readonly PgTypeInfo OidArray = new(OidArrayOid, new ArrayType(Oid));
+    public static readonly PgTypeInfo OidArray = new(OidArrayOid, new ArrayType { ElementType = Oid });
     public static readonly PgTypeInfo Json = new(JsonOid, new SimpleType());
-    public static readonly PgTypeInfo JsonArray = new(JsonArrayOid, new ArrayType(Json));
+    public static readonly PgTypeInfo JsonArray = new(JsonArrayOid, new ArrayType { ElementType = Json });
     public static readonly PgTypeInfo Point = new(PointOid, new SimpleType());
-    public static readonly PgTypeInfo PointArray = new(PointArrayOid, new ArrayType(Point));
+    public static readonly PgTypeInfo PointArray = new(PointArrayOid, new ArrayType { ElementType = Point });
     public static readonly PgTypeInfo Lseg = new(LsegOid, new SimpleType());
-    public static readonly PgTypeInfo LsegArray = new(LsegArrayOid, new ArrayType(Lseg));
+    public static readonly PgTypeInfo LsegArray = new(LsegArrayOid, new ArrayType { ElementType = Lseg });
     public static readonly PgTypeInfo Path = new(PathOid, new SimpleType());
-    public static readonly PgTypeInfo PathArray = new(PathArrayOid, new ArrayType(Path));
+    public static readonly PgTypeInfo PathArray = new(PathArrayOid, new ArrayType { ElementType = Path });
     public static readonly PgTypeInfo Box = new(BoxOid, new SimpleType());
-    public static readonly PgTypeInfo BoxArray = new(BoxArrayOid, new ArrayType(Box));
+    public static readonly PgTypeInfo BoxArray = new(BoxArrayOid, new ArrayType { ElementType = Box });
     public static readonly PgTypeInfo Polygon = new(PolygonOid, new SimpleType());
-    public static readonly PgTypeInfo PolygonArray = new(PolygonArrayOid, new ArrayType(Polygon));
+    public static readonly PgTypeInfo PolygonArray = new(PolygonArrayOid, new ArrayType { ElementType = Polygon });
     public static readonly PgTypeInfo Line = new(LineOid, new SimpleType());
-    public static readonly PgTypeInfo LineArray = new(LineArrayOid, new ArrayType(Line));
+    public static readonly PgTypeInfo LineArray = new(LineArrayOid, new ArrayType { ElementType = Line });
     public static readonly PgTypeInfo Cidr = new(CidrOid, new SimpleType());
-    public static readonly PgTypeInfo CidrArray = new(CidrArrayOid, new ArrayType(Cidr));
+    public static readonly PgTypeInfo CidrArray = new(CidrArrayOid, new ArrayType { ElementType = Cidr });
     public static readonly PgTypeInfo Float4 = new(Float4Oid, new SimpleType());
-    public static readonly PgTypeInfo Float4Array = new(Float4ArrayOid, new ArrayType(Float4));
+    public static readonly PgTypeInfo Float4Array = new(Float4ArrayOid, new ArrayType { ElementType = Float4 });
     public static readonly PgTypeInfo Float8 = new(Float8Oid, new SimpleType());
-    public static readonly PgTypeInfo Float8Array = new(Float8ArrayOid, new ArrayType(Float8));
+    public static readonly PgTypeInfo Float8Array = new(Float8ArrayOid, new ArrayType { ElementType = Float8 });
     public static readonly PgTypeInfo Unknown = new(UnknownOid, new SimpleType());
     public static readonly PgTypeInfo Circle = new(CircleOid, new SimpleType());
-    public static readonly PgTypeInfo CircleArray = new(CircleArrayOid, new ArrayType(Circle));
+    public static readonly PgTypeInfo CircleArray = new(CircleArrayOid, new ArrayType { ElementType = Circle });
     public static readonly PgTypeInfo Macaddr8 = new(Macaddr8Oid, new SimpleType());
-    public static readonly PgTypeInfo Macaddr8Array = new(Macaddr8ArrayOid, new ArrayType(Macaddr8));
+    public static readonly PgTypeInfo Macaddr8Array = new(Macaddr8ArrayOid, new ArrayType { ElementType = Macaddr8 });
     public static readonly PgTypeInfo Macaddr = new(MacaddrOid, new SimpleType());
-    public static readonly PgTypeInfo MacaddrArray = new(MacaddrArrayOid, new ArrayType(Macaddr));
+    public static readonly PgTypeInfo MacaddrArray = new(MacaddrArrayOid, new ArrayType { ElementType = Macaddr });
     public static readonly PgTypeInfo Inet = new(InetOid, new SimpleType());
-    public static readonly PgTypeInfo InetArray = new(InetArrayOid, new ArrayType(Inet));
+    public static readonly PgTypeInfo InetArray = new(InetArrayOid, new ArrayType { ElementType = Inet });
     public static readonly PgTypeInfo Bpchar = new(BpcharOid, new SimpleType());
-    public static readonly PgTypeInfo BpcharArray = new(BpcharArrayOid, new ArrayType(Bpchar));
+    public static readonly PgTypeInfo BpcharArray = new(BpcharArrayOid, new ArrayType { ElementType = Bpchar });
     public static readonly PgTypeInfo Varchar = new(VarcharOid, new SimpleType());
-    public static readonly PgTypeInfo VarcharArray = new(VarcharArrayOid, new ArrayType(Varchar));
+    public static readonly PgTypeInfo VarcharArray = new(VarcharArrayOid, new ArrayType { ElementType = Varchar });
     public static readonly PgTypeInfo Date = new(DateOid, new SimpleType());
-    public static readonly PgTypeInfo DateArray = new(DateArrayOid, new ArrayType(Date));
+    public static readonly PgTypeInfo DateArray = new(DateArrayOid, new ArrayType { ElementType = Date });
     public static readonly PgTypeInfo Time = new(TimeOid, new SimpleType());
-    public static readonly PgTypeInfo TimeArray = new(TimeArrayOid, new ArrayType(Time));
+    public static readonly PgTypeInfo TimeArray = new(TimeArrayOid, new ArrayType { ElementType = Time });
     public static readonly PgTypeInfo Timestamp = new(TimestampOid, new SimpleType());
-    public static readonly PgTypeInfo TimestampArray = new(TimestampArrayOid, new ArrayType(Timestamp));
+    public static readonly PgTypeInfo TimestampArray = new(TimestampArrayOid, new ArrayType { ElementType = Timestamp });
     public static readonly PgTypeInfo Timestamptz = new(TimestamptzOid, new SimpleType());
-    public static readonly PgTypeInfo TimestamptzArray = new(TimestamptzArrayOid, new ArrayType(Timestamptz));
+    public static readonly PgTypeInfo TimestamptzArray = new(TimestamptzArrayOid, new ArrayType { ElementType = Timestamptz });
     public static readonly PgTypeInfo Interval = new(IntervalOid, new SimpleType());
-    public static readonly PgTypeInfo IntervalArray = new(IntervalArrayOid, new ArrayType(Interval));
+    public static readonly PgTypeInfo IntervalArray = new(IntervalArrayOid, new ArrayType { ElementType = Interval });
     public static readonly PgTypeInfo Timetz = new(TimetzOid, new SimpleType());
-    public static readonly PgTypeInfo TimetzArray = new(TimetzArrayOid, new ArrayType(Timetz));
+    public static readonly PgTypeInfo TimetzArray = new(TimetzArrayOid, new ArrayType { ElementType = Timetz });
     public static readonly PgTypeInfo Bit = new(BitOid, new SimpleType());
-    public static readonly PgTypeInfo BitArray = new(BitArrayOid, new ArrayType(Bit));
+    public static readonly PgTypeInfo BitArray = new(BitArrayOid, new ArrayType { ElementType = Bit });
     public static readonly PgTypeInfo Varbit = new(VarbitOid, new SimpleType());
-    public static readonly PgTypeInfo VarbitArray = new(VarbitArrayOid, new ArrayType(Varbit));
+    public static readonly PgTypeInfo VarbitArray = new(VarbitArrayOid, new ArrayType { ElementType = Varbit });
     public static readonly PgTypeInfo Numeric = new(NumericOid, new SimpleType());
-    public static readonly PgTypeInfo NumericArray = new(NumericArrayOid, new ArrayType(Numeric));
+    public static readonly PgTypeInfo NumericArray = new(NumericArrayOid, new ArrayType { ElementType = Numeric });
     public static readonly PgTypeInfo Record = new(RecordOid, new SimpleType());
-    public static readonly PgTypeInfo RecordArray = new(RecordArrayOid, new ArrayType(Record));
+    public static readonly PgTypeInfo RecordArray = new(RecordArrayOid, new ArrayType { ElementType = Record });
     public static readonly PgTypeInfo Uuid = new(UuidOid, new SimpleType());
-    public static readonly PgTypeInfo UuidArray = new(UuidArrayOid, new ArrayType(Uuid));
+    public static readonly PgTypeInfo UuidArray = new(UuidArrayOid, new ArrayType { ElementType = Uuid });
     public static readonly PgTypeInfo Jsonb = new(JsonbOid, new SimpleType());
-    public static readonly PgTypeInfo JsonbArray = new(JsonbArrayOid, new ArrayType(Jsonb));
-    public static readonly PgTypeInfo Int4Range = new(Int4RangeOid, new RangeType(Int4));
-    public static readonly PgTypeInfo Int4RangeArray = new(Int4RangeArrayOid, new ArrayType(Int4Range));
-    public static readonly PgTypeInfo Numrange = new(NumrangeOid, new RangeType(Numeric));
-    public static readonly PgTypeInfo NumrangeArray = new(NumrangeArrayOid, new ArrayType(Numrange));
-    public static readonly PgTypeInfo Tsrange = new(TsrangeOid, new RangeType(Timestamp));
-    public static readonly PgTypeInfo TsrangeArray = new(TsrangeArrayOid, new ArrayType(Tsrange));
-    public static readonly PgTypeInfo Tstzrange = new(TstzrangeOid, new RangeType(Timestamptz));
-    public static readonly PgTypeInfo TstzrangeArray = new(TstzrangeArrayOid, new ArrayType(Tstzrange));
-    public static readonly PgTypeInfo Daterange = new(DaterangeOid, new RangeType(Date));
-    public static readonly PgTypeInfo DaterangeArray = new(DaterangeArrayOid, new ArrayType(Daterange));
-    public static readonly PgTypeInfo Int8Range = new(Int8RangeOid, new RangeType(Int8));
-    public static readonly PgTypeInfo Int8RangeArray = new(Int8RangeArrayOid, new ArrayType(Int8Range));
+    public static readonly PgTypeInfo JsonbArray = new(JsonbArrayOid, new ArrayType { ElementType = Jsonb });
+    public static readonly PgTypeInfo Int4Range = new(Int4RangeOid, new RangeType { RangeElement = Int4 });
+    public static readonly PgTypeInfo Int4RangeArray = new(Int4RangeArrayOid, new ArrayType { ElementType = Int4Range });
+    public static readonly PgTypeInfo Numrange = new(NumrangeOid, new RangeType { RangeElement = Numeric });
+    public static readonly PgTypeInfo NumrangeArray = new(NumrangeArrayOid, new ArrayType { ElementType = Numrange });
+    public static readonly PgTypeInfo Tsrange = new(TsrangeOid, new RangeType { RangeElement = Timestamp });
+    public static readonly PgTypeInfo TsrangeArray = new(TsrangeArrayOid, new ArrayType { ElementType = Tsrange });
+    public static readonly PgTypeInfo Tstzrange = new(TstzrangeOid, new RangeType { RangeElement = Timestamptz });
+    public static readonly PgTypeInfo TstzrangeArray = new(TstzrangeArrayOid, new ArrayType { ElementType = Tstzrange });
+    public static readonly PgTypeInfo Daterange = new(DaterangeOid, new RangeType { RangeElement = Date });
+    public static readonly PgTypeInfo DaterangeArray = new(DaterangeArrayOid, new ArrayType { ElementType = Daterange });
+    public static readonly PgTypeInfo Int8Range = new(Int8RangeOid, new RangeType { RangeElement = Int8 });
+    public static readonly PgTypeInfo Int8RangeArray = new(Int8RangeArrayOid, new ArrayType { ElementType = Int8Range });
     public static readonly PgTypeInfo Jsonpath = new(JsonpathOid, new SimpleType());
-    public static readonly PgTypeInfo JsonpathArray = new(JsonpathArrayOid, new ArrayType(Jsonpath));
+    public static readonly PgTypeInfo JsonpathArray = new(JsonpathArrayOid, new ArrayType { ElementType = Jsonpath });
     public static readonly PgTypeInfo Money = new(MoneyOid, new SimpleType());
-    public static readonly PgTypeInfo MoneyArray = new(MoneyArrayOid, new ArrayType(Money));
+    public static readonly PgTypeInfo MoneyArray = new(MoneyArrayOid, new ArrayType { ElementType = Money });
     public static readonly PgTypeInfo Xml = new(XmlOid, new SimpleType());
-    public static readonly PgTypeInfo XmlArray = new(XmlArrayOid, new ArrayType(Xml));
+    public static readonly PgTypeInfo XmlArray = new(XmlArrayOid, new ArrayType { ElementType = Xml });
     public static readonly PgTypeInfo Void = new(VoidOid, new PseudoType());
     public static readonly PgTypeInfo Unspecified = new(UnspecifiedOid, new SimpleType());
 
@@ -328,7 +330,7 @@ public class PgTypeInfo : IEquatable<PgTypeInfo>
             XmlArrayOid => XmlArray,
             VoidOid => Void,
             UnspecifiedOid => Unspecified,
-            _ => new PgTypeInfo(oid.Inner, new UnknownType()),
+            _ => new PgTypeInfo(oid, new UnknownType()),
         };
     }
 }

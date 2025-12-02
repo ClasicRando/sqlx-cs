@@ -186,10 +186,10 @@ internal sealed partial class PgStream : IDisposable
     /// or broken.
     /// </exception>
     public IAsyncEnumerable<Either<IDataRow, QueryResult>> ExecuteQuery(
-        IQuery query,
+        IExecutableQuery query,
         CancellationToken cancellationToken)
     {
-        PgExecutableQuery executableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
+        PgExecutableQuery executableQuery = PgException.CheckIfIs<IExecutableQuery, PgExecutableQuery>(query);
         var results = IsSimpleQuery(executableQuery)
             ? SendSimpleQuery(executableQuery.Query, cancellationToken)
             : SendExtendedQuery(

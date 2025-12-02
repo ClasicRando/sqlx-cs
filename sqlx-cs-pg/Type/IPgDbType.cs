@@ -1,4 +1,5 @@
 using Sqlx.Core.Buffer;
+using Sqlx.Core.Types;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -33,7 +34,7 @@ public interface IPgDbType<T> where T : notnull
     static abstract T DecodeText(PgTextValue value);
     
     /// <summary>
-    /// <see cref="PgTypeInfo"/> definition for this type 
+    /// <see cref="PgTypeInfo"/> definition for this type
     /// </summary>
     static abstract PgTypeInfo DbType { get; }
 

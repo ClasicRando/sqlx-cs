@@ -126,25 +126,22 @@ internal class PgExecutableQueryBindGenerator : IIncrementalGenerator
         }
         
         var valueParameterName = bindMethodToGenerate.ValueParameterName;
-        var signature = $"public static partial IQuery {bindMethodToGenerate.Name}(this IQuery query, {bindMethodToGenerate.ValueType.ToDisplayString()}{(bindMethodToGenerate.IsValueNullable ? '?' : string.Empty)} {valueParameterName})";
+        var signature = $"public static partial IBindable {bindMethodToGenerate.Name}(this IBindable bindable, {bindMethodToGenerate.ValueType.ToDisplayString()}{(bindMethodToGenerate.IsValueNullable ? '?' : string.Empty)} {valueParameterName})";
         if (bindMethodToGenerate.IsValueNullable)
         {
-            var isNullableCheck = bindMethodToGenerate.ValueType.IsValueType;
             return $$"""
                  {{signature}}
                  {
-                     return {{(isNullableCheck ? $"!{valueParameterName}.HasValue" : $"{valueParameterName} is null")}}
-                         ? query.BindNull<{{valueTypeName}}>()
-                         : PgException.CheckIfIs<IQuery, PgExecutableQuery>(query)
-                             .Encode<{{valueTypeName}}, {{bindTypeName}}>({{valueParameterName}}{{(isNullableCheck ? ".Value" : "")}});
+                     return PgException.CheckIfIs<IBindable, IPgBindable>(bindable)
+                             .BindPgNullable{{(bindMethodToGenerate.ValueType.IsValueType ? "Struct" : "Class")}}<{{valueTypeName}}, {{bindTypeName}}>({{valueParameterName}});
                  }
                  """;
         }
 
         return $"""
              {signature} =>
-                 PgException.CheckIfIs<IQuery, PgExecutableQuery>(query)
-                     .Encode<{valueTypeName}, {bindTypeName}>({valueParameterName});
+                 PgException.CheckIfIs<IBindable, IPgBindable>(bindable)
+                     .BindPg<{valueTypeName}, {bindTypeName}>({valueParameterName});
              """;
     }
 }

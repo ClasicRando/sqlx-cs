@@ -35,7 +35,7 @@ public static class ExecutableQuery
                 }
             }
 
-            throw new Exception("Query returned no rows");
+            throw new PgException("Query returned no rows");
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ public static class ExecutableQuery
                 }
             }
 
-            throw new Exception("Query returned no rows");
+            throw new PgException("Query returned no rows");
         }
     }
 }

@@ -1,4 +1,6 @@
+using Sqlx.Core.Connection;
 using Sqlx.Core.Query;
+using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Type;
 
@@ -20,12 +22,21 @@ public sealed partial class PgConnectionPool
                 AND n.nspname = $2
                 AND t.typcategory = 'E'
             """;
-        using IExecutableQuery typeOidQuery = CreateQuery(pgEnumTypeByName);
+        await using IConnection connection = CreateConnection();
+        using IExecutableQuery typeOidQuery = connection.CreateQuery(pgEnumTypeByName);
         AddTypeNameAndSchemaToQuery<TType, TEnum>(typeOidQuery);
         
-        var oid = await typeOidQuery.ExecuteScalarPg<PgOid>(cancellationToken);
-        
-        TType.DbType = new PgTypeInfo(oid.Inner, new EnumType());
+        try
+        {
+            var oid = await typeOidQuery.ExecuteScalarPg<PgOid>(cancellationToken);
+            TType.DbType = new PgTypeInfo(oid.Inner, new EnumType());
+        }
+        catch (PgException e)
+        {
+            throw new PgException(
+                "Failed to map enum. Make sure the type name is correct and include the schema name if necessary",
+                e);
+        }
     }
 
     public async Task MapComposite<TComposite>(CancellationToken cancellationToken = default)
@@ -41,15 +52,43 @@ public sealed partial class PgConnectionPool
                 AND n.nspname = $2
                 AND t.typcategory = 'C'
             """;
-        using IExecutableQuery typeOidQuery = CreateQuery(pgCompositeTypeByName);
+        const string pgCompositeAttributeOidsByOid =
+            """
+            select a.attname, a.atttypid
+            from pg_type t
+            join pg_attribute a on t.typrelid = a.attrelid
+            where
+                t.oid = $1
+                and t.typcategory = 'C'
+                and a.attnum > 0
+            """;
+        await using IConnection connection = CreateConnection();
+        using IExecutableQuery typeOidQuery = connection.CreateQuery(pgCompositeTypeByName);
         AddTypeNameAndSchemaToQuery<TComposite, TComposite>(typeOidQuery);
+
+        PgOid oid;
+        try
+        {
+            oid = await typeOidQuery.ExecuteScalarPg<PgOid>(cancellationToken);
+        }
+        catch (PgException e)
+        {
+            throw new PgException(
+                "Failed to map composite. Make sure the type name is correct and include the schema name if necessary",
+                e);
+        }
         
-        var oid = await typeOidQuery.ExecuteScalarPg<PgOid>(cancellationToken);
+        using IExecutableQuery attributeOidsQuery = connection.CreateQuery(pgCompositeAttributeOidsByOid);
+        attributeOidsQuery.Bind(oid);
         
-        TComposite.DbType = new PgTypeInfo(oid.Inner, new CompositeType());
+        var attributeOids = await attributeOidsQuery.Fetch<CompositeType.Attribute>(cancellationToken)
+            .ToArrayAsync(cancellationToken);
+        TComposite.DbType = new PgTypeInfo(
+            oid.Inner,
+            new CompositeType { Attributes = attributeOids});
     }
 
-    private static void AddTypeNameAndSchemaToQuery<TType, TValue>(IQuery query)
+    private static void AddTypeNameAndSchemaToQuery<TType, TValue>(IBindable query)
         where TType : IPgUdt<TValue>
         where TValue : notnull
     {

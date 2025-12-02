@@ -3,9 +3,9 @@ using Sqlx.Core.Result;
 namespace Sqlx.Core.Query;
 
 /// <summary>
-/// Super interface of <see cref="IQuery"/> that allows for executing the query.
+/// Super interface of <see cref="IBindable"/> that allows for executing the query.
 /// </summary>
-public interface IExecutableQuery : IQuery
+public interface IExecutableQuery : IBindable
 {
     /// <summary>
     /// Raw query to submit for execution

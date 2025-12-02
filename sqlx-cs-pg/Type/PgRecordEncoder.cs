@@ -1,24 +1,29 @@
 using System.Text.Json.Serialization.Metadata;
-using Sqlx.Core;
 using Sqlx.Core.Query;
-using Sqlx.Core.Result;
 using Sqlx.Postgres.Exceptions;
-using Sqlx.Postgres.Type;
+using Sqlx.Postgres.Pool;
+using Sqlx.Postgres.Query;
 
-namespace Sqlx.Postgres.Query;
+namespace Sqlx.Postgres.Type;
 
-/// <summary>
-/// <see cref="IExecutableQuery"/> implementation for Postgres. Parameters are encoded into a
-/// <see cref="PgParameterBuffer"/> and the query is executed using the <see cref="IQueryExecutor"/>
-/// supplied to the constructor.
-/// </summary>
-internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IExecutableQuery, IPgBindable
+public sealed class PgRecordEncoder : IPgBindable
 {
-    private IQueryExecutor? _queryExecutor = queryExecutor;
-    public string Query { get; } = sql;
+    private readonly CompositeType.Attribute[] _attributes;
+    private readonly PgParameterBuffer _parameterBuffer = new();
 
-    public PgParameterBuffer ParameterBuffer { get; } = new();
+    public ReadOnlySpan<byte> Data => _parameterBuffer.Span;
 
+    public PgRecordEncoder(PgTypeInfo typeInfo)
+    {
+        if (typeInfo.TypeKind is not CompositeType compositeType)
+        {
+            throw new PgException(
+                $"Attempted to encode a type using a {nameof(PgRecordEncoder)} but that type if not a composite or the composite type was not mapped to the connection pool using {nameof(PgConnectionPool.MapComposite)}");
+        }
+        _attributes = compositeType.Attributes;
+        _parameterBuffer.WriteInt(_attributes.Length);
+    }
+    
     public IBindable Bind(bool value)
     {
         return BindPg<bool, PgBool>(value);
@@ -86,7 +91,7 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
 
     public IBindable Bind(ReadOnlySpan<byte> value)
     {
-        ParameterBuffer.EncodeBytes(value);
+        _parameterBuffer.EncodeBytes(value);
         return this;
     }
 
@@ -97,7 +102,7 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
 
     public IBindable Bind(ReadOnlySpan<char> value)
     {
-        ParameterBuffer.EncodeChars(value);
+        _parameterBuffer.EncodeChars(value);
         return this;
     }
 
@@ -110,37 +115,31 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
     {
         if (value is null)
         {
-            ParameterBuffer.EncodeNull();
+            _parameterBuffer.EncodeNull();
             return this;
         }
-        ParameterBuffer.EncodeJsonValue(value, typeInfo);
+        _parameterBuffer.EncodeJsonValue(value, typeInfo);
         return this;
     }
 
     public IBindable BindNull<T>() where T : notnull
     {
-        ParameterBuffer.EncodeNull();
+        _parameterBuffer.WriteOid(_attributes[_parameterBuffer.ParameterCount].TypeOid);
+        _parameterBuffer.EncodeNull();
         return this;
-    }
-
-    public IBindable BindPg<TValue, TType>(TValue value)
-        where TValue : notnull
-        where TType : IPgDbType<TValue>
-    {
-        ParameterBuffer.EncodeValue<TValue, TType>(value);
-        return this;
-    }
-
-    public Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> Execute(
-        CancellationToken cancellationToken)
-    {
-        PgException.ThrowIfNull(_queryExecutor);
-        return _queryExecutor.ExecuteQuery(this, cancellationToken);
     }
 
     public void Dispose()
     {
-        ParameterBuffer.Dispose();
-        _queryExecutor = null;
+        _parameterBuffer.Dispose();
+    }
+    
+    public IBindable BindPg<TValue, TType>(TValue value)
+        where TType : IPgDbType<TValue>
+        where TValue : notnull
+    {
+        _parameterBuffer.WriteOid(TType.DbType.TypeOid);
+        _parameterBuffer.EncodeValue<TValue, TType>(value);
+        return this;
     }
 }

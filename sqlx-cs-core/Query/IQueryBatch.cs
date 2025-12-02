@@ -121,12 +121,12 @@ public interface IQueryBatch : IDisposable
     bool WrapBatchInTransaction { get; set; }
 
     /// <summary>
-    /// Add a new <see cref="IQuery"/> to this batch and allow for the caller to bind parameters as
+    /// Add a new <see cref="IBindable"/> to this batch and allow for the caller to bind parameters as
     /// needed to the query.
     /// </summary>
     /// <param name="sql">Query to execute</param>
     /// <returns>Query to bind parameters to (if needed)</returns>
-    IQuery CreateQuery(string sql);
+    IBindable CreateQuery(string sql);
 
     /// <summary>
     /// Execute the query batch and yield a stream of <see cref="IDataRow"/>s and

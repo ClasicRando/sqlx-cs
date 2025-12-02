@@ -11,7 +11,7 @@ namespace Sqlx.Core.Pool;
 /// the query execution so make sure to pull all query results as soon as possible to ensure you are
 /// not starving the connection pool.
 /// </summary>
-public interface IConnectionPool : IQueryExecutor, IAsyncDisposable
+public interface IConnectionPool : IAsyncDisposable
 {
     /// <summary>
     /// Create a connection for use in querying this pool's database. The created connection is

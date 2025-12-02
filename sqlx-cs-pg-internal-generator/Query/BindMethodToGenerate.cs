@@ -8,7 +8,7 @@ public class BindMethodToGenerate
         new(
             "SQLxPG004",
             "Annotated method does not conform to the bind method template",
-            "'{0}' must accept an IQuery as this and a value. {1}",
+            "'{0}' must accept an IBindable as this and a value. {1}",
             "sqlx-cs-pg Generation",
             DiagnosticSeverity.Error,
             true);
@@ -78,14 +78,14 @@ public class BindMethodToGenerate
         }
 
         IParameterSymbol queryParameter = _templateMethod.Parameters[0];
-        if (queryParameter.Type.Name != "IQuery")
+        if (queryParameter.Type.Name != "IBindable")
         {
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     MethodIsNotBindTemplate,
                     Location.None,
                     Name,
-                    "First parameter must be IQuery"));
+                    "First parameter must be IBindable"));
             return false;
         }
 

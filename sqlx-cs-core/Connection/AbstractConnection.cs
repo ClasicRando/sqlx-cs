@@ -74,7 +74,7 @@ public abstract class AbstractConnection : IConnection, IDisposable
     public abstract IQueryBatch CreateQueryBatch();
 
     public abstract Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
-        IQuery query,
+        IExecutableQuery query,
         CancellationToken cancellationToken);
 
     public abstract Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQueryBatch(

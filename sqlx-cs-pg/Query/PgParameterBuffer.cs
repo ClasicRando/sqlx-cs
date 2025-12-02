@@ -90,6 +90,16 @@ internal sealed class PgParameterBuffer : IDisposable
         _pgTypes.Add(PgJson<T>.DbType);
     }
 
+    public void WriteOid(PgOid oid)
+    {
+        _buffer.WriteUInt(oid.Inner);
+    }
+
+    public void WriteInt(int value)
+    {
+        _buffer.WriteInt(value);
+    }
+
     public void Dispose()
     {
         _buffer.Dispose();

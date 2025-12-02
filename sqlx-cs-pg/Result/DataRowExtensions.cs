@@ -10,38 +10,41 @@ namespace Sqlx.Postgres.Result;
 
 public static partial class DataRowExtensions
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TDecode? GetPgDecode<TDecode>(this IDataRow dataRow, int index)
-        where TDecode : IPgDbType<TDecode>
+    extension(IDataRow dataRow)
     {
-        if (dataRow.IsNull(index))
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TDecode? GetPgDecode<TDecode>(int index)
+            where TDecode : IPgDbType<TDecode>
         {
-            return default;
+            if (dataRow.IsNull(index))
+            {
+                return default;
+            }
+            PgDataRow pgDataRow = PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow);
+            return pgDataRow.DecodeNotNull<TDecode, TDecode>(index);
         }
-        PgDataRow pgDataRow = PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow);
-        return pgDataRow.DecodeNotNull<TDecode, TDecode>(index);
-    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TDecode GetPgDecodeNotNull<TDecode>(this IDataRow dataRow, int index)
-        where TDecode : IPgDbType<TDecode>
-    {
-        PgDataRow pgDataRow = PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow);
-        return pgDataRow.DecodeNotNull<TDecode, TDecode>(index);
-    }
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TDecode? GetPgDecode<TDecode>(this IDataRow dataRow, string name)
-        where TDecode : IPgDbType<TDecode>
-    {
-        return GetPgDecode<TDecode>(dataRow, dataRow.IndexOf(name));
-    }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TDecode GetPgDecodeNotNull<TDecode>(int index)
+            where TDecode : IPgDbType<TDecode>
+        {
+            PgDataRow pgDataRow = PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow);
+            return pgDataRow.DecodeNotNull<TDecode, TDecode>(index);
+        }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TDecode GetPgDecodeNotNull<TDecode>(this IDataRow dataRow, string name)
-        where TDecode : IPgDbType<TDecode>
-    {
-        return GetPgDecodeNotNull<TDecode>(dataRow, dataRow.IndexOf(name));
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TDecode? GetPgDecode<TDecode>(string name)
+            where TDecode : IPgDbType<TDecode>
+        {
+            return GetPgDecode<TDecode>(dataRow, dataRow.IndexOf(name));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TDecode GetPgDecodeNotNull<TDecode>(string name)
+            where TDecode : IPgDbType<TDecode>
+        {
+            return GetPgDecodeNotNull<TDecode>(dataRow, dataRow.IndexOf(name));
+        }
     }
 
     [GeneratePgDecodeMethod]

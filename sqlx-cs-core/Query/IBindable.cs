@@ -10,7 +10,7 @@ namespace Sqlx.Core.Query;
 /// are encoded into a buffer within the query instance and that buffer can be disposed of to save
 /// memory.
 /// </summary>
-public interface IQuery : IDisposable
+public interface IBindable : IDisposable
 {
     /// <summary>
     /// Bind boolean parameter to query. This puts that value as the nth parameter in the
@@ -20,7 +20,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">Boolean value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(bool value);
+    IBindable Bind(bool value);
 
     /// <summary>
     /// Bind sbyte parameter to query. This puts that value as the nth parameter in the
@@ -30,7 +30,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">Sbyte value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(sbyte value);
+    IBindable Bind(sbyte value);
 
     /// <summary>
     /// Bind short parameter to query. This puts that value as the nth parameter in the
@@ -39,7 +39,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">Short value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(short value);
+    IBindable Bind(short value);
 
     /// <summary>
     /// Bind int parameter to query. This puts that value as the nth parameter in the parameterized
@@ -48,7 +48,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">Int value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(int value);
+    IBindable Bind(int value);
 
     /// <summary>
     /// Bind long parameter to query. This puts that value as the nth parameter in the
@@ -57,7 +57,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">Long value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(long value);
+    IBindable Bind(long value);
 
     /// <summary>
     /// Bind float parameter to query. This puts that value as the nth parameter in the
@@ -66,7 +66,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">Float value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(float value);
+    IBindable Bind(float value);
 
     /// <summary>
     /// Bind double parameter to query. This puts that value as the nth parameter in the
@@ -75,7 +75,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">Double value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(double value);
+    IBindable Bind(double value);
 
     /// <summary>
     /// Bind TimeOnly parameter to query. This puts that value as the nth parameter in the
@@ -84,7 +84,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">TimeOnly value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(TimeOnly value);
+    IBindable Bind(TimeOnly value);
 
     /// <summary>
     /// Bind DateOnly parameter to query. This puts that value as the nth parameter in the
@@ -93,7 +93,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">DateOnly value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(DateOnly value);
+    IBindable Bind(DateOnly value);
 
     /// <summary>
     /// Bind DateTime parameter to query. This puts that value as the nth parameter in the
@@ -102,7 +102,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">DateTime value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(DateTime value);
+    IBindable Bind(DateTime value);
 
     /// <summary>
     /// Bind DateTimeOffset parameter to query. This puts that value as the nth parameter in the
@@ -111,7 +111,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">DateTimeOffset value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(DateTimeOffset value);
+    IBindable Bind(DateTimeOffset value);
 
     /// <summary>
     /// Bind decimal parameter to query. This puts that value as the nth parameter in the
@@ -120,7 +120,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">Decimal value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(decimal value);
+    IBindable Bind(decimal value);
 
     /// <summary>
     /// Bind byte[] parameter to query. This puts that value as the nth parameter in the
@@ -129,7 +129,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">Byte[] value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(byte[]? value);
+    IBindable Bind(byte[]? value);
 
     /// <summary>
     /// Bind ReadOnlySpan&lt;byte&gt; parameter to query. This puts that value as the nth parameter
@@ -138,7 +138,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">ReadOnlySpan&lt;byte&gt; value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(ReadOnlySpan<byte> value);
+    IBindable Bind(ReadOnlySpan<byte> value);
 
     /// <summary>
     /// Bind string parameter to query. This puts that value as the nth parameter in the
@@ -147,7 +147,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">String value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(string? value);
+    IBindable Bind(string? value);
 
     /// <summary>
     /// Bind ReadOnlySpan&lt;char&gt; parameter to query. This puts that value as the nth parameter
@@ -156,7 +156,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">ReadOnlySpan&lt;char&gt; value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(ReadOnlySpan<char> value);
+    IBindable Bind(ReadOnlySpan<char> value);
 
     /// <summary>
     /// Bind Guid parameter to query. This puts that value as the nth parameter in the parameterized
@@ -167,7 +167,7 @@ public interface IQuery : IDisposable
     /// </summary>
     /// <param name="value">Guid value</param>
     /// <returns>This query instance for method chaining</returns>
-    IQuery Bind(Guid value);
+    IBindable Bind(Guid value);
 
     /// <summary>
     /// Bind <typeparamref name="T"/> parameter to query as a JSON. This puts that value as the nth
@@ -180,7 +180,7 @@ public interface IQuery : IDisposable
     /// <param name="typeInfo">Optional type metadata for JSON serialization</param>
     /// <typeparam name="T">CLR type to encode as JSON</typeparam>
     /// <returns>This query instance for method chaining</returns>
-    IQuery BindJson<T>(T? value, JsonTypeInfo<T>? typeInfo = null) where T : notnull;
+    IBindable BindJson<T>(T? value, JsonTypeInfo<T>? typeInfo = null) where T : notnull;
 
     /// <summary>
     /// Bind a null value to the query. This puts a null as the nth parameter in the parameterized
@@ -191,5 +191,5 @@ public interface IQuery : IDisposable
     /// this type to inform query preparing.
     /// </typeparam>
     /// <returns></returns>
-    IQuery BindNull<T>() where T : notnull;
+    IBindable BindNull<T>() where T : notnull;
 }

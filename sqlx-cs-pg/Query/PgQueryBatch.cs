@@ -5,7 +5,7 @@ using Sqlx.Core.Result;
 namespace Sqlx.Postgres.Query;
 
 /// <summary>
-/// <see cref="IQueryBatch"/> implementation for Postgres. <see cref="IQuery"/> instances returned
+/// <see cref="IQueryBatch"/> implementation for Postgres. <see cref="IBindable"/> instances returned
 /// are always <see cref="PgExecutableQuery"/> and the queries are executed using the
 /// <see cref="IQueryExecutor"/> supplied to the constructor.
 /// </summary>
@@ -19,7 +19,7 @@ public sealed class PgQueryBatch(IQueryExecutor queryExecutor) : IQueryBatch
 
     internal IEnumerable<PgExecutableQuery> Queries => _queries;
     
-    public IQuery CreateQuery(string sql)
+    public IBindable CreateQuery(string sql)
     {
         CheckDisposed();
         var query = new PgExecutableQuery(sql, _queryExecutor!);

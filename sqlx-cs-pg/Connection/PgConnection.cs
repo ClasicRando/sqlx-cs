@@ -57,7 +57,7 @@ public sealed class PgConnection : AbstractConnection
     }
 
     public override async Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
-        IQuery query,
+        IExecutableQuery query,
         CancellationToken cancellationToken)
     {
         CheckDisposed();

@@ -31,7 +31,7 @@ public interface IQueryExecutor
     /// <param name="cancellationToken">token to cancel the async operation</param>
     /// <returns>an async stream of query result items</returns>
     Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
-        IQuery query,
+        IExecutableQuery query,
         CancellationToken cancellationToken);
     
     /// <summary>
