@@ -39,8 +39,6 @@ public partial class PgConnectionTest
     {
         await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
 
-        await InitializeStoredProcedures(connection);
-
         using IExecutableQuery procedureCall = connection.CreateQuery(OutProcedureCallSimpleQuery);
         var flow = await connection.ExecuteQuery(
             procedureCall,
@@ -63,8 +61,6 @@ public partial class PgConnectionTest
              SELECT 1 test_i;
              """;
         await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
-
-        await InitializeStoredProcedures(connection);
 
         using IExecutableQuery multiStatement = connection.CreateQuery(multiStatementQuery);
         var flow = await connection.ExecuteQuery(

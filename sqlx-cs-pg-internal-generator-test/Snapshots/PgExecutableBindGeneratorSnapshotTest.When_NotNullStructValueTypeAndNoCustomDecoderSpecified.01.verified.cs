@@ -10,7 +10,7 @@ namespace Sqlx.Postgres.Query;
 
 public static partial class Query
 {
-    public static partial IQuery Bind(this IQuery query, PgTimeTz value) =>
-        PgException.CheckIfIs<IQuery, PgExecutableQuery>(query)
-            .Encode<PgTimeTz, PgTimeTz>(value);
+    public static partial IBindable Bind(this IBindable bindable, PgTimeTz value) =>
+        PgException.CheckIfIs<IBindable, IPgBindable>(bindable)
+            .BindPg<PgTimeTz, PgTimeTz>(value);
 }

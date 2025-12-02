@@ -40,8 +40,6 @@ public partial class PgConnectionTest
         const string procedureCallQuery = $"CALL public.{OutProcedureName}($1, $2);";
         await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
 
-        await InitializeStoredProcedures(connection);
-
         using IExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall
             .Bind((int?)null)
@@ -64,8 +62,6 @@ public partial class PgConnectionTest
     {
         const string procedureCallQuery = $"CALL public.{InOutProcedureName}($1, $2);";
         await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
-
-        await InitializeStoredProcedures(connection);
 
         using IExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall

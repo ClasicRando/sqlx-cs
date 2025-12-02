@@ -19,7 +19,6 @@ public partial class PgConnectionTest
             Name = "name",
             Title = null,
         };
-        await _databaseFixture.BasicPool.MapComposite<TestCompositeType>(TestContext.Current.CancellationToken);
         await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
         using IExecutableQuery query = connection.CreateQuery("SELECT $1;");
         query.BindPg(value);
@@ -42,6 +41,24 @@ public partial class PgConnectionTest
         using IExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalarPg<TestCompositeType>();
         Assert.Equal(value, result);
+    }
+
+    private async Task CreateCompositeType()
+    {
+        const string createTypeQuery =
+            """
+            DROP TYPE IF EXISTS public.composite_type;
+            CREATE TYPE public.composite_type AS
+            (
+                id int,
+                name text,
+                title text
+            );
+            """;
+        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IExecutableQuery query = connection.CreateQuery(createTypeQuery);
+        await query.ExecuteNonQuery();
+        await _databaseFixture.BasicPool.MapComposite<TestCompositeType>(TestContext.Current.CancellationToken);
     }
 }
 

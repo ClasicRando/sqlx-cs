@@ -14,6 +14,8 @@ public partial class PgConnectionTest
     public PgConnectionTest(DatabaseFixture databaseFixture)
     {
         _databaseFixture = databaseFixture;
+        InitializeStoredProcedures().GetAwaiter().GetResult();
+        CreateCompositeType().GetAwaiter().GetResult();
     }
     
     private const string OutProcedureName = "test_proc_out";
@@ -42,8 +44,9 @@ public partial class PgConnectionTest
          $$;
          """;
 
-    private static async Task InitializeStoredProcedures(IConnection connection)
+    private async Task InitializeStoredProcedures()
     {
+        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
         using IExecutableQuery setUp = connection.CreateQuery(SetUpQuery);
         await setUp.ExecuteNonQuery();
     }

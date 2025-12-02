@@ -17,7 +17,7 @@ public class PgExecutableBindGeneratorSnapshotTest
             public static class TestExtensions
             {
                 [GeneratePgBindMethod]
-                public static partial IQuery Bind(this IQuery query, PgTimeTz value);
+                public static partial IBindable Bind(this IBindable query, PgTimeTz value);
             }
             """;
 
@@ -36,7 +36,7 @@ public class PgExecutableBindGeneratorSnapshotTest
             public static class TestExtensions
             {
                 [GeneratePgBindMethod(Encoder = typeof(PgUuid))]
-                public static partial IQuery Bind(this IQuery query, System.Guid value);
+                public static partial IBindable Bind(this IBindable query, System.Guid value);
             }
             """;
 
@@ -57,7 +57,7 @@ public class PgExecutableBindGeneratorSnapshotTest
              public static class TestExtensions
              {
                  [GeneratePgBindMethod]
-                 public static partial IQuery Bind(this IQuery query, PgTimeTz? value);
+                 public static partial IBindable Bind(this IBindable query, PgTimeTz? value);
              }
              """;
 
@@ -76,7 +76,7 @@ public class PgExecutableBindGeneratorSnapshotTest
              public static class TestExtensions
              {
                  [GeneratePgBindMethod(Encoder = typeof(PgUuid))]
-                 public static partial IQuery Bind(this IQuery query, System.Guid? value);
+                 public static partial IBindable Bind(this IBindable query, System.Guid? value);
              }
              """;
 
@@ -95,7 +95,7 @@ public class PgExecutableBindGeneratorSnapshotTest
              public static class TestExtensions
              {
                  [GeneratePgBindMethod]
-                 public static partial IQuery Bind(this IQuery query, string? value);
+                 public static partial IBindable Bind(this IBindable query, string? value);
              }
              """;
 
@@ -114,7 +114,7 @@ public class PgExecutableBindGeneratorSnapshotTest
              public static class TestExtensions
              {
                  [GeneratePgBindMethod(Encoder = typeof(PgString))]
-                 public static partial IQuery Bind(this IQuery query, string? value);
+                 public static partial IBindable Bind(this IBindable query, string? value);
              }
              """;
 
@@ -135,7 +135,7 @@ public class PgExecutableBindGeneratorSnapshotTest
              public static class TestExtensions
              {
                  [GeneratePgBindMethod]
-                 public static partial IQuery Bind(this IQuery query, PgTimeTz?[]? value);
+                 public static partial IBindable Bind(this IBindable query, PgTimeTz?[]? value);
              }
              """;
 
@@ -154,7 +154,7 @@ public class PgExecutableBindGeneratorSnapshotTest
              public static class TestExtensions
              {
                  [GeneratePgBindMethod(Encoder = typeof(PgUuid))]
-                 public static partial IQuery Bind(this IQuery query, System.Guid?[]? value);
+                 public static partial IBindable Bind(this IBindable query, System.Guid?[]? value);
              }
              """;
 
@@ -173,7 +173,7 @@ public class PgExecutableBindGeneratorSnapshotTest
              public static class TestExtensions
              {
                  [GeneratePgBindMethod]
-                 public static partial IQuery Bind(this IQuery query, string?[]? value);
+                 public static partial IBindable Bind(this IBindable query, string?[]? value);
              }
              """;
 
@@ -192,7 +192,7 @@ public class PgExecutableBindGeneratorSnapshotTest
              public static class TestExtensions
              {
                  [GeneratePgBindMethod(Encoder = typeof(PgString))]
-                 public static partial IQuery Bind(this IQuery query, string?[]? value);
+                 public static partial IBindable Bind(this IBindable query, string?[]? value);
              }
              """;
 

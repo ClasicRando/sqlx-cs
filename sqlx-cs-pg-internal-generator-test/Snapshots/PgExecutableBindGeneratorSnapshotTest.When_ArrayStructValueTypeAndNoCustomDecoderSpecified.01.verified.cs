@@ -10,11 +10,9 @@ namespace Sqlx.Postgres.Query;
 
 public static partial class Query
 {
-    public static partial IQuery Bind(this IQuery query, PgTimeTz?[]? value)
+    public static partial IBindable Bind(this IBindable bindable, PgTimeTz?[]? value)
     {
-        return value is null
-            ? query.BindNull<PgTimeTz?[]>()
-            : PgException.CheckIfIs<IQuery, PgExecutableQuery>(query)
-                .Encode<PgTimeTz?[], PgArrayTypeStruct<PgTimeTz, PgTimeTz>>(value);
+        return PgException.CheckIfIs<IBindable, IPgBindable>(bindable)
+                .BindPgNullableClass<PgTimeTz?[], PgArrayTypeStruct<PgTimeTz, PgTimeTz>>(value);
     }
 }
