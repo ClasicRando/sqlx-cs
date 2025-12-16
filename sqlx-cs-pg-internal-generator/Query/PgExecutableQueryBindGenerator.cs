@@ -72,7 +72,7 @@ internal class PgExecutableQueryBindGenerator : IIncrementalGenerator
             
             namespace Sqlx.Postgres.Query;
             
-            public static partial class Query
+            public static partial class Bindable
             {
             """);
         foreach (BindMethodToGenerate? methodToGenerate in methodsToGenerate)
@@ -126,22 +126,24 @@ internal class PgExecutableQueryBindGenerator : IIncrementalGenerator
         }
         
         var valueParameterName = bindMethodToGenerate.ValueParameterName;
-        var signature = $"public static partial IBindable {bindMethodToGenerate.Name}(this IBindable bindable, {bindMethodToGenerate.ValueType.ToDisplayString()}{(bindMethodToGenerate.IsValueNullable ? '?' : string.Empty)} {valueParameterName})";
+        var signature = $"public static partial void {bindMethodToGenerate.Name}(this IBindable bindable, {bindMethodToGenerate.ValueType.ToDisplayString()}{(bindMethodToGenerate.IsValueNullable ? '?' : string.Empty)} {valueParameterName})";
         if (bindMethodToGenerate.IsValueNullable)
         {
             return $$"""
                  {{signature}}
                  {
-                     return PgException.CheckIfIs<IBindable, IPgBindable>(bindable)
+                     PgException.CheckIfIs<IBindable, IPgBindable>(bindable)
                              .BindPgNullable{{(bindMethodToGenerate.ValueType.IsValueType ? "Struct" : "Class")}}<{{valueTypeName}}, {{bindTypeName}}>({{valueParameterName}});
                  }
                  """;
         }
 
-        return $"""
-             {signature} =>
+        return $$"""
+             {{signature}}
+             {
                  PgException.CheckIfIs<IBindable, IPgBindable>(bindable)
-                     .BindPg<{valueTypeName}, {bindTypeName}>({valueParameterName});
+                     .BindPg<{{valueTypeName}}, {{bindTypeName}}>({{valueParameterName}});
+             }
              """;
     }
 }

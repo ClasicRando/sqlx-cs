@@ -17,9 +17,8 @@ public partial class PgConnectionTest
             """;
         await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
         using IExecutableQuery query = connection.CreateQuery(extendedQuery);
-        query
-            .Bind(1)
-            .Bind(10);
+        query.Bind(1);
+        query.Bind(10);
         var flow = await connection.ExecuteQuery(query, TestContext.Current.CancellationToken);
         var results = await flow.CollectResults();
         Assert.Single(results);
@@ -41,9 +40,8 @@ public partial class PgConnectionTest
         await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
 
         using IExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
-        procedureCall
-            .Bind((int?)null)
-            .Bind((int?)null);
+        procedureCall.Bind((int?)null);
+        procedureCall.Bind((int?)null);
         var flow = await connection.ExecuteQuery(
             procedureCall,
             TestContext.Current.CancellationToken);
@@ -64,9 +62,8 @@ public partial class PgConnectionTest
         await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
 
         using IExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
-        procedureCall
-            .Bind(2)
-            .Bind("start");
+        procedureCall.Bind(2);
+        procedureCall.Bind("start");
         var flow = await connection.ExecuteQuery(
             procedureCall,
             TestContext.Current.CancellationToken);

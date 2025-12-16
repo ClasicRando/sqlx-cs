@@ -8,9 +8,11 @@ using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Query;
 
-public static partial class Query
+public static partial class Bindable
 {
-    public static partial IBindable Bind(this IBindable bindable, PgTimeTz value) =>
+    public static partial void Bind(this IBindable bindable, PgTimeTz value)
+    {
         PgException.CheckIfIs<IBindable, IPgBindable>(bindable)
             .BindPg<PgTimeTz, PgTimeTz>(value);
+    }
 }

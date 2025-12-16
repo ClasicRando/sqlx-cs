@@ -3,193 +3,144 @@ using System.Text.Json.Serialization.Metadata;
 namespace Sqlx.Core.Query;
 
 /// <summary>
-/// Implementors represent a query to be submitted to the database. It doesn't actually provide the
-/// ability to execute the query, but you can get the original query and bind parameters to the
-/// query. This means the object must represent a raw query statement and a prepared query statement
-/// as a single type. Users should dispose of the query after execution since the bound parameters
-/// are encoded into a buffer within the query instance and that buffer can be disposed of to save
-/// memory.
+/// Implementors represent a type that can bind values to itself for use in parameterized queries
+/// and database specific UDTs. Users should dispose of the query after execution since the bound
+/// parameters are encoded into a buffer within the query instance and that buffer can be disposed
+/// of to save/reuse memory.
 /// </summary>
 public interface IBindable : IDisposable
 {
     /// <summary>
-    /// Bind boolean parameter to query. This puts that value as the nth parameter in the
-    /// parameterized query, where n is the current parameter as a 1-based index. The <c>BOOLEAN</c>
-    /// type is not consistent across all databases so the driver specific implementation might
-    /// vary.
+    /// Bind a boolean value. The <c>BOOLEAN</c> type is not consistent across all databases so the
+    /// driver specific implementation might vary.
     /// </summary>
     /// <param name="value">Boolean value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(bool value);
+    void Bind(bool value);
 
     /// <summary>
-    /// Bind sbyte parameter to query. This puts that value as the nth parameter in the
-    /// parameterized query, where n is the current parameter as a 1-based index. This maps to the
-    /// <c>TINYINT</c> type but can vary between database implementations since not all use
-    /// <c>TINYINT</c>
+    /// Bind a sbyte value. This maps to the <c>TINYINT</c> type but can vary between database
+    /// implementations since not all use <c>TINYINT</c>
     /// </summary>
     /// <param name="value">Sbyte value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(sbyte value);
+    void Bind(sbyte value);
 
     /// <summary>
-    /// Bind short parameter to query. This puts that value as the nth parameter in the
-    /// parameterized query, where n is the current parameter as a 1-based index. This maps to the
-    /// <c>SMALLINT</c> type.
+    /// Bind a short value. This maps to the <c>SMALLINT</c> type.
     /// </summary>
     /// <param name="value">Short value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(short value);
+    void Bind(short value);
 
     /// <summary>
-    /// Bind int parameter to query. This puts that value as the nth parameter in the parameterized
-    /// query, where n is the current parameter as a 1-based index. This maps to the <c>INTEGER</c>
-    /// type.
+    /// Bind an int value. This maps to the <c>INTEGER</c> type.
     /// </summary>
     /// <param name="value">Int value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(int value);
+    void Bind(int value);
 
     /// <summary>
-    /// Bind long parameter to query. This puts that value as the nth parameter in the
-    /// parameterized query, where n is the current parameter as a 1-based index. This maps to the
-    /// <c>BIGINT</c> type.
+    /// Bind a long value. This maps to the <c>BIGINT</c> type.
     /// </summary>
     /// <param name="value">Long value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(long value);
+    void Bind(long value);
 
     /// <summary>
-    /// Bind float parameter to query. This puts that value as the nth parameter in the
-    /// parameterized query, where n is the current parameter as a 1-based index. This maps to the
-    /// <c>REAL</c> type.
+    /// Bind a float value. This maps to the <c>REAL</c> type.
     /// </summary>
     /// <param name="value">Float value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(float value);
+    void Bind(float value);
 
     /// <summary>
-    /// Bind double parameter to query. This puts that value as the nth parameter in the
-    /// parameterized query, where n is the current parameter as a 1-based index. This maps to the
-    /// <c>DOUBLE PRECISION</c> type.
+    /// Bind a double value. This maps to the <c>DOUBLE PRECISION</c> type.
     /// </summary>
     /// <param name="value">Double value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(double value);
+    void Bind(double value);
 
     /// <summary>
-    /// Bind TimeOnly parameter to query. This puts that value as the nth parameter in the
-    /// parameterized query, where n is the current parameter as a 1-based index. This maps to the
-    /// <c>TIME</c> type.
+    /// Bind a TimeOnly value. This maps to the <c>TIME</c> type.
     /// </summary>
     /// <param name="value">TimeOnly value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(TimeOnly value);
+    void Bind(TimeOnly value);
 
     /// <summary>
-    /// Bind DateOnly parameter to query. This puts that value as the nth parameter in the
-    /// parameterized query, where n is the current parameter as a 1-based index. This maps to the
-    /// <c>DATE</c> type.
+    /// Bind a DateOnly value. This maps to the <c>DATE</c> type.
     /// </summary>
     /// <param name="value">DateOnly value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(DateOnly value);
+    void Bind(DateOnly value);
 
     /// <summary>
-    /// Bind DateTime parameter to query. This puts that value as the nth parameter in the
-    /// parameterized query, where n is the current parameter as a 1-based index. This maps to the
-    /// <c>TIMESTAMP</c> type.
+    /// Bind a DateTime value. This maps to the <c>TIMESTAMP</c> type.
     /// </summary>
     /// <param name="value">DateTime value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(DateTime value);
+    void Bind(DateTime value);
 
     /// <summary>
-    /// Bind DateTimeOffset parameter to query. This puts that value as the nth parameter in the
-    /// parameterized query, where n is the current parameter as a 1-based index. This maps to the
-    /// <c>TIMESTAMP WITH TIME ZONE</c> type.
+    /// Bind a DateTimeOffset value. This maps to the <c>TIMESTAMP WITH TIME ZONE</c> type.
     /// </summary>
     /// <param name="value">DateTimeOffset value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(DateTimeOffset value);
+    void Bind(DateTimeOffset value);
 
     /// <summary>
-    /// Bind decimal parameter to query. This puts that value as the nth parameter in the
-    /// parameterized query, where n is the current parameter as a 1-based index. This maps to the
-    /// <c>DECIMAL</c> type.
+    /// Bind a decimal value. This maps to the <c>DECIMAL</c>/<c>NUMERIC</c> type.
     /// </summary>
     /// <param name="value">Decimal value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(decimal value);
+    void Bind(decimal value);
 
     /// <summary>
-    /// Bind byte[] parameter to query. This puts that value as the nth parameter in the
-    /// parameterized query, where n is the current parameter as a 1-based index. This maps to the
-    /// <c>VARBINARY</c>/<c>BLOB</c> type.
+    /// Bind a byte[] value. This maps to the <c>VARBINARY</c>/<c>BLOB</c> type although database
+    /// implementations might have custom types (e.g. Postgres has <c>BYTEA</c>)
     /// </summary>
     /// <param name="value">Byte[] value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(byte[]? value);
+    void Bind(byte[]? value);
 
     /// <summary>
-    /// Bind ReadOnlySpan&lt;byte&gt; parameter to query. This puts that value as the nth parameter
-    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
-    /// to the <c>VARBINARY</c>/<c>BLOB</c> type.
+    /// Bind a byte[] value. This maps to the <c>VARBINARY</c>/<c>BLOB</c> type although database
+    /// implementations might have custom types (e.g. Postgres has <c>BYTEA</c>)
     /// </summary>
     /// <param name="value">ReadOnlySpan&lt;byte&gt; value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(ReadOnlySpan<byte> value);
+    void Bind(ReadOnlySpan<byte> value);
 
     /// <summary>
-    /// Bind string parameter to query. This puts that value as the nth parameter in the
-    /// parameterized query, where n is the current parameter as a 1-based index. This maps to the
-    /// <c>VARCHAR</c>/<c>TEXT</c>/<c>CLOB</c> type.
+    /// Bind a string value. This maps to the <c>VARCHAR</c>/<c>TEXT</c>/<c>CLOB</c> type although
+    /// database implementations might have custom character types (e.g. Postgres has
+    /// <c>CITEXT</c>).
     /// </summary>
     /// <param name="value">String value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(string? value);
+    void Bind(string? value);
 
     /// <summary>
-    /// Bind ReadOnlySpan&lt;char&gt; parameter to query. This puts that value as the nth parameter
-    /// in the parameterized query, where n is the current parameter as a 1-based index. This maps
-    /// to the <c>VARCHAR</c>/<c>TEXT</c>/<c>CLOB</c> type.
+    /// Bind a string value. This maps to the <c>VARCHAR</c>/<c>TEXT</c>/<c>CLOB</c> type although
+    /// database implementations might have custom character types (e.g. Postgres has
+    /// <c>CITEXT</c>).
     /// </summary>
     /// <param name="value">ReadOnlySpan&lt;char&gt; value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(ReadOnlySpan<char> value);
+    void Bind(ReadOnlySpan<char> value);
 
     /// <summary>
-    /// Bind Guid parameter to query. This puts that value as the nth parameter in the parameterized
-    /// query, where n is the current parameter as a 1-based index. The
-    /// <c>UUID</c>/<c>UNIQUEIDENTIFIER</c> type is not consistent across all databases so the
-    /// driver specific implementation might vary. Generally it's either a built-in type or this
-    /// method tries to interpret a <see cref="Guid"/> as bytes or a string.
+    /// Bind a Guid value. The <c>UUID</c>/<c>UNIQUEIDENTIFIER</c> type is not consistent across all
+    /// databases so the driver specific implementation might vary. Generally it's either a built-in
+    /// type or this method tries to interpret a <see cref="Guid"/> as bytes or a string.
     /// </summary>
     /// <param name="value">Guid value</param>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable Bind(Guid value);
+    void Bind(Guid value);
 
     /// <summary>
-    /// Bind <typeparamref name="T"/> parameter to query as a JSON. This puts that value as the nth
-    /// parameter in the parameterized query, where n is the current parameter as a 1-based index.
-    /// Some databases have a JSON specific field type but other database drivers will treat the
-    /// JSON encoding as string or bytes. When using this method, it's recommended to supply the
-    /// <see cref="JsonTypeInfo"/> parameter to aid serialization.
+    /// Bind a <typeparamref name="T"/> value as a JSON. Some databases have a JSON specific field
+    /// type but other database drivers will treat the JSON encoding as string or bytes. When using
+    /// this method, it's recommended to supply the <see cref="JsonTypeInfo"/> parameter to aid
+    /// serialization. If you need to bind a possibly null value, use
+    /// <see cref="Bindable.BindJsonRef"/> and <see cref="Bindable.BindJsonVal"/> for class and
+    /// struct types respectively.
     /// </summary>
     /// <param name="value">Value to encode as JSON</param>
     /// <param name="typeInfo">Optional type metadata for JSON serialization</param>
     /// <typeparam name="T">CLR type to encode as JSON</typeparam>
-    /// <returns>This query instance for method chaining</returns>
-    IBindable BindJson<T>(T? value, JsonTypeInfo<T>? typeInfo = null) where T : notnull;
+    void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull;
 
     /// <summary>
-    /// Bind a null value to the query. This puts a null as the nth parameter in the parameterized
-    /// query, where n is the current parameter as a 1-based index;
+    /// Bind a null value to the query
     /// </summary>
     /// <typeparam name="T">
     /// CLR type to hint the driver as to the parameter's expected type. Drivers may or may not use
     /// this type to inform query preparing.
     /// </typeparam>
-    /// <returns></returns>
-    IBindable BindNull<T>() where T : notnull;
+    void BindNull<T>() where T : notnull;
 }

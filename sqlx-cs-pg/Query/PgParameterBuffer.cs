@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization.Metadata;
-using Sqlx.Core;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Type;
 
@@ -71,8 +70,9 @@ internal sealed class PgParameterBuffer : IDisposable
     /// <param name="chars">Chars to encode</param>
     public void EncodeChars(ReadOnlySpan<char> chars)
     {
-        _buffer.WriteInt(Charsets.Default.GetByteCount(chars));
+        var startingPosition = _buffer.StartWritingLengthPrefixed();
         _buffer.WriteString(chars);
+        _buffer.FinishWritingLengthPrefixed(startingPosition, includeLength: false);
         _pgTypes.Add(PgString.DbType);
     }
 

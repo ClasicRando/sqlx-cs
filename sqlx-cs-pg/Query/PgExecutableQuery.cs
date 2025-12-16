@@ -18,117 +18,109 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
     public string Query { get; } = sql;
 
     public PgParameterBuffer ParameterBuffer { get; } = new();
+    
 
-    public IBindable Bind(bool value)
+    
+    public void Bind(bool value)
     {
-        return BindPg<bool, PgBool>(value);
+        BindPg<bool, PgBool>(value);
     }
 
-    public IBindable Bind(sbyte value)
+    public void Bind(sbyte value)
     {
-        return BindPg<sbyte, PgChar>(value);
+        BindPg<sbyte, PgChar>(value);
     }
 
-    public IBindable Bind(short value)
+    public void Bind(short value)
     {
-        return BindPg<short, PgShort>(value);
+        BindPg<short, PgShort>(value);
     }
 
-    public IBindable Bind(int value)
+    public void Bind(int value)
     {
-        return BindPg<int, PgInt>(value);
+        BindPg<int, PgInt>(value);
     }
 
-    public IBindable Bind(long value)
+    public void Bind(long value)
     {
-        return BindPg<long, PgLong>(value);
+        BindPg<long, PgLong>(value);
     }
 
-    public IBindable Bind(float value)
+    public void Bind(float value)
     {
-        return BindPg<float, PgFloat>(value);
+        BindPg<float, PgFloat>(value);
     }
 
-    public IBindable Bind(double value)
+    public void Bind(double value)
     {
-        return BindPg<double, PgDouble>(value);
+        BindPg<double, PgDouble>(value);
     }
 
-    public IBindable Bind(TimeOnly value)
+    public void Bind(TimeOnly value)
     {
-        return BindPg<TimeOnly, PgTime>(value);
+        BindPg<TimeOnly, PgTime>(value);
     }
 
-    public IBindable Bind(DateOnly value)
+    public void Bind(DateOnly value)
     {
-        return BindPg<DateOnly, PgDate>(value);
+        BindPg<DateOnly, PgDate>(value);
     }
 
-    public IBindable Bind(DateTime value)
+    public void Bind(DateTime value)
     {
-        return BindPg<DateTime, PgDateTime>(value);
+        BindPg<DateTime, PgDateTime>(value);
     }
 
-    public IBindable Bind(DateTimeOffset value)
+    public void Bind(DateTimeOffset value)
     {
-        return BindPg<DateTimeOffset, PgDateTimeOffset>(value);
+        BindPg<DateTimeOffset, PgDateTimeOffset>(value);
     }
 
-    public IBindable Bind(decimal value)
+    public void Bind(decimal value)
     {
-        return BindPg<decimal, PgDecimal>(value);
+        BindPg<decimal, PgDecimal>(value);
+    }
+    
+    public void Bind(byte[]? value)
+    {
+        this.BindPgNullableClass<byte[], PgBytea>(value);
     }
 
-    public IBindable Bind(byte[]? value)
-    {
-        return this.BindPgNullableClass<byte[], PgBytea>(value);
-    }
-
-    public IBindable Bind(ReadOnlySpan<byte> value)
+    public void Bind(ReadOnlySpan<byte> value)
     {
         ParameterBuffer.EncodeBytes(value);
-        return this;
     }
 
-    public IBindable Bind(string? value)
+    public void Bind(string? value)
     {
-        return this.BindPgNullableClass<string, PgString>(value);
+        this.BindPgNullableClass<string, PgString>(value);
     }
 
-    public IBindable Bind(ReadOnlySpan<char> value)
+    public void Bind(ReadOnlySpan<char> value)
     {
         ParameterBuffer.EncodeChars(value);
-        return this;
     }
 
-    public IBindable Bind(Guid value)
+    public void Bind(Guid value)
     {
-        return BindPg<Guid, PgUuid>(value);
+        BindPg<Guid, PgUuid>(value);
     }
 
-    public IBindable BindJson<T>(T? value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
+    public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
     {
-        if (value is null)
-        {
-            ParameterBuffer.EncodeNull();
-            return this;
-        }
         ParameterBuffer.EncodeJsonValue(value, typeInfo);
-        return this;
     }
 
-    public IBindable BindNull<T>() where T : notnull
+    public void BindNull<T>() where T : notnull
     {
         ParameterBuffer.EncodeNull();
-        return this;
     }
 
-    public IBindable BindPg<TValue, TType>(TValue value)
+    public void BindPg<TValue, TType>(TValue value)
         where TValue : notnull
         where TType : IPgDbType<TValue>
     {
         ParameterBuffer.EncodeValue<TValue, TType>(value);
-        return this;
     }
 
     public Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> Execute(

@@ -76,6 +76,17 @@ public class BindMethodToGenerate
                     "Decode method must have exactly 2 parameters"));
             return false;
         }
+        
+        if (!_templateMethod.ReturnsVoid)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    MethodIsNotBindTemplate,
+                    Location.None,
+                    Name,
+                    "Decode method must have void return"));
+            return false;
+        }
 
         IParameterSymbol queryParameter = _templateMethod.Parameters[0];
         if (queryParameter.Type.Name != "IBindable")

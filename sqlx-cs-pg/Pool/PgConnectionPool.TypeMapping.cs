@@ -97,8 +97,8 @@ public sealed partial class PgConnectionPool
         var schemeQualifierIndex = typeName.IndexOf('.');
         if (schemeQualifierIndex > -1)
         {
-            query.Bind(typeName.AsSpan()[(schemeQualifierIndex + 1)..]);
-            query.Bind(typeName.AsSpan()[..schemeQualifierIndex]);
+            query.Bind(typeName[(schemeQualifierIndex + 1)..]);
+            query.Bind(typeName[..schemeQualifierIndex]);
         }
         else
         {
