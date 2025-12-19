@@ -9,7 +9,6 @@ using Sqlx.Core.Config;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Pool;
-using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 using Sqlx.Core.Stream;
 using Sqlx.Postgres.Connection;
@@ -20,6 +19,7 @@ using Sqlx.Postgres.Message.Backend;
 using Sqlx.Postgres.Notify;
 using Sqlx.Postgres.Pool;
 using Sqlx.Postgres.Query;
+using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Stream;
 
@@ -185,11 +185,11 @@ internal sealed partial class PgStream : IDisposable
     /// If the supplied query is not a <see cref="PgExecutableQuery"/> or the connection is closed
     /// or broken.
     /// </exception>
-    public IAsyncEnumerable<Either<IDataRow, QueryResult>> ExecuteQuery(
-        IExecutableQuery query,
+    public IAsyncEnumerable<Either<IPgDataRow, QueryResult>> ExecuteQuery(
+        IPgExecutableQuery query,
         CancellationToken cancellationToken)
     {
-        PgExecutableQuery executableQuery = PgException.CheckIfIs<IExecutableQuery, PgExecutableQuery>(query);
+        PgExecutableQuery executableQuery = PgException.CheckIfIs<IPgExecutableQuery, PgExecutableQuery>(query);
         var results = IsSimpleQuery(executableQuery)
             ? SendSimpleQuery(executableQuery.Query, cancellationToken)
             : SendExtendedQuery(
@@ -199,8 +199,8 @@ internal sealed partial class PgStream : IDisposable
         return results;
     }
 
-    public IAsyncEnumerable<Either<IDataRow, QueryResult>> ExecuteQueryBatch(
-        IQueryBatch query,
+    public IAsyncEnumerable<Either<IPgDataRow, QueryResult>> ExecuteQueryBatch(
+        IPgQueryBatch query,
         CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
@@ -236,7 +236,7 @@ internal sealed partial class PgStream : IDisposable
     /// </list>
     /// </exception>
     public async Task ExecuteTransactionCommand(
-        AbstractConnection.TransactionCommand transactionCommand,
+        TransactionCommand transactionCommand,
         CancellationToken cancellationToken)
     {
         ThrowIfNotOpen();
@@ -246,18 +246,18 @@ internal sealed partial class PgStream : IDisposable
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
             switch (transactionCommand)
             {
-                case AbstractConnection.TransactionCommand.Begin when InTransaction:
+                case TransactionCommand.Begin when InTransaction:
                     throw new UnexpectedTransactionState(false);
-                case AbstractConnection.TransactionCommand.Commit
-                    or AbstractConnection.TransactionCommand.Rollback when !InTransaction:
+                case TransactionCommand.Commit
+                    or TransactionCommand.Rollback when !InTransaction:
                     throw new UnexpectedTransactionState(true);
             }
 
             var sql = transactionCommand switch
             {
-                AbstractConnection.TransactionCommand.Begin => BeginQuery,
-                AbstractConnection.TransactionCommand.Commit => CommitQuery,
-                AbstractConnection.TransactionCommand.Rollback => RollbackQuery,
+                TransactionCommand.Begin => BeginQuery,
+                TransactionCommand.Commit => CommitQuery,
+                TransactionCommand.Rollback => RollbackQuery,
                 _ => throw PgException.EnumOutOfRange(transactionCommand),
             };
             await SendQueryMessage(sql, cancellationToken).ConfigureAwait(false);
@@ -265,7 +265,7 @@ internal sealed partial class PgStream : IDisposable
                 .ConfigureAwait(false);
             Interlocked.Exchange(
                 ref _inTransaction,
-                transactionCommand is AbstractConnection.TransactionCommand.Begin ? 1 : 0);
+                transactionCommand is TransactionCommand.Begin ? 1 : 0);
         }
         catch (OutOfMemoryException)
         {
@@ -277,7 +277,7 @@ internal sealed partial class PgStream : IDisposable
         }
         catch
         {
-            if (transactionCommand is not AbstractConnection.TransactionCommand.Commit) throw;
+            if (transactionCommand is not TransactionCommand.Commit) throw;
 
             try
             {

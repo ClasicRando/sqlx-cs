@@ -1,4 +1,6 @@
 using Sqlx.Core.Connection;
+using Sqlx.Core.Query;
+using Sqlx.Core.Result;
 
 namespace Sqlx.Core.Pool;
 
@@ -12,11 +14,16 @@ public static class ConnectionPoolExtensions
     /// <param name="connectionPool">connection pool to begin a transaction against</param>
     /// <param name="cancellationToken">optional cancellation token</param>
     /// <returns>a rented connection from the pool that is already within a transaction</returns>
-    public static async Task<IConnection> Begin(
-        this IConnectionPool connectionPool,
+    public static async Task<TConnection> Begin<TConnection, TBindable, TQuery, TQueryBatch, TDataRow>(
+        this IConnectionPool<TConnection, TBindable, TQuery, TQueryBatch, TDataRow> connectionPool,
         CancellationToken cancellationToken = default)
+        where TConnection : class, IConnection<TQuery, TBindable, TQueryBatch, TDataRow>
+        where TBindable : IBindable
+        where TQuery : IExecutableQuery<TDataRow>
+        where TQueryBatch : IQueryBatch<TBindable, TDataRow>
+        where TDataRow : IDataRow
     {
-        IConnection? connection = null;
+        TConnection? connection = null;
         try
         {
             connection = connectionPool.CreateConnection();
@@ -33,22 +40,5 @@ public static class ConnectionPoolExtensions
             await connection.CloseAsync(cancellationToken).ConfigureAwait(false);
             throw;
         }
-    }
-
-    /// <summary>
-    /// Create a connection from the pool and attempt to unwrap that connection as
-    /// <typeparamref name="TConnection"/>. Equivalent to:
-    /// <code>
-    /// IConnection connection = connectionPool.CreateConnection();
-    /// return connection.Unwrap&lt;TConnection&gt;();
-    /// </code>
-    /// </summary>
-    /// <param name="connectionPool">connection pool to fetch a connection from</param>
-    /// <typeparam name="TConnection">desired output connection type</typeparam>
-    /// <returns>a connection from the pool as the desired type</returns>
-    public static TConnection CreateConnectionAs<TConnection>(this IConnectionPool connectionPool)
-        where TConnection : IConnection
-    {
-        return connectionPool.CreateConnection().Unwrap<TConnection>();
     }
 }

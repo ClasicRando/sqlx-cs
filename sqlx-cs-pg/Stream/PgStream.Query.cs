@@ -28,9 +28,9 @@ internal partial class PgStream
     /// </summary>
     /// <param name="executableQuery">Query to check</param>
     /// <returns>True if the query must be executed using the simple protocol</returns>
-    private bool IsSimpleQuery(PgExecutableQuery executableQuery)
+    private bool IsSimpleQuery(IPgExecutableQuery executableQuery)
     {
-        if (executableQuery.ParameterBuffer.ParameterCount > 0)
+        if (executableQuery.ParameterCount > 0)
         {
             return false;
         }
@@ -71,7 +71,7 @@ internal partial class PgStream
     /// multi-statement queries, this flow will repeat until all result sets have been sent.
     /// </returns>
     /// <exception cref="ArgumentException">The query is null or whitespace</exception>
-    private async IAsyncEnumerable<Either<IDataRow, QueryResult>> SendSimpleQuery(
+    private async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> SendSimpleQuery(
         string sql,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -119,7 +119,7 @@ internal partial class PgStream
     /// If connection status is <see cref="ConnectionStatus.Broken"/> or
     /// <see cref="ConnectionStatus.Closed"/>.
     /// </exception>
-    private async IAsyncEnumerable<Either<IDataRow, QueryResult>> SendExtendedQuery(
+    private async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> SendExtendedQuery(
         string sql,
         PgParameterBuffer parameterBuffer,
         [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -232,7 +232,7 @@ internal partial class PgStream
     /// </param>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
     /// <returns>An async stream of result rows and query results</returns>
-    private async IAsyncEnumerable<Either<IDataRow, QueryResult>> CollectResult(
+    private async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> CollectResult(
         PgPreparedStatement? preparedStatement,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -249,21 +249,18 @@ internal partial class PgStream
             switch (postProcessMessage)
             {
                 case RowDescriptionMessage rowDescription:
-                    if (preparedStatement is not null)
-                    {
-                        preparedStatement.ColumnMetadata = rowDescription.ColumnMetadata;
-                    }
+                    preparedStatement?.ColumnMetadata = rowDescription.ColumnMetadata;
                     statementMetadata = new PgStatementMetadata(rowDescription.ColumnMetadata);
                     break;
                 case DataRowMessage dataRowMessage:
                     var dataRow = new PgDataRow(dataRowMessage.RowData, statementMetadata);
-                    yield return new Either<IDataRow, QueryResult>.Left(dataRow);
+                    yield return new Either<IPgDataRow, QueryResult>.Left(dataRow);
                     break;
                 case CommandCompleteMessage commandCompleteMessage:
                     var queryResult = new QueryResult(
                         commandCompleteMessage.RowCount,
                         commandCompleteMessage.Message);
-                    yield return new Either<IDataRow, QueryResult>.Right(queryResult);
+                    yield return new Either<IPgDataRow, QueryResult>.Right(queryResult);
                     break;
                 case ReadyForQueryMessage readyForQueryMessage:
                     HandleReadyForQuery(readyForQueryMessage);

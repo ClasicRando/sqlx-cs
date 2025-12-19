@@ -1,6 +1,21 @@
 using JetBrains.Annotations;
 using NSubstitute;
-using Sqlx.Core.Connection;
+using MockConnection =
+    Sqlx.Core.Connection.IConnection<Sqlx.Core.Query.IExecutableQuery<Sqlx.Core.Result.IDataRow>,
+        Sqlx.Core.Query.IBindable,
+        Sqlx.Core.Query.IQueryBatch<Sqlx.Core.Query.IBindable, Sqlx.Core.Result.IDataRow>,
+        Sqlx.Core.Result.IDataRow>;
+using MockPool =
+    Sqlx.Core.Pool.IConnectionPool<
+        Sqlx.Core.Connection.IConnection<
+            Sqlx.Core.Query.IExecutableQuery<Sqlx.Core.Result.IDataRow>,
+            Sqlx.Core.Query.IBindable,
+            Sqlx.Core.Query.IQueryBatch<Sqlx.Core.Query.IBindable, Sqlx.Core.Result.IDataRow>,
+            Sqlx.Core.Result.IDataRow>,
+        Sqlx.Core.Query.IBindable,
+        Sqlx.Core.Query.IExecutableQuery<Sqlx.Core.Result.IDataRow>,
+        Sqlx.Core.Query.IQueryBatch<Sqlx.Core.Query.IBindable, Sqlx.Core.Result.IDataRow>,
+        Sqlx.Core.Result.IDataRow>;
 
 namespace Sqlx.Core.Pool;
 
@@ -10,28 +25,15 @@ public class ConnectionPoolExtensionsTest
     [Fact]
     public async Task Begin_Should_GetConnectionAndBeginTransaction()
     {
-        var mockPool = Substitute.For<IConnectionPool>();
-        var mockConnection = Substitute.For<IConnection>();
+        var mockPool = Substitute.For<MockPool>();
+        var mockConnection = Substitute.For<MockConnection>();
         mockPool.CreateConnection().Returns(mockConnection);
         mockConnection.Status.Returns(ConnectionStatus.Closed);
 
-        IConnection _ = await mockPool.Begin();
+        var _ = await mockPool.Begin(TestContext.Current.CancellationToken);
 
         mockPool.Received().CreateConnection();
         await mockConnection.Received().OpenAsync(Arg.Any<CancellationToken>());
         await mockConnection.Received().BeginAsync(Arg.Any<CancellationToken>());
-    }
-    
-    [Fact]
-    public void AcquireAs_Should_GetConnectionAndCast()
-    {
-        var mockPool = Substitute.For<IConnectionPool>();
-        var mockConnection = Substitute.For<IConnection>();
-        mockPool.CreateConnection().Returns(mockConnection);
-
-        _ = mockPool.CreateConnectionAs<IConnection>();
-
-        mockPool.Received().CreateConnection();
-        mockConnection.Received().Unwrap<IConnection>();
     }
 }

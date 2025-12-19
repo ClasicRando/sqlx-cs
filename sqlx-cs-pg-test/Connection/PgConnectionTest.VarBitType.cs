@@ -1,6 +1,4 @@
 using System.Collections;
-using Sqlx.Core.Connection;
-using Sqlx.Core.Query;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Type;
 
@@ -14,8 +12,8 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_VarBitAndDefaultEncoding(bool[] bits)
     {
         var value = new BitArray(bits);
-        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IExecutableQuery query = connection.CreateQuery("SELECT $1;");
+        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1;");
         query.Bind(value);
         BitArray result = await query.ExecuteScalar<PgBitString, BitArray>();
         Assert.Equal(value, result);
@@ -29,9 +27,9 @@ public partial class PgConnectionTest
         string sql)
     {
         var value = new BitArray(bits);
-        await using IConnection
+        await using IPgConnection
             connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IExecutableQuery query = connection.CreateQuery(sql);
+        using IPgExecutableQuery query = connection.CreateQuery(sql);
         BitArray result = await query.ExecuteScalar<PgBitString, BitArray>();
         Assert.Equal(value, result);
     }

@@ -1,28 +1,28 @@
 using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core;
-using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Query;
+using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres;
 
 public static class TestExtensions
 {
-    public static async Task<List<(List<IDataRow>, QueryResult)>> CollectResults(
-        this IAsyncEnumerable<Either<IDataRow, QueryResult>> flow)
+    public static async Task<List<(List<IPgDataRow>, QueryResult)>> CollectResults(
+        this IAsyncEnumerable<Either<IPgDataRow, QueryResult>> flow)
     {
-        List<(List<IDataRow>, QueryResult)> result = [];
-        List<IDataRow> rowBuffer = [];
+        List<(List<IPgDataRow>, QueryResult)> result = [];
+        List<IPgDataRow> rowBuffer = [];
         await foreach (var item in flow)
         {
             switch (item)
             {
-                case Either<IDataRow, QueryResult>.Right right:
+                case Either<IPgDataRow, QueryResult>.Right right:
                     result.Add((rowBuffer, right.Value));
                     rowBuffer = [];
                     break;
-                case Either<IDataRow, QueryResult>.Left left:
+                case Either<IPgDataRow, QueryResult>.Left left:
                     rowBuffer.Add(left.Value);
                     break;
             }
@@ -31,7 +31,7 @@ public static class TestExtensions
         return result;
     }
 
-    extension(IExecutableQuery executableQuery)
+    extension(IPgExecutableQuery executableQuery)
     {
         public Task<TValue> ExecuteScalar<TDecode, TValue>()
             where TDecode : IPgDbType<TValue>

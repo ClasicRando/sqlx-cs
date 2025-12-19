@@ -1,5 +1,6 @@
 using Sqlx.Core.Pool;
 using Sqlx.Core.Query;
+using Sqlx.Core.Result;
 
 namespace Sqlx.Core.Connection;
 
@@ -7,14 +8,21 @@ namespace Sqlx.Core.Connection;
 /// Database connection type. Provides the base ability to control transactional state and create
 /// queries to execute against this connection.
 /// </summary>
-public interface IConnection : IQueryExecutor, IAsyncDisposable
+public interface
+    IConnection<TQuery, out TBindable, TQueryBatch, TDataRow> :
+    IQueryExecutor<TQuery, TBindable, TQueryBatch, TDataRow>,
+    IAsyncDisposable
+    where TQuery : IExecutableQuery<TDataRow>
+    where TBindable : IBindable
+    where TQueryBatch : IQueryBatch<TBindable, TDataRow>
+    where TDataRow : IDataRow
 {
     /// <summary>
     /// State of the connection. This is not directly connected to the state of the physical
     /// connection, but it reflects the lifecycle of the connection from the libraries' viewpoint.
     /// </summary>
     ConnectionStatus Status { get; }
-    
+
     /// <summary>
     /// True if the connection is currently within a transaction
     /// </summary>

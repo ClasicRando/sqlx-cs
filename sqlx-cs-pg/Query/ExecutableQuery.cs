@@ -10,7 +10,7 @@ namespace Sqlx.Postgres.Query;
 
 public static class ExecutableQuery
 {
-    extension(IExecutableQuery executableQuery)
+    extension(IPgExecutableQuery executableQuery)
     {
         /// <summary>
         /// Execute the query and extract the first row's first column as the desired type
@@ -28,7 +28,7 @@ public static class ExecutableQuery
             var flow = await executableQuery.Execute(cancellationToken);
             await foreach (var item in flow.WithCancellation(cancellationToken))
             {
-                if (item is Either<IDataRow, QueryResult>.Left left)
+                if (item is Either<IPgDataRow, QueryResult>.Left left)
                 {
                     return PgException.CheckIfIs<IDataRow, IPgDataRow>(left.Value)
                         .GetPgNotNull<TValue, TType>(0);
@@ -69,7 +69,7 @@ public static class ExecutableQuery
             var flow = await executableQuery.Execute(cancellationToken);
             await foreach (var item in flow.WithCancellation(cancellationToken))
             {
-                if (item is Either<IDataRow, QueryResult>.Left left)
+                if (item is Either<IPgDataRow, QueryResult>.Left left)
                 {
                     return PgException.CheckIfIs<IDataRow, PgDataRow>(left.Value)
                         .GetJsonNotNull(0, jsonTypeInfo);
@@ -77,6 +77,54 @@ public static class ExecutableQuery
             }
 
             throw new PgException("Query returned no rows");
+        }
+        
+        /// <inheritdoc cref="Core.Query.ExecutableQuery.ExecuteNonQuery"/>>
+        public Task<long> ExecuteNonQuery(CancellationToken cancellationToken = default)
+        {
+            return executableQuery.ExecuteNonQuery<IPgDataRow>(cancellationToken);
+        }
+
+        /// <inheritdoc cref="Core.Query.ExecutableQuery.Fetch"/>>
+        public IAsyncEnumerable<TRow> Fetch<TRow>(CancellationToken cancellationToken = default)
+            where TRow : IFromRow<TRow>
+        {
+            return executableQuery.Fetch<IPgDataRow, TRow>(cancellationToken);
+        }
+
+        /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchAll"/>>
+        public ValueTask<List<TRow>> FetchAll<TRow>(CancellationToken cancellationToken = default)
+            where TRow : IFromRow<TRow>
+        {
+            return executableQuery.FetchAll<IPgDataRow, TRow>(cancellationToken);
+        }
+
+        /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchFirst"/>>
+        public Task<TRow> FetchFirst<TRow>(CancellationToken cancellationToken = default)
+            where TRow : IFromRow<TRow>
+        {
+            return executableQuery.FetchFirst<IPgDataRow, TRow>(cancellationToken);
+        }
+
+        /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchFirstOrDefault"/>>
+        public Task<TRow?> FetchFirstOrDefault<TRow>(CancellationToken cancellationToken = default)
+            where TRow : IFromRow<TRow>
+        {
+            return executableQuery.FetchFirstOrDefault<IPgDataRow, TRow>(cancellationToken);
+        }
+
+        /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchSingle"/>>
+        public async Task<TRow> FetchSingle<TRow>(CancellationToken cancellationToken = default)
+            where TRow : IFromRow<TRow>
+        {
+            return await executableQuery.FetchSingle<IPgDataRow, TRow>(cancellationToken);
+        }
+
+        /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchSingleOrDefault"/>>
+        public Task<TRow?> FetchSingleOrDefault<TRow>(CancellationToken cancellationToken = default)
+            where TRow : IFromRow<TRow>
+        {
+            return executableQuery.FetchSingleOrDefault<IPgDataRow, TRow>(cancellationToken);
         }
     }
 }

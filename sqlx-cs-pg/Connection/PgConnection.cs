@@ -2,20 +2,20 @@ using Sqlx.Core;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Pool;
-using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Pool;
 using Sqlx.Postgres.Query;
+using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Stream;
 
 namespace Sqlx.Postgres.Connection;
 
 /// <summary>
-/// <see cref="IConnection"/> implementation for a Postgresql database connection. Beyond default
+/// <see cref="IPgConnection"/> implementation for a Postgresql database connection. Beyond default
 /// connection implementations, other Postgresql specific functionality is implemented such as
 /// <c>LISTEN/NOTIFY</c> and the <c>COPY</c> protocol.
 /// </summary>
-public sealed class PgConnection : AbstractConnection
+public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBindable, IPgQueryBatch, IPgDataRow>, IPgConnection
 {
     private bool _disposed;
     private PgStream? _pgStream;
@@ -46,18 +46,18 @@ public sealed class PgConnection : AbstractConnection
         }
     }
 
-    public override IExecutableQuery CreateQuery(string query)
+    public override IPgExecutableQuery CreateQuery(string query)
     {
         return new PgExecutableQuery(query, this);
     }
 
-    public override IQueryBatch CreateQueryBatch()
+    public override IPgQueryBatch CreateQueryBatch()
     {
         return new PgQueryBatch(this);
     }
 
-    public override async Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
-        IExecutableQuery query,
+    public override async Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> ExecuteQuery(
+        IPgExecutableQuery query,
         CancellationToken cancellationToken)
     {
         CheckDisposed();
@@ -65,8 +65,8 @@ public sealed class PgConnection : AbstractConnection
         return _pgStream!.ExecuteQuery(query, cancellationToken);
     }
 
-    public override async Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQueryBatch(
-        IQueryBatch query,
+    public override async Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> ExecuteQueryBatch(
+        IPgQueryBatch query,
         CancellationToken cancellationToken)
     {
         CheckDisposed();

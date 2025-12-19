@@ -1,5 +1,4 @@
-using Sqlx.Core.Connection;
-using Sqlx.Core.Query;
+using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Connection;
@@ -10,8 +9,8 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_FloatAndDefaultEncoding()
     {
         const float value = 12345.67890F;
-        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IExecutableQuery query = connection.CreateQuery("SELECT $1;");
+        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1;");
         query.Bind(value);
         var result = await query.ExecuteScalar<PgFloat, float>();
         Assert.Equal(value, result);
@@ -22,9 +21,9 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT CAST(12345.67890 AS REAL);";
         const float value = 12345.67890F;
-        await using IConnection
+        await using IPgConnection
             connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IExecutableQuery query = connection.CreateQuery(sql);
+        using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalar<PgFloat, float>();
         Assert.Equal(value, result);
     }
@@ -33,8 +32,8 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_DoubleAndDefaultEncoding()
     {
         const double value = 12345.67890;
-        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IExecutableQuery query = connection.CreateQuery("SELECT $1;");
+        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1;");
         query.Bind(value);
         var result = await query.ExecuteScalar<PgDouble, double>();
         Assert.Equal(value, result);
@@ -45,9 +44,9 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT CAST(12345.67890 AS DOUBLE PRECISION);";
         const double value = 12345.67890;
-        await using IConnection
+        await using IPgConnection
             connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IExecutableQuery query = connection.CreateQuery(sql);
+        using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalar<PgDouble, double>();
         Assert.Equal(value, result);
     }

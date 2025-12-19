@@ -90,9 +90,9 @@ namespace Sqlx.Core.Query;
 /// </para>
 /// <para>
 /// To Use this API, create the batch using
-/// <see cref="Sqlx.Core.Query.IQueryExecutor.CreateQueryBatch"/> and create each query in the
-/// batch using <see cref="CreateQuery"/>. Each query will be saved within this batch before
-/// executing the entire batch.
+/// <see cref="Sqlx.Core.Query.IQueryExecutor{TQuery,TQueryBatch,TDataRow}.CreateQueryBatch"/> and
+/// create each query in the batch using <see cref="CreateQuery"/>. Each query will be saved within
+/// this batch before executing the entire batch.
 /// <code>
 /// const string InsertStatement = "INSERT INTO table(column_1, column_2) VALUES (?,?);";
 /// IConnection connection = // Create connection instance
@@ -116,23 +116,25 @@ namespace Sqlx.Core.Query;
 /// transaction and the existing transaction will not be closed when completing the batch.
 /// </para>
 /// </summary>
-public interface IQueryBatch : IDisposable
+public interface IQueryBatch<out TBindable, TDataRow> : IDisposable
+    where TBindable : IBindable
+    where TDataRow : IDataRow
 {
     bool WrapBatchInTransaction { get; set; }
 
     /// <summary>
-    /// Add a new <see cref="IBindable"/> to this batch and allow for the caller to bind parameters as
-    /// needed to the query.
+    /// Add a new <typeparamref cref="TBindable"/> to this batch and allow for the caller to bind
+    /// parameters as needed to the query.
     /// </summary>
     /// <param name="sql">Query to execute</param>
     /// <returns>Query to bind parameters to (if needed)</returns>
-    IBindable CreateQuery(string sql);
+    TBindable CreateQuery(string sql);
 
     /// <summary>
-    /// Execute the query batch and yield a stream of <see cref="IDataRow"/>s and
+    /// Execute the query batch and yield a stream of <typeparamref cref="TDataRow"/>s and
     /// <see cref="QueryResult"/>s.
     /// </summary>
-    /// <returns>Stream of <see cref="IDataRow"/>s and <see cref="QueryResult"/>s</returns>
-    Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteBatch(
+    /// <returns>Stream of <typeparamref cref="TDataRow"/>s and <see cref="QueryResult"/>s</returns>
+    Task<IAsyncEnumerable<Either<TDataRow, QueryResult>>> ExecuteBatch(
         CancellationToken cancellationToken);
 }

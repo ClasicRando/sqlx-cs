@@ -1,5 +1,6 @@
 using Sqlx.Core.Connection;
 using Sqlx.Core.Query;
+using Sqlx.Core.Result;
 
 namespace Sqlx.Core.Pool;
 
@@ -11,17 +12,24 @@ namespace Sqlx.Core.Pool;
 /// the query execution so make sure to pull all query results as soon as possible to ensure you are
 /// not starving the connection pool.
 /// </summary>
-public interface IConnectionPool : IAsyncDisposable
+public interface IConnectionPool<out TConnection, out TBindable, TQuery, TQueryBatch, TDataRow> :
+    IAsyncDisposable
+    where TConnection : IConnection<TQuery, TBindable, TQueryBatch, TDataRow>
+    where TBindable : IBindable
+    where TQuery : IExecutableQuery<TDataRow>
+    where TQueryBatch : IQueryBatch<TBindable, TDataRow>
+    where TDataRow : IDataRow
 {
     /// <summary>
     /// Create a connection for use in querying this pool's database. The created connection is
-    /// closed until <see cref="IConnection.OpenAsync"/> is called and this method will return
-    /// immediately with the created connection. However, it will wait for an available physical
-    /// connection to become available from the pool before <see cref="IConnection.OpenAsync"/>
-    /// returns. Make sure to close the connection instance to return it's underlining physical
-    /// connection to the pool for reuse (preferably using the <see cref="IAsyncDisposable"/>
-    /// interface's language construct).
+    /// closed until <see cref="IConnection{TQuery,TBindable,TQueryBatch,TDataRow}.OpenAsync"/> is
+    /// called and this method will return immediately with the created connection. However, it will
+    /// wait for an available physical connection to become available from the pool before
+    /// <see cref="IConnection{TQuery,TBindable,TQueryBatch,TDataRow}.OpenAsync"/> returns. Make
+    /// sure to close the connection instance to return it's underlining physical connection to the
+    /// pool for reuse (preferably using the <see cref="IAsyncDisposable"/> interface's language
+    /// construct).
     /// </summary>
     /// <returns>A connection linked to this pool</returns>
-    IConnection CreateConnection();
+    TConnection CreateConnection();
 }

@@ -1,5 +1,3 @@
-using Sqlx.Core.Connection;
-using Sqlx.Core.Query;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Type;
 
@@ -11,8 +9,8 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_LineAndDefaultEncoding()
     {
         var value = new PgLine(5.63, 8.59, 4);
-        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IExecutableQuery query = connection.CreateQuery("SELECT $1;");
+        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1;");
         query.Bind(value);
         var result = await query.ExecuteScalarPg<PgLine>();
         Assert.Equal(value, result);
@@ -23,9 +21,9 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT '{5.63,8.59,4}'::line;";
         var value = new PgLine(5.63, 8.59, 4);
-        await using IConnection
+        await using IPgConnection
             connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IExecutableQuery query = connection.CreateQuery(sql);
+        using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalarPg<PgLine>();
         Assert.Equal(value, result);
     }

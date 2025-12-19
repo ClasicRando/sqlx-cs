@@ -8,7 +8,7 @@ namespace Sqlx.Postgres.Query;
 /// <see cref="IPgDbType{T}"/> to defer the type encoding to. Provides default implementations for
 /// <see cref="IBindable"/> methods that defer to that method with the Postgres type definitions.
 /// </summary>
-internal interface IPgBindable : IBindable
+public interface IPgBindable : IBindable
 {
     /// <summary>
     /// Bind the value using the Postgres definition type <typeparamref name="TType"/>. In cases
@@ -23,7 +23,7 @@ internal interface IPgBindable : IBindable
         where TValue : notnull;
 }
 
-internal static class PgBindable
+public static class PgBindable
 {
     extension(IPgBindable bindable)
     {

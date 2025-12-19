@@ -1,7 +1,7 @@
-using Sqlx.Core.Connection;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Exceptions;
+using Sqlx.Postgres.Query;
 
 namespace Sqlx.Postgres.Connection;
 
@@ -15,8 +15,8 @@ public partial class PgConnectionTest
             SELECT s.s, 'Regular Query' t
             FROM generate_series($1, $2) s
             """;
-        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IExecutableQuery query = connection.CreateQuery(extendedQuery);
+        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery(extendedQuery);
         query.Bind(1);
         query.Bind(10);
         var flow = await connection.ExecuteQuery(query, TestContext.Current.CancellationToken);
@@ -37,9 +37,9 @@ public partial class PgConnectionTest
         ExecuteQuery_Should_ReturnOneResultSet_When_ExtendedQueryStoredProcedureWithOutParameter()
     {
         const string procedureCallQuery = $"CALL public.{OutProcedureName}($1, $2);";
-        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
 
-        using IExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
+        using IPgExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall.Bind((int?)null);
         procedureCall.Bind((int?)null);
         var flow = await connection.ExecuteQuery(
@@ -59,9 +59,9 @@ public partial class PgConnectionTest
         ExecuteQuery_Should_ReturnOneResultSet_When_ExtendedQueryStoredProcedureWithInOutParameter()
     {
         const string procedureCallQuery = $"CALL public.{InOutProcedureName}($1, $2);";
-        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
 
-        using IExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
+        using IPgExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall.Bind(2);
         procedureCall.Bind("start");
         var flow = await connection.ExecuteQuery(
@@ -80,9 +80,9 @@ public partial class PgConnectionTest
     public async Task ExecuteQuery_Should_Throw_When_ExtendedQueryTimesOut()
     {
         const string sleepQuery = "SELECT pg_sleep($1);";
-        await using IConnection connection = _databaseFixture.QueryTimeoutPool.CreateConnection();
+        await using IPgConnection connection = _databaseFixture.QueryTimeoutPool.CreateConnection();
 
-        using IExecutableQuery sleepStatement = connection.CreateQuery(sleepQuery);
+        using IPgExecutableQuery sleepStatement = connection.CreateQuery(sleepQuery);
         sleepStatement.Bind(5);
         var ex = await Assert.ThrowsAsync<PgException>(async () =>
         {

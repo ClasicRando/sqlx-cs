@@ -4,7 +4,11 @@ using Sqlx.Core.Result;
 
 namespace Sqlx.Core.Connection;
 
-public abstract class AbstractConnection : IConnection, IDisposable
+public abstract class AbstractConnection<TQuery, TBindable, TQueryBatch, TDataRow> : IConnection<TQuery, TBindable, TQueryBatch, TDataRow>, IDisposable
+    where TQuery : IExecutableQuery<TDataRow>
+    where TBindable : IBindable
+    where TQueryBatch : IQueryBatch<TBindable, TDataRow>
+    where TDataRow : IDataRow
 {
     ~AbstractConnection() => Dispose(false);
 
@@ -16,7 +20,6 @@ public abstract class AbstractConnection : IConnection, IDisposable
     {
         await DisposeAsyncCore();
         Dispose(false);
-        GC.SuppressFinalize(this);
     }
 
     public void Dispose()
@@ -29,13 +32,6 @@ public abstract class AbstractConnection : IConnection, IDisposable
     public abstract bool InTransaction { get; }
 
     public abstract Task OpenAsync(CancellationToken cancellationToken = default);
-
-    public enum TransactionCommand
-    {
-        Begin = 0,
-        Commit = 1,
-        Rollback = 2,
-    }
 
     public Task BeginAsync(CancellationToken cancellationToken = default)
     {
@@ -70,15 +66,15 @@ public abstract class AbstractConnection : IConnection, IDisposable
         TransactionCommand transactionCommand,
         CancellationToken cancellationToken);
 
-    public abstract IExecutableQuery CreateQuery(string query);
-    public abstract IQueryBatch CreateQueryBatch();
+    public abstract TQuery CreateQuery(string query);
+    public abstract TQueryBatch CreateQueryBatch();
 
-    public abstract Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQuery(
-        IExecutableQuery query,
+    public abstract Task<IAsyncEnumerable<Either<TDataRow, QueryResult>>> ExecuteQuery(
+        TQuery query,
         CancellationToken cancellationToken);
 
-    public abstract Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteQueryBatch(
-        IQueryBatch query,
+    public abstract Task<IAsyncEnumerable<Either<TDataRow, QueryResult>>> ExecuteQueryBatch(
+        TQueryBatch query,
         CancellationToken cancellationToken);
 
     public abstract Task CloseAsync(CancellationToken cancellationToken = default);

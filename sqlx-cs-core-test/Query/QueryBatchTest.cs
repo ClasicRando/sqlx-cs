@@ -1,6 +1,7 @@
 using JetBrains.Annotations;
 using NSubstitute;
 using Sqlx.Core.Result;
+using MockQueryBatch = Sqlx.Core.Query.IQueryBatch<Sqlx.Core.Query.IBindable, Sqlx.Core.Result.IDataRow>;
 
 namespace Sqlx.Core.Query;
 
@@ -13,11 +14,11 @@ public class QueryBatchTest
         List<Either<IDataRow, QueryResult>> lst,
         int numberOfAffectedRows)
     {
-        var query = Substitute.For<IQueryBatch>();
+        var query = Substitute.For<MockQueryBatch>();
         query.ExecuteBatch(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-        var rowCount = await query.ExecuteNonQuery();
+        var rowCount = await query.ExecuteNonQuery(TestContext.Current.CancellationToken);
         
         Assert.Equal(numberOfAffectedRows, rowCount);
     }

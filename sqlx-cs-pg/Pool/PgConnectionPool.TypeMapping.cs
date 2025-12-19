@@ -1,5 +1,5 @@
-using Sqlx.Core.Connection;
 using Sqlx.Core.Query;
+using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Type;
@@ -22,10 +22,10 @@ public sealed partial class PgConnectionPool
                 AND n.nspname = $2
                 AND t.typcategory = 'E'
             """;
-        await using IConnection connection = CreateConnection();
-        using IExecutableQuery typeOidQuery = connection.CreateQuery(pgEnumTypeByName);
+        await using IPgConnection connection = CreateConnection();
+        using IPgExecutableQuery typeOidQuery = connection.CreateQuery(pgEnumTypeByName);
         AddTypeNameAndSchemaToQuery<TType, TEnum>(typeOidQuery);
-        
+
         try
         {
             var oid = await typeOidQuery.ExecuteScalarPg<PgOid>(cancellationToken);
@@ -62,8 +62,8 @@ public sealed partial class PgConnectionPool
                 and t.typcategory = 'C'
                 and a.attnum > 0
             """;
-        await using IConnection connection = CreateConnection();
-        using IExecutableQuery typeOidQuery = connection.CreateQuery(pgCompositeTypeByName);
+        await using IPgConnection connection = CreateConnection();
+        using IPgExecutableQuery typeOidQuery = connection.CreateQuery(pgCompositeTypeByName);
         AddTypeNameAndSchemaToQuery<TComposite, TComposite>(typeOidQuery);
 
         PgOid oid;
@@ -77,15 +77,17 @@ public sealed partial class PgConnectionPool
                 "Failed to map composite. Make sure the type name is correct and include the schema name if necessary",
                 e);
         }
-        
-        using IExecutableQuery attributeOidsQuery = connection.CreateQuery(pgCompositeAttributeOidsByOid);
+
+        using IPgExecutableQuery attributeOidsQuery =
+            connection.CreateQuery(pgCompositeAttributeOidsByOid);
         attributeOidsQuery.Bind(oid);
-        
-        var attributeOids = await attributeOidsQuery.Fetch<CompositeType.Attribute>(cancellationToken)
+
+        var attributeOids = await attributeOidsQuery
+            .Fetch<CompositeType.Attribute>(cancellationToken)
             .ToArrayAsync(cancellationToken);
         TComposite.DbType = new PgTypeInfo(
             oid.Inner,
-            new CompositeType { Attributes = attributeOids});
+            new CompositeType { Attributes = attributeOids });
     }
 
     private static void AddTypeNameAndSchemaToQuery<TType, TValue>(IBindable query)

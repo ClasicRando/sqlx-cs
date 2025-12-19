@@ -1,5 +1,4 @@
-using Sqlx.Core.Connection;
-using Sqlx.Core.Query;
+using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Connection;
@@ -10,8 +9,8 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_TimestampAndDefaultEncoding()
     {
         var value = new DateTime(2025, 1, 1, 1, 23, 45);
-        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IExecutableQuery query = connection.CreateQuery("SELECT $1;");
+        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1;");
         query.Bind(value);
         DateTime result = await query.ExecuteScalar<PgDateTime, DateTime>();
         Assert.Equal(value, result);
@@ -22,9 +21,9 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT '2025-01-01 01:23:45'::timestamp;";
         var value = new DateTime(2025, 1, 1, 1, 23, 45);
-        await using IConnection
+        await using IPgConnection
             connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IExecutableQuery query = connection.CreateQuery(sql);
+        using IPgExecutableQuery query = connection.CreateQuery(sql);
         DateTime result = await query.ExecuteScalar<PgDateTime, DateTime>();
         Assert.Equal(value, result);
     }

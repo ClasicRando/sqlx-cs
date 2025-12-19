@@ -1,25 +1,25 @@
 using Sqlx.Core;
-using Sqlx.Core.Query;
 using Sqlx.Core.Result;
+using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Query;
 
 /// <summary>
-/// <see cref="IQueryBatch"/> implementation for Postgres. <see cref="IBindable"/> instances returned
-/// are always <see cref="PgExecutableQuery"/> and the queries are executed using the
-/// <see cref="IQueryExecutor"/> supplied to the constructor.
+/// <see cref="IPgQueryBatch"/> implementation for Postgres. <see cref="IPgBindable"/> instances
+/// returned are always <see cref="PgExecutableQuery"/> and the queries are executed using the
+/// <see cref="IPgQueryExecutor"/> supplied to the constructor.
 /// </summary>
-public sealed class PgQueryBatch(IQueryExecutor queryExecutor) : IQueryBatch
+public sealed class PgQueryBatch(IPgQueryExecutor queryExecutor) : IPgQueryBatch
 {
     private bool _disposed;
-    private IQueryExecutor? _queryExecutor = queryExecutor;
+    private IPgQueryExecutor? _queryExecutor = queryExecutor;
     private readonly List<PgExecutableQuery> _queries = [];
     
     public bool WrapBatchInTransaction { get; set; }
 
     internal IEnumerable<PgExecutableQuery> Queries => _queries;
     
-    public IBindable CreateQuery(string sql)
+    public IPgBindable CreateQuery(string sql)
     {
         CheckDisposed();
         var query = new PgExecutableQuery(sql, _queryExecutor!);
@@ -27,7 +27,7 @@ public sealed class PgQueryBatch(IQueryExecutor queryExecutor) : IQueryBatch
         return query;
     }
 
-    public Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> ExecuteBatch(CancellationToken cancellationToken)
+    public Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> ExecuteBatch(CancellationToken cancellationToken)
     {
         CheckDisposed();
         return _queryExecutor!.ExecuteQueryBatch(this, cancellationToken);

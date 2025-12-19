@@ -5,7 +5,8 @@ namespace Sqlx.Core.Query;
 /// <summary>
 /// Super interface of <see cref="IBindable"/> that allows for executing the query.
 /// </summary>
-public interface IExecutableQuery : IBindable
+public interface IExecutableQuery<TDataRow> : IBindable
+    where TDataRow : IDataRow
 {
     /// <summary>
     /// Raw query to submit for execution
@@ -24,17 +25,17 @@ public interface IExecutableQuery : IBindable
     /// process the rows and results. Prefer extension methods such as:
     /// <list type="bullet">
     ///     <item><see cref="ExecutableQuery.ExecuteNonQuery"/></item>
-    ///     <item><see cref="ExecutableQuery.Fetch{T}"/></item>
-    ///     <item><see cref="ExecutableQuery.FetchFirst{T}"/></item>
-    ///     <item><see cref="ExecutableQuery.FetchFirstOrDefault{T}"/></item>
-    ///     <item><see cref="ExecutableQuery.FetchSingle{T}"/></item>
-    ///     <item><see cref="ExecutableQuery.FetchSingleOrDefault{T}"/></item>
-    ///     <item><see cref="ExecutableQuery.FetchAll{T}"/></item>
+    ///     <item><see cref="ExecutableQuery.Fetch{TDataRow, TRow}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchFirst{TDataRow, TRow}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchFirstOrDefault{TDataRow, TRow}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchSingle{TDataRow, TRow}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchSingleOrDefault{TDataRow, TRow}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchAll{TDataRow, TRow}"/></item>
     /// </list>
     /// </para>
     /// </summary>
     /// <param name="cancellationToken">cancellation token</param>
     /// <returns>async generator of query result objects</returns>
-    Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> Execute(
+    Task<IAsyncEnumerable<Either<TDataRow, QueryResult>>> Execute(
         CancellationToken cancellationToken);
 }

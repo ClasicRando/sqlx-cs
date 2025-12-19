@@ -6,11 +6,12 @@ using Sqlx.Core.Result;
 namespace Sqlx.Core.Query;
 
 /// <summary>
-/// Provides a set of extension methods for <see cref="IExecutableQuery"/>
+/// Provides a set of extension methods for <see cref="IExecutableQuery{TDataRow}"/>
 /// </summary>
 public static class ExecutableQuery
 {
-    extension(IExecutableQuery executableQuery)
+    extension<TDataRow>(IExecutableQuery<TDataRow> executableQuery)
+        where TDataRow : IDataRow
     {
         /// <summary>
         /// Execute this query, ignoring any rows returned and just counting the total number of rows
@@ -25,7 +26,7 @@ public static class ExecutableQuery
             var results = await executableQuery.Execute(cancellationToken).ConfigureAwait(false);
             await foreach (var result in results.WithCancellation(cancellationToken))
             {
-                if (result is Either<IDataRow, QueryResult>.Right right)
+                if (result is Either<TDataRow, QueryResult>.Right right)
                 {
                     count += right.Value.RowsAffected;
                 }
@@ -52,9 +53,9 @@ public static class ExecutableQuery
             {
                 switch (result)
                 {
-                    case Either<IDataRow, QueryResult>.Right:
+                    case Either<TDataRow, QueryResult>.Right:
                         yield break;
-                    case Either<IDataRow, QueryResult>.Left left:
+                    case Either<TDataRow, QueryResult>.Left left:
                         yield return TRow.FromRow(left.Value);
                         break;
                 }
@@ -72,7 +73,8 @@ public static class ExecutableQuery
         public ValueTask<List<TRow>> FetchAll<TRow>(CancellationToken cancellationToken = default)
             where TRow : IFromRow<TRow>
         {
-            return Fetch<TRow>(executableQuery, cancellationToken).ToListAsync(cancellationToken);
+            return executableQuery.Fetch<TDataRow, TRow>(cancellationToken)
+                .ToListAsync(cancellationToken);
         }
 
         /// <summary>
@@ -85,7 +87,7 @@ public static class ExecutableQuery
         public Task<TRow> FetchFirst<TRow>(CancellationToken cancellationToken = default)
             where TRow : IFromRow<TRow>
         {
-            return FetchRow<TRow>(executableQuery, false, true, cancellationToken);
+            return executableQuery.FetchRow<TDataRow, TRow>(false, true, cancellationToken);
         }
 
         /// <summary>
@@ -100,7 +102,7 @@ public static class ExecutableQuery
         public Task<TRow?> FetchFirstOrDefault<TRow>(CancellationToken cancellationToken = default)
             where TRow : IFromRow<TRow>
         {
-            return FetchRow<TRow>(executableQuery, false, false, cancellationToken);
+            return executableQuery.FetchRow<TDataRow, TRow>(false, false, cancellationToken);
         }
 
         /// <summary>
@@ -114,7 +116,7 @@ public static class ExecutableQuery
         public async Task<TRow> FetchSingle<TRow>(CancellationToken cancellationToken = default)
             where TRow : IFromRow<TRow>
         {
-            return await FetchRow<TRow>(executableQuery, true, true, cancellationToken);
+            return await executableQuery.FetchRow<TDataRow, TRow>(true, true, cancellationToken);
         }
 
         /// <summary>
@@ -130,7 +132,7 @@ public static class ExecutableQuery
         public Task<TRow?> FetchSingleOrDefault<TRow>(CancellationToken cancellationToken = default)
             where TRow : IFromRow<TRow>
         {
-            return FetchRow<TRow>(executableQuery, true, false, cancellationToken);
+            return executableQuery.FetchRow<TDataRow, TRow>(true, false, cancellationToken);
         }
 
         /// <summary>
@@ -152,7 +154,7 @@ public static class ExecutableQuery
             CancellationToken cancellationToken)
             where TRow : IFromRow<TRow>
         {
-            var results = Fetch<TRow>(executableQuery, cancellationToken).ConfigureAwait(false);
+            var results = executableQuery.Fetch<TDataRow, TRow>(cancellationToken).ConfigureAwait(false);
             await using ConfiguredCancelableAsyncEnumerable<TRow>.Enumerator enumerable = results.GetAsyncEnumerator();
             if (!await enumerable.MoveNextAsync())
             {

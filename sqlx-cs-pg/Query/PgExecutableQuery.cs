@@ -1,26 +1,27 @@
 using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core;
-using Sqlx.Core.Query;
 using Sqlx.Core.Result;
+using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Exceptions;
+using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Query;
 
 /// <summary>
-/// <see cref="IExecutableQuery"/> implementation for Postgres. Parameters are encoded into a
-/// <see cref="PgParameterBuffer"/> and the query is executed using the <see cref="IQueryExecutor"/>
+/// <see cref="IPgExecutableQuery"/> implementation for Postgres. Parameters are encoded into a
+/// <see cref="PgParameterBuffer"/> and the query is executed using the <see cref="PgConnection"/>
 /// supplied to the constructor.
 /// </summary>
-internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IExecutableQuery, IPgBindable
+internal class PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor) : IPgExecutableQuery, IPgBindable
 {
-    private IQueryExecutor? _queryExecutor = queryExecutor;
+    private IPgQueryExecutor? _queryExecutor = queryExecutor;
     public string Query { get; } = sql;
 
     public PgParameterBuffer ParameterBuffer { get; } = new();
-    
 
-    
+    public int ParameterCount => ParameterBuffer.ParameterCount;
+
     public void Bind(bool value)
     {
         BindPg<bool, PgBool>(value);
@@ -123,7 +124,7 @@ internal class PgExecutableQuery(string sql, IQueryExecutor queryExecutor) : IEx
         ParameterBuffer.EncodeValue<TValue, TType>(value);
     }
 
-    public Task<IAsyncEnumerable<Either<IDataRow, QueryResult>>> Execute(
+    public Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> Execute(
         CancellationToken cancellationToken)
     {
         PgException.ThrowIfNull(_queryExecutor);

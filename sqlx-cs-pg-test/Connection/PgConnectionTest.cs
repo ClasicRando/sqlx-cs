@@ -1,7 +1,6 @@
 using JetBrains.Annotations;
-using Sqlx.Core.Connection;
-using Sqlx.Core.Query;
 using Sqlx.Postgres.Fixtures;
+using Sqlx.Postgres.Query;
 
 namespace Sqlx.Postgres.Connection;
 
@@ -46,8 +45,8 @@ public partial class PgConnectionTest
 
     private async Task InitializeStoredProcedures()
     {
-        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IExecutableQuery setUp = connection.CreateQuery(SetUpQuery);
+        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery setUp = connection.CreateQuery(SetUpQuery);
         await setUp.ExecuteNonQuery();
     }
 }

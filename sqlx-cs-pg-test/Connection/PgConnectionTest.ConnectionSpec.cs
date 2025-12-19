@@ -1,8 +1,8 @@
 using Sqlx.Core;
-using Sqlx.Core.Connection;
 using Sqlx.Core.Pool;
-using Sqlx.Core.Query;
 using Sqlx.Core.Result;
+using Sqlx.Postgres.Query;
+using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Connection;
 
@@ -11,10 +11,10 @@ public partial class PgConnectionTest
     [Fact]
     public async Task OpenAsync_Should_SucceedWithSaslAuth_When_DefaultAuth()
     {
-        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         Assert.Equal(ConnectionStatus.Idle, connection.Status);
-        using IExecutableQuery query = connection.CreateQuery("SELECT 1;");
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT 1;");
         var rowsAffected = await query.ExecuteNonQuery(TestContext.Current.CancellationToken);
         Assert.Equal(1, rowsAffected);
     }
@@ -22,7 +22,7 @@ public partial class PgConnectionTest
     [Fact]
     public async Task CloseAsync_Should_Succeed_When_OpenConnection()
     {
-        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         Assert.Equal(ConnectionStatus.Idle, connection.Status);
         await connection.CloseAsync(TestContext.Current.CancellationToken);
@@ -32,7 +32,7 @@ public partial class PgConnectionTest
     [Fact]
     public async Task CloseAsync_Should_Succeed_When_ClosedConnection()
     {
-        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
         Assert.Equal(ConnectionStatus.Closed, connection.Status);
         await connection.CloseAsync(TestContext.Current.CancellationToken);
         Assert.Equal(ConnectionStatus.Closed, connection.Status);
@@ -41,7 +41,7 @@ public partial class PgConnectionTest
     [Fact]
     public async Task CloseAsync_Should_Fail_When_DisposedConnection()
     {
-        IConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
         Assert.Equal(ConnectionStatus.Closed, connection.Status);
         await connection.DisposeAsync();
         await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
@@ -51,7 +51,7 @@ public partial class PgConnectionTest
     [Fact]
     public async Task CommitAsync_Should_SucceedAndIncrementTransactionId()
     {
-        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         Assert.Equal(ConnectionStatus.Idle, connection.Status);
         var transactionIdStart = await GetConnectionTransactionId(connection);
@@ -68,7 +68,7 @@ public partial class PgConnectionTest
     [Fact]
     public async Task RollbackAsync_Should_SucceedAndIncrementTransactionId()
     {
-        await using IConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         Assert.Equal(ConnectionStatus.Idle, connection.Status);
         var transactionIdStart = await GetConnectionTransactionId(connection);
@@ -82,12 +82,12 @@ public partial class PgConnectionTest
         Assert.True(transactionIdBegin < transactionIdRollback);
     }
 
-    private static async Task<long> GetConnectionTransactionId(IConnection connection)
+    private static async Task<long> GetConnectionTransactionId(IPgConnection connection)
     {
-        using IExecutableQuery query = connection.CreateQuery("SELECT txid_current();");
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT txid_current();");
         var rows = await query.Execute(TestContext.Current.CancellationToken);
-        return await rows.Where(result => result is Either<IDataRow, QueryResult>.Left)
-            .Select(result => (Either<IDataRow, QueryResult>.Left)result)
+        return await rows.Where(result => result is Either<IPgDataRow, QueryResult>.Left)
+            .Select(result => (Either<IPgDataRow, QueryResult>.Left)result)
             .Select(row => row.Value.GetLongNotNull(0))
             .FirstAsync();
     }
