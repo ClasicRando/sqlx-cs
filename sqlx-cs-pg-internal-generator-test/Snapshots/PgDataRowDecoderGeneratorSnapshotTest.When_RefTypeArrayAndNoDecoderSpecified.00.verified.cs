@@ -7,5 +7,5 @@ namespace Sqlx.Postgres.Generator.Result;
 [global::System.AttributeUsage(validOn: global::System.AttributeTargets.Method)]
 public sealed class GeneratePgDecodeMethodAttribute : global::System.Attribute
 {
-    public System.Type? Decoder { get; set; }
+    public required System.Type Decoder { get; init; }
 }

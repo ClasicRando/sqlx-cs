@@ -19,7 +19,7 @@ public partial class PgConnectionTest
         };
         await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1;");
-        query.BindPg(value);
+        query.Bind(value);
         var result = await query.ExecuteScalarPg<TestCompositeType>();
         Assert.Equal(value, result);
     }
@@ -60,7 +60,7 @@ public partial class PgConnectionTest
     }
 }
 
-public readonly struct TestCompositeType : IPgUdt<TestCompositeType>, IFromRow<TestCompositeType>
+public readonly struct TestCompositeType : IPgUdt<TestCompositeType>, IFromRow<IPgDataRow, TestCompositeType>
 {
     public int Id { get; init; }
     
@@ -96,7 +96,7 @@ public readonly struct TestCompositeType : IPgUdt<TestCompositeType>, IFromRow<T
         return typeInfo == DbType;
     }
 
-    public static TestCompositeType FromRow(IDataRow dataRow)
+    public static TestCompositeType FromRow(IPgDataRow dataRow)
     {
         return new TestCompositeType
         {

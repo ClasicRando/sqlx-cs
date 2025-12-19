@@ -87,42 +87,42 @@ public static class ExecutableQuery
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.Fetch"/>>
         public IAsyncEnumerable<TRow> Fetch<TRow>(CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
             return executableQuery.Fetch<IPgDataRow, TRow>(cancellationToken);
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchAll"/>>
         public ValueTask<List<TRow>> FetchAll<TRow>(CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
             return executableQuery.FetchAll<IPgDataRow, TRow>(cancellationToken);
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchFirst"/>>
         public Task<TRow> FetchFirst<TRow>(CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
             return executableQuery.FetchFirst<IPgDataRow, TRow>(cancellationToken);
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchFirstOrDefault"/>>
         public Task<TRow?> FetchFirstOrDefault<TRow>(CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
             return executableQuery.FetchFirstOrDefault<IPgDataRow, TRow>(cancellationToken);
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchSingle"/>>
         public async Task<TRow> FetchSingle<TRow>(CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
             return await executableQuery.FetchSingle<IPgDataRow, TRow>(cancellationToken);
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchSingleOrDefault"/>>
         public Task<TRow?> FetchSingleOrDefault<TRow>(CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
             return executableQuery.FetchSingleOrDefault<IPgDataRow, TRow>(cancellationToken);
         }

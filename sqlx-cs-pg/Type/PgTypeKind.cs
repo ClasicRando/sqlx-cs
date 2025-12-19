@@ -16,12 +16,12 @@ public readonly record struct DomainType : IPgTypeKind
 
 public readonly record struct CompositeType : IPgTypeKind
 {
-    public readonly record struct Attribute : IFromRow<Attribute>
+    public readonly record struct Attribute : IFromRow<IPgDataRow, Attribute>
     {
         public required string Name { get; init; }
         public required PgOid TypeOid { get; init; }
 
-        public static Attribute FromRow(IDataRow dataRow)
+        public static Attribute FromRow(IPgDataRow dataRow)
         {
             return new Attribute
             {

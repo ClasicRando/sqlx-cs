@@ -13,7 +13,7 @@ namespace Sqlx.Postgres.Type;
 public static class PgRecordDecoder
 {
     public static T DecodeBinary<T>(ref PgBinaryValue binaryValue)
-        where T : IPgDbType<T>, IFromRow<T>
+        where T : IPgDbType<T>, IFromRow<IPgDataRow, T>
     {
         PgTypeInfo typeInfo = T.DbType;
         if (typeInfo.TypeKind is not CompositeType compositeType)
@@ -71,7 +71,7 @@ public static class PgRecordDecoder
     }
 
     public static T DecodeText<T>(in PgTextValue textValue)
-        where T : IPgDbType<T>, IFromRow<T>
+        where T : IPgDbType<T>, IFromRow<IPgDataRow, T>
     {
         PgTypeInfo typeInfo = T.DbType;
         if (typeInfo.TypeKind is not CompositeType compositeType)

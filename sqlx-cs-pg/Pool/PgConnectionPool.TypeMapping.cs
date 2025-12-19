@@ -3,6 +3,7 @@ using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Type;
+using Bindable = Sqlx.Postgres.Query.Bindable;
 
 namespace Sqlx.Postgres.Pool;
 
@@ -80,7 +81,7 @@ public sealed partial class PgConnectionPool
 
         using IPgExecutableQuery attributeOidsQuery =
             connection.CreateQuery(pgCompositeAttributeOidsByOid);
-        attributeOidsQuery.Bind(oid);
+        Bindable.Bind(attributeOidsQuery, oid);
 
         var attributeOids = await attributeOidsQuery
             .Fetch<CompositeType.Attribute>(cancellationToken)

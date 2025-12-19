@@ -11,6 +11,6 @@ namespace Sqlx.Postgres.Result;
 public static partial class DataRowExtensions
 {
     public static partial bool GetPgBoolean(this IDataRow dataRow, int index) =>
-        PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow)
-            .DecodeNotNull<bool, PgBool>(index);
+        PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)
+            .GetPgNotNull<bool, PgBool>(index);
 }

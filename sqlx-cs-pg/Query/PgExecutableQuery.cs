@@ -13,7 +13,7 @@ namespace Sqlx.Postgres.Query;
 /// <see cref="PgParameterBuffer"/> and the query is executed using the <see cref="PgConnection"/>
 /// supplied to the constructor.
 /// </summary>
-internal class PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor) : IPgExecutableQuery, IPgBindable
+internal class PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor) : IPgExecutableQuery
 {
     private IPgQueryExecutor? _queryExecutor = queryExecutor;
     public string Query { get; } = sql;
@@ -24,67 +24,67 @@ internal class PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor) : I
 
     public void Bind(bool value)
     {
-        BindPg<bool, PgBool>(value);
+        Bind<bool, PgBool>(value);
     }
 
     public void Bind(sbyte value)
     {
-        BindPg<sbyte, PgChar>(value);
+        Bind<sbyte, PgChar>(value);
     }
 
     public void Bind(short value)
     {
-        BindPg<short, PgShort>(value);
+        Bind<short, PgShort>(value);
     }
 
     public void Bind(int value)
     {
-        BindPg<int, PgInt>(value);
+        Bind<int, PgInt>(value);
     }
 
     public void Bind(long value)
     {
-        BindPg<long, PgLong>(value);
+        Bind<long, PgLong>(value);
     }
 
     public void Bind(float value)
     {
-        BindPg<float, PgFloat>(value);
+        Bind<float, PgFloat>(value);
     }
 
     public void Bind(double value)
     {
-        BindPg<double, PgDouble>(value);
+        Bind<double, PgDouble>(value);
     }
 
     public void Bind(TimeOnly value)
     {
-        BindPg<TimeOnly, PgTime>(value);
+        Bind<TimeOnly, PgTime>(value);
     }
 
     public void Bind(DateOnly value)
     {
-        BindPg<DateOnly, PgDate>(value);
+        Bind<DateOnly, PgDate>(value);
     }
 
     public void Bind(DateTime value)
     {
-        BindPg<DateTime, PgDateTime>(value);
+        Bind<DateTime, PgDateTime>(value);
     }
 
     public void Bind(DateTimeOffset value)
     {
-        BindPg<DateTimeOffset, PgDateTimeOffset>(value);
+        Bind<DateTimeOffset, PgDateTimeOffset>(value);
     }
 
     public void Bind(decimal value)
     {
-        BindPg<decimal, PgDecimal>(value);
+        Bind<decimal, PgDecimal>(value);
     }
     
     public void Bind(byte[]? value)
     {
-        this.BindPgNullableClass<byte[], PgBytea>(value);
+        this.BindRef<byte[], PgBytea>(value);
     }
 
     public void Bind(ReadOnlySpan<byte> value)
@@ -94,7 +94,7 @@ internal class PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor) : I
 
     public void Bind(string? value)
     {
-        this.BindPgNullableClass<string, PgString>(value);
+        this.BindRef<string, PgString>(value);
     }
 
     public void Bind(ReadOnlySpan<char> value)
@@ -104,7 +104,7 @@ internal class PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor) : I
 
     public void Bind(Guid value)
     {
-        BindPg<Guid, PgUuid>(value);
+        Bind<Guid, PgUuid>(value);
     }
 
     public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
@@ -117,7 +117,7 @@ internal class PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor) : I
         ParameterBuffer.EncodeNull();
     }
 
-    public void BindPg<TValue, TType>(TValue value)
+    public void Bind<TValue, TType>(TValue value)
         where TValue : notnull
         where TType : IPgDbType<TValue>
     {

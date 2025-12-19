@@ -9,7 +9,7 @@ namespace Sqlx.Core.Query;
 [TestSubject(typeof(ExecutableQuery))]
 public class ExecutableQueryTest
 {
-    private record TestRow : IFromRow<TestRow>
+    private record TestRow : IFromRow<IDataRow, TestRow>
     {
         public static TestRow FromRow(IDataRow dataRow)
         {
@@ -17,7 +17,7 @@ public class ExecutableQueryTest
         }
     }
 
-    private record struct TestRowStruct(int Id) : IFromRow<TestRowStruct>
+    private record struct TestRowStruct(int Id) : IFromRow<IDataRow, TestRowStruct>
     {
         public static TestRowStruct FromRow(IDataRow dataRow)
         {

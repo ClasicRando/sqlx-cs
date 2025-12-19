@@ -16,7 +16,7 @@ public static partial class DataRowExtensions
         {
             return null;
         }
-        return PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow)
-            .DecodeNotNull<bool?[], PgArrayTypeStruct<bool, PgBool>>(index);
+        return PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)
+            .GetPgNotNull<bool?[], PgArrayTypeStruct<bool, PgBool>>(index);
     }
 }

@@ -18,55 +18,7 @@ public interface IPgBindable : IBindable
     /// <param name="value">Value to bind</param>
     /// <typeparam name="TValue">Type of the value</typeparam>
     /// <typeparam name="TType">Type used to encode the value</typeparam>
-    void BindPg<TValue, TType>(TValue value)
+    void Bind<TValue, TType>(TValue value)
         where TType : IPgDbType<TValue>
         where TValue : notnull;
-}
-
-public static class PgBindable
-{
-    extension(IPgBindable bindable)
-    {
-        /// <summary>
-        /// Bind a nullable value type. This defers to <see cref="IBindable.BindNull"/> when the
-        /// value is null and otherwise calls <see cref="IPgBindable.BindPg"/>.
-        /// </summary>
-        /// <param name="value">Value to bind</param>
-        /// <typeparam name="TValue">Type of the value</typeparam>
-        /// <typeparam name="TType">Type used to encode the value</typeparam>
-        public void BindPgNullableStruct<TValue, TType>(TValue? value)
-            where TType : IPgDbType<TValue>
-            where TValue : struct
-        {
-            if (!value.HasValue)
-            {
-                bindable.BindNull<TType>();
-            }
-            else
-            {
-                bindable.BindPg<TValue, TType>(value.Value);
-            }
-        }
-        
-        /// <summary>
-        /// Bind a nullable ref type. This defers to <see cref="IBindable.BindNull"/> when the value
-        /// is null and otherwise calls <see cref="IPgBindable.BindPg"/>.
-        /// </summary>
-        /// <param name="value">Value to bind</param>
-        /// <typeparam name="TValue">Type of the value</typeparam>
-        /// <typeparam name="TType">Type used to encode the value</typeparam>
-        public void BindPgNullableClass<TValue, TType>(TValue? value)
-            where TType : IPgDbType<TValue>
-            where TValue : class
-        {
-            if (value is null)
-            {
-                bindable.BindNull<TType>();
-            }
-            else
-            {
-                bindable.BindPg<TValue, TType>(value);
-            }
-        }
-    }
 }
