@@ -16,13 +16,13 @@ public static class ExecutableQuery
         /// Execute the query and extract the first row's first column as the desired type
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token</param>
-        /// <typeparam name="TDecode">Type decoder for <typeparamref name="TValue"/></typeparam>
+        /// <typeparam name="TType">Type decoder for <typeparamref name="TValue"/></typeparam>
         /// <typeparam name="TValue">Final type to decode a scalar value for</typeparam>
         /// <returns>The first row's first column decoded as the desired value type</returns>
         /// <exception cref="Exception">If the query or column decoding fails</exception>
-        public async Task<TValue> ExecuteScalar<TDecode, TValue>(
+        public async Task<TValue> ExecuteScalar<TValue, TType>(
             CancellationToken cancellationToken = default)
-            where TDecode : IPgDbType<TValue>
+            where TType : IPgDbType<TValue>
             where TValue : notnull
         {
             var flow = await executableQuery.Execute(cancellationToken);
@@ -30,8 +30,8 @@ public static class ExecutableQuery
             {
                 if (item is Either<IDataRow, QueryResult>.Left left)
                 {
-                    return PgException.CheckIfIs<IDataRow, PgDataRow>(left.Value)
-                        .DecodeNotNull<TValue, TDecode>(0);
+                    return PgException.CheckIfIs<IDataRow, IPgDataRow>(left.Value)
+                        .GetPgNotNull<TValue, TType>(0);
                 }
             }
 

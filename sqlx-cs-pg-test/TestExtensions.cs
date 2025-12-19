@@ -37,7 +37,7 @@ public static class TestExtensions
             where TDecode : IPgDbType<TValue>
             where TValue : notnull
         {
-            return executableQuery.ExecuteScalar<TDecode, TValue>(
+            return executableQuery.ExecuteScalar<TValue, TDecode>(
                 TestContext.Current.CancellationToken);
         }
 

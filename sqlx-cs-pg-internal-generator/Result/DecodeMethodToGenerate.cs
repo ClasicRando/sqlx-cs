@@ -17,12 +17,12 @@ public class DecodeMethodToGenerate
     public DecodeMethodToGenerate(IMethodSymbol templateMethod)
     {
         _templateMethod = templateMethod;
-        DecoderType = _templateMethod.GetAttributes()
+        DecoderType = (ITypeSymbol) _templateMethod.GetAttributes()
             .FirstOrDefault()
             ?.NamedArguments
             .FirstOrDefault(arg => arg.Key == "Decoder")
             .Value
-            .Value as ITypeSymbol;
+            .Value!;
     }
 
     public string Name => _templateMethod.Name;
@@ -39,7 +39,7 @@ public class DecodeMethodToGenerate
 
     public string IndexerParameterName => IndexerParameter.Name;
     
-    public ITypeSymbol? DecoderType { get; }
+    public ITypeSymbol DecoderType { get; }
 
     public bool Validate(SourceProductionContext context)
     {

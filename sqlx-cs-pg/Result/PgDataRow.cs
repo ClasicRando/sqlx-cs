@@ -13,7 +13,7 @@ namespace Sqlx.Postgres.Result;
 /// <see cref="IDataRow"/> implementation for Postgres. Represents the bytes sent by the database
 /// backend, the statement's metadata and the slices into the bytes that represent each column.
 /// </summary>
-internal sealed class PgDataRow : IDataRow
+internal sealed class PgDataRow : IPgDataRow
 {
     private const int MaxStackSize = 256 / (sizeof(char) / sizeof(byte));
     private static readonly ArrayPool<char> CharArrayPool = ArrayPool<char>.Shared;
@@ -53,77 +53,77 @@ internal sealed class PgDataRow : IDataRow
 
     public bool GetBooleanNotNull(int index)
     {
-        return DecodeNotNull<bool, PgBool>(index);
+        return GetPgNotNull<bool, PgBool>(index);
     }
 
     public sbyte GetByteNotNull(int index)
     {
-        return DecodeNotNull<sbyte, PgChar>(index);
+        return GetPgNotNull<sbyte, PgChar>(index);
     }
 
     public short GetShortNotNull(int index)
     {
-        return DecodeNotNull<short, PgShort>(index);
+        return GetPgNotNull<short, PgShort>(index);
     }
 
     public int GetIntNotNull(int index)
     {
-        return DecodeNotNull<int, PgInt>(index);
+        return GetPgNotNull<int, PgInt>(index);
     }
 
     public long GetLongNotNull(int index)
     {
-        return DecodeNotNull<long, PgLong>(index);
+        return GetPgNotNull<long, PgLong>(index);
     }
 
     public float GetFloatNotNull(int index)
     {
-        return DecodeNotNull<float, PgFloat>(index);
+        return GetPgNotNull<float, PgFloat>(index);
     }
 
     public double GetDoubleNotNull(int index)
     {
-        return DecodeNotNull<double, PgDouble>(index);
+        return GetPgNotNull<double, PgDouble>(index);
     }
 
     public TimeOnly GetTimeNotNull(int index)
     {
-        return DecodeNotNull<TimeOnly, PgTime>(index);
+        return GetPgNotNull<TimeOnly, PgTime>(index);
     }
 
     public DateOnly GetDateNotNull(int index)
     {
-        return DecodeNotNull<DateOnly, PgDate>(index);
+        return GetPgNotNull<DateOnly, PgDate>(index);
     }
 
     public DateTime GetDateTimeNotNull(int index)
     {
-        return DecodeNotNull<DateTime, PgDateTime>(index);
+        return GetPgNotNull<DateTime, PgDateTime>(index);
     }
 
     public DateTimeOffset GetDateTimeOffsetNotNull(int index)
     {
-        return DecodeNotNull<DateTimeOffset, PgDateTimeOffset>(index);
+        return GetPgNotNull<DateTimeOffset, PgDateTimeOffset>(index);
     }
 
     public decimal GetDecimalNotNull(int index)
     {
-        return DecodeNotNull<decimal, PgDecimal>(index);
+        return GetPgNotNull<decimal, PgDecimal>(index);
     }
 
     public byte[] GetBytesNotNull(int index)
     {
-        return DecodeNotNull<byte[], PgBytea>(index);
+        return GetPgNotNull<byte[], PgBytea>(index);
     }
 
     public string GetStringNotNull(int index)
     {
-        return DecodeNotNull<string, PgString>(index);
+        return GetPgNotNull<string, PgString>(index);
     }
 
     public Guid GetGuidNotNull(int index)
     {
-        return DecodeNotNull<Guid, PgUuid>(index);
+        return GetPgNotNull<Guid, PgUuid>(index);
     }
 
     public T GetJsonNotNull<T>(int index, JsonTypeInfo<T>? jsonTypeInfo = null) where T : notnull
@@ -193,9 +193,9 @@ internal sealed class PgDataRow : IDataRow
             : new ColumnData(false, slice, ref columnMetadata);
     }
 
-    internal TResult DecodeNotNull<TResult, TType>(int index)
-        where TResult : notnull
+    public TResult GetPgNotNull<TResult, TType>(int index)
         where TType : IPgDbType<TResult>
+        where TResult : notnull
     {
         ColumnData columnData = GetColumnData(index);
         if (columnData.IsNull)

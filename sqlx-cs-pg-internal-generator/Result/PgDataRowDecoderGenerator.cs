@@ -20,7 +20,7 @@ internal class PgDataRowDecoderGenerator : IIncrementalGenerator
         [global::System.AttributeUsage(validOn: global::System.AttributeTargets.Method)]
         public sealed class GeneratePgDecodeMethodAttribute : global::System.Attribute
         {
-            public System.Type? Decoder { get; set; }
+            public required System.Type Decoder { get; init; }
         }
         """;
     
@@ -139,8 +139,8 @@ internal class PgDataRowDecoderGenerator : IIncrementalGenerator
                         {
                             return null;
                         }
-                        return PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow)
-                            .DecodeNotNull<{{resultTypeName}}, {{decoderTypeName}}>(index);
+                        return PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)
+                            .GetPgNotNull<{{resultTypeName}}, {{decoderTypeName}}>(index);
                     }
                     """
                 : $$"""
@@ -150,14 +150,14 @@ internal class PgDataRowDecoderGenerator : IIncrementalGenerator
                         {
                             return null;
                         }
-                        return PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow)
-                            .DecodeNotNull<{{resultTypeName}}, {{decoderTypeName}}>({{indexerName}});
+                        return PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)
+                            .GetPgNotNull<{{resultTypeName}}, {{decoderTypeName}}>({{indexerName}});
                     }
                     """;
         }
 
         return indexerIsString
-            ? $"{signature} =>\n    PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow)\n        .DecodeNotNull<{resultTypeName}, {decoderTypeName}>(dataRow.IndexOf({indexerName}));"
-            : $"{signature} =>\n    PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow)\n        .DecodeNotNull<{resultTypeName}, {decoderTypeName}>({indexerName});";
+            ? $"{signature} =>\n    PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)\n        .GetPgNotNull<{resultTypeName}, {decoderTypeName}>(dataRow.IndexOf({indexerName}));"
+            : $"{signature} =>\n    PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)\n        .GetPgNotNull<{resultTypeName}, {decoderTypeName}>({indexerName});";
     }
 }

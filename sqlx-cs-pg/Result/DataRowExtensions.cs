@@ -13,195 +13,53 @@ public static partial class DataRowExtensions
     extension(IDataRow dataRow)
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TDecode? GetPgDecode<TDecode>(int index)
-            where TDecode : IPgDbType<TDecode>
+        public TType GetPgNotNull<TType>(int index)
+            where TType : IPgDbType<TType>
         {
-            if (dataRow.IsNull(index))
-            {
-                return default;
-            }
-            PgDataRow pgDataRow = PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow);
-            return pgDataRow.DecodeNotNull<TDecode, TDecode>(index);
+            return PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)
+                .GetPgNotNull<TType, TType>(index);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TDecode GetPgDecodeNotNull<TDecode>(int index)
-            where TDecode : IPgDbType<TDecode>
+        public TType GetPgNotNull<TType>(string name)
+            where TType : IPgDbType<TType>
         {
-            PgDataRow pgDataRow = PgException.CheckIfIs<IDataRow, PgDataRow>(dataRow);
-            return pgDataRow.DecodeNotNull<TDecode, TDecode>(index);
+            return PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)
+                .GetPgNotNull<TType, TType>(name);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TDecode? GetPgDecode<TDecode>(string name)
-            where TDecode : IPgDbType<TDecode>
+        public TType? GetPgRef<TType>(int index)
+            where TType : class, IPgDbType<TType>
         {
-            return GetPgDecode<TDecode>(dataRow, dataRow.IndexOf(name));
+            return PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)
+                .GetPgRef<TType, TType>(index);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TDecode GetPgDecodeNotNull<TDecode>(string name)
-            where TDecode : IPgDbType<TDecode>
+        public TType? GetPgRef<TType>(string name)
+            where TType : class, IPgDbType<TType>
         {
-            return GetPgDecodeNotNull<TDecode>(dataRow, dataRow.IndexOf(name));
+            return PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)
+                .GetPgRef<TType, TType>(name);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TType? GetPgVal<TType>(int index)
+            where TType : struct, IPgDbType<TType>
+        {
+            return PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)
+                .GetPgVal<TType, TType>(index);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TType? GetPgVal<TType>(string name)
+            where TType : struct, IPgDbType<TType>
+        {
+            return PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)
+                .GetPgVal<TType, TType>(name);
         }
     }
-
-    [GeneratePgDecodeMethod]
-    public static partial PgOid? GetPgOid(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgOid GetPgOidNotNull(this IDataRow dataRow, int index);
-
-    [GeneratePgDecodeMethod]
-    public static partial PgOid? GetPgOid(this IDataRow dataRow, string name);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgOid GetPgOidNotNull(this IDataRow dataRow, string name);
-
-    [GeneratePgDecodeMethod]
-    public static partial PgTimeTz? GetPgTimeTz(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgTimeTz GetPgTimeTzNotNull(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgTimeTz? GetPgTimeTz(this IDataRow dataRow, string name);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgTimeTz GetPgTimeTzNotNull(this IDataRow dataRow, string name);
-
-    [GeneratePgDecodeMethod]
-    public static partial PgPoint? GetPgPoint(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgPoint GetPgPointNotNull(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgPoint? GetPgPoint(this IDataRow dataRow, string name);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgPoint GetPgPointNotNull(this IDataRow dataRow, string name);
-
-    [GeneratePgDecodeMethod]
-    public static partial PgLine? GetPgLine(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgLine GetPgLineNotNull(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgLine? GetPgLine(this IDataRow dataRow, string name);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgLine GetPgLineNotNull(this IDataRow dataRow, string name);
-
-    [GeneratePgDecodeMethod]
-    public static partial PgLineSegment? GetPgLineSegment(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgLineSegment GetPgLineSegmentNotNull(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgLineSegment? GetPgLineSegment(this IDataRow dataRow, string name);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgLineSegment GetPgLineSegmentNotNull(this IDataRow dataRow, string name);
-
-    [GeneratePgDecodeMethod]
-    public static partial PgBox? GetPgBox(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgBox GetPgBoxNotNull(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgBox? GetPgBox(this IDataRow dataRow, string name);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgBox GetPgBoxNotNull(this IDataRow dataRow, string name);
-
-    [GeneratePgDecodeMethod]
-    public static partial PgPath? GetPgPath(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgPath GetPgPathNotNull(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgPath? GetPgPath(this IDataRow dataRow, string name);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgPath GetPgPathNotNull(this IDataRow dataRow, string name);
-
-    [GeneratePgDecodeMethod]
-    public static partial PgCircle? GetPgCircle(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgCircle GetPgCircleNotNull(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgCircle? GetPgCircle(this IDataRow dataRow, string name);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgCircle GetPgCircleNotNull(this IDataRow dataRow, string name);
-
-    [GeneratePgDecodeMethod]
-    public static partial PgPolygon? GetPgPolygon(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgPolygon GetPgPolygonNotNull(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgPolygon? GetPgPolygon(this IDataRow dataRow, string name);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgPolygon GetPgPolygonNotNull(this IDataRow dataRow, string name);
-
-    [GeneratePgDecodeMethod]
-    public static partial PgInterval? GetPgInterval(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgInterval GetPgIntervalNotNull(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgInterval? GetPgInterval(this IDataRow dataRow, string name);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgInterval GetPgIntervalNotNull(this IDataRow dataRow, string name);
-
-    [GeneratePgDecodeMethod]
-    public static partial PgMacAddress? GetPgMacAddress(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgMacAddress GetPgMacAddressNotNull(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgMacAddress? GetPgMacAddress(this IDataRow dataRow, string name);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgMacAddress GetPgMacAddressNotNull(this IDataRow dataRow, string name);
-
-    [GeneratePgDecodeMethod]
-    public static partial PgMoney? GetPgMoney(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgMoney GetPgMoneyNotNull(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgMoney? GetPgMoney(this IDataRow dataRow, string name);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgMoney GetPgMoneyNotNull(this IDataRow dataRow, string name);
-
-    [GeneratePgDecodeMethod]
-    public static partial PgInet? GetPgInet(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgInet GetPgInetNotNull(this IDataRow dataRow, int index);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgInet? GetPgInet(this IDataRow dataRow, string name);
-    
-    [GeneratePgDecodeMethod]
-    public static partial PgInet GetPgInetNotNull(this IDataRow dataRow, string name);
 
     [GeneratePgDecodeMethod(Decoder = typeof(PgIpNetwork))]
     public static partial IPNetwork? GetPgIpNetwork(this IDataRow dataRow, int index);
@@ -479,7 +337,7 @@ public static partial class DataRowExtensions
     [GeneratePgDecodeMethod(Decoder = typeof(PgUuid))]
     public static partial Guid?[] GetPgGuidArrayNotNull(this IDataRow dataRow, string name);
 
-    [GeneratePgDecodeMethod]
+    [GeneratePgDecodeMethod(Decoder = typeof(PgTimeTz))]
     public static partial PgTimeTz?[]? GetPgTimeTzArray(this IDataRow dataRow, int index);
 
     [GeneratePgDecodeMethod(Decoder = typeof(PgTimeTz))]

@@ -26,7 +26,7 @@ public readonly record struct CompositeType : IPgTypeKind
             return new Attribute
             {
                 Name = dataRow.GetStringNotNull("attname"),
-                TypeOid = dataRow.GetPgOidNotNull("atttypid"),
+                TypeOid = dataRow.GetPgNotNull<PgOid>("atttypid"),
             };
         }
     }
