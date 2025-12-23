@@ -33,17 +33,8 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
     public override async Task OpenAsync(CancellationToken cancellationToken = default)
     {
         CheckClosed();
-        PgStream stream = await _pool.AcquireStream().ConfigureAwait(false);
-        try
-        {
-            await stream.OpenAsync(cancellationToken).ConfigureAwait(false);
-            _pgStream = stream;
-        }
-        catch
-        {
-            await _pool.Return(stream, cancellationToken).ConfigureAwait(false);
-            throw;
-        }
+        PgStream stream = await _pool.AcquireStream(cancellationToken).ConfigureAwait(false);
+        _pgStream = stream;
     }
 
     public override IPgExecutableQuery CreateQuery(string query)
@@ -74,22 +65,23 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
         return _pgStream!.ExecuteQueryBatch(query, cancellationToken);
     }
 
-    public override async Task CloseAsync(CancellationToken cancellationToken = default)
+    public override Task CloseAsync(CancellationToken cancellationToken = default)
     {
         CheckDisposed();
         try
         {
             if (Status is ConnectionStatus.Closed or ConnectionStatus.Broken)
             {
-                return;
+                return Task.CompletedTask;
             }
 
-            await _pool.Return(_pgStream!, cancellationToken).ConfigureAwait(false);
+            _pool.Return(_pgStream!);
         }
         finally
         {
             _pgStream = null;
         }
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -144,13 +136,6 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
     {
         if (_disposed) return;
         if (disposing) CloseAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-        _disposed = true;
-    }
-
-    protected override async ValueTask DisposeAsyncCore()
-    {
-        if (_disposed) return;
-        await CloseAsync().ConfigureAwait(false);
         _disposed = true;
     }
 }

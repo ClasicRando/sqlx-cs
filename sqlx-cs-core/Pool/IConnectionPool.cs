@@ -20,16 +20,17 @@ public interface IConnectionPool<out TConnection, out TBindable, TQuery, TQueryB
     where TQueryBatch : IQueryBatch<TBindable, TDataRow>
     where TDataRow : IDataRow
 {
+    PoolOptions PoolOptions { get; }
+    
     /// <summary>
     /// Create a connection for use in querying this pool's database. The created connection is
     /// closed until <see cref="IConnection{TQuery,TBindable,TQueryBatch,TDataRow}.OpenAsync"/> is
     /// called and this method will return immediately with the created connection. However, it will
     /// wait for an available physical connection to become available from the pool before
     /// <see cref="IConnection{TQuery,TBindable,TQueryBatch,TDataRow}.OpenAsync"/> returns. Make
-    /// sure to close the connection instance to return it's underlining physical connection to the
-    /// pool for reuse (preferably using the <see cref="IAsyncDisposable"/> interface's language
-    /// construct).
+    /// sure to close the connection instance to release any system resources held by the connection
+    /// or to return it to the underlining pool.
     /// </summary>
-    /// <returns>A connection linked to this pool</returns>
+    /// <returns>A new connection object</returns>
     TConnection CreateConnection();
 }

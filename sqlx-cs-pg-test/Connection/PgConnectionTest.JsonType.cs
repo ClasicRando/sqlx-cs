@@ -12,8 +12,8 @@ public partial class PgConnectionTest
         bool useSourceGeneration)
     {
         var value = new Inner(1, "Test1");
-        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1;");
+        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 json_col;");
         query.BindJson(value, useSourceGeneration ? SourceGenerationContext.Default.Inner : null);
         Inner result = await query.ExecuteScalarJson(
             useSourceGeneration ? SourceGenerationContext.Default.Inner : null);
@@ -28,7 +28,7 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT '{\"Id\":1,\"Name\":\"Test1\"}'::jsonb;";
         var value = new Inner(1, "Test1");
-        await using IPgConnection
+        using IPgConnection
             connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         Inner result = await query.ExecuteScalarJson(
@@ -43,7 +43,7 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT '{\"Id\":1,\"Name\":\"Test1\"}'::json;";
         var value = new Inner(1, "Test1");
-        await using IPgConnection
+        using IPgConnection
             connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         Inner result = await query.ExecuteScalarJson(

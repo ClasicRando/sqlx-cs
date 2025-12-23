@@ -9,8 +9,8 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_FloatAndDefaultEncoding()
     {
         const float value = 12345.67890F;
-        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1;");
+        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 float_col;");
         query.Bind(value);
         var result = await query.ExecuteScalar<PgFloat, float>();
         Assert.Equal(value, result);
@@ -21,7 +21,7 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT CAST(12345.67890 AS REAL);";
         const float value = 12345.67890F;
-        await using IPgConnection
+        using IPgConnection
             connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalar<PgFloat, float>();
@@ -32,8 +32,8 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_DoubleAndDefaultEncoding()
     {
         const double value = 12345.67890;
-        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1;");
+        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 double_col;");
         query.Bind(value);
         var result = await query.ExecuteScalar<PgDouble, double>();
         Assert.Equal(value, result);
@@ -44,7 +44,7 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT CAST(12345.67890 AS DOUBLE PRECISION);";
         const double value = 12345.67890;
-        await using IPgConnection
+        using IPgConnection
             connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalar<PgDouble, double>();

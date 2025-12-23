@@ -17,7 +17,6 @@ using Sqlx.Postgres.Logging;
 using Sqlx.Postgres.Message.Auth;
 using Sqlx.Postgres.Message.Backend;
 using Sqlx.Postgres.Notify;
-using Sqlx.Postgres.Pool;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Result;
 
@@ -27,16 +26,17 @@ namespace Sqlx.Postgres.Stream;
 /// Underlining connection to a Postgres database backend. Performs all the IO operations through an
 /// <see cref="IAsyncStream"/>.
 /// </summary>
-internal sealed partial class PgStream : IDisposable
+public sealed partial class PgStream : IPooledConnection
 {
     private const string BeginQuery = "BEGIN;";
     private const string CommitQuery = "COMMIT;";
     private const string RollbackQuery = "ROLLBACK;";
 
     private static readonly ArrayPool<byte> ArrayPool = ArrayPool<byte>.Shared;
+    public DateTime LastOpenTimestamp { get; private set; }
+    public Guid Id { get; } = Guid.NewGuid();
     private bool _disposed;
     private readonly IAsyncStream _asyncStream;
-    private PgConnectionPool? _pool;
     private readonly ILogger<PgStream> _logger;
     private readonly WriteBuffer _writeBuffer = new();
 
@@ -48,16 +48,16 @@ internal sealed partial class PgStream : IDisposable
     private int _pendingReadyForQuery;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    internal PgStream(IAsyncStream asyncStream, PgConnectionPool pool)
+    internal PgStream(IAsyncStream asyncStream, PgConnectOptions connectOptions)
     {
+        ConnectOptions = connectOptions;
         _asyncStream = asyncStream;
-        _pool = pool;
-        _logger = _pool.ConnectOptions.LoggerFactory.CreateLogger<PgStream>();
+        _logger = connectOptions.LoggerFactory.CreateLogger<PgStream>();
         _statementCache = new LruCache<string, PgPreparedStatement>(
-            pool.ConnectOptions.StatementCacheCapacity);
+            connectOptions.StatementCacheCapacity);
     }
 
-    private PgConnectOptions ConnectOptions => _pool!.ConnectOptions;
+    private PgConnectOptions ConnectOptions { get; }
 
     public ConnectionStatus Status { get; private set; } = ConnectionStatus.Closed;
 
@@ -67,7 +67,7 @@ internal sealed partial class PgStream : IDisposable
     /// Open the underlining stream and initiate the connection with the database backend 
     /// </summary>
     /// <param name="cancellationToken">Token to cancel async operation</param>
-    internal async Task OpenAsync(CancellationToken cancellationToken)
+    public async Task OpenAsync(CancellationToken cancellationToken)
     {
         CheckDisposed();
         Status = ConnectionStatus.Connecting;
@@ -84,6 +84,7 @@ internal sealed partial class PgStream : IDisposable
             await WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)
                 .ConfigureAwait(false);
             Status = ConnectionStatus.Idle;
+            LastOpenTimestamp = DateTime.UtcNow;
         }
         catch
         {
@@ -644,21 +645,10 @@ internal sealed partial class PgStream : IDisposable
 
     private void CheckDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
-    /// <summary>
-    /// Clean up the stream for future usage. This is called by the connection pool to prepare the
-    /// connection for usage by another caller.
-    /// </summary>
-    /// <param name="cancellationToken">Token to cancel the async operation</param>
-    internal ValueTask CleanUp(CancellationToken cancellationToken)
-    {
-        return ValueTask.CompletedTask;
-    }
-
     public void Dispose()
     {
         if (_disposed) return;
 
-        _pool = null;
         // If we can send messages to the server, sent the terminate command before closing
         if (Status is ConnectionStatus.Idle)
         {

@@ -15,7 +15,7 @@ using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Stream;
 
-internal partial class PgStream
+public partial class PgStream
 {
     private const string UnnamedPortal = "";
     private readonly LruCache<string, PgPreparedStatement> _statementCache;

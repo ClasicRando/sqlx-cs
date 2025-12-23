@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace Sqlx.Postgres.Generator.Result;
 
 [Generator]
-internal class PgDataRowDecoderGenerator : IIncrementalGenerator
+internal sealed class PgDataRowDecoderGenerator : IIncrementalGenerator
 {
     private const string GeneratePgDecodeMethodAttribute =
         """
@@ -114,15 +114,14 @@ internal class PgDataRowDecoderGenerator : IIncrementalGenerator
             ITypeSymbol resultTypeElement = SourceGenerationHelper.NotNullType(
                 ((IArrayTypeSymbol)decodeMethodToGenerate.ReturnType).ElementType);
             var resultTypeElementName = resultTypeElement.ToDisplayString();
-            var tempDecoderTypeName = decodeMethodToGenerate.DecoderType?.ToDisplayString()
-                                      ?? resultTypeElementName;
+            var tempDecoderTypeName = decodeMethodToGenerate.DecoderType.ToDisplayString();
             decoderTypeName = resultTypeElement.IsValueType
                 ? $"PgArrayTypeStruct<{resultTypeElementName}, {tempDecoderTypeName}>"
                 : $"PgArrayTypeClass<{resultTypeElementName}, {tempDecoderTypeName}>";
         }
         else
         {
-            decoderTypeName = decodeMethodToGenerate.DecoderType?.ToDisplayString() ?? resultTypeName;
+            decoderTypeName = decodeMethodToGenerate.DecoderType.ToDisplayString();
         }
         
         var indexerName = decodeMethodToGenerate.IndexerParameterName;

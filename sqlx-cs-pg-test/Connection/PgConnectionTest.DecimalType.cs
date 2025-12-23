@@ -9,8 +9,8 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_DecimalAndDefaultEncoding()
     {
         var value = decimal.Parse("12345.67890");
-        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1;");
+        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 decimal_col;");
         query.Bind(value);
         var result = await query.ExecuteScalar<PgDecimal, decimal>();
         Assert.Equal(value, result);
@@ -21,7 +21,7 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT '12345.67890'::numeric;";
         var value = decimal.Parse("12345.67890");
-        await using IPgConnection
+        using IPgConnection
             connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalar<PgDecimal, decimal>();

@@ -11,7 +11,7 @@ namespace Sqlx.Core.Connection;
 public interface
     IConnection<TQuery, out TBindable, TQueryBatch, TDataRow> :
     IQueryExecutor<TQuery, TBindable, TQueryBatch, TDataRow>,
-    IAsyncDisposable
+    IDisposable
     where TQuery : IExecutableQuery<TDataRow>
     where TBindable : IBindable
     where TQueryBatch : IQueryBatch<TBindable, TDataRow>

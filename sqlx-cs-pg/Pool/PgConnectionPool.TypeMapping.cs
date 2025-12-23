@@ -3,7 +3,6 @@ using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Type;
-using Bindable = Sqlx.Postgres.Query.Bindable;
 
 namespace Sqlx.Postgres.Pool;
 
@@ -23,7 +22,7 @@ public sealed partial class PgConnectionPool
                 AND n.nspname = $2
                 AND t.typcategory = 'E'
             """;
-        await using IPgConnection connection = CreateConnection();
+        using IPgConnection connection = CreateConnection();
         using IPgExecutableQuery typeOidQuery = connection.CreateQuery(pgEnumTypeByName);
         AddTypeNameAndSchemaToQuery<TType, TEnum>(typeOidQuery);
 
@@ -63,7 +62,7 @@ public sealed partial class PgConnectionPool
                 and t.typcategory = 'C'
                 and a.attnum > 0
             """;
-        await using IPgConnection connection = CreateConnection();
+        using IPgConnection connection = CreateConnection();
         using IPgExecutableQuery typeOidQuery = connection.CreateQuery(pgCompositeTypeByName);
         AddTypeNameAndSchemaToQuery<TComposite, TComposite>(typeOidQuery);
 
@@ -81,7 +80,7 @@ public sealed partial class PgConnectionPool
 
         using IPgExecutableQuery attributeOidsQuery =
             connection.CreateQuery(pgCompositeAttributeOidsByOid);
-        Bindable.Bind(attributeOidsQuery, oid);
+        attributeOidsQuery.Bind(oid);
 
         var attributeOids = await attributeOidsQuery
             .Fetch<CompositeType.Attribute>(cancellationToken)

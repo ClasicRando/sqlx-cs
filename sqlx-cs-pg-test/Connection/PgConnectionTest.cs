@@ -45,7 +45,7 @@ public partial class PgConnectionTest
 
     private async Task InitializeStoredProcedures()
     {
-        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery setUp = connection.CreateQuery(SetUpQuery);
         await setUp.ExecuteNonQuery();
     }

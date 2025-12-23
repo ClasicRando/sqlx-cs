@@ -1,3 +1,4 @@
+using Sqlx.Core.Pool;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Pool;
 
@@ -22,26 +23,27 @@ public sealed class DatabaseFixture : IDisposable
                        ?? throw new Exception("PG_PASSWORD is not present");
         var database = Environment.GetEnvironmentVariable("PG_DATABASE")
                        ?? throw new Exception("PG_DATABASE is not present");
+        var poolOptions = new PoolOptions();
         var builder1 = new PgConnectOptions.Builder(host, port, username)
         {
             Database = database,
             Password = password,
         };
-        BasicPool = new PgConnectionPool(builder1.Build());
+        BasicPool = new PgConnectionPool(builder1.Build(), poolOptions);
         var builder2 = new PgConnectOptions.Builder(host, port, username)
         {
             Database = database,
             Password = password,
             UseExtendedProtocolForSimpleQueries = false,
         };
-        SimpleQueryTextPool = new PgConnectionPool(builder2.Build());
+        SimpleQueryTextPool = new PgConnectionPool(builder2.Build(), poolOptions);
         var builder3 = new PgConnectOptions.Builder(host, port, username)
         {
             Database = database,
             Password = password,
             QueryTimeout = TimeSpan.FromSeconds(1),
         };
-        QueryTimeoutPool = new PgConnectionPool(builder3.Build());
+        QueryTimeoutPool = new PgConnectionPool(builder3.Build(), poolOptions);
     }
 
     public void Dispose()

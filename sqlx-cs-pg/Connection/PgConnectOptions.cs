@@ -47,6 +47,10 @@ public class PgConnectOptions
         /// </summary>
         public string? Database { get; set; }
         /// <summary>
+        /// Optional global connect timeout. Default to 0 which disables connect timeouts.
+        /// </summary>
+        public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(15);
+        /// <summary>
         /// Optional global query timeout. Default to 0 which disables query timeouts.
         /// </summary>
         public TimeSpan QueryTimeout { get; set; } = TimeSpan.Zero;
@@ -119,6 +123,7 @@ public class PgConnectOptions
         ApplicationName = builder.ApplicationName;
         Password = builder.Password;
         Database = builder.Database;
+        ConnectTimeout = builder.ConnectTimeout;
         QueryTimeout = builder.QueryTimeout;
         StatementCacheCapacity = builder.StatementCacheCapacity;
         UseExtendedProtocolForSimpleQueries = builder.UseExtendedProtocolForSimpleQueries;
@@ -143,6 +148,8 @@ public class PgConnectOptions
     public string? Password { get; }
     /// <inheritdoc cref="Builder.Database"/>
     public string? Database { get; }
+    /// <inheritdoc cref="Builder.ConnectTimeout"/>
+    public TimeSpan ConnectTimeout { get; }
     /// <inheritdoc cref="Builder.QueryTimeout"/>
     public TimeSpan QueryTimeout { get; }
     /// <inheritdoc cref="Builder.StatementCacheCapacity"/>

@@ -15,7 +15,7 @@ public partial class PgConnectionTest
             SELECT s.s, 'Regular Query' t
             FROM generate_series($1, $2) s
             """;
-        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(extendedQuery);
         query.Bind(1);
         query.Bind(10);
@@ -37,7 +37,7 @@ public partial class PgConnectionTest
         ExecuteQuery_Should_ReturnOneResultSet_When_ExtendedQueryStoredProcedureWithOutParameter()
     {
         const string procedureCallQuery = $"CALL public.{OutProcedureName}($1, $2);";
-        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall.Bind((int?)null);
@@ -59,7 +59,7 @@ public partial class PgConnectionTest
         ExecuteQuery_Should_ReturnOneResultSet_When_ExtendedQueryStoredProcedureWithInOutParameter()
     {
         const string procedureCallQuery = $"CALL public.{InOutProcedureName}($1, $2);";
-        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall.Bind(2);
@@ -80,7 +80,7 @@ public partial class PgConnectionTest
     public async Task ExecuteQuery_Should_Throw_When_ExtendedQueryTimesOut()
     {
         const string sleepQuery = "SELECT pg_sleep($1);";
-        await using IPgConnection connection = _databaseFixture.QueryTimeoutPool.CreateConnection();
+        using IPgConnection connection = _databaseFixture.QueryTimeoutPool.CreateConnection();
 
         using IPgExecutableQuery sleepStatement = connection.CreateQuery(sleepQuery);
         sleepStatement.Bind(5);

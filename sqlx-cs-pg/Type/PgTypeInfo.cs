@@ -1,6 +1,6 @@
 namespace Sqlx.Postgres.Type;
 
-public class PgTypeInfo : IEquatable<PgTypeInfo>
+public sealed class PgTypeInfo : IEquatable<PgTypeInfo>
 {
     private const int BoolOid = 16;
     private const int BoolArrayOid = 1000;
@@ -104,7 +104,7 @@ public class PgTypeInfo : IEquatable<PgTypeInfo>
     
     internal PgTypeInfo(uint typeOid, IPgTypeKind typeKind) : this(new PgOid(typeOid), typeKind) {}
     
-    internal PgTypeInfo(PgOid typeOid, IPgTypeKind typeKind)
+    private PgTypeInfo(PgOid typeOid, IPgTypeKind typeKind)
     {
         TypeOid = typeOid;
         TypeKind = typeKind;

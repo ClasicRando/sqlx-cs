@@ -6,7 +6,7 @@ using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Stream;
 
-internal sealed partial class PgStream
+public sealed partial class PgStream
 {
     private const int MajorVersionNo = 3;
     private const int MinorVersionNo = 0;

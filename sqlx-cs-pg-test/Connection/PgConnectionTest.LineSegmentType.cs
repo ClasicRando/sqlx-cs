@@ -9,8 +9,8 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_LineSegmentAndDefaultEncoding()
     {
         var value = new PgLineSegment(new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8));
-        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1;");
+        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 lseg_col;");
         query.Bind(value);
         var result = await query.ExecuteScalarPg<PgLineSegment>();
         Assert.Equal(value, result);
@@ -21,7 +21,7 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT '((5.63,8.59),(4.87,2.8))'::lseg;";
         var value = new PgLineSegment(new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8));
-        await using IPgConnection
+        using IPgConnection
             connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalarPg<PgLineSegment>();

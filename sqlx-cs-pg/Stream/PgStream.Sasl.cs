@@ -6,7 +6,7 @@ using Sqlx.Postgres.Message.Auth;
 
 namespace Sqlx.Postgres.Stream;
 
-internal partial class PgStream
+public partial class PgStream
 {
     private const string Mechanism = "SCRAM-SHA-256";
     private const string CbindFlag = "n";

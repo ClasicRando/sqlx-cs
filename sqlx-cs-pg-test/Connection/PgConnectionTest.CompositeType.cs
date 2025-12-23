@@ -17,8 +17,8 @@ public partial class PgConnectionTest
             Name = "name",
             Title = null,
         };
-        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1;");
+        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 comp_col;");
         query.Bind(value);
         var result = await query.ExecuteScalarPg<TestCompositeType>();
         Assert.Equal(value, result);
@@ -34,7 +34,7 @@ public partial class PgConnectionTest
             Name = "name",
             Title = null,
         };
-        await using IPgConnection
+        using IPgConnection
             connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalarPg<TestCompositeType>();
@@ -53,7 +53,7 @@ public partial class PgConnectionTest
                 title text
             );
             """;
-        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(createTypeQuery);
         await query.ExecuteNonQuery();
         await _databaseFixture.BasicPool.MapComposite<TestCompositeType>(TestContext.Current.CancellationToken);

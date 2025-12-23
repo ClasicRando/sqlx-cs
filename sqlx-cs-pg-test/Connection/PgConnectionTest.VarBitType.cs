@@ -12,8 +12,8 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_VarBitAndDefaultEncoding(bool[] bits)
     {
         var value = new BitArray(bits);
-        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1;");
+        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 varbit_col;");
         query.Bind(value);
         BitArray result = await query.ExecuteScalar<PgBitString, BitArray>();
         Assert.Equal(value, result);
@@ -27,7 +27,7 @@ public partial class PgConnectionTest
         string sql)
     {
         var value = new BitArray(bits);
-        await using IPgConnection
+        using IPgConnection
             connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         BitArray result = await query.ExecuteScalar<PgBitString, BitArray>();

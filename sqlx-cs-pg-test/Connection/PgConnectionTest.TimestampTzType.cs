@@ -9,8 +9,8 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_TimestampTzAndDefaultEncoding()
     {
         var value = new DateTimeOffset(2025, 1, 1, 1, 23, 45, TimeSpan.FromHours(2));
-        await using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1;");
+        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 timestamptz_col;");
         query.Bind(value);
         DateTimeOffset result = await query.ExecuteScalar<PgDateTimeOffset, DateTimeOffset>();
         Assert.Equal(value.UtcDateTime, result);
@@ -21,7 +21,7 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT '2025-01-01 01:23:45+02'::timestamptz;";
         var value = new DateTimeOffset(2025, 1, 1, 1, 23, 45, TimeSpan.FromHours(2));
-        await using IPgConnection
+        using IPgConnection
             connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         DateTimeOffset result = await query.ExecuteScalar<PgDateTimeOffset, DateTimeOffset>();

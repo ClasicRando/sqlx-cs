@@ -14,14 +14,6 @@ public abstract class AbstractConnection<TQuery, TBindable, TQueryBatch, TDataRo
 
     protected abstract void Dispose(bool disposing);
 
-    protected abstract ValueTask DisposeAsyncCore();
-
-    public async ValueTask DisposeAsync()
-    {
-        await DisposeAsyncCore();
-        Dispose(false);
-    }
-
     public void Dispose()
     {
         Dispose(true);

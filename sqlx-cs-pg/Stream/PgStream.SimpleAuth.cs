@@ -5,7 +5,7 @@ using Sqlx.Postgres.Message.Frontend;
 
 namespace Sqlx.Postgres.Stream;
 
-internal partial class PgStream
+public partial class PgStream
 {
     /// <summary>
     /// Handle simple password auth flow. This sends the password as a simple message of bytes
