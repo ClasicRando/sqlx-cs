@@ -24,18 +24,18 @@ public interface IExecutableQuery<TDataRow> : IBindable
     /// This is considered a low-level API for query execution since the user needs to manually
     /// process the rows and results. Prefer extension methods such as:
     /// <list type="bullet">
-    ///     <item><see cref="ExecutableQuery.ExecuteNonQuery"/></item>
-    ///     <item><see cref="ExecutableQuery.Fetch{TDataRow, TRow}"/></item>
-    ///     <item><see cref="ExecutableQuery.FetchFirst{TDataRow, TRow}"/></item>
-    ///     <item><see cref="ExecutableQuery.FetchFirstOrDefault{TDataRow, TRow}"/></item>
-    ///     <item><see cref="ExecutableQuery.FetchSingle{TDataRow, TRow}"/></item>
-    ///     <item><see cref="ExecutableQuery.FetchSingleOrDefault{TDataRow, TRow}"/></item>
-    ///     <item><see cref="ExecutableQuery.FetchAll{TDataRow, TRow}"/></item>
+    ///     <item><see cref="ExecutableQuery.ExecuteNonQueryAsync{TDataRow}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchAsync{TDataRow,TRow}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchFirstAsync{TDataRow,TRow}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchFirstOrDefaultAsync{TDataRow,TRow}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchSingleAsync{TDataRow,TRow}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchSingleOrDefaultAsync{TDataRow,TRow}"/></item>
+    ///     <item><see cref="ExecutableQuery.FetchAllAsync{TDataRow,TRow}"/></item>
     /// </list>
     /// </para>
     /// </summary>
     /// <param name="cancellationToken">cancellation token</param>
     /// <returns>async generator of query result objects</returns>
-    Task<IAsyncEnumerable<Either<TDataRow, QueryResult>>> Execute(
+    Task<IAsyncEnumerable<Either<TDataRow, QueryResult>>> ExecuteAsync(
         CancellationToken cancellationToken);
 }

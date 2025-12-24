@@ -190,21 +190,17 @@ public sealed partial class PgStream : IPooledConnection
         IPgExecutableQuery query,
         CancellationToken cancellationToken)
     {
-        PgExecutableQuery executableQuery = PgException.CheckIfIs<IPgExecutableQuery, PgExecutableQuery>(query);
-        var results = IsSimpleQuery(executableQuery)
-            ? SendSimpleQuery(executableQuery.Query, cancellationToken)
-            : SendExtendedQuery(
-                executableQuery.Query,
-                executableQuery.ParameterBuffer,
-                cancellationToken);
+        var results = IsSimpleQuery(query)
+            ? SendSimpleQuery(query.Query, cancellationToken)
+            : SendExtendedQuery(query, cancellationToken);
         return results;
     }
 
     public IAsyncEnumerable<Either<IPgDataRow, QueryResult>> ExecuteQueryBatch(
-        IPgQueryBatch query,
+        IPgQueryBatch queryBatch,
         CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return PipelineQueries(queryBatch, cancellationToken);
     }
 
     /// <exception cref="InvalidOperationException">

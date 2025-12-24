@@ -15,7 +15,7 @@ public partial class PgConnectionTest
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         Assert.Equal(ConnectionStatus.Idle, connection.Status);
         using IPgExecutableQuery query = connection.CreateQuery("SELECT 1;");
-        var rowsAffected = await query.ExecuteNonQuery(TestContext.Current.CancellationToken);
+        var rowsAffected = await query.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
         Assert.Equal(1, rowsAffected);
     }
 
@@ -85,7 +85,7 @@ public partial class PgConnectionTest
     private static async Task<long> GetConnectionTransactionId(IPgConnection connection)
     {
         using IPgExecutableQuery query = connection.CreateQuery("SELECT txid_current();");
-        var rows = await query.Execute(TestContext.Current.CancellationToken);
+        var rows = await query.ExecuteAsync(TestContext.Current.CancellationToken);
         return await rows.Where(result => result is Either<IPgDataRow, QueryResult>.Left)
             .Select(result => (Either<IPgDataRow, QueryResult>.Left)result)
             .Select(row => row.Value.GetLongNotNull(0))

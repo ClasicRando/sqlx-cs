@@ -33,7 +33,7 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
     public override async Task OpenAsync(CancellationToken cancellationToken = default)
     {
         CheckClosed();
-        PgStream stream = await _pool.AcquireStream(cancellationToken).ConfigureAwait(false);
+        PgStream stream = await _pool.AcquireStreamAsync(cancellationToken).ConfigureAwait(false);
         _pgStream = stream;
     }
 
@@ -47,7 +47,7 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
         return new PgQueryBatch(this);
     }
 
-    public override async Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> ExecuteQuery(
+    public override async Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> ExecuteQueryAsync(
         IPgExecutableQuery query,
         CancellationToken cancellationToken)
     {
@@ -56,7 +56,7 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
         return _pgStream!.ExecuteQuery(query, cancellationToken);
     }
 
-    public override async Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> ExecuteQueryBatch(
+    public override async Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> ExecuteQueryBatchAsync(
         IPgQueryBatch query,
         CancellationToken cancellationToken)
     {
@@ -98,7 +98,7 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
     ///     <item>commit or rollback a transaction while not within a transaction</item>
     /// </list>
     /// </exception>
-    protected override Task ExecuteTransactionCommand(
+    protected override Task ExecuteTransactionCommandAsync(
         TransactionCommand transactionCommand,
         CancellationToken cancellationToken)
     {

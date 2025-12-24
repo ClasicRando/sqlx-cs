@@ -16,11 +16,15 @@ namespace Sqlx.Postgres.Query;
 internal class PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor) : IPgExecutableQuery
 {
     private IPgQueryExecutor? _queryExecutor = queryExecutor;
+    private readonly PgParameterBuffer _parameterBuffer = new();
+    
     public string Query { get; } = sql;
 
-    public PgParameterBuffer ParameterBuffer { get; } = new();
+    public short ParameterCount => _parameterBuffer.ParameterCount;
 
-    public int ParameterCount => ParameterBuffer.ParameterCount;
+    public IReadOnlyList<PgTypeInfo> PgTypes => _parameterBuffer.PgTypes;
+
+    public ReadOnlySpan<byte> EncodedParameters => _parameterBuffer.Span;
 
     public void Bind(bool value)
     {
@@ -89,7 +93,7 @@ internal class PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor) : I
 
     public void Bind(ReadOnlySpan<byte> value)
     {
-        ParameterBuffer.EncodeBytes(value);
+        _parameterBuffer.EncodeBytes(value);
     }
 
     public void Bind(string? value)
@@ -99,7 +103,7 @@ internal class PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor) : I
 
     public void Bind(ReadOnlySpan<char> value)
     {
-        ParameterBuffer.EncodeChars(value);
+        _parameterBuffer.EncodeChars(value);
     }
 
     public void Bind(Guid value)
@@ -109,31 +113,31 @@ internal class PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor) : I
 
     public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
     {
-        ParameterBuffer.EncodeJsonValue(value, typeInfo);
+        _parameterBuffer.EncodeJsonValue(value, typeInfo);
     }
 
     public void BindNull<T>() where T : notnull
     {
-        ParameterBuffer.EncodeNull();
+        _parameterBuffer.EncodeNull();
     }
 
     public void Bind<TValue, TType>(TValue value)
         where TValue : notnull
         where TType : IPgDbType<TValue>
     {
-        ParameterBuffer.EncodeValue<TValue, TType>(value);
+        _parameterBuffer.EncodeValue<TValue, TType>(value);
     }
 
-    public Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> Execute(
+    public Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> ExecuteAsync(
         CancellationToken cancellationToken)
     {
         PgException.ThrowIfNull(_queryExecutor);
-        return _queryExecutor.ExecuteQuery(this, cancellationToken);
+        return _queryExecutor.ExecuteQueryAsync(this, cancellationToken);
     }
 
     public void Dispose()
     {
-        ParameterBuffer.Dispose();
+        _parameterBuffer.Dispose();
         _queryExecutor = null;
     }
 }

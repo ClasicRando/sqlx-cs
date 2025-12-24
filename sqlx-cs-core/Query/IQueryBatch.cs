@@ -90,9 +90,9 @@ namespace Sqlx.Core.Query;
 /// </para>
 /// <para>
 /// To Use this API, create the batch using
-/// <see cref="Sqlx.Core.Query.IQueryExecutor{TQuery,TQueryBatch,TDataRow}.CreateQueryBatch"/> and
-/// create each query in the batch using <see cref="CreateQuery"/>. Each query will be saved within
-/// this batch before executing the entire batch.
+/// <see cref="Sqlx.Core.Query.IQueryExecutor{TQuery,TBindable,TQueryBatch,TDataRow}.CreateQueryBatch"/>
+/// and create each query in the batch using <see cref="CreateQuery"/>. Each query will be saved
+/// within this batch before executing the entire batch.
 /// <code>
 /// const string InsertStatement = "INSERT INTO table(column_1, column_2) VALUES (?,?);";
 /// IConnection connection = // Create connection instance
@@ -120,6 +120,11 @@ public interface IQueryBatch<out TBindable, TDataRow> : IDisposable
     where TBindable : IBindable
     where TDataRow : IDataRow
 {
+    /// <summary>
+    /// True if the entire batch should be executed within a single transaction block and false if
+    /// every query should be executed within its own transaction. This property has no impact once
+    /// <see cref="ExecuteBatch"/> is initiated.
+    /// </summary>
     bool WrapBatchInTransaction { get; set; }
 
     /// <summary>

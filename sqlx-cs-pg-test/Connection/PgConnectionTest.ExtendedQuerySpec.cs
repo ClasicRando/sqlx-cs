@@ -19,7 +19,7 @@ public partial class PgConnectionTest
         using IPgExecutableQuery query = connection.CreateQuery(extendedQuery);
         query.Bind(1);
         query.Bind(10);
-        var flow = await connection.ExecuteQuery(query, TestContext.Current.CancellationToken);
+        var flow = await connection.ExecuteQueryAsync(query, TestContext.Current.CancellationToken);
         var results = await flow.CollectResults();
         Assert.Single(results);
         (var rows, QueryResult result) = results[0];
@@ -42,7 +42,7 @@ public partial class PgConnectionTest
         using IPgExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall.Bind((int?)null);
         procedureCall.Bind((int?)null);
-        var flow = await connection.ExecuteQuery(
+        var flow = await connection.ExecuteQueryAsync(
             procedureCall,
             TestContext.Current.CancellationToken);
         var results = await flow.CollectResults();
@@ -64,7 +64,7 @@ public partial class PgConnectionTest
         using IPgExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall.Bind(2);
         procedureCall.Bind("start");
-        var flow = await connection.ExecuteQuery(
+        var flow = await connection.ExecuteQueryAsync(
             procedureCall,
             TestContext.Current.CancellationToken);
         var results = await flow.CollectResults();
@@ -86,7 +86,7 @@ public partial class PgConnectionTest
         sleepStatement.Bind(5);
         var ex = await Assert.ThrowsAsync<PgException>(async () =>
         {
-            var results = await connection.ExecuteQuery(
+            var results = await connection.ExecuteQueryAsync(
                 sleepStatement,
                 TestContext.Current.CancellationToken);
             await results.CollectResults();

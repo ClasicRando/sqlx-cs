@@ -17,7 +17,7 @@ public sealed class PgRecordEncoder : IPgBindable
         if (typeInfo.TypeKind is not CompositeType compositeType)
         {
             throw new PgException(
-                $"Attempted to encode a type using a {nameof(PgRecordEncoder)} but that type if not a composite or the composite type was not mapped to the connection pool using {nameof(PgConnectionPool.MapComposite)}");
+                $"Attempted to encode a type using a {nameof(PgRecordEncoder)} but that type if not a composite or the composite type was not mapped to the connection pool using {nameof(PgConnectionPool.MapCompositeAsync)}");
         }
         _attributes = compositeType.Attributes;
         _parameterBuffer.WriteInt(_attributes.Length);

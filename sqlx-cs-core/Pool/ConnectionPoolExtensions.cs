@@ -14,7 +14,7 @@ public static class ConnectionPoolExtensions
     /// <param name="connectionPool">connection pool to begin a transaction against</param>
     /// <param name="cancellationToken">optional cancellation token</param>
     /// <returns>a rented connection from the pool that is already within a transaction</returns>
-    public static async Task<TConnection> Begin<TConnection, TBindable, TQuery, TQueryBatch, TDataRow>(
+    public static async Task<TConnection> BeginAsync<TConnection, TBindable, TQuery, TQueryBatch, TDataRow>(
         this IConnectionPool<TConnection, TBindable, TQuery, TQueryBatch, TDataRow> connectionPool,
         CancellationToken cancellationToken = default)
         where TConnection : class, IConnection<TQuery, TBindable, TQueryBatch, TDataRow>

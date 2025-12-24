@@ -27,17 +27,17 @@ public abstract class AbstractConnection<TQuery, TBindable, TQueryBatch, TDataRo
 
     public Task BeginAsync(CancellationToken cancellationToken = default)
     {
-        return ExecuteTransactionCommand(TransactionCommand.Begin, cancellationToken);
+        return ExecuteTransactionCommandAsync(TransactionCommand.Begin, cancellationToken);
     }
 
     public Task CommitAsync(CancellationToken cancellationToken = default)
     {
-        return ExecuteTransactionCommand(TransactionCommand.Commit, cancellationToken);
+        return ExecuteTransactionCommandAsync(TransactionCommand.Commit, cancellationToken);
     }
 
     public Task RollbackAsync(CancellationToken cancellationToken = default)
     {
-        return ExecuteTransactionCommand(TransactionCommand.Rollback, cancellationToken);
+        return ExecuteTransactionCommandAsync(TransactionCommand.Rollback, cancellationToken);
     }
 
     /// <summary>
@@ -54,18 +54,18 @@ public abstract class AbstractConnection<TQuery, TBindable, TQueryBatch, TDataRo
     ///     <item>commit or rollback a transaction while not within a transaction</item>
     /// </list>
     /// </exception>
-    protected abstract Task ExecuteTransactionCommand(
+    protected abstract Task ExecuteTransactionCommandAsync(
         TransactionCommand transactionCommand,
         CancellationToken cancellationToken);
 
     public abstract TQuery CreateQuery(string query);
     public abstract TQueryBatch CreateQueryBatch();
 
-    public abstract Task<IAsyncEnumerable<Either<TDataRow, QueryResult>>> ExecuteQuery(
+    public abstract Task<IAsyncEnumerable<Either<TDataRow, QueryResult>>> ExecuteQueryAsync(
         TQuery query,
         CancellationToken cancellationToken);
 
-    public abstract Task<IAsyncEnumerable<Either<TDataRow, QueryResult>>> ExecuteQueryBatch(
+    public abstract Task<IAsyncEnumerable<Either<TDataRow, QueryResult>>> ExecuteQueryBatchAsync(
         TQueryBatch query,
         CancellationToken cancellationToken);
 

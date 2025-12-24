@@ -19,7 +19,7 @@ public partial class PgConnectionTest
             """;
         using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(simpleQuery);
-        var flow = await connection.ExecuteQuery(query, TestContext.Current.CancellationToken);
+        var flow = await connection.ExecuteQueryAsync(query, TestContext.Current.CancellationToken);
         var results = await flow.CollectResults();
         Assert.Single(results);
         (var rows, QueryResult result) = results[0];
@@ -39,7 +39,7 @@ public partial class PgConnectionTest
         using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery procedureCall = connection.CreateQuery(OutProcedureCallSimpleQuery);
-        var flow = await connection.ExecuteQuery(
+        var flow = await connection.ExecuteQueryAsync(
             procedureCall,
             TestContext.Current.CancellationToken);
         var results = await flow.CollectResults();
@@ -62,7 +62,7 @@ public partial class PgConnectionTest
         using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery multiStatement = connection.CreateQuery(multiStatementQuery);
-        var flow = await connection.ExecuteQuery(
+        var flow = await connection.ExecuteQueryAsync(
             multiStatement,
             TestContext.Current.CancellationToken);
         var results = await flow.CollectResults();
@@ -87,7 +87,7 @@ public partial class PgConnectionTest
         using IPgExecutableQuery multiStatement = connection.CreateQuery(sleepQuery);
         var ex = await Assert.ThrowsAsync<PgException>(async () =>
         {
-            var results = await connection.ExecuteQuery(
+            var results = await connection.ExecuteQueryAsync(
                 multiStatement,
                 TestContext.Current.CancellationToken);
             await results.CollectResults();

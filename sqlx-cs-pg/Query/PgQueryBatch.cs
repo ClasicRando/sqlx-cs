@@ -17,7 +17,7 @@ public sealed class PgQueryBatch(IPgQueryExecutor queryExecutor) : IPgQueryBatch
     
     public bool WrapBatchInTransaction { get; set; }
 
-    internal IEnumerable<PgExecutableQuery> Queries => _queries;
+    internal IReadOnlyList<PgExecutableQuery> Queries => _queries;
     
     public IPgBindable CreateQuery(string sql)
     {
@@ -30,13 +30,15 @@ public sealed class PgQueryBatch(IPgQueryExecutor queryExecutor) : IPgQueryBatch
     public Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> ExecuteBatch(CancellationToken cancellationToken)
     {
         CheckDisposed();
-        return _queryExecutor!.ExecuteQueryBatch(this, cancellationToken);
+        return _queryExecutor!.ExecuteQueryBatchAsync(this, cancellationToken);
     }
 
     private void CheckDisposed() => ObjectDisposedException.ThrowIf(_disposed, typeof(PgQueryBatch));
     
     public void Dispose()
     {
+        if (_disposed) return;
+        
         _disposed = true;
         _queryExecutor = null;
         foreach (PgExecutableQuery query in _queries)

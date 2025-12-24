@@ -27,7 +27,7 @@ public sealed class AsyncStream : IAsyncStream
 
     public async Task OpenAsync(string host, ushort port, CancellationToken cancellationToken)
     {
-        var endPoints = await GetIpEndpoints(host, port, cancellationToken);
+        var endPoints = await GetIpEndpointsAsync(host, port, cancellationToken);
         for (var i = 0; i < endPoints.Length; i++)
         {
             IPEndPoint ipEndPoint = endPoints[i];
@@ -73,7 +73,7 @@ public sealed class AsyncStream : IAsyncStream
     /// <param name="length">require length of data in the internal buffer</param>
     /// <param name="cancellationToken">token to cancel the async operation</param>
     /// <exception cref="SqlxException">if the stream is closed</exception>
-    private async ValueTask FillBuffer(int length, CancellationToken cancellationToken)
+    private async ValueTask FillBufferAsync(int length, CancellationToken cancellationToken)
     {
         SqlxException.ThrowIfNull(_stream);
         var bytesRemaining = _bufferLength - _bufferPosition;
@@ -139,14 +139,14 @@ public sealed class AsyncStream : IAsyncStream
     public async ValueTask<byte> ReadByteAsync(CancellationToken cancellationToken)
     {
         SqlxException.ThrowIfNull(_stream);
-        await FillBuffer(1, cancellationToken).ConfigureAwait(false);
+        await FillBufferAsync(1, cancellationToken).ConfigureAwait(false);
         return _innerBuffer[_bufferPosition++];
     }
 
     public async ValueTask<int> ReadIntAsync(CancellationToken cancellationToken)
     {
         SqlxException.ThrowIfNull(_stream);
-        await FillBuffer(4, cancellationToken).ConfigureAwait(false);
+        await FillBufferAsync(4, cancellationToken).ConfigureAwait(false);
         var result = new ReadBuffer(_innerBuffer.AsSpan(_bufferPosition))
             .ReadInt();
         _bufferPosition += 4;
@@ -156,12 +156,12 @@ public sealed class AsyncStream : IAsyncStream
     public async ValueTask ReadBufferAsync(Memory<byte> buffer, CancellationToken cancellationToken)
     {
         SqlxException.ThrowIfNull(_stream);
-        await FillBuffer(buffer.Length, cancellationToken).ConfigureAwait(false);
+        await FillBufferAsync(buffer.Length, cancellationToken).ConfigureAwait(false);
         _innerBuffer.AsMemory(_bufferPosition, buffer.Length).CopyTo(buffer);
         _bufferPosition += buffer.Length;
     }
 
-    private static async Task<IPEndPoint[]> GetIpEndpoints(
+    private static async Task<IPEndPoint[]> GetIpEndpointsAsync(
         string host,
         ushort port,
         CancellationToken cancellationToken)

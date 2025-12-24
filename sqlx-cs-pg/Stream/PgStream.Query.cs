@@ -6,6 +6,7 @@ using Sqlx.Core.Pool;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Connection;
+using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Logging;
 using Sqlx.Postgres.Message.Backend;
 using Sqlx.Postgres.Message.Frontend;
@@ -47,7 +48,7 @@ public partial class PgStream
 
         return QueryUtils.QueryCount(executableQuery.Query) != 1;
     }
-    
+
     /// <summary>
     /// <para>
     /// Send a query to the postgres database using the simple query protocol. This sends a single
@@ -87,7 +88,7 @@ public partial class PgStream
             _pendingReadyForQuery++;
 
             Status = ConnectionStatus.Fetching;
-            var items = CollectResult(null, cancellationToken).ConfigureAwait(false);
+            var items = CollectResult(null, false, cancellationToken).ConfigureAwait(false);
             await foreach (var item in items)
             {
                 yield return item;
@@ -107,8 +108,7 @@ public partial class PgStream
     /// that are captured as a Flow of zero or more <see cref="IDataRow"/>s followed by a
     /// <see cref="QueryResult"/> to denote the end of a result set.
     /// </summary>
-    /// <param name="sql">Query to execute</param>
-    /// <param name="parameterBuffer">Statement parameters encoded as binary values</param>
+    /// <param name="executableQuery">Query to execute</param>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
     /// <returns>
     /// Async stream of zero or more data rows followed by a query result to end the result set. For
@@ -120,30 +120,101 @@ public partial class PgStream
     /// <see cref="ConnectionStatus.Closed"/>.
     /// </exception>
     private async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> SendExtendedQuery(
-        string sql,
-        PgParameterBuffer parameterBuffer,
+        IPgExecutableQuery executableQuery,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(sql);
+        ArgumentException.ThrowIfNullOrWhiteSpace(executableQuery.Query);
         ThrowIfNotOpen();
-        
+
         try
         {
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
             Status = ConnectionStatus.Executing;
             PgPreparedStatement statement = await GetOrPrepareStatement(
-                sql,
-                parameterBuffer.PgTypes,
-                cancellationToken)
+                    executableQuery.Query,
+                    executableQuery.PgTypes,
+                    cancellationToken)
                 .ConfigureAwait(false);
-            await ExecutePreparedStatement(statement, parameterBuffer, true, cancellationToken)
+            await ExecutePreparedStatement(
+                    statement.StatementName,
+                    executableQuery.ParameterCount,
+                    executableQuery.EncodedParameters,
+                    true,
+                    cancellationToken)
                 .ConfigureAwait(false);
             Status = ConnectionStatus.Fetching;
-            var items = CollectResult(statement, cancellationToken).ConfigureAwait(false);
+            var items = CollectResult(statement, false, cancellationToken).ConfigureAwait(false);
             await foreach (var item in items)
             {
                 yield return item;
+            }
+        }
+        finally
+        {
+            _semaphore.Release();
+            Status = ConnectionStatus.Idle;
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="queryBatch"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    private async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> PipelineQueries(
+        IPgQueryBatch queryBatch,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        ThrowIfNotOpen();
+        PgQueryBatch pgQueryBatch = PgException.CheckIfIs<IPgQueryBatch, PgQueryBatch>(queryBatch);
+        var syncAll = queryBatch.WrapBatchInTransaction;
+
+        try
+        {
+            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await WaitUntilReady(cancellationToken).ConfigureAwait(false);
+            Status = ConnectionStatus.Executing;
+            var queries = pgQueryBatch.Queries;
+            var queryCount = queries.Count;
+            var statements = new PgPreparedStatement[queryCount];
+
+            for (var i = 0; i < queryCount; i++)
+            {
+                PgExecutableQuery executableQuery = queries[i];
+                PgPreparedStatement statement = await GetOrPrepareStatement(
+                        executableQuery.Query,
+                        executableQuery.PgTypes,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                statements[i] = statement;
+            }
+
+            for (var i = 0; i < statements.Length; i++)
+            {
+                PgExecutableQuery executableQuery = queries[i];
+                PgPreparedStatement statement = statements[i];
+                await ExecutePreparedStatement(
+                        statement.StatementName,
+                        executableQuery.ParameterCount,
+                        executableQuery.EncodedParameters,
+                        syncAll || i == queryCount - 1,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            Status = ConnectionStatus.Fetching;
+            for (var i = 0; i < statements.Length; i++)
+            {
+                PgPreparedStatement statement = statements[i];
+                var breakOnCommandComplete = !syncAll && i != queryCount - 1;
+                var items = CollectResult(statement, breakOnCommandComplete, cancellationToken)
+                    .ConfigureAwait(false);
+                await foreach (var item in items)
+                {
+                    yield return item;
+                }
             }
         }
         finally
@@ -183,7 +254,7 @@ public partial class PgStream
 
         statement = await ExecuteStatementPrepare(sql, parameterTypes, cancellationToken)
             .ConfigureAwait(false);
-        
+
         var removedEntry = _statementCache.Put(statement.Sql, statement);
         if (removedEntry is not null)
         {
@@ -195,27 +266,32 @@ public partial class PgStream
     }
 
     /// <summary>
-    /// 
+    /// Bind parameters to a new portal for the named statement and execute the same portal to
+    /// fetch all rows.
     /// </summary>
-    /// <param name="preparedStatement"></param>
-    /// <param name="parameterBuffer"></param>
-    /// <param name="sendSync"></param>
+    /// <param name="statementName">Name of the statement to execute</param>
+    /// <param name="parameterCount">Query to execute</param>
+    /// <param name="encodedParameters">Query to execute</param>
+    /// <param name="sendSync">
+    /// True if the messages should be finalized with a SYNC command. Otherwise, the messages are
+    /// just flushed to the server
+    /// </param>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
-    /// <returns></returns>
     private Task ExecutePreparedStatement(
-        PgPreparedStatement preparedStatement,
-        PgParameterBuffer parameterBuffer,
+        ReadOnlySpan<char> statementName,
+        short parameterCount,
+        ReadOnlySpan<byte> encodedParameters,
         bool sendSync,
         CancellationToken cancellationToken)
     {
         WriteBindMessage(
             UnnamedPortal,
-            preparedStatement.StatementName,
-            parameterBuffer.ParameterCount,
-            parameterBuffer.Span);
+            statementName,
+            parameterCount,
+            encodedParameters);
         WriteExecuteMessage(UnnamedPortal, 0);
         WriteCloseMessage(MessageTarget.Portal, UnnamedPortal);
-        return sendSync ? WriteSync(cancellationToken) : Task.CompletedTask;
+        return sendSync ? WriteSync(cancellationToken) : Flush(cancellationToken);
     }
 
     /// <summary>
@@ -230,10 +306,18 @@ public partial class PgStream
     /// the simple query protocol and a row description message is expected before the query
     /// response.
     /// </param>
+    /// <param name="breakOnCommandComplete">
+    /// True if the enumerable should break when <c>COMMAND COMPLETE</c> is sent by the server. This
+    /// should only be true for pipelined queries where <c>SYNC</c> is not sent for every query in
+    /// the batch. In other words, this parameter is telling the method that <c>READY FOR QUERY</c>
+    /// is not the only exit condition and command complete should also be considered a condition to
+    /// exit result collection.
+    /// </param>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
     /// <returns>An async stream of result rows and query results</returns>
     private async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> CollectResult(
         PgPreparedStatement? preparedStatement,
+        bool breakOnCommandComplete,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var statementMetadata = new PgStatementMetadata(preparedStatement?.ColumnMetadata ?? []);
@@ -242,14 +326,13 @@ public partial class PgStream
             IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
                 .ConfigureAwait(false);
             IPgBackendMessage? postProcessMessage = await ApplyStandardMessageProcessing(
-                backendMessage,
-                cancellationToken)
+                    backendMessage,
+                    cancellationToken)
                 .ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
             switch (postProcessMessage)
             {
                 case RowDescriptionMessage rowDescription:
-                    preparedStatement?.ColumnMetadata = rowDescription.ColumnMetadata;
                     statementMetadata = new PgStatementMetadata(rowDescription.ColumnMetadata);
                     break;
                 case DataRowMessage dataRowMessage:
@@ -261,6 +344,11 @@ public partial class PgStream
                         commandCompleteMessage.RowCount,
                         commandCompleteMessage.Message);
                     yield return new Either<IPgDataRow, QueryResult>.Right(queryResult);
+                    if (breakOnCommandComplete)
+                    {
+                        yield break;
+                    }
+
                     break;
                 case ReadyForQueryMessage readyForQueryMessage:
                     HandleReadyForQuery(readyForQueryMessage);
@@ -298,7 +386,9 @@ public partial class PgStream
     /// </summary>
     /// <param name="preparedStatement">Prepared statement to close</param>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
-    private async Task ReleasePreparedStatement(PgPreparedStatement preparedStatement, CancellationToken cancellationToken)
+    private async Task ReleasePreparedStatement(
+        PgPreparedStatement preparedStatement,
+        CancellationToken cancellationToken)
     {
         WriteCloseMessage(
             MessageTarget.PreparedStatement,
@@ -333,14 +423,14 @@ public partial class PgStream
         WriteParseMessage(statement.StatementName, sql, parameterTypes);
         WriteDescribeMessage(MessageTarget.PreparedStatement, statement.StatementName);
         await WriteSync(cancellationToken).ConfigureAwait(false);
-        
+
         while (true)
         {
             IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
                 .ConfigureAwait(false);
             IPgBackendMessage? postProcessMessage = await ApplyStandardMessageProcessing(
-                backendMessage,
-                cancellationToken)
+                    backendMessage,
+                    cancellationToken)
                 .ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
             switch (postProcessMessage)

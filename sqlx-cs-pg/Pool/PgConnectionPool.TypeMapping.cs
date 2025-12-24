@@ -8,7 +8,7 @@ namespace Sqlx.Postgres.Pool;
 
 public sealed partial class PgConnectionPool
 {
-    public async Task MapEnum<TEnum, TType>(CancellationToken cancellationToken = default)
+    public async Task MapEnumAsync<TEnum, TType>(CancellationToken cancellationToken = default)
         where TType : IPgUdt<TEnum>
         where TEnum : Enum
     {
@@ -28,7 +28,7 @@ public sealed partial class PgConnectionPool
 
         try
         {
-            var oid = await typeOidQuery.ExecuteScalarPg<PgOid>(cancellationToken);
+            var oid = await typeOidQuery.ExecuteScalar<PgOid>(cancellationToken);
             TType.DbType = new PgTypeInfo(oid.Inner, new EnumType());
         }
         catch (PgException e)
@@ -39,7 +39,7 @@ public sealed partial class PgConnectionPool
         }
     }
 
-    public async Task MapComposite<TComposite>(CancellationToken cancellationToken = default)
+    public async Task MapCompositeAsync<TComposite>(CancellationToken cancellationToken = default)
         where TComposite : IPgUdt<TComposite>
     {
         const string pgCompositeTypeByName =
@@ -69,7 +69,7 @@ public sealed partial class PgConnectionPool
         PgOid oid;
         try
         {
-            oid = await typeOidQuery.ExecuteScalarPg<PgOid>(cancellationToken);
+            oid = await typeOidQuery.ExecuteScalar<PgOid>(cancellationToken);
         }
         catch (PgException e)
         {
@@ -83,7 +83,7 @@ public sealed partial class PgConnectionPool
         attributeOidsQuery.Bind(oid);
 
         var attributeOids = await attributeOidsQuery
-            .Fetch<CompositeType.Attribute>(cancellationToken)
+            .FetchAsync<CompositeType.Attribute>(cancellationToken)
             .ToArrayAsync(cancellationToken);
         TComposite.DbType = new PgTypeInfo(
             oid.Inner,

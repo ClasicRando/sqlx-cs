@@ -47,6 +47,6 @@ public partial class PgConnectionTest
     {
         using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery setUp = connection.CreateQuery(SetUpQuery);
-        await setUp.ExecuteNonQuery();
+        await setUp.ExecuteNonQueryAsync();
     }
 }

@@ -55,8 +55,8 @@ public partial class PgConnectionTest
             """;
         using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(createTypeQuery);
-        await query.ExecuteNonQuery();
-        await _databaseFixture.BasicPool.MapComposite<TestCompositeType>(TestContext.Current.CancellationToken);
+        await query.ExecuteNonQueryAsync();
+        await _databaseFixture.BasicPool.MapCompositeAsync<TestCompositeType>(TestContext.Current.CancellationToken);
     }
 }
 

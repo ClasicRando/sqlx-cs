@@ -30,7 +30,7 @@ public class ConnectionPoolExtensionsTest
         mockPool.CreateConnection().Returns(mockConnection);
         mockConnection.Status.Returns(ConnectionStatus.Closed);
 
-        var _ = await mockPool.Begin(TestContext.Current.CancellationToken);
+        var _ = await mockPool.BeginAsync(TestContext.Current.CancellationToken);
 
         mockPool.Received().CreateConnection();
         await mockConnection.Received().OpenAsync(Arg.Any<CancellationToken>());

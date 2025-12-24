@@ -43,16 +43,16 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
         _idleConnectionWriter = idleChannel.Writer;
         _connections = new TConnection[poolOptions.MaxConnections];
         _idleCleanupTimer = new PeriodicTimer(poolOptions.IdleCleanupInterval);
-        _idleCleanupTask = Task.Run(() => IdleCleanupAction(_idleCleanupCts.Token));
+        _idleCleanupTask = Task.Run(() => IdleCleanupActionAsync(_idleCleanupCts.Token));
     }
 
-    internal ValueTask<TConnection> AcquireStream(CancellationToken cancellationToken)
+    internal ValueTask<TConnection> AcquireStreamAsync(CancellationToken cancellationToken)
     {
         return TryGetIdleStream(out TConnection? stream)
             ? ValueTask.FromResult(stream)
-            : AcquireStreamAsync(cancellationToken);
+            : CoreAsync(cancellationToken);
 
-        async ValueTask<TConnection> AcquireStreamAsync(CancellationToken ct)
+        async ValueTask<TConnection> CoreAsync(CancellationToken ct)
         {
             using var acquireTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             acquireTimeoutCts.CancelAfter(_connectTimeout);
@@ -60,7 +60,7 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
 
             do
             {
-                TConnection? s = await OpenNewStream(acquireTimeoutToken).ConfigureAwait(false);
+                TConnection? s = await OpenNewStreamAsync(acquireTimeoutToken).ConfigureAwait(false);
                 if (s is not null)
                 {
                     return s;
@@ -125,7 +125,7 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
 
     protected abstract TConnection CreateNewConnection();
 
-    private async ValueTask<TConnection?> OpenNewStream(CancellationToken cancellationToken)
+    private async ValueTask<TConnection?> OpenNewStreamAsync(CancellationToken cancellationToken)
     {
         var currentStreamCount = _connectionCount;
         while (currentStreamCount < PoolOptions.MaxConnections)
@@ -259,7 +259,7 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
         }
     }
 
-    private async Task IdleCleanupAction(CancellationToken cancellationToken)
+    private async Task IdleCleanupActionAsync(CancellationToken cancellationToken)
     {
         var sampleSize = DivideRoundingUp(
             (int)PoolOptions.IdleTimeout.TotalMilliseconds,

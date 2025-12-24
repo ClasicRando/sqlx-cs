@@ -19,7 +19,7 @@ public static class PgRecordDecoder
         if (typeInfo.TypeKind is not CompositeType compositeType)
         {
             throw new PgException(
-                $"Attempted to decode a type using a {nameof(PgRecordDecoder)} but that type if not a composite or the composite type was not mapped to the connection pool using {nameof(PgConnectionPool.MapComposite)}");
+                $"Attempted to decode a type using a {nameof(PgRecordDecoder)} but that type if not a composite or the composite type was not mapped to the connection pool using {nameof(PgConnectionPool.MapCompositeAsync)}");
         }
 
         var attributeCount = binaryValue.Buffer.ReadInt();
@@ -77,7 +77,7 @@ public static class PgRecordDecoder
         if (typeInfo.TypeKind is not CompositeType compositeType)
         {
             throw new PgException(
-                $"Attempted to decode a type using a {nameof(PgRecordDecoder)} but that type if not a composite or the composite type was not mapped to the connection pool using {nameof(PgConnectionPool.MapComposite)}");
+                $"Attempted to decode a type using a {nameof(PgRecordDecoder)} but that type if not a composite or the composite type was not mapped to the connection pool using {nameof(PgConnectionPool.MapCompositeAsync)}");
         }
 
         var attributeLiterals = ParseCompositeLiteralToValueRanges<T>(in textValue);
