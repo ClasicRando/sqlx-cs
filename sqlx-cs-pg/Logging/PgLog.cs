@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Sqlx.Postgres.Message.Backend;
-using Sqlx.Postgres.Pool;
 using Sqlx.Postgres.Stream;
 
 namespace Sqlx.Postgres.Logging;

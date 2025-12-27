@@ -24,26 +24,35 @@ public sealed class DatabaseFixture : IDisposable
         var database = Environment.GetEnvironmentVariable("PG_DATABASE")
                        ?? throw new Exception("PG_DATABASE is not present");
         var poolOptions = new PoolOptions();
-        var builder1 = new PgConnectOptions.Builder(host, port, username)
+        var options1 = new PgConnectOptions
         {
+            Host = host,
+            Port = port,
+            Username = username,
             Database = database,
             Password = password,
         };
-        BasicPool = new PgConnectionPool(builder1.Build(), poolOptions);
-        var builder2 = new PgConnectOptions.Builder(host, port, username)
+        BasicPool = new PgConnectionPool(options1, poolOptions);
+        var options2 = new PgConnectOptions
         {
+            Host = host,
+            Port = port,
+            Username = username,
             Database = database,
             Password = password,
             UseExtendedProtocolForSimpleQueries = false,
         };
-        SimpleQueryTextPool = new PgConnectionPool(builder2.Build(), poolOptions);
-        var builder3 = new PgConnectOptions.Builder(host, port, username)
+        SimpleQueryTextPool = new PgConnectionPool(options2, poolOptions);
+        var options3 = new PgConnectOptions
         {
+            Host = host,
+            Port = port,
+            Username = username,
             Database = database,
             Password = password,
             QueryTimeout = TimeSpan.FromSeconds(1),
         };
-        QueryTimeoutPool = new PgConnectionPool(builder3.Build(), poolOptions);
+        QueryTimeoutPool = new PgConnectionPool(options3, poolOptions);
     }
 
     public void Dispose()

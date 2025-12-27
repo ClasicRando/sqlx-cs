@@ -919,6 +919,29 @@ public static class SqlStateExtensions
             SqlState.SnapshotTooOld => (SnapshotTooOld, "snapshot_too_old"),
             _ => throw new ArgumentOutOfRangeException(nameof(sqlState), sqlState, "Invalid SqlState"),
         };
+    }
 
+    private static readonly SqlState[] CriticalErrors =
+    [
+        SqlState.InsufficientResources,
+        SqlState.DiskFull,
+        SqlState.OutOfMemory,
+        SqlState.TooManyConnections,
+        SqlState.ConfigurationLimitExceeded,
+        SqlState.SystemError,
+        SqlState.IoError,
+        SqlState.UndefinedFile,
+        SqlState.DuplicateFile,
+        SqlState.AdminShutdown,
+        SqlState.CrashShutdown,
+        SqlState.CannotConnectNow,
+    ];
+
+    extension(SqlState sqlState)
+    {
+        public bool IsCriticalConnectionError => sqlState.IsCriticalPoolError
+                                                 || sqlState is SqlState.ProtocolViolation;
+
+        public bool IsCriticalPoolError => CriticalErrors.Contains(sqlState);
     }
 }

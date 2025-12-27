@@ -16,6 +16,7 @@ using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Logging;
 using Sqlx.Postgres.Message.Auth;
 using Sqlx.Postgres.Message.Backend;
+using Sqlx.Postgres.Message.Backend.Information;
 using Sqlx.Postgres.Notify;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Result;
@@ -88,7 +89,7 @@ public sealed partial class PgStream : IPooledConnection
         }
         catch
         {
-            Status = ConnectionStatus.Broken;
+            BreakConnection();
             throw;
         }
         finally
@@ -158,13 +159,13 @@ public sealed partial class PgStream : IPooledConnection
                 .ConfigureAwait(false);
             if (result is Either<ReadyForQueryMessage, ErrorResponseMessage>.Right)
             {
-                Status = ConnectionStatus.Broken;
+                BreakConnection();
                 return false;
             }
         }
         catch (SqlxException)
         {
-            Status = ConnectionStatus.Broken;
+            BreakConnection();
             return false;
         }
         finally
@@ -453,6 +454,10 @@ public sealed partial class PgStream : IPooledConnection
                 OnNegotiateProtocolVersion(negotiateProtocolVersion);
                 return null;
             case ErrorResponseMessage errorResponse:
+                if (errorResponse.InformationResponse.Code.IsCriticalConnectionError)
+                {
+                    BreakConnection();
+                }
                 return throwOnError ? throw new PgException(errorResponse) : message;
             default:
                 return message;
@@ -639,12 +644,19 @@ public sealed partial class PgStream : IPooledConnection
         };
     }
 
+    private void BreakConnection()
+    {
+        Status = ConnectionStatus.Broken;
+        Dispose();
+    }
+
     private void CheckDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     public void Dispose()
     {
         if (_disposed) return;
 
+        _disposed = true;
         // If we can send messages to the server, sent the terminate command before closing
         if (Status is ConnectionStatus.Idle)
         {
@@ -661,6 +673,5 @@ public sealed partial class PgStream : IPooledConnection
 
         _writeBuffer.Dispose();
         _asyncStream.Dispose();
-        _disposed = true;
     }
 }
