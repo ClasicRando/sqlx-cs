@@ -22,15 +22,15 @@ namespace Sqlx.Core.Pool;
 [TestSubject(typeof(ConnectionPoolExtensions))]
 public class ConnectionPoolExtensionsTest
 {
-    [Fact]
-    public async Task Begin_Should_GetConnectionAndBeginTransaction()
+    [Test]
+    public async Task Begin_Should_GetConnectionAndBeginTransaction(CancellationToken ct)
     {
         var mockPool = Substitute.For<MockPool>();
         var mockConnection = Substitute.For<MockConnection>();
         mockPool.CreateConnection().Returns(mockConnection);
         mockConnection.Status.Returns(ConnectionStatus.Closed);
 
-        var _ = await mockPool.BeginAsync(TestContext.Current.CancellationToken);
+        var _ = await mockPool.BeginAsync(ct);
 
         mockPool.Received().CreateConnection();
         await mockConnection.Received().OpenAsync(Arg.Any<CancellationToken>());

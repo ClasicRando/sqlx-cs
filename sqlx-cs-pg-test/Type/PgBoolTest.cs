@@ -9,10 +9,10 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgBool))]
 public class PgBoolTest
 {
-    [Theory]
-    [InlineData(true, new byte[] { 1 })]
-    [InlineData(false, new byte[] { 0 })]
-    public void Encode_Should_WriteByte(bool value, byte[] expectedBytes)
+    [Test]
+    [Arguments(true, new byte[] { 1 })]
+    [Arguments(false, new byte[] { 0 })]
+    public async Task Encode_Should_WriteByte(bool value, byte[] expectedBytes)
     {
         using var buffer = new WriteBuffer();
 
@@ -20,14 +20,14 @@ public class PgBoolTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 1 }, true)]
-    [InlineData(new byte[] { 255 }, true)]
-    [InlineData(new byte[] { 0 }, false)]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsBoolean(
+    [Test]
+    [Arguments(new byte[] { 1 }, true)]
+    [Arguments(new byte[] { 255 }, true)]
+    [Arguments(new byte[] { 0 }, false)]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsBoolean(
         byte[] binaryData,
         bool expectedValue)
     {
@@ -36,14 +36,14 @@ public class PgBoolTest
 
         var actualValue = PgBool.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("t", true)]
-    [InlineData("true", true)]
-    [InlineData("f", false)]
-    public void DecodeText_Should_DecodeTextEncodedValueAsBoolean(
+    [Test]
+    [Arguments("t", true)]
+    [Arguments("true", true)]
+    [Arguments("f", false)]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsBoolean(
         string textData,
         bool expectedValue)
     {
@@ -52,12 +52,12 @@ public class PgBoolTest
 
         var actualValue = PgBool.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("error")]
-    public void DecodeText_Should_Fail_When_FirstCharacterIsNotValid(string textData)
+    [Test]
+    [Arguments("error")]
+    public async Task DecodeText_Should_Fail_When_FirstCharacterIsNotValid(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -69,8 +69,8 @@ public class PgBoolTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Boolean", e.Message);
-            Assert.Contains("First character must be 't' or 'f'", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Boolean");
+            await Assert.That(e.Message).Contains("First character must be 't' or 'f'");
         }
         catch (Exception e)
         {
@@ -78,23 +78,22 @@ public class PgBoolTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnBoolType() => Assert.Equal(PgTypeInfo.Bool, PgBool.DbType);
+    [Test]
+    public async Task DbType_Should_ReturnBoolType() => await Assert.That(PgBool.DbType).IsEqualTo(PgTypeInfo.Bool);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnBoolArrayType() =>
-        Assert.Equal(PgTypeInfo.BoolArray, PgBool.ArrayDbType);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnBoolArrayType() =>
+        await Assert.That(PgBool.ArrayDbType).IsEqualTo(PgTypeInfo.BoolArray);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgBool.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgBool.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
-    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
+    public static IEnumerable<Func<(PgTypeInfo, bool)>> IsCompatibleCases()
     {
-        return new TheoryData<PgTypeInfo, bool>(
-            (PgTypeInfo.Bool, true),
-            (PgTypeInfo.BoolArray, false),
-            (PgTypeInfo.Int4, false));
+        yield return () => (PgTypeInfo.Bool, true);
+        yield return () => (PgTypeInfo.BoolArray, false);
+        yield return () => (PgTypeInfo.Int4, false);
     }
 }

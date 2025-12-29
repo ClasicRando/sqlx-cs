@@ -8,8 +8,8 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_CompositeAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_CompositeAndDefaultEncoding(CancellationToken ct)
     {
         var value = new TestCompositeType
         {
@@ -17,15 +17,15 @@ public partial class PgConnectionTest
             Name = "name",
             Title = null,
         };
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 comp_col;");
         query.Bind(value);
-        var result = await query.ExecuteScalarPg<TestCompositeType>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<TestCompositeType>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_CompositeAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_CompositeAndTextEncoding(CancellationToken ct)
     {
         const string sql = "SELECT '(1,name,NULL)'::composite_type;";
         var value = new TestCompositeType
@@ -35,28 +35,10 @@ public partial class PgConnectionTest
             Title = null,
         };
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        var result = await query.ExecuteScalarPg<TestCompositeType>();
-        Assert.Equal(value, result);
-    }
-
-    private async Task CreateCompositeType()
-    {
-        const string createTypeQuery =
-            """
-            DROP TYPE IF EXISTS public.composite_type;
-            CREATE TYPE public.composite_type AS
-            (
-                id int,
-                name text,
-                title text
-            );
-            """;
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery(createTypeQuery);
-        await query.ExecuteNonQueryAsync();
-        await _databaseFixture.BasicPool.MapCompositeAsync<TestCompositeType>(TestContext.Current.CancellationToken);
+        var result = await query.ExecuteScalar<TestCompositeType>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 }
 

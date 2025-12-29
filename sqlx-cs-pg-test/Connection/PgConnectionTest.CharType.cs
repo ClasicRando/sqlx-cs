@@ -5,26 +5,26 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_CharAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_CharAndDefaultEncoding(CancellationToken ct)
     {
         const sbyte value = (sbyte)'e';
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 char_col;");
         query.Bind(value);
-        var result = await query.ExecuteScalar<PgChar, sbyte>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<sbyte, PgChar>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_CharAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_CharAndTextEncoding(CancellationToken ct)
     {
         const string sql = "SELECT 'e'::\"char\";";
         const sbyte value = (sbyte)'e';
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        var result = await query.ExecuteScalar<PgChar, sbyte>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<sbyte, PgChar>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 }

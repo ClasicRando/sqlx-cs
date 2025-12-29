@@ -6,31 +6,34 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Theory]
-    [InlineData(new[] { true, false, true, false })]
-    [InlineData(new[] { true, false, true, false, true, false, true, false })]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_VarBitAndDefaultEncoding(bool[] bits)
+    [Test]
+    [Arguments(new[] { true, false, true, false })]
+    [Arguments(new[] { true, false, true, false, true, false, true, false })]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_VarBitAndDefaultEncoding(
+        bool[] bits,
+        CancellationToken ct)
     {
         var value = new BitArray(bits);
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 varbit_col;");
         query.Bind(value);
-        BitArray result = await query.ExecuteScalar<PgBitString, BitArray>();
-        Assert.Equal(value, result);
+        BitArray result = await query.ExecuteScalar<BitArray, PgBitString>(ct);
+        await Assert.That(result).IsEquivalentTo(value);
     }
 
-    [Theory]
-    [InlineData(new[] { true, false, true, false }, "SELECT '1010'::varbit;")]
-    [InlineData(new[] { true, false, true, false, true, false, true, false }, "SELECT '10101010'::varbit;")]
+    [Test]
+    [Arguments(new[] { true, false, true, false }, "SELECT '1010'::varbit;")]
+    [Arguments(new[] { true, false, true, false, true, false, true, false }, "SELECT '10101010'::varbit;")]
     public async Task ExecuteScalar_Should_Decode_When_VarBitAndTextEncoding(
         bool[] bits,
-        string sql)
+        string sql,
+        CancellationToken ct)
     {
         var value = new BitArray(bits);
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        BitArray result = await query.ExecuteScalar<PgBitString, BitArray>();
-        Assert.Equal(value, result);
+        BitArray result = await query.ExecuteScalar<BitArray, PgBitString>(ct);
+        await Assert.That(result).IsEquivalentTo(value);
     }
 }

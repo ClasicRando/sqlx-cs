@@ -9,9 +9,9 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgMacAddress8))]
 public class PgMacAddress8Test
 {
-    [Theory]
-    [InlineData(new byte[] { 0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05 })]
-    public void Encode_Should_WriteMacAddr8(byte[] address)
+    [Test]
+    [Arguments(new byte[] { 0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05 })]
+    public async Task Encode_Should_WriteMacAddr8(byte[] address)
     {
         PgMacAddress8 value = PgMacAddress8.FromBytes(address);
         using var buffer = new WriteBuffer();
@@ -20,12 +20,12 @@ public class PgMacAddress8Test
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(address, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(address);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05 })]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsMacAddr8(byte[] binaryData)
+    [Test]
+    [Arguments(new byte[] { 0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05 })]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsMacAddr8(byte[] binaryData)
     {
         PgMacAddress8 expectedValue = PgMacAddress8.FromBytes(binaryData);
         var columnMetadata = new PgColumnMetadata();
@@ -33,14 +33,14 @@ public class PgMacAddress8Test
 
         PgMacAddress8 actualValue = PgMacAddress8.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         "08:00:2b:01:02:03:04:05",
         new byte[] { 0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05 })]
-    public void DecodeText_Should_DecodeTextEncodedValueAsMacAddr8(string textData, byte[] address)
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsMacAddr8(string textData, byte[] address)
     {
         PgMacAddress8 expectedValue = PgMacAddress8.FromBytes(address);
         var columnMetadata = new PgColumnMetadata();
@@ -48,13 +48,13 @@ public class PgMacAddress8Test
 
         PgMacAddress8 actualValue = PgMacAddress8.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("01:01:01:01:01", "Expected 8 address hex characters")]
-    [InlineData("01:01:01:01:1:01:01:01", "Could not parse network location bytes from")]
-    public void DecodeText_Should_Fail_When_InvalidPgMacAddress8(string textData, string contains)
+    [Test]
+    [Arguments("01:01:01:01:01", "Expected 8 address hex characters")]
+    [Arguments("01:01:01:01:1:01:01:01", "Could not parse network location bytes from")]
+    public async Task DecodeText_Should_Fail_When_InvalidPgMacAddress8(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -66,8 +66,8 @@ public class PgMacAddress8Test
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: Sqlx.Postgres.Type.PgMacAddress8", e.Message);
-            Assert.Contains(contains, e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: Sqlx.Postgres.Type.PgMacAddress8");
+            await Assert.That(e.Message).Contains(contains);
         }
         catch (Exception e)
         {
@@ -75,18 +75,18 @@ public class PgMacAddress8Test
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnMacAddr8Type() =>
-        Assert.Equal(PgTypeInfo.Macaddr8, PgMacAddress8.DbType);
+    [Test]
+    public async Task DbType_Should_ReturnMacAddr8Type() =>
+        await Assert.That(PgMacAddress8.DbType).IsEqualTo(PgTypeInfo.Macaddr8);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnMacAddr8Type() =>
-        Assert.Equal(PgTypeInfo.Macaddr8Array, PgMacAddress8.ArrayDbType);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnMacAddr8Type() =>
+        await Assert.That(PgMacAddress8.ArrayDbType).IsEqualTo(PgTypeInfo.Macaddr8Array);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgMacAddress8.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgMacAddress8.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

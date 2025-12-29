@@ -9,10 +9,10 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgDate))]
 public class PgDateTest
 {
-    [Theory]
-    [InlineData(2024, 1, 1, new byte[] { 0, 0, 34, 62 })]
-    [InlineData(1995, 1, 1, new byte[] { 255, 255, 248, 222 })]
-    public void Encode_Should_WriteDate(int year, int month, int day, byte[] expectedBytes)
+    [Test]
+    [Arguments(2024, 1, 1, new byte[] { 0, 0, 34, 62 })]
+    [Arguments(1995, 1, 1, new byte[] { 255, 255, 248, 222 })]
+    public async Task Encode_Should_WriteDate(int year, int month, int day, byte[] expectedBytes)
     {
         var value = new DateOnly(year, month, day);
         using var buffer = new WriteBuffer();
@@ -21,13 +21,13 @@ public class PgDateTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 0, 0, 34, 62 }, 2024, 1, 1)]
-    [InlineData(new byte[] { 255, 255, 248, 222 }, 1995, 1, 1)]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsDate(
+    [Test]
+    [Arguments(new byte[] { 0, 0, 34, 62 }, 2024, 1, 1)]
+    [Arguments(new byte[] { 255, 255, 248, 222 }, 1995, 1, 1)]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsDate(
         byte[] binaryData,
         int year,
         int month,
@@ -39,13 +39,13 @@ public class PgDateTest
 
         DateOnly actualValue = PgDate.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("2024-01-01", 2024, 1, 1)]
-    [InlineData("1995-01-01", 1995, 1, 1)]
-    public void DecodeText_Should_DecodeTextEncodedValueAsDate(
+    [Test]
+    [Arguments("2024-01-01", 2024, 1, 1)]
+    [Arguments("1995-01-01", 1995, 1, 1)]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsDate(
         string textData,
         int year,
         int month,
@@ -57,13 +57,13 @@ public class PgDateTest
 
         DateOnly actualValue = PgDate.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("2024/01/01")]
-    [InlineData("01/01/1995")]
-    public void DecodeText_Should_Fail_When_InvalidDateString(string textData)
+    [Test]
+    [Arguments("2024/01/01")]
+    [Arguments("01/01/1995")]
+    public async Task DecodeText_Should_Fail_When_InvalidDateString(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -75,9 +75,9 @@ public class PgDateTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.DateOnly", e.Message);
-            Assert.Contains("Cannot parse", e.Message);
-            Assert.Contains("as a DateOnly", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.DateOnly");
+            await Assert.That(e.Message).Contains("Cannot parse");
+            await Assert.That(e.Message).Contains("as a DateOnly");
         }
         catch (Exception e)
         {
@@ -85,25 +85,25 @@ public class PgDateTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnDateType() => Assert.Equal(PgDate.DbType, PgTypeInfo.Date);
+    [Test]
+    public async Task DbType_Should_ReturnDateType() => await Assert.That(PgTypeInfo.Date).IsEqualTo(PgDate.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnDateType() =>
-        Assert.Equal(PgDate.ArrayDbType, PgTypeInfo.DateArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnDateType() =>
+        await Assert.That(PgTypeInfo.DateArray).IsEqualTo(PgDate.ArrayDbType);
 
-    [Fact]
-    public void RangeType_Should_ReturnDateRangeType() =>
-        Assert.Equal(PgDate.RangeType, PgTypeInfo.Daterange);
+    [Test]
+    public async Task RangeType_Should_ReturnDateRangeType() =>
+        await Assert.That(PgTypeInfo.Daterange).IsEqualTo(PgDate.RangeType);
 
-    [Fact]
-    public void RangeArrayType_Should_ReturnDateRangeType() =>
-        Assert.Equal(PgDate.RangeArrayType, PgTypeInfo.DaterangeArray);
+    [Test]
+    public async Task RangeArrayType_Should_ReturnDateRangeType() =>
+        await Assert.That(PgTypeInfo.DaterangeArray).IsEqualTo(PgDate.RangeArrayType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgDate.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgDate.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

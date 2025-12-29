@@ -9,8 +9,8 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgLine))]
 public class PgLineTest
 {
-    [Fact]
-    public void Encode_Should_WritePgCircle()
+    [Test]
+    public async Task Encode_Should_WritePgCircle()
     {
         byte[] expectedBytes =
         [
@@ -24,11 +24,11 @@ public class PgLineTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Fact]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsPgCircle()
+    [Test]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsPgCircle()
     {
         var expectedValue = new PgLine(5.63, 8.59, 4);
         byte[] binaryData =
@@ -41,11 +41,11 @@ public class PgLineTest
 
         PgLine actualValue = PgLine.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Fact]
-    public void DecodeText_Should_DecodeTextEncodedValueAsPgCircle()
+    [Test]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsPgCircle()
     {
         const string textData = "{5.63,8.59,4}";
         var expectedValue = new PgLine(5.63, 8.59, 4);
@@ -54,14 +54,14 @@ public class PgLineTest
 
         PgLine actualValue = PgLine.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("{error,error,error}", "Could not parse A value")]
-    [InlineData("{1,error,error}", "Could not parse B value")]
-    [InlineData("{1,2,error}", "Could not parse C value")]
-    public void DecodeText_Should_Fail_When_InvalidText(
+    [Test]
+    [Arguments("{error,error,error}", "Could not parse A value")]
+    [Arguments("{1,error,error}", "Could not parse B value")]
+    [Arguments("{1,2,error}", "Could not parse C value")]
+    public async Task DecodeText_Should_Fail_When_InvalidText(
         string textData,
         string contains)
     {
@@ -75,8 +75,8 @@ public class PgLineTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: Sqlx.Postgres.Type.PgLine", e.Message);
-            Assert.Contains(contains, e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: Sqlx.Postgres.Type.PgLine");
+            await Assert.That(e.Message).Contains(contains);
         }
         catch (Exception e)
         {
@@ -84,17 +84,17 @@ public class PgLineTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnLineType() => Assert.Equal(PgLine.DbType, PgTypeInfo.Line);
+    [Test]
+    public async Task DbType_Should_ReturnLineType() => await Assert.That(PgTypeInfo.Line).IsEqualTo(PgLine.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnLineArrayType() =>
-        Assert.Equal(PgLine.ArrayDbType, PgTypeInfo.LineArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnLineArrayType() =>
+        await Assert.That(PgTypeInfo.LineArray).IsEqualTo(PgLine.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgLine.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgLine.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

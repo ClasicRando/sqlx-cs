@@ -9,8 +9,8 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgBox))]
 public class PgBoxTest
 {
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         4,
         3,
         2,
@@ -20,7 +20,7 @@ public class PgBoxTest
             64, 16, 0, 0, 0, 0, 0, 0, 64, 8, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 63, 240, 0,
             0, 0, 0, 0, 0,
         })]
-    public void Encode_Should_WriteBox(
+    public async Task Encode_Should_WriteBox(
         double x1,
         double y1,
         double x2,
@@ -34,11 +34,11 @@ public class PgBoxTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         new byte[]
         {
             64, 16, 0, 0, 0, 0, 0, 0, 64, 8, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 63, 240, 0,
@@ -48,7 +48,7 @@ public class PgBoxTest
         3,
         2,
         1)]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsBox(
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsBox(
         byte[] binaryData,
         double x1,
         double y1,
@@ -61,12 +61,12 @@ public class PgBoxTest
 
         PgBox actualValue = PgBox.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("(4,3),(2,1)", 4, 3, 2, 1)]
-    public void DecodeText_Should_DecodeTextEncodedValueAsBox(
+    [Test]
+    [Arguments("(4,3),(2,1)", 4, 3, 2, 1)]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsBox(
         string textData,
         double x1,
         double y1,
@@ -79,13 +79,13 @@ public class PgBoxTest
 
         PgBox actualValue = PgBox.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("(1,2)")]
-    [InlineData("(1,2),(3,4),(5,6)")]
-    public void DecodeText_Should_Fail_When_LiteralDoesNotHave2Points(string textData)
+    [Test]
+    [Arguments("(1,2)")]
+    [Arguments("(1,2),(3,4),(5,6)")]
+    public async Task DecodeText_Should_Fail_When_LiteralDoesNotHave2Points(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -97,8 +97,8 @@ public class PgBoxTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: Sqlx.Postgres.Type.PgBox", e.Message);
-            Assert.Contains("Box geoms must have exactly 2 points", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: Sqlx.Postgres.Type.PgBox");
+            await Assert.That(e.Message).Contains("Box geoms must have exactly 2 points");
         }
         catch (Exception e)
         {
@@ -106,23 +106,22 @@ public class PgBoxTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnBoxType() => Assert.Equal(PgTypeInfo.Box, PgBox.DbType);
+    [Test]
+    public async Task DbType_Should_ReturnBoxType() => await Assert.That(PgBox.DbType).IsEqualTo(PgTypeInfo.Box);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnBoxType() =>
-        Assert.Equal(PgTypeInfo.BoxArray, PgBox.ArrayDbType);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnBoxType() =>
+        await Assert.That(PgBox.ArrayDbType).IsEqualTo(PgTypeInfo.BoxArray);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgBox.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgBox.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
-    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
+    public static IEnumerable<Func<(PgTypeInfo, bool)>> IsCompatibleCases()
     {
-        return new TheoryData<PgTypeInfo, bool>(
-            (PgTypeInfo.Box, true),
-            (PgTypeInfo.BoxArray, false),
-            (PgTypeInfo.Int4, false));
+        yield return () => (PgTypeInfo.Box, true);
+        yield return () => (PgTypeInfo.BoxArray, false);
+        yield return () => (PgTypeInfo.Int4, false);
     }
 }

@@ -9,8 +9,8 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgLineSegment))]
 public class PgLineSegmentTest
 {
-    [Fact]
-    public void Encode_Should_WritePgCircle()
+    [Test]
+    public async Task Encode_Should_WritePgCircle()
     {
         byte[] expectedBytes =
         [
@@ -24,11 +24,11 @@ public class PgLineSegmentTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Fact]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsPgCircle()
+    [Test]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsPgCircle()
     {
         var expectedValue = new PgLineSegment(new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8));
         byte[] binaryData =
@@ -41,11 +41,11 @@ public class PgLineSegmentTest
 
         PgLineSegment actualValue = PgLineSegment.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Fact]
-    public void DecodeText_Should_DecodeTextEncodedValueAsPgCircle()
+    [Test]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsPgCircle()
     {
         const string textData = "((5.63,8.59),(4.87,2.8))";
         var expectedValue = new PgLineSegment(new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8));
@@ -54,13 +54,13 @@ public class PgLineSegmentTest
 
         PgLineSegment actualValue = PgLineSegment.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("((1,1),(1,1),(1,1))")]
-    [InlineData("((1,1))")]
-    public void DecodeText_Should_Fail_When_InvalidText(string textData)
+    [Test]
+    [Arguments("((1,1),(1,1),(1,1))")]
+    [Arguments("((1,1))")]
+    public async Task DecodeText_Should_Fail_When_InvalidText(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -72,8 +72,8 @@ public class PgLineSegmentTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: Sqlx.Postgres.Type.PgLineSegment", e.Message);
-            Assert.Contains("Line segments must have exactly 2 points", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: Sqlx.Postgres.Type.PgLineSegment");
+            await Assert.That(e.Message).Contains("Line segments must have exactly 2 points");
         }
         catch (Exception e)
         {
@@ -81,17 +81,17 @@ public class PgLineSegmentTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnLineType() => Assert.Equal(PgLineSegment.DbType, PgTypeInfo.Lseg);
+    [Test]
+    public async Task DbType_Should_ReturnLineType() => await Assert.That(PgTypeInfo.Lseg).IsEqualTo(PgLineSegment.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnLineArrayType() =>
-        Assert.Equal(PgLineSegment.ArrayDbType, PgTypeInfo.LsegArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnLineArrayType() =>
+        await Assert.That(PgTypeInfo.LsegArray).IsEqualTo(PgLineSegment.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgLineSegment.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgLineSegment.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

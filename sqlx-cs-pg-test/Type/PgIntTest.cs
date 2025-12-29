@@ -9,13 +9,13 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgInt))]
 public class PgIntTest
 {
-    [Theory]
-    [InlineData(int.MinValue, new byte[] { 128, 0, 0, 0 })]
-    [InlineData(short.MinValue, new byte[] { 255, 255, 128, 0 })]
-    [InlineData(0, new byte[] { 0, 0, 0, 0 })]
-    [InlineData(short.MaxValue, new byte[] { 0, 0, 127, 255 })]
-    [InlineData(int.MaxValue, new byte[] { 127, 255, 255, 255 })]
-    public void Encode_Should_WriteInt(int value, byte[] expectedBytes)
+    [Test]
+    [Arguments(int.MinValue, new byte[] { 128, 0, 0, 0 })]
+    [Arguments(short.MinValue, new byte[] { 255, 255, 128, 0 })]
+    [Arguments(0, new byte[] { 0, 0, 0, 0 })]
+    [Arguments(short.MaxValue, new byte[] { 0, 0, 127, 255 })]
+    [Arguments(int.MaxValue, new byte[] { 127, 255, 255, 255 })]
+    public async Task Encode_Should_WriteInt(int value, byte[] expectedBytes)
     {
         using var buffer = new WriteBuffer();
 
@@ -23,22 +23,22 @@ public class PgIntTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 255, 255, 255, 255, 128, 0, 0, 0 }, int.MinValue)]
-    [InlineData(new byte[] { 128, 0, 0, 0 }, int.MinValue)]
-    [InlineData(new byte[] { 255, 255, 255, 255, 255, 255, 128, 0 }, short.MinValue)]
-    [InlineData(new byte[] { 255, 255, 128, 0 }, short.MinValue)]
-    [InlineData(new byte[] { 128, 0 }, short.MinValue)]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0)]
-    [InlineData(new byte[] { 127, 255 }, short.MaxValue)]
-    [InlineData(new byte[] { 0, 0, 127, 255 }, short.MaxValue)]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 127, 255 }, short.MaxValue)]
-    [InlineData(new byte[] { 127, 255, 255, 255 }, int.MaxValue)]
-    [InlineData(new byte[] { 0, 0, 0, 0, 127, 255, 255, 255 }, int.MaxValue)]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsInt(
+    [Test]
+    [Arguments(new byte[] { 255, 255, 255, 255, 128, 0, 0, 0 }, int.MinValue)]
+    [Arguments(new byte[] { 128, 0, 0, 0 }, int.MinValue)]
+    [Arguments(new byte[] { 255, 255, 255, 255, 255, 255, 128, 0 }, short.MinValue)]
+    [Arguments(new byte[] { 255, 255, 128, 0 }, short.MinValue)]
+    [Arguments(new byte[] { 128, 0 }, short.MinValue)]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0)]
+    [Arguments(new byte[] { 127, 255 }, short.MaxValue)]
+    [Arguments(new byte[] { 0, 0, 127, 255 }, short.MaxValue)]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 127, 255 }, short.MaxValue)]
+    [Arguments(new byte[] { 127, 255, 255, 255 }, int.MaxValue)]
+    [Arguments(new byte[] { 0, 0, 0, 0, 127, 255, 255, 255 }, int.MaxValue)]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsInt(
         byte[] binaryData,
         int expectedValue)
     {
@@ -47,13 +47,13 @@ public class PgIntTest
 
         var actualValue = PgInt.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 128, 0, 0, 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 127, 255, 255, 255, 255, 255, 255, 255 })]
-    public void DecodeBytes_Should_Fail_When_OutsideOfIntBounds(byte[] binaryData)
+    [Test]
+    [Arguments(new byte[] { 128, 0, 0, 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 127, 255, 255, 255, 255, 255, 255, 255 })]
+    public async Task DecodeBytes_Should_Fail_When_OutsideOfIntBounds(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
@@ -64,8 +64,8 @@ public class PgIntTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Int32", e.Message);
-            Assert.Contains("Value is outside of valid int", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Int32");
+            await Assert.That(e.Message).Contains("Value is outside of valid int");
         }
         catch (Exception e)
         {
@@ -73,14 +73,14 @@ public class PgIntTest
         }
     }
 
-    [Theory]
-    [InlineData(new byte[] { 0 })]
-    [InlineData(new byte[] { 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 })]
-    public void DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
+    [Test]
+    [Arguments(new byte[] { 0 })]
+    [Arguments(new byte[] { 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 })]
+    public async Task DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
@@ -91,8 +91,8 @@ public class PgIntTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Int32", e.Message);
-            Assert.Contains("Could not extract integer from buffer. Number of bytes = ", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Int32");
+            await Assert.That(e.Message).Contains("Could not extract integer from buffer. Number of bytes = ");
         }
         catch (Exception e)
         {
@@ -100,13 +100,13 @@ public class PgIntTest
         }
     }
 
-    [Theory]
-    [InlineData("-2147483648", int.MinValue)]
-    [InlineData("-32768", short.MinValue)]
-    [InlineData("0", 0)]
-    [InlineData("32767", short.MaxValue)]
-    [InlineData("2147483647", int.MaxValue)]
-    public void DecodeText_Should_DecodeTextEncodedValueAsInt(
+    [Test]
+    [Arguments("-2147483648", int.MinValue)]
+    [Arguments("-32768", short.MinValue)]
+    [Arguments("0", 0)]
+    [Arguments("32767", short.MaxValue)]
+    [Arguments("2147483647", int.MaxValue)]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsInt(
         string textData,
         int expectedValue)
     {
@@ -115,14 +115,14 @@ public class PgIntTest
 
         var actualValue = PgInt.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("error", "Could not convert 'error' into System.Int32")]
-    [InlineData("-9223372036854775808", "Value is outside of valid int")]
-    [InlineData("9223372036854775807", "Value is outside of valid int")]
-    public void DecodeText_Should_Fail_When_InvalidIntString(string textData, string contains)
+    [Test]
+    [Arguments("error", "Could not convert 'error' into System.Int32")]
+    [Arguments("-9223372036854775808", "Value is outside of valid int")]
+    [Arguments("9223372036854775807", "Value is outside of valid int")]
+    public async Task DecodeText_Should_Fail_When_InvalidIntString(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -134,8 +134,8 @@ public class PgIntTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Int32", e.Message);
-            Assert.Contains(contains, e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Int32");
+            await Assert.That(e.Message).Contains(contains);
         }
         catch (Exception e)
         {
@@ -143,17 +143,17 @@ public class PgIntTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnIntType() => Assert.Equal(PgInt.DbType, PgTypeInfo.Int4);
+    [Test]
+    public async Task DbType_Should_ReturnIntType() => await Assert.That(PgTypeInfo.Int4).IsEqualTo(PgInt.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnIntType() =>
-        Assert.Equal(PgInt.ArrayDbType, PgTypeInfo.Int4Array);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnIntType() =>
+        await Assert.That(PgTypeInfo.Int4Array).IsEqualTo(PgInt.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgInt.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgInt.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

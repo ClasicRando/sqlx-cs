@@ -9,12 +9,12 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgOid))]
 public class PgOidTest
 {
-    [Theory]
-    [InlineData(0, new byte[] { 0, 0, 0, 0 })]
-    [InlineData(short.MaxValue, new byte[] { 0, 0, 127, 255 })]
-    [InlineData(int.MaxValue, new byte[] { 127, 255, 255, 255 })]
-    [InlineData(uint.MaxValue, new byte[] { 255, 255, 255, 255 })]
-    public void Encode_Should_WriteInt(uint value, byte[] expectedBytes)
+    [Test]
+    [Arguments(0, new byte[] { 0, 0, 0, 0 })]
+    [Arguments(short.MaxValue, new byte[] { 0, 0, 127, 255 })]
+    [Arguments(int.MaxValue, new byte[] { 127, 255, 255, 255 })]
+    [Arguments(uint.MaxValue, new byte[] { 255, 255, 255, 255 })]
+    public async Task Encode_Should_WriteInt(uint value, byte[] expectedBytes)
     {
         using var buffer = new WriteBuffer();
 
@@ -22,19 +22,19 @@ public class PgOidTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0)]
-    [InlineData(new byte[] { 127, 255 }, short.MaxValue)]
-    [InlineData(new byte[] { 0, 0, 127, 255 }, short.MaxValue)]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 127, 255 }, short.MaxValue)]
-    [InlineData(new byte[] { 127, 255, 255, 255 }, int.MaxValue)]
-    [InlineData(new byte[] { 0, 0, 0, 0, 127, 255, 255, 255 }, int.MaxValue)]
-    [InlineData(new byte[] { 255, 255, 255, 255 }, uint.MaxValue)]
-    [InlineData(new byte[] { 0, 0, 0, 0, 255, 255, 255, 255 }, uint.MaxValue)]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsInt(
+    [Test]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0)]
+    [Arguments(new byte[] { 127, 255 }, short.MaxValue)]
+    [Arguments(new byte[] { 0, 0, 127, 255 }, short.MaxValue)]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 127, 255 }, short.MaxValue)]
+    [Arguments(new byte[] { 127, 255, 255, 255 }, int.MaxValue)]
+    [Arguments(new byte[] { 0, 0, 0, 0, 127, 255, 255, 255 }, int.MaxValue)]
+    [Arguments(new byte[] { 255, 255, 255, 255 }, uint.MaxValue)]
+    [Arguments(new byte[] { 0, 0, 0, 0, 255, 255, 255, 255 }, uint.MaxValue)]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsInt(
         byte[] binaryData,
         uint expectedValue)
     {
@@ -43,13 +43,13 @@ public class PgOidTest
 
         PgOid actualValue = PgOid.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue.Inner);
+        await Assert.That(actualValue.Inner).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 255, 0, 0, 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 127, 255, 255, 255, 255, 255, 255, 255 })]
-    public void DecodeBytes_Should_Fail_When_OutsideOfIntBounds(byte[] binaryData)
+    [Test]
+    [Arguments(new byte[] { 255, 0, 0, 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 127, 255, 255, 255, 255, 255, 255, 255 })]
+    public async Task DecodeBytes_Should_Fail_When_OutsideOfIntBounds(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
@@ -60,8 +60,8 @@ public class PgOidTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.UInt32", e.Message);
-            Assert.Contains("Value is outside of valid uint", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.UInt32");
+            await Assert.That(e.Message).Contains("Value is outside of valid uint");
         }
         catch (Exception e)
         {
@@ -69,14 +69,14 @@ public class PgOidTest
         }
     }
 
-    [Theory]
-    [InlineData(new byte[] { 0 })]
-    [InlineData(new byte[] { 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 })]
-    public void DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
+    [Test]
+    [Arguments(new byte[] { 0 })]
+    [Arguments(new byte[] { 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 })]
+    public async Task DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
@@ -87,8 +87,8 @@ public class PgOidTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.UInt32", e.Message);
-            Assert.Contains("Could not extract integer from buffer. Number of bytes = ", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.UInt32");
+            await Assert.That(e.Message).Contains("Could not extract integer from buffer. Number of bytes = ");
         }
         catch (Exception e)
         {
@@ -96,12 +96,12 @@ public class PgOidTest
         }
     }
 
-    [Theory]
-    [InlineData("0", 0)]
-    [InlineData("32767", short.MaxValue)]
-    [InlineData("2147483647", int.MaxValue)]
-    [InlineData("4294967295", uint.MaxValue)]
-    public void DecodeText_Should_DecodeTextEncodedValueAsInt(
+    [Test]
+    [Arguments("0", 0)]
+    [Arguments("32767", short.MaxValue)]
+    [Arguments("2147483647", int.MaxValue)]
+    [Arguments("4294967295", uint.MaxValue)]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsInt(
         string textData,
         uint expectedValue)
     {
@@ -110,14 +110,14 @@ public class PgOidTest
 
         PgOid actualValue = PgOid.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue.Inner);
+        await Assert.That(actualValue.Inner).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("error", "Could not convert 'error' into System.UInt32")]
-    [InlineData("-9223372036854775808", "Value is outside of valid uint")]
-    [InlineData("9223372036854775807", "Value is outside of valid uint")]
-    public void DecodeText_Should_Fail_When_InvalidIntString(string textData, string contains)
+    [Test]
+    [Arguments("error", "Could not convert 'error' into System.UInt32")]
+    [Arguments("-9223372036854775808", "Value is outside of valid uint")]
+    [Arguments("9223372036854775807", "Value is outside of valid uint")]
+    public async Task DecodeText_Should_Fail_When_InvalidIntString(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -129,8 +129,8 @@ public class PgOidTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.UInt32", e.Message);
-            Assert.Contains(contains, e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.UInt32");
+            await Assert.That(e.Message).Contains(contains);
         }
         catch (Exception e)
         {
@@ -138,25 +138,24 @@ public class PgOidTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnIntType() => Assert.Equal(PgTypeInfo.Oid, PgOid.DbType);
+    [Test]
+    public async Task DbType_Should_ReturnIntType() => await Assert.That(PgOid.DbType).IsEqualTo(PgTypeInfo.Oid);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnIntType() =>
-        Assert.Equal(PgTypeInfo.OidArray, PgOid.ArrayDbType);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnIntType() =>
+        await Assert.That(PgOid.ArrayDbType).IsEqualTo(PgTypeInfo.OidArray);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgInt.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgInt.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
-    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
+    public static IEnumerable<Func<(PgTypeInfo, bool)>> IsCompatibleCases()
     {
-        return new TheoryData<PgTypeInfo, bool>(
-            (PgTypeInfo.Int8, true),
-            (PgTypeInfo.OidArray, false),
-            (PgTypeInfo.Oid, true),
-            (PgTypeInfo.Int4, true),
-            (PgTypeInfo.Int2, true));
+        yield return () => (PgTypeInfo.Int8, true);
+        yield return () => (PgTypeInfo.OidArray, false);
+        yield return () => (PgTypeInfo.Oid, true);
+        yield return () => (PgTypeInfo.Int4, true);
+        yield return () => (PgTypeInfo.Int2, true);
     }
 }

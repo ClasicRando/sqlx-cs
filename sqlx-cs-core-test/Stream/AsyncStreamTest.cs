@@ -7,72 +7,79 @@ namespace Sqlx.Core.Stream;
 [TestSubject(typeof(AsyncStream))]
 public class AsyncStreamTest
 {
-    [Fact]
-    public async Task WriteAsync_Should_SendAllBytes()
+    private const string TestKey = "AsyncStreamTest";
+    
+    [Test]
+    [NotInParallel(TestKey)]
+    public async Task WriteAsync_Should_SendAllBytes(CancellationToken ct)
     {
         const int port = 8080;
         byte[] expectedBytes = [0xA5, 0x45, 0xFF];
         using var listener = new TcpListener(IPAddress.Any, port);
         listener.Start();
-        var listenerTask = Task.Run(ListenTask, TestContext.Current.CancellationToken);
+        var listenerTask = Task.Run(ListenTask, ct);
 
         using var asyncStream = new AsyncStream();
-        await asyncStream.OpenAsync("127.0.0.1", port, TestContext.Current.CancellationToken);
-        await asyncStream.WriteAsync(expectedBytes, TestContext.Current.CancellationToken);
+        await asyncStream.OpenAsync("127.0.0.1", port, ct);
+        await asyncStream.WriteAsync(expectedBytes, ct);
 
         var actualBytes = await listenerTask;
         
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
         return;
 
         async Task<byte[]> ListenTask()
         {
-            TcpClient client = await listener.AcceptTcpClientAsync(TestContext.Current.CancellationToken);
+            TcpClient client = await listener.AcceptTcpClientAsync(ct);
             await using NetworkStream stream = client.GetStream();
 
             var buffer = new byte[1024];
-            var bytesRead = await stream.ReadAsync(buffer, TestContext.Current.CancellationToken);
+            var bytesRead = await stream.ReadAsync(buffer, ct);
             return buffer[..bytesRead];
         }
     }
     
-    [Theory]
-    [MemberData(nameof(ReadBufferAsyncCases))]
-    public async Task ReadBufferAsync_Should_ReadAllBytes_When_SimplePayload(byte[] expectedBytes)
+    [Test]
+    [NotInParallel(TestKey)]
+    [MethodDataSource(nameof(ReadBufferAsyncCases))]
+    public async Task ReadBufferAsync_Should_ReadAllBytes_When_SimplePayload(
+        byte[] expectedBytes,
+        CancellationToken ct)
     {
         const int port = 8080;
         using var listener = new TcpListener(IPAddress.Any, port);
         listener.Start();
-        Task _ = Task.Run(ListenTask, TestContext.Current.CancellationToken);
+        Task _ = Task.Run(ListenTask, ct);
 
         using var asyncStream = new AsyncStream();
-        await asyncStream.OpenAsync("127.0.0.1", port, TestContext.Current.CancellationToken);
+        await asyncStream.OpenAsync("127.0.0.1", port, ct);
 
         var actualBytes = new byte[expectedBytes.Length];
-        await asyncStream.ReadBufferAsync(actualBytes, TestContext.Current.CancellationToken);
+        await asyncStream.ReadBufferAsync(actualBytes, ct);
         
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
         return;
 
         async Task ListenTask()
         {
             listener.Start();
-            TcpClient client = await listener.AcceptTcpClientAsync(TestContext.Current.CancellationToken);
+            TcpClient client = await listener.AcceptTcpClientAsync(ct);
             await using NetworkStream stream = client.GetStream();
 
-            await stream.WriteAsync(expectedBytes, TestContext.Current.CancellationToken);
+            await stream.WriteAsync(expectedBytes, ct);
         }
     }
 
-    public static IEnumerable<TheoryDataRow<byte[]>> ReadBufferAsyncCases()
+    public static IEnumerable<Func<byte[]>> ReadBufferAsyncCases()
     {
-        return new TheoryData<byte[]>(
-            ([0xA5, 0x45, 0xFF]),
-            (Enumerable.Range(1, AsyncStream.DefaultBufferSize + 1).Select(i => (byte)i).ToArray()));
+        yield return () => [0xA5, 0x45, 0xFF];
+        yield return () => Enumerable.Range(1, AsyncStream.DefaultBufferSize + 1).Select(i => (byte)i).ToArray();
     }
     
-    [Fact]
-    public async Task ReadBufferAsync_Should_ReadAllBytesGrowAndShrinkInternalBuffer_When_OneTimeLargePayload()
+    [Test]
+    [NotInParallel(TestKey)]
+    public async Task ReadBufferAsync_Should_ReadAllBytesGrowAndShrinkInternalBuffer_When_OneTimeLargePayload(
+        CancellationToken ct)
     {
         const int port = 8080;
         var largePacket = Enumerable.Range(1, AsyncStream.DefaultBufferSize + 1)
@@ -80,65 +87,67 @@ public class AsyncStreamTest
         byte[] smallPacket = [0xA5, 0x45, 0xFF];
         using var listener = new TcpListener(IPAddress.Any, port);
         listener.Start();
-        Task _ = Task.Run(ListenTask, TestContext.Current.CancellationToken);
+        Task _ = Task.Run(ListenTask, ct);
 
         using var asyncStream = new AsyncStream();
-        await asyncStream.OpenAsync("127.0.0.1", port, TestContext.Current.CancellationToken);
+        await asyncStream.OpenAsync("127.0.0.1", port, ct);
 
         var actualBytes = new byte[largePacket.Length];
-        await asyncStream.ReadBufferAsync(actualBytes, TestContext.Current.CancellationToken);
-        Assert.Equal(largePacket, actualBytes);
-        Assert.True(asyncStream.InnerBufferSize > AsyncStream.DefaultBufferSize);
+        await asyncStream.ReadBufferAsync(actualBytes, ct);
+        await Assert.That(actualBytes).IsEquivalentTo(largePacket);
+        await Assert.That(asyncStream.InnerBufferSize > AsyncStream.DefaultBufferSize).IsTrue();
         
         actualBytes = new byte[smallPacket.Length];
-        await asyncStream.ReadBufferAsync(actualBytes, TestContext.Current.CancellationToken);
-        Assert.Equal(smallPacket, actualBytes);
-        Assert.False(asyncStream.InnerBufferSize > AsyncStream.DefaultBufferSize);
+        await asyncStream.ReadBufferAsync(actualBytes, ct);
+        await Assert.That(actualBytes).IsEquivalentTo(smallPacket);
+        await Assert.That(asyncStream.InnerBufferSize > AsyncStream.DefaultBufferSize).IsFalse();
         
         return;
 
         async Task ListenTask()
         {
             listener.Start();
-            TcpClient client = await listener.AcceptTcpClientAsync(TestContext.Current.CancellationToken);
+            TcpClient client = await listener.AcceptTcpClientAsync(ct);
             await using NetworkStream stream = client.GetStream();
 
-            await stream.WriteAsync(largePacket, TestContext.Current.CancellationToken);
-            await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
-            await stream.WriteAsync(smallPacket, TestContext.Current.CancellationToken);
+            await stream.WriteAsync(largePacket, ct);
+            await Task.Delay(TimeSpan.FromSeconds(2), ct);
+            await stream.WriteAsync(smallPacket, ct);
         }
     }
     
-    [Fact]
-    public async Task ReadBufferAsync_Should_ReadAllBytes_When_ComplexPayload()
+    [Test]
+    [NotInParallel(TestKey)]
+    public async Task ReadBufferAsync_Should_ReadAllBytes_When_ComplexPayload(
+        CancellationToken ct)
     {
         const int port = 8080;
         byte[] firstPacket = [0xB8, 0xC2, 0x89];
         byte[] secondPacket = [0xA5, 0x45, 0xFF];
         using var listener = new TcpListener(IPAddress.Any, port);
         listener.Start();
-        Task _ = Task.Run(ListenTask, TestContext.Current.CancellationToken);
+        Task _ = Task.Run(ListenTask, ct);
 
         using var asyncStream = new AsyncStream();
-        await asyncStream.OpenAsync("127.0.0.1", port, TestContext.Current.CancellationToken);
+        await asyncStream.OpenAsync("127.0.0.1", port, ct);
 
-        var firstByte = await asyncStream.ReadByteAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(firstPacket[0], firstByte);
-        var firstInt = await asyncStream.ReadIntAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(-1031166651, firstInt);
-        var secondByte = await asyncStream.ReadByteAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(secondPacket[2], secondByte);
+        var firstByte = await asyncStream.ReadByteAsync(ct);
+        await Assert.That(firstByte).IsEqualTo(firstPacket[0]);
+        var firstInt = await asyncStream.ReadIntAsync(ct);
+        await Assert.That(firstInt).IsEqualTo(-1031166651);
+        var secondByte = await asyncStream.ReadByteAsync(ct);
+        await Assert.That(secondByte).IsEqualTo(secondPacket[2]);
         return;
 
         async Task ListenTask()
         {
             listener.Start();
-            TcpClient client = await listener.AcceptTcpClientAsync(TestContext.Current.CancellationToken);
+            TcpClient client = await listener.AcceptTcpClientAsync(ct);
             await using NetworkStream stream = client.GetStream();
 
-            await stream.WriteAsync(firstPacket, TestContext.Current.CancellationToken);
-            await Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
-            await stream.WriteAsync(secondPacket, TestContext.Current.CancellationToken);
+            await stream.WriteAsync(firstPacket, ct);
+            await Task.Delay(TimeSpan.FromSeconds(2), ct);
+            await stream.WriteAsync(secondPacket, ct);
         }
     }
 }

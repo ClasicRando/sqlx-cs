@@ -7,24 +7,24 @@ namespace Sqlx.Core.Buffer;
 [TestSubject(typeof(WriteBuffer))]
 public class WriteBufferTest
 {
-    [Theory]
-    [InlineData(54)]
-    [InlineData(byte.MaxValue)]
-    [InlineData(byte.MinValue)]
-    public void WriteByte_Should_FillBufferWithByte(byte value)
+    [Test]
+    [Arguments(54)]
+    [Arguments(byte.MaxValue)]
+    [Arguments(byte.MinValue)]
+    public async Task WriteByte_Should_FillBufferWithByte(byte value)
     {
         using var buffer = new WriteBuffer();
         
         buffer.WriteByte(value);
         
-        Assert.Equal([value], buffer.ReadableSpan.ToArray());
+        await Assert.That(buffer.ReadableSpan.ToArray()).IsEquivalentTo([value]);
     }
 
-    [Theory]
-    [InlineData(589)]
-    [InlineData(short.MaxValue)]
-    [InlineData(short.MinValue)]
-    public void WriteShort_Should_FillBufferWithShort(short value)
+    [Test]
+    [Arguments(589)]
+    [Arguments(short.MaxValue)]
+    [Arguments(short.MinValue)]
+    public async Task WriteShort_Should_FillBufferWithShort(short value)
     {
         using var buffer = new WriteBuffer();
         var shortValue = BitConverter.IsLittleEndian
@@ -34,14 +34,14 @@ public class WriteBufferTest
         
         buffer.WriteShort(value);
         
-        Assert.Equal(bytes, buffer.ReadableSpan.ToArray());
+        await Assert.That(buffer.ReadableSpan.ToArray()).IsEquivalentTo(bytes);
     }
 
-    [Theory]
-    [InlineData(38023)]
-    [InlineData(int.MaxValue)]
-    [InlineData(int.MinValue)]
-    public void WriteInt_Should_FillBufferWithInt(int value)
+    [Test]
+    [Arguments(38023)]
+    [Arguments(int.MaxValue)]
+    [Arguments(int.MinValue)]
+    public async Task WriteInt_Should_FillBufferWithInt(int value)
     {
         using var buffer = new WriteBuffer();
         var intValue = BitConverter.IsLittleEndian
@@ -56,14 +56,14 @@ public class WriteBufferTest
         
         buffer.WriteInt(value);
         
-        Assert.Equal(bytes, buffer.ReadableSpan.ToArray());
+        await Assert.That(buffer.ReadableSpan.ToArray()).IsEquivalentTo(bytes);
     }
 
-    [Theory]
-    [InlineData(2204379902L)]
-    [InlineData(long.MaxValue)]
-    [InlineData(long.MinValue)]
-    public void WriteLong_Should_FillBufferWithLong(long value)
+    [Test]
+    [Arguments(2204379902L)]
+    [Arguments(long.MaxValue)]
+    [Arguments(long.MinValue)]
+    public async Task WriteLong_Should_FillBufferWithLong(long value)
     {
         using var buffer = new WriteBuffer();
         var longValue = BitConverter.IsLittleEndian
@@ -82,14 +82,14 @@ public class WriteBufferTest
         
         buffer.WriteLong(value);
         
-        Assert.Equal(bytes, buffer.ReadableSpan.ToArray());
+        await Assert.That(buffer.ReadableSpan.ToArray()).IsEquivalentTo(bytes);
     }
 
-    [Theory]
-    [InlineData(52.365F)]
-    [InlineData(float.MaxValue)]
-    [InlineData(float.MinValue)]
-    public void WriteFloat_Should_FillBufferWithFloat(float value)
+    [Test]
+    [Arguments(52.365F)]
+    [Arguments(float.MaxValue)]
+    [Arguments(float.MinValue)]
+    public async Task WriteFloat_Should_FillBufferWithFloat(float value)
     {
         using var buffer = new WriteBuffer();
         var floatValue = BitConverter.IsLittleEndian
@@ -104,14 +104,14 @@ public class WriteBufferTest
         
         buffer.WriteFloat(value);
         
-        Assert.Equal(bytes, buffer.ReadableSpan.ToArray());
+        await Assert.That(buffer.ReadableSpan.ToArray()).IsEquivalentTo(bytes);
     }
 
-    [Theory]
-    [InlineData(3.4028234663852886E+38D)]
-    [InlineData(double.MaxValue)]
-    [InlineData(double.MinValue)]
-    public void WriteDouble_Should_FillBufferWithDouble(double value)
+    [Test]
+    [Arguments(3.4028234663852886E+38D)]
+    [Arguments(double.MaxValue)]
+    [Arguments(double.MinValue)]
+    public async Task WriteDouble_Should_FillBufferWithDouble(double value)
     {
         using var buffer = new WriteBuffer();
         var doubleValue = BitConverter.IsLittleEndian
@@ -130,58 +130,58 @@ public class WriteBufferTest
         
         buffer.WriteDouble(value);
         
-        Assert.Equal(bytes, buffer.ReadableSpan.ToArray());
+        await Assert.That(buffer.ReadableSpan.ToArray()).IsEquivalentTo(bytes);
     }
 
-    [Fact]
-    public void WriteBytes_Should_FillBufferWithBytes_When_Span()
+    [Test]
+    public async Task WriteBytes_Should_FillBufferWithBytes_When_Span()
     {
         using var buffer = new WriteBuffer();
         byte[] bytes = [1, 2, 3, 255, 4];
 
         buffer.WriteBytes(bytes.AsSpan(0, 4));
         
-        Assert.Equal(bytes[..4], buffer.ReadableSpan.ToArray());
+        await Assert.That(buffer.ReadableSpan.ToArray()).IsEquivalentTo(bytes[..4]);
     }
 
-    [Fact]
-    public void WriteBytes_Should_FillBufferWithBytes_When_Memory()
+    [Test]
+    public async Task WriteBytes_Should_FillBufferWithBytes_When_Memory()
     {
         using var buffer = new WriteBuffer();
         byte[] bytes = [1, 2, 3, 255, 4];
 
         buffer.WriteBytes(bytes.AsMemory(0, 4));
         
-        Assert.Equal(bytes[..4], buffer.ReadableSpan.ToArray());
+        await Assert.That(buffer.ReadableSpan.ToArray()).IsEquivalentTo(bytes[..4]);
     }
 
-    [Fact]
-    public void WriteString_Should_FillBufferWithUtf8Bytes()
+    [Test]
+    public async Task WriteString_Should_FillBufferWithUtf8Bytes()
     {
         using var buffer = new WriteBuffer();
         const string value = "This is a test";
 
         buffer.WriteString(value);
         
-        Assert.Equal(value, Encoding.UTF8.GetString(buffer.ReadableSpan));
+        await Assert.That(Encoding.UTF8.GetString(buffer.ReadableSpan)).IsEqualTo(value);
     }
 
-    [Fact]
-    public void WriteCString_Should_FillBufferWithNullTerminatedUtf8Bytes()
+    [Test]
+    public async Task WriteCString_Should_FillBufferWithNullTerminatedUtf8Bytes()
     {
         using var buffer = new WriteBuffer();
         const string value = "This is a test";
 
         buffer.WriteCString(value);
         
-        Assert.Equal(value, Encoding.UTF8.GetString(buffer.ReadableSpan[..^1]));
-        Assert.Equal(0, buffer.ReadableSpan[^1]);
+        await Assert.That(Encoding.UTF8.GetString(buffer.ReadableSpan[..^1])).IsEqualTo(value);
+        await Assert.That(buffer.ReadableSpan[^1]).IsEqualTo((byte)0);
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void WriteLengthPrefixed_Should_AllowForWritingToBufferWithALengthPrefix(bool includeLength)
+    [Test]
+    [Arguments(true)]
+    [Arguments(false)]
+    public async Task WriteLengthPrefixed_Should_AllowForWritingToBufferWithALengthPrefix(bool includeLength)
     {
         using var buffer = new WriteBuffer();
         
@@ -191,7 +191,11 @@ public class WriteBufferTest
 
         var bytes = buffer.ReadableSpan.ToArray();
         var readBuffer = new ReadBuffer(bytes.AsSpan());
-        Assert.Equal(1 + (includeLength ? 4 : 0), readBuffer.ReadInt());
-        Assert.Equal(1, readBuffer.ReadByte());
+
+        var firstInt = readBuffer.ReadInt();
+        var firstByte = readBuffer.ReadByte();
+        
+        await Assert.That(firstInt).IsEqualTo(1 + (includeLength ? 4 : 0));
+        await Assert.That(firstByte).IsEqualTo((byte)1);
     }
 }

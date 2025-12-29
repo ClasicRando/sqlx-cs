@@ -8,21 +8,21 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgPolygon))]
 public class PgPolygonTest
 {
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         new[] { 5.63, 8.59, 4.87, 2.8 },
         new byte[]
         {
             0, 0, 0, 2, 64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174, 64,
             19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102,
         })]
-    [InlineData(
+    [Arguments(
         new[] { 4.87, 2.8 },
         new byte[]
         {
             0, 0, 0, 1, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102,
         })]
-    public void Encode_Should_WritePolygon(
+    public async Task Encode_Should_WritePolygon(
         double[] values,
         byte[] expectedBytes)
     {
@@ -42,24 +42,24 @@ public class PgPolygonTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         new byte[]
         {
             0, 0, 0, 2, 64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174, 64,
             19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102,
         },
         new[] { 5.63, 8.59, 4.87, 2.8 })]
-    [InlineData(
+    [Arguments(
         new byte[]
         {
             0, 0, 0, 1, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102,
         },
         new[] { 4.87, 2.8 })]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsPolygon(
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsPolygon(
         byte[] binaryData,
         double[] values)
     {
@@ -78,17 +78,17 @@ public class PgPolygonTest
 
         PgPolygon actualValue = PgPolygon.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         "((5.63,8.59),(4.87,2.8))",
         new[] { 5.63, 8.59, 4.87, 2.8 })]
-    [InlineData(
+    [Arguments(
         "((5.63,8.59))",
         new[] { 5.63, 8.59 })]
-    public void DecodeText_Should_DecodeTextEncodedValueAsPolygon(
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsPolygon(
         string textData,
         double[] values)
     {
@@ -107,20 +107,20 @@ public class PgPolygonTest
 
         PgPolygon actualValue = PgPolygon.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Fact]
-    public void DbType_Should_ReturnPolygonType() => Assert.Equal(PgPolygon.DbType, PgTypeInfo.Polygon);
+    [Test]
+    public async Task DbType_Should_ReturnPolygonType() => await Assert.That(PgTypeInfo.Polygon).IsEqualTo(PgPolygon.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnPolygonType() =>
-        Assert.Equal(PgPolygon.ArrayDbType, PgTypeInfo.PolygonArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnPolygonType() =>
+        await Assert.That(PgTypeInfo.PolygonArray).IsEqualTo(PgPolygon.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgPolygon.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgPolygon.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

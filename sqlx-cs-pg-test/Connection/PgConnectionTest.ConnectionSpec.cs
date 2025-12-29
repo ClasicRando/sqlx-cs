@@ -8,87 +8,87 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Fact]
-    public async Task OpenAsync_Should_SucceedWithSaslAuth_When_DefaultAuth()
+    [Test]
+    public async Task OpenAsync_Should_SucceedWithSaslAuth_When_DefaultAuth(CancellationToken ct)
     {
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        await connection.OpenAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(ConnectionStatus.Idle, connection.Status);
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        await connection.OpenAsync(ct);
+        await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Idle);
         using IPgExecutableQuery query = connection.CreateQuery("SELECT 1;");
-        var rowsAffected = await query.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(1, rowsAffected);
+        var rowsAffected = await query.ExecuteNonQueryAsync(ct);
+        await Assert.That(rowsAffected).IsEqualTo(1);
     }
 
-    [Fact]
-    public async Task CloseAsync_Should_Succeed_When_OpenConnection()
+    [Test]
+    public async Task CloseAsync_Should_Succeed_When_OpenConnection(CancellationToken ct)
     {
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        await connection.OpenAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(ConnectionStatus.Idle, connection.Status);
-        await connection.CloseAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(ConnectionStatus.Closed, connection.Status);
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        await connection.OpenAsync(ct);
+        await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Idle);
+        await connection.CloseAsync(ct);
+        await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Closed);
     }
 
-    [Fact]
-    public async Task CloseAsync_Should_Succeed_When_ClosedConnection()
+    [Test]
+    public async Task CloseAsync_Should_Succeed_When_ClosedConnection(CancellationToken ct)
     {
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        Assert.Equal(ConnectionStatus.Closed, connection.Status);
-        await connection.CloseAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(ConnectionStatus.Closed, connection.Status);
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Closed);
+        await connection.CloseAsync(ct);
+        await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Closed);
     }
 
-    [Fact]
-    public async Task CloseAsync_Should_Fail_When_DisposedConnection()
+    [Test]
+    public async Task CloseAsync_Should_Fail_When_DisposedConnection(CancellationToken ct)
     {
-        IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        Assert.Equal(ConnectionStatus.Closed, connection.Status);
+        IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Closed);
         connection.Dispose();
         await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
-            await connection.CloseAsync(TestContext.Current.CancellationToken));
+            await connection.CloseAsync(ct));
     }
 
-    [Fact]
-    public async Task CommitAsync_Should_SucceedAndIncrementTransactionId()
+    [Test]
+    public async Task CommitAsync_Should_SucceedAndIncrementTransactionId(CancellationToken ct)
     {
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        await connection.OpenAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(ConnectionStatus.Idle, connection.Status);
-        var transactionIdStart = await GetConnectionTransactionId(connection);
-        await connection.BeginAsync(TestContext.Current.CancellationToken);
-        var transactionIdBegin = await GetConnectionTransactionId(connection);
-        Assert.NotEqual(transactionIdStart, transactionIdBegin);
-        Assert.True(transactionIdStart < transactionIdBegin);
-        await connection.CommitAsync(TestContext.Current.CancellationToken);
-        var transactionIdCommit = await GetConnectionTransactionId(connection);
-        Assert.NotEqual(transactionIdBegin, transactionIdCommit);
-        Assert.True(transactionIdBegin < transactionIdCommit);
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        await connection.OpenAsync(ct);
+        await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Idle);
+        var transactionIdStart = await GetConnectionTransactionId(connection, ct);
+        await connection.BeginAsync(ct);
+        var transactionIdBegin = await GetConnectionTransactionId(connection, ct);
+        await Assert.That(transactionIdBegin).IsNotEqualTo(transactionIdStart);
+        await Assert.That(transactionIdStart < transactionIdBegin).IsTrue();
+        await connection.CommitAsync(ct);
+        var transactionIdCommit = await GetConnectionTransactionId(connection, ct);
+        await Assert.That(transactionIdCommit).IsNotEqualTo(transactionIdBegin);
+        await Assert.That(transactionIdBegin < transactionIdCommit).IsTrue();
     }
 
-    [Fact]
-    public async Task RollbackAsync_Should_SucceedAndIncrementTransactionId()
+    [Test]
+    public async Task RollbackAsync_Should_SucceedAndIncrementTransactionId(CancellationToken ct)
     {
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        await connection.OpenAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(ConnectionStatus.Idle, connection.Status);
-        var transactionIdStart = await GetConnectionTransactionId(connection);
-        await connection.BeginAsync(TestContext.Current.CancellationToken);
-        var transactionIdBegin = await GetConnectionTransactionId(connection);
-        Assert.NotEqual(transactionIdStart, transactionIdBegin);
-        Assert.True(transactionIdStart < transactionIdBegin);
-        await connection.RollbackAsync(TestContext.Current.CancellationToken);
-        var transactionIdRollback = await GetConnectionTransactionId(connection);
-        Assert.NotEqual(transactionIdBegin, transactionIdRollback);
-        Assert.True(transactionIdBegin < transactionIdRollback);
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        await connection.OpenAsync(ct);
+        await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Idle);
+        var transactionIdStart = await GetConnectionTransactionId(connection, ct);
+        await connection.BeginAsync(ct);
+        var transactionIdBegin = await GetConnectionTransactionId(connection, ct);
+        await Assert.That(transactionIdBegin).IsNotEqualTo(transactionIdStart);
+        await Assert.That(transactionIdStart < transactionIdBegin).IsTrue();
+        await connection.RollbackAsync(ct);
+        var transactionIdRollback = await GetConnectionTransactionId(connection, ct);
+        await Assert.That(transactionIdRollback).IsNotEqualTo(transactionIdBegin);
+        await Assert.That(transactionIdBegin < transactionIdRollback).IsTrue();
     }
 
-    private static async Task<long> GetConnectionTransactionId(IPgConnection connection)
+    private static async Task<long> GetConnectionTransactionId(IPgConnection connection, CancellationToken ct)
     {
         using IPgExecutableQuery query = connection.CreateQuery("SELECT txid_current();");
-        var rows = await query.ExecuteAsync(TestContext.Current.CancellationToken);
+        var rows = await query.ExecuteAsync(ct);
         return await rows.Where(result => result is Either<IPgDataRow, QueryResult>.Left)
             .Select(result => (Either<IPgDataRow, QueryResult>.Left)result)
             .Select(row => row.Value.GetLongNotNull(0))
-            .FirstAsync();
+            .FirstAsync(ct);
     }
 }

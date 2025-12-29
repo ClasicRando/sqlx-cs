@@ -16,61 +16,61 @@ public partial class JsonTest
     private readonly JsonType _jsonType = new(1, "Test");
     private const string JsonTypeStr = "{\"Id\":1,\"Name\":\"Test\"}";
 
-    [Fact]
-    public void WriteToBuffer_Should_WriteJsonValueToBuffer_When_SourceGeneratedType()
+    [Test]
+    public async Task WriteToBuffer_Should_WriteJsonValueToBuffer_When_SourceGeneratedType()
     {
         using var buffer = new WriteBuffer();
         
         Json.WriteToBuffer(buffer, _jsonType, SourceGenerationContext.Default.JsonType);
         
-        Assert.Equal(JsonTypeStr, Encoding.UTF8.GetString(buffer.ReadableSpan));
+        await Assert.That(Encoding.UTF8.GetString(buffer.ReadableSpan)).IsEqualTo(JsonTypeStr);
     }
     
-    [Fact]
-    public void WriteToBuffer_Should_WriteJsonValueToBuffer_When_ReflectionBasedSerialization()
+    [Test]
+    public async Task WriteToBuffer_Should_WriteJsonValueToBuffer_When_ReflectionBasedSerialization()
     {
         using var buffer = new WriteBuffer();
         
         Json.WriteToBuffer(buffer, _jsonType, null);
         
-        Assert.Equal(JsonTypeStr, Encoding.UTF8.GetString(buffer.ReadableSpan));
+        await Assert.That(Encoding.UTF8.GetString(buffer.ReadableSpan)).IsEqualTo(JsonTypeStr);
     }
 
-    [Fact]
-    public void FromBytes_Should_ReadJsonValueFromBytes_When_SourceGeneratedType()
+    [Test]
+    public async Task FromBytes_Should_ReadJsonValueFromBytes_When_SourceGeneratedType()
     {
         var bytes = Encoding.UTF8.GetBytes(JsonTypeStr);
 
         var result = Json.FromBytes<JsonType>(bytes, SourceGenerationContext.Default.JsonType);
         
-        Assert.Equal(_jsonType, result);
+        await Assert.That(result).IsEqualTo(_jsonType);
     }
 
-    [Fact]
-    public void FromBytes_Should_ReadJsonValueFromBytes_When_ReflectionBasedSerialization()
+    [Test]
+    public async Task FromBytes_Should_ReadJsonValueFromBytes_When_ReflectionBasedSerialization()
     {
         var bytes = Encoding.UTF8.GetBytes(JsonTypeStr);
 
         var result = Json.FromBytes<JsonType>(bytes);
         
-        Assert.Equal(_jsonType, result);
+        await Assert.That(result).IsEqualTo(_jsonType);
     }
 
-    [Fact]
-    public void FromChars_Should_ReadJsonValueFromBytes_When_SourceGeneratedType()
+    [Test]
+    public async Task FromChars_Should_ReadJsonValueFromBytes_When_SourceGeneratedType()
     {
         var result = Json.FromChars<JsonType>(
             JsonTypeStr,
             SourceGenerationContext.Default.JsonType);
         
-        Assert.Equal(_jsonType, result);
+        await Assert.That(result).IsEqualTo(_jsonType);
     }
 
-    [Fact]
-    public void FromChars_Should_ReadJsonValueFromBytes_When_ReflectionBasedSerialization()
+    [Test]
+    public async Task FromChars_Should_ReadJsonValueFromBytes_When_ReflectionBasedSerialization()
     {
         var result = Json.FromChars<JsonType>(JsonTypeStr);
         
-        Assert.Equal(_jsonType, result);
+        await Assert.That(result).IsEqualTo(_jsonType);
     }
 }

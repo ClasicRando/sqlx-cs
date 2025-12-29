@@ -5,29 +5,30 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_BoolAndDefaultEncoding(bool value)
+    [Test]
+    [Arguments(true)]
+    [Arguments(false)]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_BoolAndDefaultEncoding(bool value, CancellationToken ct)
     {
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 bool_col;");
         query.Bind(value);
-        var result = await query.ExecuteScalar<PgBool, bool>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<bool, PgBool>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Theory]
-    [InlineData(true, "SELECT true;")]
-    [InlineData(false, "SELECT false;")]
+    [Test]
+    [Arguments(true, "SELECT true;")]
+    [Arguments(false, "SELECT false;")]
     public async Task ExecuteScalar_Should_Decode_When_BoolAndTextEncoding(
         bool value,
-        string sql)
+        string sql,
+        CancellationToken ct)
     {
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        var result = await query.ExecuteScalar<PgBool, bool>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<bool, PgBool>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 }

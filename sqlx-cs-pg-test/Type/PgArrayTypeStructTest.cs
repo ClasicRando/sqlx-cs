@@ -9,9 +9,9 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgArrayTypeStruct<,>))]
 public class PgArrayTypeStructTest
 {
-    [Theory]
-    [MemberData(nameof(EncodeCases))]
-    public void Encode_Should_WriteIntArray(int?[] value, byte[] expectedBytes)
+    [Test]
+    [MethodDataSource(nameof(EncodeCases))]
+    public async Task Encode_Should_WriteIntArray(int?[] value, byte[] expectedBytes)
     {
         using var buffer = new WriteBuffer();
 
@@ -19,47 +19,75 @@ public class PgArrayTypeStructTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
-    }
-    
-    public static IEnumerable<object[]> EncodeCases()
-    {
-        yield return [Array.Empty<int?>(), new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 1 }];
-        yield return [new int?[] { 1 }, new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0, 1 }];
-        yield return [new int?[] { null, 1 }, new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 2, 0, 0, 0, 1, 255, 255, 255, 255, 0, 0, 0, 4, 0, 0, 0, 1 }];
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [MemberData(nameof(DecodeBytesCases))]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsIntArray(byte[] binaryData, int?[] expectedValue)
+    public static IEnumerable<Func<(int?[], byte[])>> EncodeCases()
+    {
+        yield return () => ([], [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 1]);
+        yield return () => ([1],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0, 1]);
+        yield return () => ([null, 1],
+        [
+            0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 2, 0, 0, 0, 1, 255, 255, 255, 255, 0, 0,
+            0, 4, 0, 0, 0, 1,
+        ]);
+    }
+
+    [Test]
+    [MethodDataSource(nameof(DecodeBytesCases))]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsIntArray(
+        byte[] binaryData,
+        int?[] expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
 
         var actualValue = PgArrayTypeStruct<int, PgInt>.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
-    }
-    
-    public static IEnumerable<object[]> DecodeBytesCases()
-    {
-        yield return [new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 1 }, Array.Empty<int?>()];
-        yield return [new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0, 1 }, new int?[] { 1 }];
-        yield return [new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 2, 0, 0, 0, 1, 255, 255, 255, 255, 0, 0, 0, 4, 0, 0, 0, 1 }, new int?[] { null, 1 }];
+        await Assert.That(actualValue).IsEquivalentTo(expectedValue);
     }
 
-    [Theory]
-    [MemberData(nameof(DecodeTextCases))]
-    public void DecodeText_Should_DecodeTextEncodedValueAsIntArray(string textData, int?[] expectedValue)
+    public static IEnumerable<object[]> DecodeBytesCases()
+    {
+        yield return
+        [
+            new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 1 },
+            Array.Empty<int?>(),
+        ];
+        yield return
+        [
+            new byte[]
+            {
+                0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0, 1
+            },
+            new int?[] { 1 },
+        ];
+        yield return
+        [
+            new byte[]
+            {
+                0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 2, 0, 0, 0, 1, 255, 255, 255, 255, 0,
+                0, 0, 4, 0, 0, 0, 1,
+            },
+            new int?[] { null, 1 },
+        ];
+    }
+
+    [Test]
+    [MethodDataSource(nameof(DecodeTextCases))]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsIntArray(
+        string textData,
+        int?[] expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
 
         var actualValue = PgArrayTypeStruct<int, PgInt>.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEquivalentTo(expectedValue);
     }
-    
+
     public static IEnumerable<object[]> DecodeTextCases()
     {
         yield return ["{}", Array.Empty<int?>()];
@@ -67,9 +95,9 @@ public class PgArrayTypeStructTest
         yield return ["{NULL,1}", new int?[] { null, 1 }];
     }
 
-    [Theory]
-    [InlineData("error")]
-    public void DecodeText_Should_Fail_When_InvalidArrayLiteral(string textData)
+    [Test]
+    [Arguments("error")]
+    public async Task DecodeText_Should_Fail_When_InvalidArrayLiteral(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -81,8 +109,8 @@ public class PgArrayTypeStructTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Int32[]", e.Message);
-            Assert.Contains("Array literal must be enclosed in curly braces", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Int32[]");
+            await Assert.That(e.Message).Contains("Array literal must be enclosed in curly braces");
         }
         catch (Exception e)
         {
@@ -90,22 +118,20 @@ public class PgArrayTypeStructTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnArrayType() => Assert.Equal(
-        PgArrayTypeStruct<int, PgInt>.DbType,
-        PgTypeInfo.Int4Array);
+    [Test]
+    public async Task DbType_Should_ReturnArrayType() => await Assert.That(PgTypeInfo.Int4Array)
+        .IsEqualTo(PgArrayTypeStruct<int, PgInt>.DbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) => Assert.Equal(
-        expectedResult,
-        PgArrayTypeStruct<int, PgInt>.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) => await Assert
+        .That(PgArrayTypeStruct<int, PgInt>.IsCompatible(pgType))
+        .IsEqualTo(expectedResult);
 
-    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
+    public static IEnumerable<Func<(PgTypeInfo, bool)>> IsCompatibleCases()
     {
-        return new TheoryData<PgTypeInfo, bool>(
-            (PgTypeInfo.Int4Array, true),
-            (PgTypeInfo.Int4, false),
-            (PgTypeInfo.TextArray, false));
+        yield return () => (PgTypeInfo.Int4Array, true);
+        yield return () => (PgTypeInfo.Int4, false);
+        yield return () => (PgTypeInfo.TextArray, false);
     }
 }

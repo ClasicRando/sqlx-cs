@@ -5,26 +5,26 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_TimestampAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_TimestampAndDefaultEncoding(CancellationToken ct)
     {
         var value = new DateTime(2025, 1, 1, 1, 23, 45);
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 timestamp_col;");
         query.Bind(value);
-        DateTime result = await query.ExecuteScalar<PgDateTime, DateTime>();
-        Assert.Equal(value, result);
+        DateTime result = await query.ExecuteScalar<DateTime, PgDateTime>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_TimestampAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_TimestampAndTextEncoding(CancellationToken ct)
     {
         const string sql = "SELECT '2025-01-01 01:23:45'::timestamp;";
         var value = new DateTime(2025, 1, 1, 1, 23, 45);
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        DateTime result = await query.ExecuteScalar<PgDateTime, DateTime>();
-        Assert.Equal(value, result);
+        DateTime result = await query.ExecuteScalar<DateTime, PgDateTime>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 }

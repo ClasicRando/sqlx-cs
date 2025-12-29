@@ -5,95 +5,95 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_ShortAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_ShortAndDefaultEncoding(CancellationToken ct)
     {
         const short value = 5234;
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 short_col;");
         query.Bind(value);
-        var result = await query.ExecuteScalar<PgShort, short>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<short, PgShort>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_ShortAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_ShortAndTextEncoding(CancellationToken ct)
     {
         const string sql = "SELECT CAST(5234 AS SMALLINT);";
         const short value = 5234;
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        var result = await query.ExecuteScalar<PgShort, short>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<short, PgShort>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_IntAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_IntAndDefaultEncoding(CancellationToken ct)
     {
         const int value = 523566486;
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 int_col;");
         query.Bind(value);
-        var result = await query.ExecuteScalar<PgInt, int>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<int, PgInt>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_IntAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_IntAndTextEncoding(CancellationToken ct)
     {
         const string sql = "SELECT CAST(523566486 AS INTEGER);";
         const int value = 523566486;
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        var result = await query.ExecuteScalar<PgInt, int>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<int, PgInt>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_OidAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_OidAndDefaultEncoding(CancellationToken ct)
     {
         const uint value = 523566486u;
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 oid_col;");
         query.Bind(new PgOid(value));
-        PgOid result = await query.ExecuteScalar<PgOid, PgOid>();
-        Assert.Equal(value, result.Inner);
+        var result = await query.ExecuteScalar<PgOid>(ct);
+        await Assert.That(result).Member(r => r.Inner, r => r.IsEqualTo(value));
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_OidAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_OidAndTextEncoding(CancellationToken ct)
     {
         const string sql = "SELECT CAST(523566486 AS OID);";
         const uint value = 523566486u;
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        PgOid result = await query.ExecuteScalar<PgOid, PgOid>();
-        Assert.Equal(value, result.Inner);
+        var result = await query.ExecuteScalar<PgOid>(ct);
+        await Assert.That(result).Member(r => r.Inner, r => r.IsEqualTo(value));
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_LongAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_LongAndDefaultEncoding(CancellationToken ct)
     {
         const long value = 2523557916465468;
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 long_col;");
         query.Bind(value);
-        var result = await query.ExecuteScalar<PgLong, long>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<long, PgLong>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_LongAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_LongAndTextEncoding(CancellationToken ct)
     {
         const string sql = "SELECT CAST(2523557916465468 AS BIGINT);";
         const long value = 2523557916465468;
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        var result = await query.ExecuteScalar<PgLong, long>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<long, PgLong>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 }

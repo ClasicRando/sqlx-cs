@@ -8,53 +8,56 @@ namespace Sqlx.Core.Query;
 [TestSubject(typeof(QueryBatch))]
 public class QueryBatchTest
 {
-    [Theory]
-    [MemberData(nameof(ExecuteNonQueryAsyncCases))]
+    [Test]
+    [MethodDataSource(nameof(ExecuteNonQueryAsyncCases))]
     public async Task ExecuteNonQueryAsync_Should_ReturnTotalAffectedRowCount(
         List<Either<IDataRow, QueryResult>> lst,
-        int numberOfAffectedRows)
+        int numberOfAffectedRows,
+        CancellationToken ct)
     {
         var query = Substitute.For<MockQueryBatch>();
         query.ExecuteBatch(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-        var rowCount = await query.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+        var rowCount = await query.ExecuteNonQueryAsync(ct);
         
-        Assert.Equal(numberOfAffectedRows, rowCount);
+        await Assert.That(rowCount).IsEqualTo(numberOfAffectedRows);
     }
     
-    public static IEnumerable<TheoryDataRow<List<Either<IDataRow, QueryResult>>, int>> ExecuteNonQueryAsyncCases()
+    public static IEnumerable<Func<(List<Either<IDataRow, QueryResult>>, int)>> ExecuteNonQueryAsyncCases()
     {
-        return new TheoryData<List<Either<IDataRow, QueryResult>>, int>(
-            (
-                [
-                    new Either<IDataRow, QueryResult>.Right(new QueryResult(20, string.Empty)),
-                    new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                    new Either<IDataRow, QueryResult>.Right(new QueryResult(10, string.Empty)),
-                ],
-                30
-            ),
-            (
-                [
-                    new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                    new Either<IDataRow, QueryResult>.Right(new QueryResult(10, string.Empty)),
-                ],
-                10
-            ),
-            (
-                [
-                    new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                    new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                    new Either<IDataRow, QueryResult>.Right(new QueryResult(5, string.Empty)),
-                    new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                    new Either<IDataRow, QueryResult>.Right(new QueryResult(5, string.Empty)),
-                ],
-                10
-            ));
+        yield return () =>
+        (
+            [
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(20, string.Empty)),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(10, string.Empty)),
+            ],
+            30
+        );
+        yield return () =>
+        (
+            [
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(10, string.Empty)),
+            ],
+            10
+        );
+        yield return () =>
+        (
+            [
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(5, string.Empty)),
+                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                new Either<IDataRow, QueryResult>.Right(new QueryResult(5, string.Empty)),
+            ],
+            10
+        );
     }
     
-    [Fact]
-    public async Task ToResultAsync_Should_ExtractRows()
+    [Test]
+    public async Task ToResultAsync_Should_ExtractRows(CancellationToken ct)
     {
         List<Either<IDataRow, QueryResult>> lst =
         [
@@ -67,13 +70,13 @@ public class QueryBatchTest
         query.ExecuteBatch(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(lst.ToAsyncEnumerable()));
 
-        var batchResult = await query.ToResultAsync(TestContext.Current.CancellationToken);
+        var batchResult = await query.ToResultAsync(ct);
 
         var rows1 = await batchResult.ExtractNextResultAsync<Row1>();
-        Assert.Single(rows1);
+        await Assert.That(rows1).IsSingleElement();
         
         var rows2 = await batchResult.ExtractNextResultAsync<Row2>();
-        Assert.Single(rows2);
+        await Assert.That(rows2).IsSingleElement();
 
         await Assert.ThrowsAsync<QueryBatchExhausted>(() => batchResult.ExtractNextResultAsync<Row1>());
     }

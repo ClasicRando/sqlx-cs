@@ -5,26 +5,26 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_TextAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_TextAndDefaultEncoding(CancellationToken ct)
     {
         const string value = "This is a test";
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 text_col;");
         query.Bind(value);
-        var result = await query.ExecuteScalar<PgString, string>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<string, PgString>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_TextAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_TextAndTextEncoding(CancellationToken ct)
     {
         const string sql = "SELECT 'This is a test';";
         const string value = "This is a test";
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        var result = await query.ExecuteScalar<PgString, string>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<string, PgString>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 }

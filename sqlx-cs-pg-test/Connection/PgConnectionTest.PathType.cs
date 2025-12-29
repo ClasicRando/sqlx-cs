@@ -5,26 +5,26 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_PathAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_PathAndDefaultEncoding(CancellationToken ct)
     {
         var value = new PgPath(false, [new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8)]);
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 path_col;");
         query.Bind(value);
-        var result = await query.ExecuteScalarPg<PgPath>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<PgPath>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_PathAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_PathAndTextEncoding(CancellationToken ct)
     {
         const string sql = "SELECT '[(5.63,8.59),(4.87,2.8)]'::path;";
         var value = new PgPath(false, [new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8)]);
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        var result = await query.ExecuteScalarPg<PgPath>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<PgPath>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 }

@@ -8,11 +8,11 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgBytea))]
 public class PgByteaTest
 {
-    [Theory]
-    [InlineData("\\xdeadbeef", new byte[] { 0xde, 0xad, 0xbe, 0xef })]
-    [InlineData(@"\000\047\134", new byte[] { 0x00, 0x27, 0x5c })]
-    [InlineData(@"'\\", new byte[] { 0x27, 0x5c })]
-    public void DecodeText_Should_DecodeTextEncodedValueAsBytes(
+    [Test]
+    [Arguments("\\xdeadbeef", new byte[] { 0xde, 0xad, 0xbe, 0xef })]
+    [Arguments(@"\000\047\134", new byte[] { 0x00, 0x27, 0x5c })]
+    [Arguments(@"'\\", new byte[] { 0x27, 0x5c })]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsBytes(
         string textData,
         byte[] expectedValue)
     {
@@ -21,12 +21,12 @@ public class PgByteaTest
 
         var actualValue = PgBytea.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEquivalentTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("\\xdea", "Hex encoded byte array must have an even number of elements")]
-    public void DecodeText_Should_Fail_When_FirstCharacterIsNotValid(
+    [Test]
+    [Arguments("\\xdea", "Hex encoded byte array must have an even number of elements")]
+    public async Task DecodeText_Should_Fail_When_FirstCharacterIsNotValid(
         string textData,
         string contains)
     {
@@ -40,8 +40,8 @@ public class PgByteaTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Byte[]", e.Message);
-            Assert.Contains(contains, e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Byte[]");
+            await Assert.That(e.Message).Contains(contains);
         }
         catch (Exception e)
         {
@@ -49,17 +49,17 @@ public class PgByteaTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnByteaType() => Assert.Equal(PgBytea.DbType, PgTypeInfo.Bytea);
+    [Test]
+    public async Task DbType_Should_ReturnByteaType() => await Assert.That(PgTypeInfo.Bytea).IsEqualTo(PgBytea.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnByteaType() =>
-        Assert.Equal(PgBytea.ArrayDbType, PgTypeInfo.ByteaArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnByteaType() =>
+        await Assert.That(PgTypeInfo.ByteaArray).IsEqualTo(PgBytea.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgBytea.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgBytea.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

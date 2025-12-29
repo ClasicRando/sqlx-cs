@@ -1,67 +1,9 @@
 namespace Sqlx.Postgres.Generator.Tests.Result;
 
-[UsesVerify]
 public class PgDataRowDecoderGeneratorSnapshotTest
 {
-    [Fact]
-    public Task When_NotNullReturnIntIndexAndNoCustomDecoderSpecified()
-    {
-        const string source = 
-            """
-            using Sqlx.Core.Result;
-            using Sqlx.Postgres.Generator.Result;
-            using Sqlx.Postgres.Types;
-
-            public static class TestExtensions
-            {
-                [GeneratePgDecodeMethod]
-                public static partial PgTimeTz GetPgTimeTz(this IDataRow dataRow, int index);
-            }
-            """;
-
-        return TestHelper.VerifyPgDataRowDecoderGenerator(source);
-    }
-    
-    [Fact]
-    public Task When_NotNullReturnStringIndexAndNoCustomDecoderSpecified()
-    {
-        const string source = 
-            """
-            using Sqlx.Core.Result;
-            using Sqlx.Postgres.Generator.Result;
-            using Sqlx.Postgres.Types;
-
-            public static class TestExtensions
-            {
-                [GeneratePgDecodeMethod]
-                public static partial PgTimeTz GetPgTimeTz(this IDataRow dataRow, string name);
-            }
-            """;
-
-        return TestHelper.VerifyPgDataRowDecoderGenerator(source);
-    }
-    
-    [Fact]
-    public Task When_NullableValueTypeReturnIntIndexAndNoCustomDecoderSpecified()
-    {
-        const string source = 
-            """
-            using Sqlx.Core.Result;
-            using Sqlx.Postgres.Generator.Result;
-            using Sqlx.Postgres.Types;
-
-            public static class TestExtensions
-            {
-                [GeneratePgDecodeMethod]
-                public static partial PgTimeTz? GetPgTimeTz(this IDataRow dataRow, int index);
-            }
-            """;
-
-        return TestHelper.VerifyPgDataRowDecoderGenerator(source);
-    }
-    
-    [Fact]
-    public Task When_NullableRefTypeReturnIntIndexAndCustomDecoderSpecified()
+    [Test]
+    public async Task When_NotNullRefTypeReturnStringIndex()
     {
         const string source = 
             """
@@ -72,15 +14,15 @@ public class PgDataRowDecoderGeneratorSnapshotTest
             public static class TestExtensions
             {
                 [GeneratePgDecodeMethod(Decoder = typeof(PgString))]
-                public static partial string? GetPgString(this IDataRow dataRow, int index);
+                public static partial string GetStringNotNull(this IDataRow dataRow, string name);
             }
             """;
 
-        return TestHelper.VerifyPgDataRowDecoderGenerator(source);
+        await TestHelper.VerifyPgDataRowDecoderGenerator(source);
     }
     
-    [Fact]
-    public Task When_CustomDecoderSpecified()
+    [Test]
+    public async Task When_NullableRefTypeReturnIntIndex()
     {
         const string source = 
             """
@@ -90,37 +32,35 @@ public class PgDataRowDecoderGeneratorSnapshotTest
 
             public static class TestExtensions
             {
-                [GeneratePgDecodeMethod(Decoder = typeof(PgBool))]
-                public static partial bool GetPgBoolean(this IDataRow dataRow, int index);
+                [GeneratePgDecodeMethod(Decoder = typeof(PgString))]
+                public static partial string? GetString(this IDataRow dataRow, int index);
             }
             """;
 
-        return TestHelper.VerifyPgDataRowDecoderGenerator(source);
+        await TestHelper.VerifyPgDataRowDecoderGenerator(source);
     }
     
-    [Fact]
-    public Task When_ValueTypeArrayAndNoDecoderSpecified()
+    [Test]
+    public async Task When_NullableValueTypeReturnIntIndex()
     {
         const string source = 
             """
             using Sqlx.Core.Result;
             using Sqlx.Postgres.Generator.Result;
             using Sqlx.Postgres.Types;
-            
-            public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds);
 
             public static class TestExtensions
             {
-                [GeneratePgDecodeMethod]
-                public static partial PgTimeTz?[]? GetPgTimeTzArray(this IDataRow dataRow, int index);
+                [GeneratePgDecodeMethod(Decoder = typeof(PgInt))]
+                public static partial int? GetInt(this IDataRow dataRow, int index);
             }
             """;
 
-        return TestHelper.VerifyPgDataRowDecoderGenerator(source);
+        await TestHelper.VerifyPgDataRowDecoderGenerator(source);
     }
     
-    [Fact]
-    public Task When_ValueTypeArrayAndDecoderSpecified()
+    [Test]
+    public async Task When_ValueTypeArray()
     {
         const string source = 
             """
@@ -135,30 +75,11 @@ public class PgDataRowDecoderGeneratorSnapshotTest
             }
             """;
 
-        return TestHelper.VerifyPgDataRowDecoderGenerator(source);
+        await TestHelper.VerifyPgDataRowDecoderGenerator(source);
     }
     
-    [Fact]
-    public Task When_RefTypeArrayAndNoDecoderSpecified()
-    {
-        const string source = 
-            """
-            using Sqlx.Core.Result;
-            using Sqlx.Postgres.Generator.Result;
-            using Sqlx.Postgres.Types;
-
-            public static class TestExtensions
-            {
-                [GeneratePgDecodeMethod]
-                public static partial PgInet?[]? GetPgInetArray(this IDataRow dataRow, int index);
-            }
-            """;
-
-        return TestHelper.VerifyPgDataRowDecoderGenerator(source);
-    }
-    
-    [Fact]
-    public Task When_RefTypeArrayAndDecoderSpecified()
+    [Test]
+    public async Task When_RefTypeArray()
     {
         const string source = 
             """
@@ -169,10 +90,10 @@ public class PgDataRowDecoderGeneratorSnapshotTest
             public static class TestExtensions
             {
                 [GeneratePgDecodeMethod(Decoder = typeof(PgString))]
-                public static partial string?[]? GetPgStrongArray(this IDataRow dataRow, int index);
+                public static partial string?[]? GetPgStringArray(this IDataRow dataRow, int index);
             }
             """;
 
-        return TestHelper.VerifyPgDataRowDecoderGenerator(source);
+        await TestHelper.VerifyPgDataRowDecoderGenerator(source);
     }
 }

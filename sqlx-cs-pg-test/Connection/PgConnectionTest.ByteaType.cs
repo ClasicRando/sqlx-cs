@@ -5,26 +5,26 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_ByteaAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_ByteaAndDefaultEncoding(CancellationToken ct)
     {
         var value = new byte[] { 0xde, 0xad, 0xbe, 0xef };
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 bytea_col;");
         query.Bind(value);
-        var result = await query.ExecuteScalar<PgBytea, byte[]>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<byte[], PgBytea>(ct);
+        await Assert.That(result).IsEquivalentTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_ByteaAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_ByteaAndTextEncoding(CancellationToken ct)
     {
         const string sql = "SELECT '\\xdeadbeef'::bytea;";
         var value = new byte[] { 0xde, 0xad, 0xbe, 0xef };
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        var result = await query.ExecuteScalar<PgBytea, byte[]>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<byte[], PgBytea>(ct);
+        await Assert.That(result).IsEquivalentTo(value);
     }
 }

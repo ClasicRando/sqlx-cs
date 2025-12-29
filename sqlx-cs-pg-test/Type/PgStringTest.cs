@@ -8,12 +8,12 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgString))]
 public class PgStringTest
 {
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         "This is a test",
         new byte[] { 84, 104, 105, 115, 32, 105, 115, 32, 97, 32, 116, 101, 115, 116 })]
-    [InlineData("😀", new byte[] { 240, 159, 152, 128 })]
-    public void Encode_Should_WriteText(string value, byte[] expectedBytes)
+    [Arguments("😀", new byte[] { 240, 159, 152, 128 })]
+    public async Task Encode_Should_WriteText(string value, byte[] expectedBytes)
     {
         using var buffer = new WriteBuffer();
 
@@ -21,15 +21,15 @@ public class PgStringTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         new byte[] { 84, 104, 105, 115, 32, 105, 115, 32, 97, 32, 116, 101, 115, 116 },
         "This is a test")]
-    [InlineData(new byte[] { 240, 159, 152, 128 }, "😀")]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsText(
+    [Arguments(new byte[] { 240, 159, 152, 128 }, "😀")]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsText(
         byte[] binaryData,
         string expectedValue)
     {
@@ -38,13 +38,13 @@ public class PgStringTest
 
         var actualValue = PgString.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("This is a test", "This is a test")]
-    [InlineData("😀", "😀")]
-    public void DecodeText_Should_DecodeTextEncodedValueAsText(
+    [Test]
+    [Arguments("This is a test", "This is a test")]
+    [Arguments("😀", "😀")]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsText(
         string textData,
         string expectedValue)
     {
@@ -53,20 +53,20 @@ public class PgStringTest
 
         var actualValue = PgString.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Fact]
-    public void DbType_Should_ReturnTextType() => Assert.Equal(PgString.DbType, PgTypeInfo.Text);
+    [Test]
+    public async Task DbType_Should_ReturnTextType() => await Assert.That(PgTypeInfo.Text).IsEqualTo(PgString.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnTextType() =>
-        Assert.Equal(PgString.ArrayDbType, PgTypeInfo.TextArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnTextType() =>
+        await Assert.That(PgTypeInfo.TextArray).IsEqualTo(PgString.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgString.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgString.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

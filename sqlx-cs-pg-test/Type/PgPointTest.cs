@@ -9,8 +9,8 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgPoint))]
 public class PgPointTest
 {
-    [Fact]
-    public void Encode_Should_WritePoint()
+    [Test]
+    public async Task Encode_Should_WritePoint()
     {
         byte[] expectedBytes =
             [64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174];
@@ -21,11 +21,11 @@ public class PgPointTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Fact]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsPoint()
+    [Test]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsPoint()
     {
         byte[] binaryData =
             [64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174];
@@ -35,11 +35,11 @@ public class PgPointTest
 
         PgPoint actualValue = PgPoint.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Fact]
-    public void DecodeText_Should_DecodeTextEncodedValueAsPoint()
+    [Test]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsPoint()
     {
         const string textData = "(5.63,8.59)";
         var expectedValue = new PgPoint(5.63, 8.59);
@@ -48,14 +48,14 @@ public class PgPointTest
 
         PgPoint actualValue = PgPoint.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("(error)", "Could not find point separator character")]
-    [InlineData("(error,1)", "Could not parse X coordinate")]
-    [InlineData("(1,error)", "Could not parse Y coordinate")]
-    public void DecodeText_Should_Fail_When_InvalidText(string textData, string contains)
+    [Test]
+    [Arguments("(error)", "Could not find point separator character")]
+    [Arguments("(error,1)", "Could not parse X coordinate")]
+    [Arguments("(1,error)", "Could not parse Y coordinate")]
+    public async Task DecodeText_Should_Fail_When_InvalidText(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -67,8 +67,8 @@ public class PgPointTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: Sqlx.Postgres.Type.PgPoint", e.Message);
-            Assert.Contains(contains, e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: Sqlx.Postgres.Type.PgPoint");
+            await Assert.That(e.Message).Contains(contains);
         }
         catch (Exception e)
         {
@@ -76,17 +76,17 @@ public class PgPointTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnPointType() => Assert.Equal(PgPoint.DbType, PgTypeInfo.Point);
+    [Test]
+    public async Task DbType_Should_ReturnPointType() => await Assert.That(PgTypeInfo.Point).IsEqualTo(PgPoint.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnPointType() =>
-        Assert.Equal(PgPoint.ArrayDbType, PgTypeInfo.PointArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnPointType() =>
+        await Assert.That(PgTypeInfo.PointArray).IsEqualTo(PgPoint.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgPoint.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgPoint.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

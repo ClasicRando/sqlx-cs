@@ -10,14 +10,14 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgInet))]
 public class PgInetTest
 {
-    [Theory]
-    [InlineData(new byte[] { 192, 168, 0, 1 }, 24, new byte[] { 2, 24, 0, 4, 192, 168, 0, 1 })]
-    [InlineData(new byte[] { 10, 0, 0, 2 }, 32, new byte[] { 2, 32, 0, 4, 10, 0, 0, 2 })]
-    [InlineData(
+    [Test]
+    [Arguments(new byte[] { 192, 168, 0, 1 }, 24, new byte[] { 2, 24, 0, 4, 192, 168, 0, 1 })]
+    [Arguments(new byte[] { 10, 0, 0, 2 }, 32, new byte[] { 2, 32, 0, 4, 10, 0, 0, 2 })]
+    [Arguments(
         new byte[] { 32, 1, 13, 184, 18, 52, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         1,
         new byte[] { 3, 1, 0, 16, 32, 1, 13, 184, 18, 52, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })]
-    public void Encode_Should_WriteInet(
+    public async Task Encode_Should_WriteInet(
         byte[] address,
         byte prefixLength,
         byte[] expectedBytes)
@@ -29,17 +29,17 @@ public class PgInetTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 2, 24, 0, 4, 192, 168, 0, 1 }, new byte[] { 192, 168, 0, 1 }, 24)]
-    [InlineData(new byte[] { 2, 32, 0, 4, 10, 0, 0, 2 }, new byte[] { 10, 0, 0, 2 }, 32)]
-    [InlineData(
+    [Test]
+    [Arguments(new byte[] { 2, 24, 0, 4, 192, 168, 0, 1 }, new byte[] { 192, 168, 0, 1 }, 24)]
+    [Arguments(new byte[] { 2, 32, 0, 4, 10, 0, 0, 2 }, new byte[] { 10, 0, 0, 2 }, 32)]
+    [Arguments(
         new byte[] { 3, 1, 1, 16, 32, 1, 13, 184, 18, 52, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         new byte[] { 32, 1, 13, 184, 18, 52, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         1)]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsInet(
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsInet(
         byte[] binaryData,
         byte[] address,
         byte prefixLength)
@@ -50,21 +50,21 @@ public class PgInetTest
 
         PgInet actualValue = PgInet.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("192.168.0.1/24", new byte[] { 192, 168, 0, 1 }, 24)]
-    [InlineData("10.0.0.2/32", new byte[] { 10, 0, 0, 2 }, 32)]
-    [InlineData(
+    [Test]
+    [Arguments("192.168.0.1/24", new byte[] { 192, 168, 0, 1 }, 24)]
+    [Arguments("10.0.0.2/32", new byte[] { 10, 0, 0, 2 }, 32)]
+    [Arguments(
         "2001:db8:1234::",
         new byte[] { 32, 1, 13, 184, 18, 52, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         128)]
-    [InlineData(
+    [Arguments(
         "2001:0DB8:AC10:FE01:0000:0000:0000:0000/1",
         new byte[] { 32, 1, 13, 184, 172, 16, 254, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
         1)]
-    public void DecodeText_Should_DecodeTextEncodedValueAsInet(
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsInet(
         string textData,
         byte[] address,
         byte prefixLength)
@@ -75,17 +75,17 @@ public class PgInetTest
 
         PgInet actualValue = PgInet.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         "error",
         "Could not parse 'error' into a network value")]
-    [InlineData(
+    [Arguments(
         "192.168.0.1/error",
         "Could not parse '192.168.0.1/error' into a network value")]
-    public void DecodeText_Should_Fail_When_InvalidPgInet(string textData, string contains)
+    public async Task DecodeText_Should_Fail_When_InvalidPgInet(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -97,8 +97,8 @@ public class PgInetTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: Sqlx.Postgres.Type.PgInet", e.Message);
-            Assert.Contains(contains, e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: Sqlx.Postgres.Type.PgInet");
+            await Assert.That(e.Message).Contains(contains);
         }
         catch (Exception e)
         {
@@ -106,18 +106,18 @@ public class PgInetTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnInetType() =>
-        Assert.Equal(PgInet.DbType, PgTypeInfo.Inet);
+    [Test]
+    public async Task DbType_Should_ReturnInetType() =>
+        await Assert.That(PgTypeInfo.Inet).IsEqualTo(PgInet.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnInetType() =>
-        Assert.Equal(PgInet.ArrayDbType, PgTypeInfo.InetArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnInetType() =>
+        await Assert.That(PgTypeInfo.InetArray).IsEqualTo(PgInet.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgInet.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgInet.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

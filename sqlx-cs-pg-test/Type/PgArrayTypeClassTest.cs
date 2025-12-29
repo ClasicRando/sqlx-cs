@@ -9,25 +9,25 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgArrayTypeClass<,>))]
 public class PgArrayTypeClassTest
 {
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         new string[] { },
         new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 1 })]
-    [InlineData(
+    [Arguments(
         new[] { "test" },
         new byte[]
         {
             0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 4, (byte)'t',
             (byte)'e', (byte)'s', (byte)'t',
         })]
-    [InlineData(
+    [Arguments(
         new[] { null, "test" },
         new byte[]
         {
             0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 2, 0, 0, 0, 1, 255, 255, 255, 255, 0, 0,
             0, 4, (byte)'t', (byte)'e', (byte)'s', (byte)'t',
         })]
-    public void Encode_Should_WriteStringArray(string[] value, byte[] expectedBytes)
+    public async Task Encode_Should_WriteStringArray(string[] value, byte[] expectedBytes)
     {
         using var buffer = new WriteBuffer();
 
@@ -35,61 +35,61 @@ public class PgArrayTypeClassTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 1 },
         new string[] { })]
-    [InlineData(
+    [Arguments(
         new byte[]
         {
             0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 4, (byte)'t',
             (byte)'e', (byte)'s', (byte)'t',
         },
         new[] { "test" })]
-    [InlineData(
+    [Arguments(
         new byte[]
         {
             0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 2, 0, 0, 0, 1, 255, 255, 255, 255, 0, 0,
             0, 4, (byte)'t', (byte)'e', (byte)'s', (byte)'t',
         },
         new[] { null, "test" })]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsStringArray(
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsStringArray(
         byte[] binaryData,
-        string[] expectedValue)
+        string?[] expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
 
         var actualValue = PgArrayTypeClass<string, PgString>.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEquivalentTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("{}", new string[] { })]
-    [InlineData("{test}", new[] { "test" })]
-    [InlineData("{,test}", new[] { "", "test" })]
-    [InlineData("{,\"test\"}", new[] { "", "test" })]
-    [InlineData("{\"\",test}", new[] { "", "test" })]
-    [InlineData("{NULL,\"test\"}", new[] { null, "test" })]
-    public void DecodeText_Should_DecodeTextEncodedValueAsStringArray(
+    [Test]
+    [Arguments("{}", new string[] { })]
+    [Arguments("{test}", new[] { "test" })]
+    [Arguments("{,test}", new[] { "", "test" })]
+    [Arguments("{,\"test\"}", new[] { "", "test" })]
+    [Arguments("{\"\",test}", new[] { "", "test" })]
+    [Arguments("{NULL,\"test\"}", new[] { null, "test" })]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsStringArray(
         string textData,
-        string[] expectedValue)
+        string?[] expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
 
         var actualValue = PgArrayTypeClass<string, PgString>.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEquivalentTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("error")]
-    public void DecodeText_Should_Fail_When_InvalidArrayLiteral(string textData)
+    [Test]
+    [Arguments("error")]
+    public async Task DecodeText_Should_Fail_When_InvalidArrayLiteral(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -101,8 +101,8 @@ public class PgArrayTypeClassTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.String[]", e.Message);
-            Assert.Contains("Array literal must be enclosed in curly braces", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.String[]");
+            await Assert.That(e.Message).Contains("Array literal must be enclosed in curly braces");
         }
         catch (Exception e)
         {
@@ -110,22 +110,20 @@ public class PgArrayTypeClassTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnArrayType() => Assert.Equal(
-        PgArrayTypeClass<string, PgString>.DbType,
-        PgTypeInfo.TextArray);
+    [Test]
+    public async Task DbType_Should_ReturnArrayType() => await Assert.That(PgTypeInfo.TextArray)
+        .IsEqualTo(PgArrayTypeClass<string, PgString>.DbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) => Assert.Equal(
-        expectedResult,
-        PgArrayTypeClass<string, PgString>.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) => await Assert
+        .That(PgArrayTypeClass<string, PgString>.IsCompatible(pgType))
+        .IsEqualTo(expectedResult);
 
-    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
+    public static IEnumerable<Func<(PgTypeInfo, bool)>> IsCompatibleCases()
     {
-        return new TheoryData<PgTypeInfo, bool>(
-            (PgTypeInfo.TextArray, true),
-            (PgTypeInfo.Text, false),
-            (PgTypeInfo.Int4Array, false));
+        yield return () => (PgTypeInfo.TextArray, true);
+        yield return () => (PgTypeInfo.Text, false);
+        yield return () => (PgTypeInfo.Int4Array, false);
     }
 }

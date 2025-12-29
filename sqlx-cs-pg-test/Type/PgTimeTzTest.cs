@@ -9,10 +9,10 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgTimeTz))]
 public class PgTimeTzTest
 {
-    [Theory]
-    [InlineData(4, 5, 6, 789, 123, 0, new byte[] { 0, 0, 0, 3, 108, 151, 203, 3, 0, 0, 0, 0 })]
-    [InlineData(4, 5, 6, 789, 0, 3600, new byte[] { 0, 0, 0, 3, 108, 151, 202, 136, 0, 0, 14, 16 })]
-    [InlineData(
+    [Test]
+    [Arguments(4, 5, 6, 789, 123, 0, new byte[] { 0, 0, 0, 3, 108, 151, 203, 3, 0, 0, 0, 0 })]
+    [Arguments(4, 5, 6, 789, 0, 3600, new byte[] { 0, 0, 0, 3, 108, 151, 202, 136, 0, 0, 14, 16 })]
+    [Arguments(
         4,
         5,
         6,
@@ -20,8 +20,8 @@ public class PgTimeTzTest
         0,
         -3600,
         new byte[] { 0, 0, 0, 3, 108, 139, 192, 128, 255, 255, 241, 240 })]
-    [InlineData(4, 5, 0, 0, 0, 0, new byte[] { 0, 0, 0, 3, 108, 48, 51, 0, 0, 0, 0, 0 })]
-    public void Encode_Should_WriteDate(
+    [Arguments(4, 5, 0, 0, 0, 0, new byte[] { 0, 0, 0, 3, 108, 48, 51, 0, 0, 0, 0, 0 })]
+    public async Task Encode_Should_WriteDate(
         int hour,
         int minute,
         int second,
@@ -39,13 +39,13 @@ public class PgTimeTzTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 0, 0, 0, 3, 108, 151, 203, 3, 0, 0, 0, 0 }, 4, 5, 6, 789, 123, 0)]
-    [InlineData(new byte[] { 0, 0, 0, 3, 108, 151, 202, 136, 0, 0, 14, 16 }, 4, 5, 6, 789, 0, 3600)]
-    [InlineData(
+    [Test]
+    [Arguments(new byte[] { 0, 0, 0, 3, 108, 151, 203, 3, 0, 0, 0, 0 }, 4, 5, 6, 789, 123, 0)]
+    [Arguments(new byte[] { 0, 0, 0, 3, 108, 151, 202, 136, 0, 0, 14, 16 }, 4, 5, 6, 789, 0, 3600)]
+    [Arguments(
         new byte[] { 0, 0, 0, 3, 108, 139, 192, 128, 255, 255, 241, 240 },
         4,
         5,
@@ -53,8 +53,8 @@ public class PgTimeTzTest
         0,
         0,
         -3600)]
-    [InlineData(new byte[] { 0, 0, 0, 3, 108, 48, 51, 0, 0, 0, 0, 0 }, 4, 5, 0, 0, 0, 0)]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsDate(
+    [Arguments(new byte[] { 0, 0, 0, 3, 108, 48, 51, 0, 0, 0, 0, 0 }, 4, 5, 0, 0, 0, 0)]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsDate(
         byte[] binaryData,
         int hour,
         int minute,
@@ -71,15 +71,15 @@ public class PgTimeTzTest
 
         PgTimeTz actualValue = PgTimeTz.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("04:05:06.789123Z", 4, 5, 6, 789, 123, 0)]
-    [InlineData("04:05:06.789+01", 4, 5, 6, 789, 0, 3600)]
-    [InlineData("04:05:06-01", 4, 5, 6, 0, 0, -3600)]
-    [InlineData("04:05:00+00", 4, 5, 0, 0, 0, 0)]
-    public void DecodeText_Should_DecodeTextEncodedValueAsDate(
+    [Test]
+    [Arguments("04:05:06.789123Z", 4, 5, 6, 789, 123, 0)]
+    [Arguments("04:05:06.789+01", 4, 5, 6, 789, 0, 3600)]
+    [Arguments("04:05:06-01", 4, 5, 6, 0, 0, -3600)]
+    [Arguments("04:05:00+00", 4, 5, 0, 0, 0, 0)]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsDate(
         string textData,
         int hour,
         int minute,
@@ -96,18 +96,18 @@ public class PgTimeTzTest
 
         PgTimeTz actualValue = PgTimeTz.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("error", "System.TimeOnly", "Could not parse 'error' into a time value")]
-    [InlineData(
+    [Test]
+    [Arguments("error", "System.TimeOnly", "Could not parse 'error' into a time value")]
+    [Arguments(
         "23:56:12/01",
         "System.TimeOnly",
         "Could not parse '23:56:12/01' into a time value")]
-    [InlineData("23:56:12+error", "Sqlx.Postgres.Type.PgTimeTz", "Could not parse offset from")]
-    [InlineData("23:56:12+07:52:24", "Sqlx.Postgres.Type.PgTimeTz", "Could not parse offset from")]
-    public void DecodeText_Should_Fail_When_InvalidDateString(
+    [Arguments("23:56:12+error", "Sqlx.Postgres.Type.PgTimeTz", "Could not parse offset from")]
+    [Arguments("23:56:12+07:52:24", "Sqlx.Postgres.Type.PgTimeTz", "Could not parse offset from")]
+    public async Task DecodeText_Should_Fail_When_InvalidDateString(
         string textData,
         string output,
         string contains)
@@ -122,8 +122,8 @@ public class PgTimeTzTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains($"Desired Output: {output}", e.Message);
-            Assert.Contains(contains, e.Message);
+            await Assert.That(e.Message).Contains($"Desired Output: {output}");
+            await Assert.That(e.Message).Contains(contains);
         }
         catch (Exception e)
         {
@@ -131,17 +131,17 @@ public class PgTimeTzTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnDateType() => Assert.Equal(PgTimeTz.DbType, PgTypeInfo.Timetz);
+    [Test]
+    public async Task DbType_Should_ReturnDateType() => await Assert.That(PgTypeInfo.Timetz).IsEqualTo(PgTimeTz.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnDateType() =>
-        Assert.Equal(PgTimeTz.ArrayDbType, PgTypeInfo.TimetzArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnDateType() =>
+        await Assert.That(PgTypeInfo.TimetzArray).IsEqualTo(PgTimeTz.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgTimeTz.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgTimeTz.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

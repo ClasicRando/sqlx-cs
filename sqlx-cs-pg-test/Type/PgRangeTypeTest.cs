@@ -9,9 +9,9 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgRangeType<,>))]
 public class PgRangeTypeTest
 {
-    [Theory]
-    [MemberData(nameof(EncodeTestCases))]
-    public void Encode_Should_WriteIntRange(PgRange<int> value, byte[] expectedBytes)
+    [Test]
+    [MethodDataSource(nameof(EncodeTestCases))]
+    public async Task Encode_Should_WriteIntRange(PgRange<int> value, byte[] expectedBytes)
     {
         using var buffer = new WriteBuffer();
 
@@ -19,31 +19,20 @@ public class PgRangeTypeTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    public static IEnumerable<TheoryDataRow<PgRange<int>, byte[]>> EncodeTestCases()
+    public static IEnumerable<Func<(PgRange<int>, byte[])>> EncodeTestCases()
     {
-        return new TheoryData<PgRange<int>, byte[]>(
-            (new PgRange<int>(Bound<int>.Included(-1), Bound<int>.Excluded(11)),
-            [
-                0x02, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00,
-                0x00, 0x00, 0x0B,
-            ]),
-            (new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Included(11)),
-            [
-                0x04, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00,
-                0x00, 0x00, 0x0B,
-            ]),
-            (new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Unbounded()),
-                [0x10, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF]),
-            (new PgRange<int>(Bound<int>.Unbounded(), Bound<int>.Included(11)),
-                [0x08 | 0x04, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B]));
+        yield return () => (new PgRange<int>(Bound<int>.Included(-1), Bound<int>.Excluded(11)), [0x02, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B]);
+        yield return () => (new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Included(11)), [0x04, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B,]);
+        yield return () => (new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Unbounded()), [0x10, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF]);
+        yield return () => (new PgRange<int>(Bound<int>.Unbounded(), Bound<int>.Included(11)), [0x08 | 0x04, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B]);
     }
 
-    [Theory]
-    [MemberData(nameof(DecodeBytesTestCases))]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsIntRange(
+    [Test]
+    [MethodDataSource(nameof(DecodeBytesTestCases))]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsIntRange(
         byte[] binaryData,
         PgRange<int> expectedValue)
     {
@@ -52,25 +41,20 @@ public class PgRangeTypeTest
 
         var actualValue = PgRangeType<int, PgInt>.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    public static IEnumerable<TheoryDataRow<byte[], PgRange<int>>> DecodeBytesTestCases()
+    public static IEnumerable<Func<(byte[], PgRange<int>)>> DecodeBytesTestCases()
     {
-        return new TheoryData<byte[], PgRange<int>>(
-            ([0x02, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B],
-                new PgRange<int>(Bound<int>.Included(-1), Bound<int>.Excluded(11))),
-            ([0x04, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B],
-                new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Included(11))),
-            ([0x10, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF],
-                new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Unbounded())),
-            ([0x08 | 0x04, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B],
-                new PgRange<int>(Bound<int>.Unbounded(), Bound<int>.Included(11))));
+        yield return () => ([0x02, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B], new PgRange<int>(Bound<int>.Included(-1), Bound<int>.Excluded(11)));
+        yield return () => ([0x04, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B], new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Included(11)));
+        yield return () => ([0x10, 0x00, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF], new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Unbounded()));
+        yield return () => ([0x08 | 0x04, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0B], new PgRange<int>(Bound<int>.Unbounded(), Bound<int>.Included(11)));
     }
 
-    [Theory]
-    [MemberData(nameof(DecodeTextTestCases))]
-    public void DecodeText_Should_DecodeTextEncodedValueAsIntRange(
+    [Test]
+    [MethodDataSource(nameof(DecodeTextTestCases))]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsIntRange(
         string textData,
         PgRange<int> expectedValue)
     {
@@ -79,21 +63,20 @@ public class PgRangeTypeTest
 
         var actualValue = PgRangeType<int, PgInt>.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    public static IEnumerable<TheoryDataRow<string, PgRange<int>>> DecodeTextTestCases()
+    public static IEnumerable<Func<(string, PgRange<int>)>> DecodeTextTestCases()
     {
-        return new TheoryData<string, PgRange<int>>(
-            ("[-1,11)", new PgRange<int>(Bound<int>.Included(-1), Bound<int>.Excluded(11))),
-            ("(-1,11]", new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Included(11))),
-            ("(-1,)", new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Unbounded())),
-            ("(,11]", new PgRange<int>(Bound<int>.Unbounded(), Bound<int>.Included(11))));
+        yield return () => ("[-1,11)", new PgRange<int>(Bound<int>.Included(-1), Bound<int>.Excluded(11)));
+        yield return () => ("(-1,11]", new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Included(11)));
+        yield return () => ("(-1,)", new PgRange<int>(Bound<int>.Excluded(-1), Bound<int>.Unbounded()));
+        yield return () => ("(,11]", new PgRange<int>(Bound<int>.Unbounded(), Bound<int>.Included(11)));
     }
 
-    [Theory]
-    [InlineData("error")]
-    public void DecodeText_Should_Fail_When_InvalidArrayLiteral(string textData)
+    [Test]
+    [Arguments("error")]
+    public async Task DecodeText_Should_Fail_When_InvalidArrayLiteral(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -105,8 +88,8 @@ public class PgRangeTypeTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: Sqlx.Postgres.Type.PgRange", e.Message);
-            Assert.Contains("Could not find separator character in ", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: Sqlx.Postgres.Type.PgRange");
+            await Assert.That(e.Message).Contains("Could not find separator character in ");
         }
         catch (Exception e)
         {
@@ -114,22 +97,17 @@ public class PgRangeTypeTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnRangeType() => Assert.Equal(
-        PgRangeType<int, PgInt>.DbType,
-        PgTypeInfo.Int4Range);
+    [Test]
+    public async Task DbType_Should_ReturnRangeType() => await Assert.That(PgTypeInfo.Int4Range).IsEqualTo(PgRangeType<int, PgInt>.DbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) => Assert.Equal(
-        expectedResult,
-        PgRangeType<int, PgInt>.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) => await Assert.That(PgRangeType<int, PgInt>.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
-    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
+    public static IEnumerable<Func<(PgTypeInfo, bool)>> IsCompatibleCases()
     {
-        return new TheoryData<PgTypeInfo, bool>(
-            (PgTypeInfo.Int4Range, true),
-            (PgTypeInfo.Text, false),
-            (PgTypeInfo.Int4RangeArray, false));
+        yield return () => (PgTypeInfo.Int4Range, true);
+        yield return () => (PgTypeInfo.Text, false);
+        yield return () => (PgTypeInfo.Int4RangeArray, false);
     }
 }

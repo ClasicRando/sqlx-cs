@@ -1,26 +1,16 @@
 using JetBrains.Annotations;
 using Sqlx.Postgres.Fixtures;
-using Sqlx.Postgres.Query;
 
 namespace Sqlx.Postgres.Connection;
 
-[Collection("Postgres Database")]
+[ClassDataSource<DatabaseFixture>(Shared = SharedType.PerClass)]
 [TestSubject(typeof(PgConnection))]
-public partial class PgConnectionTest
+public partial class PgConnectionTest(DatabaseFixture databaseFixture)
 {
-    private readonly DatabaseFixture _databaseFixture;
-
-    public PgConnectionTest(DatabaseFixture databaseFixture)
-    {
-        _databaseFixture = databaseFixture;
-        InitializeStoredProcedures().GetAwaiter().GetResult();
-        CreateCompositeType().GetAwaiter().GetResult();
-    }
-    
     private const string OutProcedureName = "test_proc_out";
     private const string InOutProcedureName = "test_proc_in_out";
 
-    private const string SetUpQuery = 
+    public const string SetUpQuery = 
         $"""
          DROP PROCEDURE IF EXISTS public.{OutProcedureName};
          CREATE PROCEDURE public.{OutProcedureName}(out int, out text)
@@ -42,11 +32,15 @@ public partial class PgConnectionTest
          END;
          $$;
          """;
-
-    private async Task InitializeStoredProcedures()
-    {
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery setUp = connection.CreateQuery(SetUpQuery);
-        await setUp.ExecuteNonQueryAsync();
-    }
+    
+    public const string CreateTypeQuery =
+        """
+        DROP TYPE IF EXISTS public.composite_type;
+        CREATE TYPE public.composite_type AS
+        (
+            id int,
+            name text,
+            title text
+        );
+        """;
 }

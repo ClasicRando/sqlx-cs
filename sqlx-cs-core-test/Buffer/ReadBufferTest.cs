@@ -6,15 +6,15 @@ namespace Sqlx.Core.Buffer;
 [TestSubject(typeof(ReadBuffer))]
 public class ReadBufferTest
 {
-    [Theory]
-    [MemberData(nameof(SkipTestCases))]
-    public void Skip_Should_ReturnSliceBounds(byte[] bytes, int skipNumber, Range expectedSlice)
+    [Test]
+    [MethodDataSource(nameof(SkipTestCases))]
+    public async Task Skip_Should_ReturnSliceBounds(byte[] bytes, int skipNumber, Range expectedSlice)
     {
         var buffer = new ReadBuffer(bytes);
 
         Range range = buffer.Skip(skipNumber);
         
-        Assert.Equal(expectedSlice, range);
+        await Assert.That(range).IsEqualTo(expectedSlice);
     }
 
     public static IEnumerable<object[]> SkipTestCases()
@@ -23,22 +23,22 @@ public class ReadBufferTest
         yield return [new byte [] { 1, 2, 3, 4, 5 }, 2, new Range(0, 2)];
     }
     
-    [Theory]
-    [InlineData(54)]
-    [InlineData(byte.MaxValue)]
-    [InlineData(byte.MinValue)]
-    public void ReadByte_Should_ReturnByte(byte value)
+    [Test]
+    [Arguments(54)]
+    [Arguments(byte.MaxValue)]
+    [Arguments(byte.MinValue)]
+    public async Task ReadByte_Should_ReturnByte(byte value)
     {
         byte[] bytes = [value];
         var buffer = new ReadBuffer(bytes);
 
         var actualValue = buffer.ReadByte();
         
-        Assert.Equal(value, actualValue);
+        await Assert.That(actualValue).IsEqualTo(value);
     }
     
-    [Fact]
-    public void ReadByte_Should_ThrowException_When_OutsideOfBounds()
+    [Test]
+    public async Task ReadByte_Should_ThrowException_When_OutsideOfBounds()
     {
         byte[] bytes = [];
         var buffer = new ReadBuffer(bytes);
@@ -51,18 +51,18 @@ public class ReadBufferTest
         catch (Exception e)
         {
             #if DEBUG
-                Assert.IsType<InvalidOperationException>(e);
+                await Assert.That(e).IsTypeOf<InvalidOperationException>();
             #else
-                Assert.IsType<IndexOutOfRangeException>(e);
+                await Assert.That(e).IsTypeOf<IndexOutOfRangeException>();
             #endif
         }
     }
     
-    [Theory]
-    [InlineData(589)]
-    [InlineData(short.MaxValue)]
-    [InlineData(short.MinValue)]
-    public void ReadShort_Should_ReturnShort(short value)
+    [Test]
+    [Arguments(589)]
+    [Arguments(short.MaxValue)]
+    [Arguments(short.MinValue)]
+    public async Task ReadShort_Should_ReturnShort(short value)
     {
         var shortValue = BitConverter.IsLittleEndian
             ? BinaryPrimitives.ReverseEndianness(value)
@@ -72,14 +72,14 @@ public class ReadBufferTest
 
         var actualValue = buffer.ReadShort();
         
-        Assert.Equal(value, actualValue);
+        await Assert.That(actualValue).IsEqualTo(value);
     }
     
-    [Theory]
-    [InlineData(38023)]
-    [InlineData(int.MaxValue)]
-    [InlineData(int.MinValue)]
-    public void ReadInt_Should_ReturnInt(int value)
+    [Test]
+    [Arguments(38023)]
+    [Arguments(int.MaxValue)]
+    [Arguments(int.MinValue)]
+    public async Task ReadInt_Should_ReturnInt(int value)
     {
         var intValue = BitConverter.IsLittleEndian
             ? BinaryPrimitives.ReverseEndianness(value)
@@ -94,14 +94,14 @@ public class ReadBufferTest
 
         var actualValue = buffer.ReadInt();
         
-        Assert.Equal(value, actualValue);
+        await Assert.That(actualValue).IsEqualTo(value);
     }
     
-    [Theory]
-    [InlineData(2204379902L)]
-    [InlineData(long.MaxValue)]
-    [InlineData(long.MinValue)]
-    public void ReadLong_Should_ReturnLong(long value)
+    [Test]
+    [Arguments(2204379902L)]
+    [Arguments(long.MaxValue)]
+    [Arguments(long.MinValue)]
+    public async Task ReadLong_Should_ReturnLong(long value)
     {
         var longValue = BitConverter.IsLittleEndian
             ? BinaryPrimitives.ReverseEndianness(value)
@@ -120,14 +120,14 @@ public class ReadBufferTest
 
         var actualValue = buffer.ReadLong();
         
-        Assert.Equal(value, actualValue);
+        await Assert.That(actualValue).IsEqualTo(value);
     }
     
-    [Theory]
-    [InlineData(52.365F)]
-    [InlineData(float.MaxValue)]
-    [InlineData(float.MinValue)]
-    public void ReadFloat_Should_ReturnFloat(float value)
+    [Test]
+    [Arguments(52.365F)]
+    [Arguments(float.MaxValue)]
+    [Arguments(float.MinValue)]
+    public async Task ReadFloat_Should_ReturnFloat(float value)
     {
         var floatValue = BitConverter.IsLittleEndian
             ? BinaryPrimitives.ReverseEndianness(BitConverter.SingleToInt32Bits(value))
@@ -142,14 +142,14 @@ public class ReadBufferTest
 
         var actualValue = buffer.ReadFloat();
         
-        Assert.Equal(value, actualValue);
+        await Assert.That(actualValue).IsEqualTo(value);
     }
     
-    [Theory]
-    [InlineData(3.4028234663852886E+38D)]
-    [InlineData(double.MaxValue)]
-    [InlineData(double.MinValue)]
-    public void ReadDouble_Should_ReturnDouble(double value)
+    [Test]
+    [Arguments(3.4028234663852886E+38D)]
+    [Arguments(double.MaxValue)]
+    [Arguments(double.MinValue)]
+    public async Task ReadDouble_Should_ReturnDouble(double value)
     {
         var doubleValue = BitConverter.IsLittleEndian
             ? BinaryPrimitives.ReverseEndianness(BitConverter.DoubleToInt64Bits(value))
@@ -168,76 +168,80 @@ public class ReadBufferTest
 
         var actualValue = buffer.ReadDouble();
         
-        Assert.Equal(value, actualValue);
+        await Assert.That(actualValue).IsEqualTo(value);
     }
 
-    [Fact]
-    public void ReadBytesAsSpan_Should_ReturnReadOnlySpan()
+    [Test]
+    public async Task ReadBytesAsSpan_Should_ReturnReadOnlySpan()
     {
         byte[] bytes = [1, 2, 3, 255, 4];
         var buffer = new ReadBuffer(bytes);
 
         var actualSpan = buffer.ReadBytesAsSpan(4).ToArray();
         
-        Assert.Equal(bytes[..4], actualSpan);
+        await Assert.That(actualSpan).IsEquivalentTo(bytes[..4]);
     }
 
-    [Fact]
-    public void ReadBytes_Should_ReturnByteArray()
+    [Test]
+    public async Task ReadBytes_Should_ReturnByteArray()
     {
         byte[] bytes = [1, 2, 3, 255, 4];
         var buffer = new ReadBuffer(bytes);
 
         var actualArray = buffer.ReadBytes(4);
         
-        Assert.Equal(bytes[..4], actualArray);
+        await Assert.That(actualArray).IsEquivalentTo(bytes[..4]);
     }
 
-    [Fact]
-    public void ReadText_Should_ReturnString()
+    [Test]
+    public async Task ReadText_Should_ReturnString()
     {
         var bytes = "This is a test. Not in result"u8.ToArray();
         var buffer = new ReadBuffer(bytes);
 
         var actualString = buffer.ReadText(14);
         
-        Assert.Equal("This is a test", actualString);
+        await Assert.That(actualString).IsEqualTo("This is a test");
     }
 
-    [Fact]
-    public void ReadCString_Should_ReturnStringUntilNullTerminator()
+    [Test]
+    public async Task ReadCString_Should_ReturnStringUntilNullTerminator()
     {
         var bytes = "This is a test\0 Not in result\0"u8.ToArray();
         var buffer = new ReadBuffer(bytes);
 
         var actualString = buffer.ReadCString();
         
-        Assert.Equal("This is a test", actualString);
+        await Assert.That(actualString).IsEqualTo("This is a test");
     }
 
-    [Fact]
-    public void Slice_Should_ReturnSubsetOfBufferAndAdvancePositionUntilAfterSlice()
+    [Test]
+    public async Task Slice_Should_ReturnSubsetOfBufferAndAdvancePositionUntilAfterSlice()
     {
         byte[] bytes = [1, 2, 3, 4, 5];
         var buffer = new ReadBuffer(bytes);
 
         ReadBuffer slice = buffer.Slice(3);
+        var remaining = buffer.Remaining;
+        var actualBytes = slice.ReadBytes();
         
-        Assert.Equal(2, buffer.Remaining);
-        Assert.Equal([1, 2, 3], slice.ReadBytes());
+        await Assert.That(remaining).IsEqualTo(2);
+        await Assert.That(actualBytes).IsEquivalentTo(new byte[] { 1, 2, 3 });
     }
 
-    [Fact]
-    public void Reset_Should_ReturnPositionToStart()
+    [Test]
+    public async Task Reset_Should_ReturnPositionToStart()
     {
         byte[] bytes = [1, 2, 3, 4, 5];
         var buffer = new ReadBuffer(bytes);
 
         buffer.Skip(2);
-        Assert.Equal(3, buffer.Remaining);
-        
+
+        var remaining1 = buffer.Remaining;
         buffer.Reset();
+        var remaining2 = buffer.Remaining;
         
-        Assert.Equal(5, buffer.Remaining);
+        await Assert.That(remaining1).IsEqualTo(3);
+        await Assert.That(remaining2).IsEqualTo(5);
     }
 }

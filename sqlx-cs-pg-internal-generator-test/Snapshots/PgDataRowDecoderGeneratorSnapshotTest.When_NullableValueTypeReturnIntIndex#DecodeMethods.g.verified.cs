@@ -10,13 +10,13 @@ namespace Sqlx.Postgres.Result;
 
 public static partial class DataRowExtensions
 {
-    public static partial PgTimeTz?[]? GetPgTimeTzArray(this IDataRow dataRow, int index)
+    public static partial int? GetInt(this IDataRow dataRow, int index)
     {
         if (dataRow.IsNull(index))
         {
             return null;
         }
         return PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)
-            .GetPgNotNull<PgTimeTz?[], PgArrayTypeStruct<PgTimeTz, PgTimeTz>>(index);
+            .GetPgNotNull<int, PgInt>(index);
     }
 }

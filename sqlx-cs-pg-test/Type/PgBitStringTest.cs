@@ -10,12 +10,12 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgBitString))]
 public class PgBitStringTest
 {
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         new[] { true, false, true, false, true, false, true, false },
         new byte[] { 0, 0, 0, 8, 0b10101010 })]
-    [InlineData(new[] { true, false, true, false }, new byte[] { 0, 0, 0, 4, 0b10100000 })]
-    public void Encode_Should_WriteVarBit(bool[] bits, byte[] expectedBytes)
+    [Arguments(new[] { true, false, true, false }, new byte[] { 0, 0, 0, 4, 0b10100000 })]
+    public async Task Encode_Should_WriteVarBit(bool[] bits, byte[] expectedBytes)
     {
         var value = new BitArray(bits);
         using var buffer = new WriteBuffer();
@@ -24,15 +24,15 @@ public class PgBitStringTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         new byte[] { 0, 0, 0, 8, 0b10101010 },
         new[] { true, false, true, false, true, false, true, false })]
-    [InlineData(new byte[] { 0, 0, 0, 4, 0b10100000 }, new[] { true, false, true, false })]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsVarBit(
+    [Arguments(new byte[] { 0, 0, 0, 4, 0b10100000 }, new[] { true, false, true, false })]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsVarBit(
         byte[] binaryData,
         bool[] bits)
     {
@@ -42,13 +42,13 @@ public class PgBitStringTest
 
         BitArray actualValue = PgBitString.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEquivalentTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("10101010", new[] { true, false, true, false, true, false, true, false })]
-    [InlineData("1010", new[] { true, false, true, false })]
-    public void DecodeText_Should_DecodeTextEncodedValueAsVarBit(
+    [Test]
+    [Arguments("10101010", new[] { true, false, true, false, true, false, true, false })]
+    [Arguments("1010", new[] { true, false, true, false })]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsVarBit(
         string textData,
         bool[] bits)
     {
@@ -58,12 +58,12 @@ public class PgBitStringTest
 
         BitArray actualValue = PgBitString.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEquivalentTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("012")]
-    public void DecodeText_Should_Fail_When_AnyCharacterIsInvalid(string textData)
+    [Test]
+    [Arguments("012")]
+    public async Task DecodeText_Should_Fail_When_AnyCharacterIsInvalid(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -75,8 +75,8 @@ public class PgBitStringTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Collections.BitArray", e.Message);
-            Assert.Contains("Could not decode char", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Collections.BitArray");
+            await Assert.That(e.Message).Contains("Could not decode char");
         }
         catch (Exception e)
         {
@@ -84,25 +84,24 @@ public class PgBitStringTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnVarBitType() =>
-        Assert.Equal(PgTypeInfo.Varbit, PgBitString.DbType);
+    [Test]
+    public async Task DbType_Should_ReturnVarBitType() =>
+        await Assert.That(PgBitString.DbType).IsEqualTo(PgTypeInfo.Varbit);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnVarBitArrayType() =>
-        Assert.Equal(PgTypeInfo.VarbitArray, PgBitString.ArrayDbType);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnVarBitArrayType() =>
+        await Assert.That(PgBitString.ArrayDbType).IsEqualTo(PgTypeInfo.VarbitArray);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgBitString.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgBitString.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
-    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
+    public static IEnumerable<Func<(PgTypeInfo, bool)>> IsCompatibleCases()
     {
-        return new TheoryData<PgTypeInfo, bool>(
-            (PgTypeInfo.Varbit, true),
-            (PgTypeInfo.Bit, true),
-            (PgTypeInfo.VarbitArray, false),
-            (PgTypeInfo.Int4, false));
+        yield return () => (PgTypeInfo.Varbit, true);
+        yield return () => (PgTypeInfo.Bit, true);
+        yield return () => (PgTypeInfo.VarbitArray, false);
+        yield return () => (PgTypeInfo.Int4, false);
     }
 }

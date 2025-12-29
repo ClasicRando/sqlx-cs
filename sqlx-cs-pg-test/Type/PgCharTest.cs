@@ -9,11 +9,11 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgChar))]
 public class PgCharTest
 {
-    [Theory]
-    [InlineData(sbyte.MinValue, new byte[] { 128 })]
-    [InlineData(1, new byte[] { 1 })]
-    [InlineData(sbyte.MaxValue, new byte[] { 127 })]
-    public void Encode_Should_WriteByte(sbyte value, byte[] expectedBytes)
+    [Test]
+    [Arguments(sbyte.MinValue, new byte[] { 128 })]
+    [Arguments(1, new byte[] { 1 })]
+    [Arguments(sbyte.MaxValue, new byte[] { 127 })]
+    public async Task Encode_Should_WriteByte(sbyte value, byte[] expectedBytes)
     {
         using var buffer = new WriteBuffer();
 
@@ -21,15 +21,15 @@ public class PgCharTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 128 }, sbyte.MinValue)]
-    [InlineData(new byte[] { 1 }, 1)]
-    [InlineData(new byte[] { 127 }, sbyte.MaxValue)]
-    [InlineData(new byte[] { }, 0)]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsSbyte(
+    [Test]
+    [Arguments(new byte[] { 128 }, sbyte.MinValue)]
+    [Arguments(new byte[] { 1 }, 1)]
+    [Arguments(new byte[] { 127 }, sbyte.MaxValue)]
+    [Arguments(new byte[] { }, 0)]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsSbyte(
         byte[] binaryData,
         sbyte expectedValue)
     {
@@ -38,14 +38,14 @@ public class PgCharTest
 
         var actualValue = PgChar.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("", 0)]
-    [InlineData("t", 116)]
-    [InlineData("\\147", 103)]
-    public void DecodeText_Should_DecodeTextEncodedValueAsSbyte(
+    [Test]
+    [Arguments("", 0)]
+    [Arguments("t", 116)]
+    [Arguments("\\147", 103)]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsSbyte(
         string textData,
         sbyte expectedValue)
     {
@@ -54,15 +54,15 @@ public class PgCharTest
 
         var actualValue = PgChar.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("ex")]
-    [InlineData("err")]
-    [InlineData("error")]
-    [InlineData("error test")]
-    public void DecodeText_Should_Fail_When_InvalidNumberOfCharacters(string textData)
+    [Test]
+    [Arguments("ex")]
+    [Arguments("err")]
+    [Arguments("error")]
+    [Arguments("error test")]
+    public async Task DecodeText_Should_Fail_When_InvalidNumberOfCharacters(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -74,8 +74,8 @@ public class PgCharTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.SByte", e.Message);
-            Assert.Contains("Received invalid \"char\" text", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.SByte");
+            await Assert.That(e.Message).Contains("Received invalid \"char\" text");
         }
         catch (Exception e)
         {
@@ -83,17 +83,17 @@ public class PgCharTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnCharType() => Assert.Equal(PgChar.DbType, PgTypeInfo.Char);
+    [Test]
+    public async Task DbType_Should_ReturnCharType() => await Assert.That(PgTypeInfo.Char).IsEqualTo(PgChar.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnCharType() =>
-        Assert.Equal(PgChar.ArrayDbType, PgTypeInfo.CharArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnCharType() =>
+        await Assert.That(PgTypeInfo.CharArray).IsEqualTo(PgChar.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgChar.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgChar.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

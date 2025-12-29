@@ -5,26 +5,26 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_PolygonAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_PolygonAndDefaultEncoding(CancellationToken ct)
     {
         var value = new PgPolygon([new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8)]);
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 polygon_col;");
         query.Bind(value);
-        var result = await query.ExecuteScalarPg<PgPolygon>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<PgPolygon>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_PolygonAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_PolygonAndTextEncoding(CancellationToken ct)
     {
         const string sql = "SELECT '((5.63,8.59),(4.87,2.8))'::polygon;";
         var value = new PgPolygon([new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8)]);
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        var result = await query.ExecuteScalarPg<PgPolygon>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<PgPolygon>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 }

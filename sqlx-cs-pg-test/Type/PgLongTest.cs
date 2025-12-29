@@ -9,15 +9,15 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgLong))]
 public class PgLongTest
 {
-    [Theory]
-    [InlineData(long.MinValue, new byte[] { 128, 0, 0, 0, 0, 0, 0, 0 })]
-    [InlineData(int.MinValue, new byte[] { 255, 255, 255, 255, 128, 0, 0, 0 })]
-    [InlineData(short.MinValue, new byte[] { 255, 255, 255, 255, 255, 255, 128, 0 })]
-    [InlineData(0, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 })]
-    [InlineData(short.MaxValue, new byte[] { 0, 0, 0, 0, 0, 0, 127, 255 })]
-    [InlineData(int.MaxValue, new byte[] { 0, 0, 0, 0, 127, 255, 255, 255 })]
-    [InlineData(long.MaxValue, new byte[] { 127, 255, 255, 255, 255, 255, 255, 255 })]
-    public void Encode_Should_WriteLong(long value, byte[] expectedBytes)
+    [Test]
+    [Arguments(long.MinValue, new byte[] { 128, 0, 0, 0, 0, 0, 0, 0 })]
+    [Arguments(int.MinValue, new byte[] { 255, 255, 255, 255, 128, 0, 0, 0 })]
+    [Arguments(short.MinValue, new byte[] { 255, 255, 255, 255, 255, 255, 128, 0 })]
+    [Arguments(0, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 })]
+    [Arguments(short.MaxValue, new byte[] { 0, 0, 0, 0, 0, 0, 127, 255 })]
+    [Arguments(int.MaxValue, new byte[] { 0, 0, 0, 0, 127, 255, 255, 255 })]
+    [Arguments(long.MaxValue, new byte[] { 127, 255, 255, 255, 255, 255, 255, 255 })]
+    public async Task Encode_Should_WriteLong(long value, byte[] expectedBytes)
     {
         using var buffer = new WriteBuffer();
 
@@ -25,18 +25,18 @@ public class PgLongTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 128, 0, 0, 0, 0, 0, 0, 0 }, long.MinValue)]
-    [InlineData(new byte[] { 255, 255, 255, 255, 128, 0, 0, 0 }, int.MinValue)]
-    [InlineData(new byte[] { 255, 255, 255, 255, 255, 255, 128, 0 }, short.MinValue)]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0)]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 127, 255 }, short.MaxValue)]
-    [InlineData(new byte[] { 0, 0, 0, 0, 127, 255, 255, 255 }, int.MaxValue)]
-    [InlineData(new byte[] { 127, 255, 255, 255, 255, 255, 255, 255 }, long.MaxValue)]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsLong(
+    [Test]
+    [Arguments(new byte[] { 128, 0, 0, 0, 0, 0, 0, 0 }, long.MinValue)]
+    [Arguments(new byte[] { 255, 255, 255, 255, 128, 0, 0, 0 }, int.MinValue)]
+    [Arguments(new byte[] { 255, 255, 255, 255, 255, 255, 128, 0 }, short.MinValue)]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0)]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 127, 255 }, short.MaxValue)]
+    [Arguments(new byte[] { 0, 0, 0, 0, 127, 255, 255, 255 }, int.MaxValue)]
+    [Arguments(new byte[] { 127, 255, 255, 255, 255, 255, 255, 255 }, long.MaxValue)]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsLong(
         byte[] binaryData,
         long expectedValue)
     {
@@ -45,17 +45,17 @@ public class PgLongTest
 
         var actualValue = PgLong.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 0 })]
-    [InlineData(new byte[] { 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 })]
-    public void DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
+    [Test]
+    [Arguments(new byte[] { 0 })]
+    [Arguments(new byte[] { 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 })]
+    public async Task DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
@@ -66,8 +66,8 @@ public class PgLongTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Int64", e.Message);
-            Assert.Contains("Could not extract integer from buffer. Number of bytes = ", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Int64");
+            await Assert.That(e.Message).Contains("Could not extract integer from buffer. Number of bytes = ");
         }
         catch (Exception e)
         {
@@ -75,15 +75,15 @@ public class PgLongTest
         }
     }
 
-    [Theory]
-    [InlineData("-9223372036854775808", long.MinValue)]
-    [InlineData("-2147483648", int.MinValue)]
-    [InlineData("-32768", short.MinValue)]
-    [InlineData("0", 0)]
-    [InlineData("32767", short.MaxValue)]
-    [InlineData("2147483647", int.MaxValue)]
-    [InlineData("9223372036854775807", long.MaxValue)]
-    public void DecodeText_Should_DecodeTextEncodedValueAsLong(
+    [Test]
+    [Arguments("-9223372036854775808", long.MinValue)]
+    [Arguments("-2147483648", int.MinValue)]
+    [Arguments("-32768", short.MinValue)]
+    [Arguments("0", 0)]
+    [Arguments("32767", short.MaxValue)]
+    [Arguments("2147483647", int.MaxValue)]
+    [Arguments("9223372036854775807", long.MaxValue)]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsLong(
         string textData,
         long expectedValue)
     {
@@ -92,12 +92,12 @@ public class PgLongTest
 
         var actualValue = PgLong.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("error", "Could not convert 'error' into System.Int64")]
-    public void DecodeText_Should_Fail_When_InvalidLongString(string textData, string contains)
+    [Test]
+    [Arguments("error", "Could not convert 'error' into System.Int64")]
+    public async Task DecodeText_Should_Fail_When_InvalidLongString(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -109,8 +109,8 @@ public class PgLongTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Int64", e.Message);
-            Assert.Contains(contains, e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Int64");
+            await Assert.That(e.Message).Contains(contains);
         }
         catch (Exception e)
         {
@@ -118,17 +118,17 @@ public class PgLongTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnLongType() => Assert.Equal(PgLong.DbType, PgTypeInfo.Int8);
+    [Test]
+    public async Task DbType_Should_ReturnLongType() => await Assert.That(PgTypeInfo.Int8).IsEqualTo(PgLong.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnLongType() =>
-        Assert.Equal(PgLong.ArrayDbType, PgTypeInfo.Int8Array);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnLongType() =>
+        await Assert.That(PgTypeInfo.Int8Array).IsEqualTo(PgLong.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgLong.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgLong.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

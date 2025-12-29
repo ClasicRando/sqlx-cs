@@ -9,12 +9,12 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgTime))]
 public class PgTimeTest
 {
-    [Theory]
-    [InlineData(4, 5, 6, 789, 123, new byte[] { 0, 0, 0, 3, 108, 151, 203, 3 })]
-    [InlineData(4, 5, 6, 789, 0, new byte[] { 0, 0, 0, 3, 108, 151, 202, 136 })]
-    [InlineData(4, 5, 6, 0, 0, new byte[] { 0, 0, 0, 3, 108, 139, 192, 128 })]
-    [InlineData(4, 5, 0, 0, 0, new byte[] { 0, 0, 0, 3, 108, 48, 51, 0 })]
-    public void Encode_Should_WriteDate(
+    [Test]
+    [Arguments(4, 5, 6, 789, 123, new byte[] { 0, 0, 0, 3, 108, 151, 203, 3 })]
+    [Arguments(4, 5, 6, 789, 0, new byte[] { 0, 0, 0, 3, 108, 151, 202, 136 })]
+    [Arguments(4, 5, 6, 0, 0, new byte[] { 0, 0, 0, 3, 108, 139, 192, 128 })]
+    [Arguments(4, 5, 0, 0, 0, new byte[] { 0, 0, 0, 3, 108, 48, 51, 0 })]
+    public async Task Encode_Should_WriteDate(
         int hour,
         int minute,
         int second,
@@ -29,15 +29,15 @@ public class PgTimeTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 0, 0, 0, 3, 108, 151, 203, 3 }, 4, 5, 6, 789, 123)]
-    [InlineData(new byte[] { 0, 0, 0, 3, 108, 151, 202, 136 }, 4, 5, 6, 789, 0)]
-    [InlineData(new byte[] { 0, 0, 0, 3, 108, 139, 192, 128 }, 4, 5, 6, 0, 0)]
-    [InlineData(new byte[] { 0, 0, 0, 3, 108, 48, 51, 0 }, 4, 5, 0, 0, 0)]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsDate(
+    [Test]
+    [Arguments(new byte[] { 0, 0, 0, 3, 108, 151, 203, 3 }, 4, 5, 6, 789, 123)]
+    [Arguments(new byte[] { 0, 0, 0, 3, 108, 151, 202, 136 }, 4, 5, 6, 789, 0)]
+    [Arguments(new byte[] { 0, 0, 0, 3, 108, 139, 192, 128 }, 4, 5, 6, 0, 0)]
+    [Arguments(new byte[] { 0, 0, 0, 3, 108, 48, 51, 0 }, 4, 5, 0, 0, 0)]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsDate(
         byte[] binaryData,
         int hour,
         int minute,
@@ -51,15 +51,15 @@ public class PgTimeTest
 
         TimeOnly actualValue = PgTime.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("04:05:06.789123", 4, 5, 6, 789, 123)]
-    [InlineData("04:05:06.789", 4, 5, 6, 789, 0)]
-    [InlineData("04:05:06", 4, 5, 6, 0, 0)]
-    [InlineData("04:05:00", 4, 5, 0, 0, 0)]
-    public void DecodeText_Should_DecodeTextEncodedValueAsDate(
+    [Test]
+    [Arguments("04:05:06.789123", 4, 5, 6, 789, 123)]
+    [Arguments("04:05:06.789", 4, 5, 6, 789, 0)]
+    [Arguments("04:05:06", 4, 5, 6, 0, 0)]
+    [Arguments("04:05:00", 4, 5, 0, 0, 0)]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsDate(
         string textData,
         int hour,
         int minute,
@@ -73,13 +73,13 @@ public class PgTimeTest
 
         TimeOnly actualValue = PgTime.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("error")]
-    [InlineData("28:56:12")]
-    public void DecodeText_Should_Fail_When_InvalidDateString(string textData)
+    [Test]
+    [Arguments("error")]
+    [Arguments("28:56:12")]
+    public async Task DecodeText_Should_Fail_When_InvalidDateString(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -91,9 +91,9 @@ public class PgTimeTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.TimeOnly", e.Message);
-            Assert.Contains("Could not parse", e.Message);
-            Assert.Contains("into a time value", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.TimeOnly");
+            await Assert.That(e.Message).Contains("Could not parse");
+            await Assert.That(e.Message).Contains("into a time value");
         }
         catch (Exception e)
         {
@@ -101,17 +101,17 @@ public class PgTimeTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnDateType() => Assert.Equal(PgTime.DbType, PgTypeInfo.Time);
+    [Test]
+    public async Task DbType_Should_ReturnDateType() => await Assert.That(PgTypeInfo.Time).IsEqualTo(PgTime.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnDateType() =>
-        Assert.Equal(PgTime.ArrayDbType, PgTypeInfo.TimeArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnDateType() =>
+        await Assert.That(PgTypeInfo.TimeArray).IsEqualTo(PgTime.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgTime.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgTime.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

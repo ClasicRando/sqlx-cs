@@ -9,8 +9,8 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgCircle))]
 public class PgCircleTest
 {
-    [Fact]
-    public void Encode_Should_WritePgCircle()
+    [Test]
+    public async Task Encode_Should_WritePgCircle()
     {
         byte[] expectedBytes =
         [
@@ -24,11 +24,11 @@ public class PgCircleTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Fact]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsPgCircle()
+    [Test]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsPgCircle()
     {
         var expectedValue = new PgCircle(new PgPoint(5.63, 8.59), 4);
         byte[] binaryData =
@@ -41,11 +41,11 @@ public class PgCircleTest
 
         PgCircle actualValue = PgCircle.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Fact]
-    public void DecodeText_Should_DecodeTextEncodedValueAsPgCircle()
+    [Test]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsPgCircle()
     {
         const string textData = "<(5.63,8.59),4>";
         var expectedValue = new PgCircle(new PgPoint(5.63, 8.59), 4);
@@ -54,13 +54,13 @@ public class PgCircleTest
 
         PgCircle actualValue = PgCircle.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("(error,error),error", "Could not parse X coordinate")]
-    [InlineData("<(1,2),error>", "Could not parse radius from ")]
-    public void DecodeText_Should_Fail_When_InvalidText(
+    [Test]
+    [Arguments("(error,error),error", "Could not parse X coordinate")]
+    [Arguments("<(1,2),error>", "Could not parse radius from ")]
+    public async Task DecodeText_Should_Fail_When_InvalidText(
         string textData,
         string contains)
     {
@@ -74,8 +74,8 @@ public class PgCircleTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: Sqlx.Postgres.Type.PgCircle", e.Message);
-            Assert.Contains(contains, e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: Sqlx.Postgres.Type.PgCircle");
+            await Assert.That(e.Message).Contains(contains);
         }
         catch (Exception e)
         {
@@ -83,17 +83,17 @@ public class PgCircleTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnCircleType() => Assert.Equal(PgCircle.DbType, PgTypeInfo.Circle);
+    [Test]
+    public async Task DbType_Should_ReturnCircleType() => await Assert.That(PgTypeInfo.Circle).IsEqualTo(PgCircle.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnCircleArrayType() =>
-        Assert.Equal(PgCircle.ArrayDbType, PgTypeInfo.CircleArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnCircleArrayType() =>
+        await Assert.That(PgTypeInfo.CircleArray).IsEqualTo(PgCircle.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgCircle.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgCircle.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

@@ -10,8 +10,8 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgJson<>))]
 public class PgJsonTest
 {
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         1,
         "Test1",
         true,
@@ -20,7 +20,7 @@ public class PgJsonTest
             1, 123, 34, 73, 100, 34, 58, 49, 44, 34, 78, 97, 109, 101, 34, 58, 34, 84, 101, 115,
             116, 49, 34, 125,
         })]
-    [InlineData(
+    [Arguments(
         2,
         "Test2",
         false,
@@ -29,7 +29,7 @@ public class PgJsonTest
             1, 123, 34, 73, 100, 34, 58, 50, 44, 34, 78, 97, 109, 101, 34, 58, 34, 84, 101, 115,
             116, 50, 34, 125,
         })]
-    public void Encode_Should_WriteJson(
+    public async Task Encode_Should_WriteJson(
         int id,
         string name,
         bool useSourceGeneration,
@@ -45,11 +45,11 @@ public class PgJsonTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         new byte[]
         {
             1, 123, 34, 73, 100, 34, 58, 49, 44, 34, 78, 97, 109, 101, 34, 58, 34, 84, 101, 115,
@@ -59,7 +59,7 @@ public class PgJsonTest
         1,
         "Test1",
         true)]
-    [InlineData(
+    [Arguments(
         new byte[]
         {
             123, 34, 73, 100, 34, 58, 50, 44, 34, 78, 97, 109, 101, 34, 58, 34, 84, 101, 115, 116,
@@ -69,7 +69,7 @@ public class PgJsonTest
         2,
         "Test2",
         false)]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsJson(
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsJson(
         byte[] binaryData,
         bool isJsonB,
         int id,
@@ -91,13 +91,13 @@ public class PgJsonTest
             ref binaryValue,
             useSourceGeneration ? SourceGenerationContext.Default.Inner : null);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("{\"Id\":1,\"Name\":\"Test1\"}", true, 1, "Test1", true)]
-    [InlineData("{\"Id\":2,\"Name\":\"Test2\"}", false, 2, "Test2", false)]
-    public void DecodeText_Should_DecodeTextEncodedValueAsJson(
+    [Test]
+    [Arguments("{\"Id\":1,\"Name\":\"Test1\"}", true, 1, "Test1", true)]
+    [Arguments("{\"Id\":2,\"Name\":\"Test2\"}", false, 2, "Test2", false)]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsJson(
         string textData,
         bool isJsonB,
         int id,
@@ -119,11 +119,11 @@ public class PgJsonTest
             textValue,
             useSourceGeneration ? SourceGenerationContext.Default.Inner : null);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Fact]
-    public void DecodeText_Should_Fail_When_JsonValueIsNull()
+    [Test]
+    public async Task DecodeText_Should_Fail_When_JsonValueIsNull()
     {
         const string textData = "null";
         var columnMetadata = new PgColumnMetadata();
@@ -136,9 +136,8 @@ public class PgJsonTest
         }
         catch (ArgumentException e)
         {
-            Assert.Contains(
-                "JSON deserialization returned null. Cannot create Json from null",
-                e.Message);
+            await Assert.That(e.Message)
+                .Contains("JSON deserialization returned null. Cannot create Json from null");
         }
         catch (Exception e)
         {
@@ -146,17 +145,17 @@ public class PgJsonTest
         }
     }
 
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         "{\"ID\":2}",
         "The JSON property 'ID' could not be mapped to any .NET member contained in type 'Sqlx.Postgres.Type.Inner'.")]
-    [InlineData(
+    [Arguments(
         "{\"Id\":2,\"Name\":null}",
         "The constructor parameter 'name' on type 'Sqlx.Postgres.Type.Inner' doesn't allow null values.")]
-    [InlineData(
+    [Arguments(
         "{\"Id\":2,\"Name\":\"\",\"Other\":null}",
         "The JSON property 'Other' could not be mapped to any .NET member contained in type 'Sqlx.Postgres.Type.Inner'.")]
-    public void DecodeText_Should_Fail_When_InvalidJson(string textData, string message)
+    public async Task DecodeText_Should_Fail_When_InvalidJson(string textData, string message)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -170,7 +169,7 @@ public class PgJsonTest
         }
         catch (JsonException e)
         {
-            Assert.Contains(message, e.Message);
+            await Assert.That(e.Message).Contains(message);
         }
         catch (Exception e)
         {
@@ -178,25 +177,24 @@ public class PgJsonTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnJsonType() => Assert.Equal(PgJson<Inner>.DbType, PgTypeInfo.Jsonb);
+    [Test]
+    public async Task DbType_Should_ReturnJsonType() => await Assert.That(PgTypeInfo.Jsonb).IsEqualTo(PgJson<Inner>.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnJsonType() =>
-        Assert.Equal(PgJson<Inner>.ArrayDbType, PgTypeInfo.JsonbArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnJsonType() =>
+        await Assert.That(PgTypeInfo.JsonbArray).IsEqualTo(PgJson<Inner>.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgJson<Inner>.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgJson<Inner>.IsCompatible(pgType)).IsEqualTo(expectedResult);
     
-    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
+    public static IEnumerable<Func<(PgTypeInfo, bool)>> IsCompatibleCases()
     {
-        return new TheoryData<PgTypeInfo, bool>(
-            (PgTypeInfo.Json, true),
-            (PgTypeInfo.Jsonb, true),
-            (PgTypeInfo.JsonbArray, false),
-            (PgTypeInfo.Int4, false));
+        yield return () => (PgTypeInfo.Json, true);
+        yield return () => (PgTypeInfo.Jsonb, true);
+        yield return () => (PgTypeInfo.JsonbArray, false);
+        yield return () => (PgTypeInfo.Int4, false);
     }
 }
 

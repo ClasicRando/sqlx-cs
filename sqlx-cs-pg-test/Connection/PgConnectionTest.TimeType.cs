@@ -5,26 +5,26 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_TimeAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_TimeAndDefaultEncoding(CancellationToken ct)
     {
         var value = new TimeOnly(4, 5, 6, 789, 123);
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 time_col;");
         query.Bind(value);
-        TimeOnly result = await query.ExecuteScalar<PgTime, TimeOnly>();
-        Assert.Equal(value, result);
+        TimeOnly result = await query.ExecuteScalar<TimeOnly, PgTime>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_TimeAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_TimeAndTextEncoding(CancellationToken ct)
     {
         const string sql = "SELECT '04:05:06.789123'::time;";
         var value = new TimeOnly(4, 5, 6, 789, 123);
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        TimeOnly result = await query.ExecuteScalar<PgTime, TimeOnly>();
-        Assert.Equal(value, result);
+        TimeOnly result = await query.ExecuteScalar<TimeOnly, PgTime>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 }

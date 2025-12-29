@@ -10,14 +10,14 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgIpNetwork))]
 public class PgIpNetworkTest
 {
-    [Theory]
-    [InlineData(new byte[] { 192, 168, 0, 0 }, 24, new byte[] { 2, 24, 1, 4, 192, 168, 0, 0 })]
-    [InlineData(new byte[] { 10, 0, 0, 0 }, 32, new byte[] { 2, 32, 1, 4, 10, 0, 0, 0 })]
-    [InlineData(
+    [Test]
+    [Arguments(new byte[] { 192, 168, 0, 0 }, 24, new byte[] { 2, 24, 1, 4, 192, 168, 0, 0 })]
+    [Arguments(new byte[] { 10, 0, 0, 0 }, 32, new byte[] { 2, 32, 1, 4, 10, 0, 0, 0 })]
+    [Arguments(
         new byte[] { 32, 1, 13, 184, 18, 52, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         48,
         new byte[] { 3, 48, 1, 16, 32, 1, 13, 184, 18, 52, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })]
-    public void Encode_Should_WriteIPNetwork(
+    public async Task Encode_Should_WriteIPNetwork(
         byte[] address,
         byte prefixLength,
         byte[] expectedBytes)
@@ -29,17 +29,17 @@ public class PgIpNetworkTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 2, 24, 1, 4, 192, 168, 0, 0 }, new byte[] { 192, 168, 0, 0 }, 24)]
-    [InlineData(new byte[] { 2, 32, 1, 4, 10, 0, 0, 0 }, new byte[] { 10, 0, 0, 0 }, 32)]
-    [InlineData(
+    [Test]
+    [Arguments(new byte[] { 2, 24, 1, 4, 192, 168, 0, 0 }, new byte[] { 192, 168, 0, 0 }, 24)]
+    [Arguments(new byte[] { 2, 32, 1, 4, 10, 0, 0, 0 }, new byte[] { 10, 0, 0, 0 }, 32)]
+    [Arguments(
         new byte[] { 3, 48, 0, 16, 32, 1, 13, 184, 18, 52, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         new byte[] { 32, 1, 13, 184, 18, 52, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         48)]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsIPNetwork(
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsIPNetwork(
         byte[] binaryData,
         byte[] address,
         byte prefixLength)
@@ -50,21 +50,21 @@ public class PgIpNetworkTest
 
         IPNetwork actualValue = PgIpNetwork.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("192.168.0.0/24", new byte[] { 192, 168, 0, 0 }, 24)]
-    [InlineData("10.0.0.0/32", new byte[] { 10, 0, 0, 0 }, 32)]
-    [InlineData(
+    [Test]
+    [Arguments("192.168.0.0/24", new byte[] { 192, 168, 0, 0 }, 24)]
+    [Arguments("10.0.0.0/32", new byte[] { 10, 0, 0, 0 }, 32)]
+    [Arguments(
         "2001:db8:1234::/48",
         new byte[] { 32, 1, 13, 184, 18, 52, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         48)]
-    [InlineData(
+    [Arguments(
         "2001:0DB8:AC10:FE01:0000:0000:0000:0000/128",
         new byte[] { 32, 1, 13, 184, 172, 16, 254, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
         128)]
-    public void DecodeText_Should_DecodeTextEncodedValueAsIPNetwork(
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsIPNetwork(
         string textData,
         byte[] address,
         byte prefixLength)
@@ -75,17 +75,17 @@ public class PgIpNetworkTest
 
         IPNetwork actualValue = PgIpNetwork.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData(
+    [Test]
+    [Arguments(
         "error",
         "Could not parse 'error' into a network value")]
-    [InlineData(
+    [Arguments(
         "192.168.0.0/error",
         "Could not parse '192.168.0.0/error' into a network value")]
-    public void DecodeText_Should_Fail_When_InvalidIPNetwork(string textData, string contains)
+    public async Task DecodeText_Should_Fail_When_InvalidIPNetwork(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -97,12 +97,12 @@ public class PgIpNetworkTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Net.IPNetwork", e.Message);
-            Assert.Contains(contains, e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Net.IPNetwork");
+            await Assert.That(e.Message).Contains(contains);
         }
         catch (ArgumentException e)
         {
-            Assert.Contains(contains, e.Message);
+            await Assert.That(e.Message).Contains(contains);
         }
         catch (Exception e)
         {
@@ -110,18 +110,18 @@ public class PgIpNetworkTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnIpNetworkType() =>
-        Assert.Equal(PgIpNetwork.DbType, PgTypeInfo.Cidr);
+    [Test]
+    public async Task DbType_Should_ReturnIpNetworkType() =>
+        await Assert.That(PgTypeInfo.Cidr).IsEqualTo(PgIpNetwork.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnIpNetworkType() =>
-        Assert.Equal(PgIpNetwork.ArrayDbType, PgTypeInfo.CidrArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnIpNetworkType() =>
+        await Assert.That(PgTypeInfo.CidrArray).IsEqualTo(PgIpNetwork.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgIpNetwork.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgIpNetwork.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

@@ -5,26 +5,26 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_PointAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_PointAndDefaultEncoding(CancellationToken ct)
     {
         var value = new PgPoint(5.63, 8.59);
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 point_col;");
         query.Bind(value);
-        var result = await query.ExecuteScalarPg<PgPoint>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<PgPoint>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_PointAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_PointAndTextEncoding(CancellationToken ct)
     {
         const string sql = "SELECT '(5.63,8.59)'::point;";
         var value = new PgPoint(5.63, 8.59);
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        var result = await query.ExecuteScalarPg<PgPoint>();
-        Assert.Equal(value, result);
+        var result = await query.ExecuteScalar<PgPoint>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 }

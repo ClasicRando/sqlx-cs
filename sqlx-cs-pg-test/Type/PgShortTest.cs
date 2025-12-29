@@ -9,11 +9,11 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgShort))]
 public class PgShortTest
 {
-    [Theory]
-    [InlineData(short.MinValue, new byte[] { 128, 0 })]
-    [InlineData(0, new byte[] { 0, 0 })]
-    [InlineData(short.MaxValue, new byte[] { 127, 255 })]
-    public void Encode_Should_WriteShort(short value, byte[] expectedBytes)
+    [Test]
+    [Arguments(short.MinValue, new byte[] { 128, 0 })]
+    [Arguments(0, new byte[] { 0, 0 })]
+    [Arguments(short.MaxValue, new byte[] { 127, 255 })]
+    public async Task Encode_Should_WriteShort(short value, byte[] expectedBytes)
     {
         using var buffer = new WriteBuffer();
 
@@ -21,18 +21,18 @@ public class PgShortTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 255, 255, 255, 255, 255, 255, 128, 0 }, short.MinValue)]
-    [InlineData(new byte[] { 255, 255, 128, 0 }, short.MinValue)]
-    [InlineData(new byte[] { 128, 0 }, short.MinValue)]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0)]
-    [InlineData(new byte[] { 127, 255 }, short.MaxValue)]
-    [InlineData(new byte[] { 0, 0, 127, 255 }, short.MaxValue)]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 127, 255 }, short.MaxValue)]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsShort(
+    [Test]
+    [Arguments(new byte[] { 255, 255, 255, 255, 255, 255, 128, 0 }, short.MinValue)]
+    [Arguments(new byte[] { 255, 255, 128, 0 }, short.MinValue)]
+    [Arguments(new byte[] { 128, 0 }, short.MinValue)]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0)]
+    [Arguments(new byte[] { 127, 255 }, short.MaxValue)]
+    [Arguments(new byte[] { 0, 0, 127, 255 }, short.MaxValue)]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 127, 255 }, short.MaxValue)]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsShort(
         byte[] binaryData,
         short expectedValue)
     {
@@ -41,15 +41,15 @@ public class PgShortTest
 
         var actualValue = PgShort.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 128, 0, 0, 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 255, 255, 255, 255, 128, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 127, 255, 255, 255 })]
-    [InlineData(new byte[] { 127, 255, 255, 255, 255, 255, 255, 255 })]
-    public void DecodeBytes_Should_Fail_When_OutsideOfShortBounds(byte[] binaryData)
+    [Test]
+    [Arguments(new byte[] { 128, 0, 0, 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 255, 255, 255, 255, 128, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 127, 255, 255, 255 })]
+    [Arguments(new byte[] { 127, 255, 255, 255, 255, 255, 255, 255 })]
+    public async Task DecodeBytes_Should_Fail_When_OutsideOfShortBounds(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
@@ -60,8 +60,8 @@ public class PgShortTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Int16", e.Message);
-            Assert.Contains("Value is outside of valid short", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Int16");
+            await Assert.That(e.Message).Contains("Value is outside of valid short");
         }
         catch (Exception e)
         {
@@ -69,14 +69,14 @@ public class PgShortTest
         }
     }
 
-    [Theory]
-    [InlineData(new byte[] { 0 })]
-    [InlineData(new byte[] { 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 })]
-    public void DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
+    [Test]
+    [Arguments(new byte[] { 0 })]
+    [Arguments(new byte[] { 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 })]
+    public async Task DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
@@ -87,8 +87,8 @@ public class PgShortTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Int16", e.Message);
-            Assert.Contains("Could not extract integer from buffer. Number of bytes = ", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Int16");
+            await Assert.That(e.Message).Contains("Could not extract integer from buffer. Number of bytes = ");
         }
         catch (Exception e)
         {
@@ -96,11 +96,11 @@ public class PgShortTest
         }
     }
 
-    [Theory]
-    [InlineData("-32768", short.MinValue)]
-    [InlineData("0", 0)]
-    [InlineData("32767", short.MaxValue)]
-    public void DecodeText_Should_DecodeTextEncodedValueAsShort(
+    [Test]
+    [Arguments("-32768", short.MinValue)]
+    [Arguments("0", 0)]
+    [Arguments("32767", short.MaxValue)]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsShort(
         string textData,
         short expectedValue)
     {
@@ -109,16 +109,16 @@ public class PgShortTest
 
         var actualValue = PgShort.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("error", "Could not convert 'error' into System.Int16")]
-    [InlineData("-9223372036854775808", "Value is outside of valid short")]
-    [InlineData("-2147483648", "Value is outside of valid short")]
-    [InlineData("2147483647", "Value is outside of valid short")]
-    [InlineData("9223372036854775807", "Value is outside of valid short")]
-    public void DecodeText_Should_Fail_When_InvalidShortString(string textData, string contains)
+    [Test]
+    [Arguments("error", "Could not convert 'error' into System.Int16")]
+    [Arguments("-9223372036854775808", "Value is outside of valid short")]
+    [Arguments("-2147483648", "Value is outside of valid short")]
+    [Arguments("2147483647", "Value is outside of valid short")]
+    [Arguments("9223372036854775807", "Value is outside of valid short")]
+    public async Task DecodeText_Should_Fail_When_InvalidShortString(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -130,8 +130,8 @@ public class PgShortTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Int16", e.Message);
-            Assert.Contains(contains, e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Int16");
+            await Assert.That(e.Message).Contains(contains);
         }
         catch (Exception e)
         {
@@ -139,17 +139,17 @@ public class PgShortTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnShortType() => Assert.Equal(PgShort.DbType, PgTypeInfo.Int2);
+    [Test]
+    public async Task DbType_Should_ReturnShortType() => await Assert.That(PgTypeInfo.Int2).IsEqualTo(PgShort.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnShortType() =>
-        Assert.Equal(PgShort.ArrayDbType, PgTypeInfo.Int2Array);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnShortType() =>
+        await Assert.That(PgTypeInfo.Int2Array).IsEqualTo(PgShort.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgShort.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgShort.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {

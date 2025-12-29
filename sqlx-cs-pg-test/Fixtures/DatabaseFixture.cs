@@ -1,11 +1,12 @@
 using Sqlx.Core.Pool;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Pool;
+using Sqlx.Postgres.Query;
+using TUnit.Core.Interfaces;
 
 namespace Sqlx.Postgres.Fixtures;
 
-// ReSharper disable once ClassNeverInstantiated.Global
-public sealed class DatabaseFixture : IDisposable
+public sealed class DatabaseFixture : IAsyncInitializer, IAsyncDisposable
 {
     public PgConnectionPool BasicPool { get; }
 
@@ -55,10 +56,31 @@ public sealed class DatabaseFixture : IDisposable
         QueryTimeoutPool = new PgConnectionPool(options3, poolOptions);
     }
 
-    public void Dispose()
+    public async Task InitializeAsync()
     {
-        BasicPool.DisposeAsync().AsTask().GetAwaiter().GetResult();
-        SimpleQueryTextPool.DisposeAsync().AsTask().GetAwaiter().GetResult();
-        QueryTimeoutPool.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        await InitializeStoredProcedures();
+        await CreateCompositeType();
+    }
+
+    private async Task InitializeStoredProcedures()
+    {
+        using IPgConnection connection = BasicPool.CreateConnection();
+        using IPgExecutableQuery setUp = connection.CreateQuery(PgConnectionTest.SetUpQuery);
+        await setUp.ExecuteNonQueryAsync();
+    }
+    
+    private async Task CreateCompositeType()
+    {
+        using IPgConnection connection = BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery(PgConnectionTest.CreateTypeQuery);
+        await query.ExecuteNonQueryAsync();
+        await BasicPool.MapCompositeAsync<TestCompositeType>();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await BasicPool.DisposeAsync();
+        await SimpleQueryTextPool.DisposeAsync();
+        await QueryTimeoutPool.DisposeAsync();
     }
 }

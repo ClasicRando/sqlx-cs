@@ -2,9 +2,8 @@ namespace Sqlx.Core.Cache;
 
 public class LruCacheTest
 {
-
-    [Fact]
-    public void Get_Should_ReturnValueForKey_WhenPresentInCache()
+    [Test]
+    public async Task Get_Should_ReturnValueForKey_WhenPresentInCache()
     {
         var cache = new LruCache<string, int>(
             1,
@@ -12,29 +11,29 @@ public class LruCacheTest
             {
                 { "Test", 1 },
             });
-        Assert.Equal(1, cache.Get("Test"));
+        await Assert.That(cache.Get("Test")).IsEqualTo(1);
     }
 
-    [Fact]
-    public void Capacity_Should_MatchTheSpecificInitializer()
+    [Test]
+    public async Task Capacity_Should_MatchTheSpecificInitializer()
     {
         var cache = new LruCache<string, int>(10);
         
-        Assert.Equal(10, cache.Capacity);
+        await Assert.That(cache.Capacity).IsEqualTo(10);
     }
 
-    [Fact]
-    public void Count_Should_MatchTheCurrentNumberOfItems()
+    [Test]
+    public async Task Count_Should_MatchTheCurrentNumberOfItems()
     {
         var cache = new LruCache<string, int>(10);
         
-        Assert.Equal(0, cache.Count);
+        await Assert.That(cache.Count).IsEqualTo(0);
 
         cache.Put("Test", 1);
-        Assert.Equal(1, cache.Count);
+        await Assert.That(cache.Count).IsEqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public void Put_Should_ReturnNull_When_CapacityIsNotExceeded()
     {
         var cache = new LruCache<string, int>(10);
@@ -44,12 +43,18 @@ public class LruCacheTest
         Assert.Null(ejected);
     }
 
-    [Theory]
-    [MemberData(nameof(PutCapacityExceeded))]
-    public void Put_Should_ReturnOldestEntry_When_CapacityIsExceeded(
+    public record EjectedTuple(string Key, int Value)
+    {
+        public static implicit operator (string, int)(EjectedTuple tuple) =>
+            (tuple.Key, tuple.Value);
+    }
+
+    [Test]
+    [MethodDataSource(nameof(PutCapacityExceeded))]
+    public async Task Put_Should_ReturnOldestEntry_When_CapacityIsExceeded(
         Dictionary<string, int> initialEntries,
         Dictionary<string, int> otherEntries,
-        (string, int) expectedEjected)
+        EjectedTuple expectedEjected)
     {
         var cache = new LruCache<string, int>(initialEntries.Count, initialEntries);
         foreach (var entry in otherEntries)
@@ -60,21 +65,21 @@ public class LruCacheTest
         var ejected = cache.Put("TestKey", int.MaxValue);
         
         Assert.NotNull(ejected);
-        Assert.Equal(expectedEjected, ejected);
+        await Assert.That(ejected).IsEqualTo(expectedEjected);
     }
 
-    public static IEnumerable<object[]> PutCapacityExceeded()
+    public static IEnumerable<Func<(Dictionary<string, int>, Dictionary<string, int>, EjectedTuple)>> PutCapacityExceeded()
     {
-        yield return [
+        yield return () => (
             new Dictionary<string, int>
             {
                 { "Test", 1 },
                 { "Test2", 2 },
             },
             new Dictionary<string, int>(),
-            ("Test", 1),
-        ];
-        yield return [
+            new EjectedTuple("Test", 1)
+        );
+        yield return () => (
             new Dictionary<string, int>
             {
                 { "Test", 1 },
@@ -84,9 +89,9 @@ public class LruCacheTest
             {
                 { "Test3", 3 },
             },
-            ("Test2", 2),
-        ];
-        yield return [
+            new EjectedTuple("Test2", 2)
+        );
+        yield return () => (
             new Dictionary<string, int>
             {
                 { "Test", 1 },
@@ -97,7 +102,7 @@ public class LruCacheTest
                 { "Test3", 3 },
                 { "Test", 10 },
             },
-            ("Test3", 3),
-        ];
+            new EjectedTuple("Test3", 3)
+        );
     }
 }

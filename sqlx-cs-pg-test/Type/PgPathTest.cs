@@ -8,9 +8,9 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgPath))]
 public class PgPathTest
 {
-    [Theory]
-    [MemberData(nameof(EncodeCases))]
-    public void Encode_Should_WritePath(PgPath value, byte[] expectedBytes)
+    [Test]
+    [MethodDataSource(nameof(EncodeCases))]
+    public async Task Encode_Should_WritePath(PgPath value, byte[] expectedBytes)
     {
         using var buffer = new WriteBuffer();
 
@@ -18,19 +18,18 @@ public class PgPathTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    public static IEnumerable<TheoryDataRow<PgPath, byte[]>> EncodeCases()
+    public static IEnumerable<Func<(PgPath, byte[])>> EncodeCases()
     {
-        return new TheoryData<PgPath, byte[]>(
-            (new PgPath(false, [new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8)]), [0, 0, 0, 0, 2, 64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102]),
-            (new PgPath(true, [new PgPoint(4.87, 2.8)]), [1, 0, 0, 0, 1, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102]));
+        yield return () => (new PgPath(false, [new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8)]), [0, 0, 0, 0, 2, 64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102]);
+        yield return () => (new PgPath(true, [new PgPoint(4.87, 2.8)]), [1, 0, 0, 0, 1, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102]);
     }
 
-    [Theory]
-    [MemberData(nameof(DecodeBytesCases))]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsPath(
+    [Test]
+    [MethodDataSource(nameof(DecodeBytesCases))]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsPath(
         byte[] binaryData,
         PgPath expectedValue)
     {
@@ -39,19 +38,18 @@ public class PgPathTest
 
         PgPath actualValue = PgPath.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    public static IEnumerable<TheoryDataRow<byte[], PgPath>> DecodeBytesCases()
+    public static IEnumerable<Func<(byte[], PgPath)>> DecodeBytesCases()
     {
-        return new TheoryData<byte[], PgPath>(
-            ([0, 0, 0, 0, 2, 64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102], new PgPath(false, [new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8)])),
-            ([1, 0, 0, 0, 1, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102], new PgPath(true, [new PgPoint(4.87, 2.8)])));
+        yield return () => ([0, 0, 0, 0, 2, 64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102], new PgPath(false, [new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8)]));
+        yield return () => ([1, 0, 0, 0, 1, 64, 19, 122, 225, 71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102], new PgPath(true, [new PgPoint(4.87, 2.8)]));
     }
 
-    [Theory]
-    [MemberData(nameof(DecodeTextCases))]
-    public void DecodeText_Should_DecodeTextEncodedValueAsPath(
+    [Test]
+    [MethodDataSource(nameof(DecodeTextCases))]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsPath(
         string textData,
         PgPath expectedValue)
     {
@@ -60,33 +58,31 @@ public class PgPathTest
 
         PgPath actualValue = PgPath.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    public static IEnumerable<TheoryDataRow<string, PgPath>> DecodeTextCases()
+    public static IEnumerable<Func<(string, PgPath)>> DecodeTextCases()
     {
-        return new TheoryData<string, PgPath>(
-            ("[(5.63,8.59),(4.87,2.8)]", new PgPath(false, [new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8)])),
-            ("((4.87, 2.8))", new PgPath(true, [new PgPoint(4.87, 2.8)])));
+        yield return () => ("[(5.63,8.59),(4.87,2.8)]", new PgPath(false, [new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8)]));
+        yield return () => ("((4.87, 2.8))", new PgPath(true, [new PgPoint(4.87, 2.8)]));
     }
 
-    [Fact]
-    public void DbType_Should_ReturnPathType() => Assert.Equal(PgPath.DbType, PgTypeInfo.Path);
+    [Test]
+    public async Task DbType_Should_ReturnPathType() => await Assert.That(PgTypeInfo.Path).IsEqualTo(PgPath.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnPathType() =>
-        Assert.Equal(PgPath.ArrayDbType, PgTypeInfo.PathArray);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnPathType() =>
+        await Assert.That(PgTypeInfo.PathArray).IsEqualTo(PgPath.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgPath.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgPath.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
-    public static IEnumerable<TheoryDataRow<PgTypeInfo, bool>> IsCompatibleCases()
+    public static IEnumerable<Func<(PgTypeInfo, bool)>> IsCompatibleCases()
     {
-        return new TheoryData<PgTypeInfo, bool>(
-            (PgTypeInfo.Path, true),
-            (PgTypeInfo.PathArray, false),
-            (PgTypeInfo.Int4, false));
+        yield return () => (PgTypeInfo.Path, true);
+        yield return () => (PgTypeInfo.PathArray, false);
+        yield return () => (PgTypeInfo.Int4, false);
     }
 }

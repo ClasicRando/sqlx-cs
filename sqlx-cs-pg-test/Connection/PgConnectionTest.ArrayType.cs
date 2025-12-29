@@ -5,51 +5,51 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_RefTypeArrayAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_RefTypeArrayAndDefaultEncoding(CancellationToken ct)
     {
         string?[] input = ["this", "is", null, "a", "test"];
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 text_array_col;");
         query.Bind(input);
-        var result = await query.ExecuteScalar<PgArrayTypeClass<string, PgString>, string?[]>();
-        Assert.Equal(input, result);
+        var result = await query.ExecuteScalar<string?[], PgArrayTypeClass<string, PgString>>(ct);
+        await Assert.That(result).IsEquivalentTo(input);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_RefTypeArrayAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_RefTypeArrayAndTextEncoding(CancellationToken ct)
     {
         string?[] input = ["this", "is", null, "a", "test"];
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query =
             connection.CreateQuery("SELECT '{this,is,NULL,a,test}'::text[];");
         query.Bind(input);
-        var result = await query.ExecuteScalar<PgArrayTypeClass<string, PgString>, string?[]>();
-        Assert.Equal(input, result);
+        var result = await query.ExecuteScalar<string?[], PgArrayTypeClass<string, PgString>>(ct);
+        await Assert.That(result).IsEquivalentTo(input);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_ValueTypeArrayAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_ValueTypeArrayAndDefaultEncoding(CancellationToken ct)
     {
         int?[] input = [-493, 0, null, 34, 68095];
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 int_array_col;");
         query.Bind(input);
-        var result = await query.ExecuteScalar<PgArrayTypeStruct<int, PgInt>, int?[]>();
-        Assert.Equal(input, result);
+        var result = await query.ExecuteScalar<int?[], PgArrayTypeStruct<int, PgInt>>(ct);
+        await Assert.That(result).IsEquivalentTo(input);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_ValueTypeArrayAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_ValueTypeArrayAndTextEncoding(CancellationToken ct)
     {
         int?[] input = [-493, 0, null, 34, 68095];
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query =
             connection.CreateQuery("SELECT '{-493,0,NULL,34,68095}'::int[];");
         query.Bind(input);
-        var result = await query.ExecuteScalar<PgArrayTypeStruct<int, PgInt>, int?[]>();
-        Assert.Equal(input, result);
+        var result = await query.ExecuteScalar<int?[], PgArrayTypeStruct<int, PgInt>>(ct);
+        await Assert.That(result).IsEquivalentTo(input);
     }
 }

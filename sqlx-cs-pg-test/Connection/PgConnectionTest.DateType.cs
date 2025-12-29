@@ -5,26 +5,26 @@ namespace Sqlx.Postgres.Connection;
 
 public partial class PgConnectionTest
 {
-    [Fact]
-    public async Task ExecuteScalar_Should_EncodeAndDecode_When_DateAndDefaultEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_EncodeAndDecode_When_DateAndDefaultEncoding(CancellationToken ct)
     {
         var value = new DateOnly(2025, 1, 1);
-        using IPgConnection connection = _databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 date_col;");
         query.Bind(value);
-        DateOnly result = await query.ExecuteScalar<PgDate, DateOnly>();
-        Assert.Equal(value, result);
+        DateOnly result = await query.ExecuteScalar<DateOnly, PgDate>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 
-    [Fact]
-    public async Task ExecuteScalar_Should_Decode_When_DateAndTextEncoding()
+    [Test]
+    public async Task ExecuteScalar_Should_Decode_When_DateAndTextEncoding(CancellationToken ct)
     {
         const string sql = "SELECT '2025-01-01'::date;";
         var value = new DateOnly(2025, 1, 1);
         using IPgConnection
-            connection = _databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        DateOnly result = await query.ExecuteScalar<PgDate, DateOnly>();
-        Assert.Equal(value, result);
+        DateOnly result = await query.ExecuteScalar<DateOnly, PgDate>(ct);
+        await Assert.That(result).IsEqualTo(value);
     }
 }

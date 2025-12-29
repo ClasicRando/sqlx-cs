@@ -9,13 +9,13 @@ namespace Sqlx.Postgres.Type;
 [TestSubject(typeof(PgFloat))]
 public class PgFloatTest
 {
-    [Theory]
-    [InlineData(float.MinValue, new byte[] { 255, 127, 255, 255 })]
-    [InlineData(-25.2356, new byte[] { 193, 201, 226, 130 })]
-    [InlineData(0, new byte[] { 0, 0, 0, 0 })]
-    [InlineData(85.569, new byte[] { 66, 171, 35, 84 })]
-    [InlineData(float.MaxValue, new byte[] { 127, 127, 255, 255 })]
-    public void Encode_Should_WriteFloat(float value, byte[] expectedBytes)
+    [Test]
+    [Arguments(float.MinValue, new byte[] { 255, 127, 255, 255 })]
+    [Arguments(-25.2356, new byte[] { 193, 201, 226, 130 })]
+    [Arguments(0, new byte[] { 0, 0, 0, 0 })]
+    [Arguments(85.569, new byte[] { 66, 171, 35, 84 })]
+    [Arguments(float.MaxValue, new byte[] { 127, 127, 255, 255 })]
+    public async Task Encode_Should_WriteFloat(float value, byte[] expectedBytes)
     {
         using var buffer = new WriteBuffer();
 
@@ -23,18 +23,18 @@ public class PgFloatTest
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
-        Assert.Equal(expectedBytes, actualBytes);
+        await Assert.That(actualBytes).IsEquivalentTo(expectedBytes);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 255, 127, 255, 255 }, float.MinValue)]
-    [InlineData(new byte[] { 193, 201, 226, 130 }, -25.2356)]
-    [InlineData(new byte[] { 192, 57, 60, 80, 72, 22, 240, 7 }, -25.2356)]
-    [InlineData(new byte[] { 0, 0, 0, 0 }, 0)]
-    [InlineData(new byte[] { 66, 171, 35, 84 }, 85.569)]
-    [InlineData(new byte[] { 64, 85, 100, 106, 126, 249, 219, 35 }, 85.569)]
-    [InlineData(new byte[] { 127, 127, 255, 255 }, float.MaxValue)]
-    public void DecodeBytes_Should_DecodeBinaryEncodedValueAsFloat(
+    [Test]
+    [Arguments(new byte[] { 255, 127, 255, 255 }, float.MinValue)]
+    [Arguments(new byte[] { 193, 201, 226, 130 }, -25.2356)]
+    [Arguments(new byte[] { 192, 57, 60, 80, 72, 22, 240, 7 }, -25.2356)]
+    [Arguments(new byte[] { 0, 0, 0, 0 }, 0)]
+    [Arguments(new byte[] { 66, 171, 35, 84 }, 85.569)]
+    [Arguments(new byte[] { 64, 85, 100, 106, 126, 249, 219, 35 }, 85.569)]
+    [Arguments(new byte[] { 127, 127, 255, 255 }, float.MaxValue)]
+    public async Task DecodeBytes_Should_DecodeBinaryEncodedValueAsFloat(
         byte[] binaryData,
         float expectedValue)
     {
@@ -43,13 +43,13 @@ public class PgFloatTest
 
         var actualValue = PgFloat.DecodeBytes(ref binaryValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData(new byte[] { 255, 239, 255, 255, 255, 255, 255, 255 })]
-    [InlineData(new byte[] { 127, 239, 255, 255, 255, 255, 255, 255 })]
-    public void DecodeBytes_Should_Fail_When_OutsideOfFloatBounds(byte[] binaryData)
+    [Test]
+    [Arguments(new byte[] { 255, 239, 255, 255, 255, 255, 255, 255 })]
+    [Arguments(new byte[] { 127, 239, 255, 255, 255, 255, 255, 255 })]
+    public async Task DecodeBytes_Should_Fail_When_OutsideOfFloatBounds(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
@@ -60,8 +60,8 @@ public class PgFloatTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Single", e.Message);
-            Assert.Contains("Floating point value is outside the bounds of float", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Single");
+            await Assert.That(e.Message).Contains("Floating point value is outside the bounds of float");
         }
         catch (Exception e)
         {
@@ -69,15 +69,15 @@ public class PgFloatTest
         }
     }
 
-    [Theory]
-    [InlineData(new byte[] { 0 })]
-    [InlineData(new byte[] { 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 0 })]
-    [InlineData(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 })]
-    public void DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
+    [Test]
+    [Arguments(new byte[] { 0 })]
+    [Arguments(new byte[] { 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 0 })]
+    [Arguments(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 })]
+    public async Task DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
@@ -88,8 +88,8 @@ public class PgFloatTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Single", e.Message);
-            Assert.Contains("Could not extract float from buffer. Number of bytes = ", e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Single");
+            await Assert.That(e.Message).Contains("Could not extract float from buffer. Number of bytes = ");
         }
         catch (Exception e)
         {
@@ -97,13 +97,13 @@ public class PgFloatTest
         }
     }
 
-    [Theory]
-    [InlineData("-3.40282346638528859e+38", float.MinValue)]
-    [InlineData("-25.2356", -25.2356)]
-    [InlineData("0", 0)]
-    [InlineData("85.569", 85.569)]
-    [InlineData("3.40282346638528859e+38", float.MaxValue)]
-    public void DecodeText_Should_DecodeTextEncodedValueAsFloat(
+    [Test]
+    [Arguments("-3.40282346638528859e+38", float.MinValue)]
+    [Arguments("-25.2356", -25.2356)]
+    [Arguments("0", 0)]
+    [Arguments("85.569", 85.569)]
+    [Arguments("3.40282346638528859e+38", float.MaxValue)]
+    public async Task DecodeText_Should_DecodeTextEncodedValueAsFloat(
         string textData,
         float expectedValue)
     {
@@ -112,14 +112,14 @@ public class PgFloatTest
 
         var actualValue = PgFloat.DecodeText(textValue);
 
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Theory]
-    [InlineData("error", "Could not convert 'error' into System.Single")]
-    [InlineData("3.40282346638528859e+39", "Floating point value is outside the bounds of float")]
-    [InlineData("-3.40282346638528859e+39", "Floating point value is outside the bounds of float")]
-    public void DecodeText_Should_Fail_When_InvalidFloatString(string textData, string contains)
+    [Test]
+    [Arguments("error", "Could not convert 'error' into System.Single")]
+    [Arguments("3.40282346638528859e+39", "Floating point value is outside the bounds of float")]
+    [Arguments("-3.40282346638528859e+39", "Floating point value is outside the bounds of float")]
+    public async Task DecodeText_Should_Fail_When_InvalidFloatString(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
@@ -131,8 +131,8 @@ public class PgFloatTest
         }
         catch (ColumnDecodeException e)
         {
-            Assert.Contains("Desired Output: System.Single", e.Message);
-            Assert.Contains(contains, e.Message);
+            await Assert.That(e.Message).Contains("Desired Output: System.Single");
+            await Assert.That(e.Message).Contains(contains);
         }
         catch (Exception e)
         {
@@ -140,17 +140,17 @@ public class PgFloatTest
         }
     }
 
-    [Fact]
-    public void DbType_Should_ReturnFloatType() => Assert.Equal(PgFloat.DbType, PgTypeInfo.Float4);
+    [Test]
+    public async Task DbType_Should_ReturnFloatType() => await Assert.That(PgTypeInfo.Float4).IsEqualTo(PgFloat.DbType);
 
-    [Fact]
-    public void ArrayDbType_Should_ReturnFloatType() =>
-        Assert.Equal(PgFloat.ArrayDbType, PgTypeInfo.Float4Array);
+    [Test]
+    public async Task ArrayDbType_Should_ReturnFloatType() =>
+        await Assert.That(PgTypeInfo.Float4Array).IsEqualTo(PgFloat.ArrayDbType);
 
-    [Theory]
-    [MemberData(nameof(IsCompatibleCases))]
-    public void IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
-        Assert.Equal(expectedResult, PgFloat.IsCompatible(pgType));
+    [Test]
+    [MethodDataSource(nameof(IsCompatibleCases))]
+    public async Task IsCompatible(PgTypeInfo pgType, bool expectedResult) =>
+        await Assert.That(PgFloat.IsCompatible(pgType)).IsEqualTo(expectedResult);
 
     public static IEnumerable<object[]> IsCompatibleCases()
     {
