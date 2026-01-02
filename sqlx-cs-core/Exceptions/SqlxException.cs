@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Sqlx.Core.Exceptions;
@@ -30,7 +31,7 @@ public class SqlxException : Exception
     /// <exception cref="SqlxException">if the value is null</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void ThrowIfNull<T>(
-        T? value,
+        [NotNull] T? value,
         string message = "",
         [CallerArgumentExpression(nameof(value))]
         string name = "")

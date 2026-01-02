@@ -34,7 +34,7 @@ public sealed class WriteBuffer : IBufferWriter<byte>, IDisposable
     }
 
     /// <summary>Number writeable bytes remaining in the buffer</summary>
-    private int Remaining => _buffer.Length - _writePosition;
+    public int Remaining => _buffer.Length - _writePosition;
 
     /// <summary><see cref="ReadOnlyMemory{T}"/> of the bytes written to this buffer</summary>
     public ReadOnlyMemory<byte> ReadableMemory => _buffer.AsMemory(0, _writePosition);

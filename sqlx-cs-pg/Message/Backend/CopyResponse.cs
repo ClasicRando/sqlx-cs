@@ -12,7 +12,7 @@ internal readonly struct CopyResponse(CopyFormat CopyFormat, short ColumnCount)
 {
     internal static CopyResponse Decode(ReadBuffer buffer)
     {
-        CopyFormat copyFormat = CopyFormatExtensions.FromByte(buffer.ReadByte());
+        CopyFormat copyFormat = CopyFormat.FromByte(buffer.ReadByte());
         var columnCount = buffer.ReadShort();
         return new CopyResponse(copyFormat, columnCount);
     }

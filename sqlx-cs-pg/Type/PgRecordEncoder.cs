@@ -90,6 +90,7 @@ public sealed class PgRecordEncoder : IPgBindable
 
     public void Bind(ReadOnlySpan<byte> value)
     {
+        _parameterBuffer.WriteOid(PgBytea.DbType.TypeOid);
         _parameterBuffer.EncodeBytes(value);
     }
 
@@ -100,6 +101,7 @@ public sealed class PgRecordEncoder : IPgBindable
 
     public void Bind(ReadOnlySpan<char> value)
     {
+        _parameterBuffer.WriteOid(PgString.DbType.TypeOid);
         _parameterBuffer.EncodeChars(value);
     }
 
@@ -110,6 +112,7 @@ public sealed class PgRecordEncoder : IPgBindable
 
     public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
     {
+        _parameterBuffer.WriteOid(PgJson<T>.DbType.TypeOid);
         _parameterBuffer.EncodeJsonValue(value, typeInfo);
     }
 

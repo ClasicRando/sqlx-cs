@@ -24,7 +24,7 @@ public static class ExecutableQuery
         {
             long count = 0;
             var results = await executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            await foreach (var result in results.WithCancellation(cancellationToken))
+            await foreach (var result in results.ConfigureAwait(false).WithCancellation(cancellationToken))
             {
                 if (result is Either<TDataRow, QueryResult>.Right right)
                 {

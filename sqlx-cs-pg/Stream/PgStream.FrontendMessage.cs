@@ -186,11 +186,27 @@ public sealed partial class PgStream
         return Flush(cancellationToken);
     }
 
-    public void WriteCopyDataMessage(ReadOnlySpan<byte> data)
+    private void WriteCopyDataMessage(ReadOnlySpan<byte> data)
     {
         _writeBuffer.WriteCode(PgFrontendMessageType.CopyData);
         _writeBuffer.WriteInt(data.Length + sizeof(int));
         _writeBuffer.WriteBytes(data);
+    }
+
+    private Task SendCopyDoneMessage(CancellationToken cancellationToken)
+    {
+        _writeBuffer.WriteCode(PgFrontendMessageType.CopyDone);
+        _writeBuffer.WriteInt(sizeof(int));
+        return Flush(cancellationToken);
+    }
+
+    private Task SendCopyFailMessage(string message, CancellationToken cancellationToken)
+    {
+        _writeBuffer.WriteCode(PgFrontendMessageType.CopyFail);
+        var startingPosition = _writeBuffer.StartWritingLengthPrefixed();
+        _writeBuffer.WriteCString(message);
+        _writeBuffer.FinishWritingLengthPrefixed(startingPosition, includeLength: true);
+        return Flush(cancellationToken);
     }
 
     private Task SendTerminate()

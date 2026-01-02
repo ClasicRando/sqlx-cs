@@ -1,5 +1,3 @@
-using Sqlx.Core.Buffer;
-
 namespace Sqlx.Postgres.Message.Backend;
 
 /// <summary>
@@ -9,8 +7,5 @@ namespace Sqlx.Postgres.Message.Backend;
 /// </summary>
 internal sealed class CopyDataMessage(byte[] data) : IPgBackendDataMessage
 {
-    // ReSharper disable once ReplaceWithPrimaryConstructorParameter
-    private readonly byte[] _data = data;
-
-    private ReadOnlySpan<byte> Data => _data.AsSpan();
+    public byte[] Data { get; } = data;
 }

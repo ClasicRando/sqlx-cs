@@ -26,7 +26,7 @@ public static class ExecutableQuery
             where TValue : notnull
         {
             var flow = await executableQuery.ExecuteAsync(cancellationToken);
-            await foreach (var item in flow.WithCancellation(cancellationToken))
+            await foreach (var item in flow.ConfigureAwait(false).WithCancellation(cancellationToken))
             {
                 if (item is Either<IPgDataRow, QueryResult>.Left left)
                 {
@@ -66,7 +66,7 @@ public static class ExecutableQuery
             where TValue : notnull
         {
             var flow = await executableQuery.ExecuteAsync(cancellationToken);
-            await foreach (var item in flow.WithCancellation(cancellationToken))
+            await foreach (var item in flow.ConfigureAwait(false).WithCancellation(cancellationToken))
             {
                 if (item is Either<IPgDataRow, QueryResult>.Left left)
                 {

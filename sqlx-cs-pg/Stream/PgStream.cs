@@ -71,8 +71,8 @@ public sealed partial class PgStream : IPooledConnection
     public async Task OpenAsync(CancellationToken cancellationToken)
     {
         CheckDisposed();
-        Status = ConnectionStatus.Connecting;
         await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        Status = ConnectionStatus.Connecting;
         try
         {
             await _asyncStream.OpenAsync(

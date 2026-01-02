@@ -96,8 +96,8 @@ public partial class PgStream
         }
         finally
         {
-            _semaphore.Release();
             Status = ConnectionStatus.Idle;
+            _semaphore.Release();
         }
     }
 
@@ -152,8 +152,8 @@ public partial class PgStream
         }
         finally
         {
-            _semaphore.Release();
             Status = ConnectionStatus.Idle;
+            _semaphore.Release();
         }
     }
 
@@ -219,8 +219,8 @@ public partial class PgStream
         }
         finally
         {
-            _semaphore.Release();
             Status = ConnectionStatus.Idle;
+            _semaphore.Release();
         }
     }
 
@@ -241,7 +241,7 @@ public partial class PgStream
     /// </param>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
     /// <returns>The prepared statement to execute the desired query</returns>
-    private async Task<PgPreparedStatement> GetOrPrepareStatement(
+    internal async Task<PgPreparedStatement> GetOrPrepareStatement(
         string sql,
         IReadOnlyList<PgTypeInfo> parameterTypes,
         CancellationToken cancellationToken)

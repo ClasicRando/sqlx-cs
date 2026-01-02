@@ -1,8 +1,10 @@
+using System.IO.Pipelines;
 using Sqlx.Core;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Pool;
 using Sqlx.Core.Result;
+using Sqlx.Postgres.Copy;
 using Sqlx.Postgres.Pool;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Result;
@@ -52,7 +54,7 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
         CancellationToken cancellationToken)
     {
         CheckDisposed();
-        await ConnectIfClosed(cancellationToken);
+        await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
         return _pgStream!.ExecuteQuery(query, cancellationToken);
     }
 
@@ -61,7 +63,7 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
         CancellationToken cancellationToken)
     {
         CheckDisposed();
-        await ConnectIfClosed(cancellationToken);
+        await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
         return _pgStream!.ExecuteQueryBatch(query, cancellationToken);
     }
 
@@ -84,6 +86,21 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
         return Task.CompletedTask;
     }
 
+    public async Task<IAsyncEnumerable<byte[]>> CopyOut(ICopyTo copyOutStatement, CancellationToken cancellationToken = default)
+    {
+        CheckDisposed();
+        await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
+        return _pgStream!.CopyOut(copyOutStatement, cancellationToken);
+    }
+
+    public async Task<QueryResult> CopyIn(ICopyFrom copyInStatement, PipeReader data, CancellationToken cancellationToken = default)
+    {
+        CheckDisposed();
+        await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
+        return await _pgStream!.CopyIn(copyInStatement, data, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Execute the desired transaction command. If an error occurs trying to commiting a
     /// transaction, a <c>ROLLBACK</c> command will be tried as a last effort to resolve the
@@ -98,12 +115,14 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
     ///     <item>commit or rollback a transaction while not within a transaction</item>
     /// </list>
     /// </exception>
-    protected override Task ExecuteTransactionCommandAsync(
+    protected override async Task ExecuteTransactionCommandAsync(
         TransactionCommand transactionCommand,
         CancellationToken cancellationToken)
     {
         CheckDisposed();
-        return _pgStream!.ExecuteTransactionCommand(transactionCommand, cancellationToken);
+        await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
+        await _pgStream!.ExecuteTransactionCommand(transactionCommand, cancellationToken)
+            .ConfigureAwait(false);
     }
     
     /// <summary>
@@ -137,5 +156,13 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
         if (_disposed) return;
         if (disposing) CloseAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         _disposed = true;
+    }
+
+    internal Task<PgPreparedStatement> GetOrPrepareStatement(
+        string sql,
+        CancellationToken cancellationToken)
+    {
+        CheckDisposed();
+        return _pgStream!.GetOrPrepareStatement(sql, [], cancellationToken);
     }
 }
