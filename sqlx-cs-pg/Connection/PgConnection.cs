@@ -1,4 +1,5 @@
 using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
 using Sqlx.Core;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Exceptions;
@@ -17,7 +18,8 @@ namespace Sqlx.Postgres.Connection;
 /// connection implementations, other Postgresql specific functionality is implemented such as
 /// <c>LISTEN/NOTIFY</c> and the <c>COPY</c> protocol.
 /// </summary>
-public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBindable, IPgQueryBatch, IPgDataRow>, IPgConnection
+public sealed class PgConnection :
+    AbstractConnection<IPgExecutableQuery, IPgBindable, IPgQueryBatch, IPgDataRow>, IPgConnection
 {
     private bool _disposed;
     private PgStream? _pgStream;
@@ -29,7 +31,7 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
     }
 
     public override ConnectionStatus Status => _pgStream?.Status ?? ConnectionStatus.Closed;
-    
+
     public override bool InTransaction => _pgStream?.InTransaction ?? false;
 
     public override async Task OpenAsync(CancellationToken cancellationToken = default)
@@ -49,22 +51,30 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
         return new PgQueryBatch(this);
     }
 
-    public override async Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> ExecuteQueryAsync(
+    public override async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> ExecuteQueryAsync(
         IPgExecutableQuery query,
-        CancellationToken cancellationToken)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        return _pgStream!.ExecuteQuery(query, cancellationToken);
+        await foreach (var item in _pgStream!.ExecuteQuery(query, cancellationToken)
+                           .ConfigureAwait(false))
+        {
+            yield return item;
+        }
     }
 
-    public override async Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> ExecuteQueryBatchAsync(
+    public override async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> ExecuteQueryBatchAsync(
         IPgQueryBatch query,
-        CancellationToken cancellationToken)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        return _pgStream!.ExecuteQueryBatch(query, cancellationToken);
+        await foreach (var item in _pgStream!.ExecuteQueryBatch(query, cancellationToken)
+                           .ConfigureAwait(false))
+        {
+            yield return item;
+        }
     }
 
     public override Task CloseAsync(CancellationToken cancellationToken = default)
@@ -83,17 +93,23 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
         {
             _pgStream = null;
         }
+
         return Task.CompletedTask;
     }
 
-    public async Task<IAsyncEnumerable<byte[]>> CopyOut(ICopyTo copyOutStatement, CancellationToken cancellationToken = default)
+    public async Task<IAsyncEnumerable<byte[]>> CopyOut(
+        ICopyTo copyOutStatement,
+        CancellationToken cancellationToken = default)
     {
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
         return _pgStream!.CopyOut(copyOutStatement, cancellationToken);
     }
 
-    public async Task<QueryResult> CopyIn(ICopyFrom copyInStatement, PipeReader data, CancellationToken cancellationToken = default)
+    public async Task<QueryResult> CopyIn(
+        ICopyFrom copyInStatement,
+        PipeReader data,
+        CancellationToken cancellationToken = default)
     {
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
@@ -124,7 +140,7 @@ public sealed class PgConnection : AbstractConnection<IPgExecutableQuery, IPgBin
         await _pgStream!.ExecuteTransactionCommand(transactionCommand, cancellationToken)
             .ConfigureAwait(false);
     }
-    
+
     /// <summary>
     /// Call <see cref="OpenAsync"/> is the connection is closed.
     /// </summary>

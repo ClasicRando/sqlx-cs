@@ -85,9 +85,8 @@ public partial class PgConnectionTest
     private static async Task<long> GetConnectionTransactionId(IPgConnection connection, CancellationToken ct)
     {
         using IPgExecutableQuery query = connection.CreateQuery("SELECT txid_current();");
-        var rows = await query.ExecuteAsync(ct);
-        return await rows.Where(result => result is Either<IPgDataRow, QueryResult>.Left)
-            .Select(result => (Either<IPgDataRow, QueryResult>.Left)result)
+        return await query.ExecuteAsync(ct)
+            .OfType<Either<IPgDataRow, QueryResult>.Left>()
             .Select(row => row.Value.GetLongNotNull(0))
             .FirstAsync(ct);
     }

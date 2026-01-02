@@ -19,8 +19,7 @@ public partial class PgConnectionTest
         using IPgExecutableQuery query = connection.CreateQuery(extendedQuery);
         query.Bind(1);
         query.Bind(10);
-        var flow = await connection.ExecuteQueryAsync(query, ct);
-        var results = await flow.CollectResults();
+        var results = await connection.ExecuteQueryAsync(query, ct).CollectResults();
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
         await Assert.That(result.RowsAffected).IsEqualTo(10);
@@ -42,8 +41,7 @@ public partial class PgConnectionTest
         using IPgExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall.Bind((int?)null);
         procedureCall.Bind((int?)null);
-        var flow = await connection.ExecuteQueryAsync(procedureCall, ct);
-        var results = await flow.CollectResults();
+        var results = await connection.ExecuteQueryAsync(procedureCall, ct).CollectResults();
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
         await Assert.That(result.RowsAffected).IsEqualTo(0);
@@ -62,8 +60,7 @@ public partial class PgConnectionTest
         using IPgExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall.Bind(2);
         procedureCall.Bind("start");
-        var flow = await connection.ExecuteQueryAsync(procedureCall, ct);
-        var results = await flow.CollectResults();
+        var results = await connection.ExecuteQueryAsync(procedureCall, ct).CollectResults();
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
         await Assert.That(result.RowsAffected).IsEqualTo(0);
@@ -82,8 +79,7 @@ public partial class PgConnectionTest
         sleepStatement.Bind(5);
         var ex = await Assert.ThrowsAsync<PgException>(async () =>
         {
-            var results = await connection.ExecuteQueryAsync(sleepStatement, ct);
-            await results.CollectResults();
+            await connection.ExecuteQueryAsync(sleepStatement, ct).CollectResults();
         });
         await Assert.That(ex!.Message).Contains("canceling statement due to statement timeout");
     }

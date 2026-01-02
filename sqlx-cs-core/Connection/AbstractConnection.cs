@@ -4,7 +4,7 @@ using Sqlx.Core.Result;
 
 namespace Sqlx.Core.Connection;
 
-public abstract class AbstractConnection<TQuery, TBindable, TQueryBatch, TDataRow> : IConnection<TQuery, TBindable, TQueryBatch, TDataRow>, IDisposable
+public abstract class AbstractConnection<TQuery, TBindable, TQueryBatch, TDataRow> : IConnection<TQuery, TBindable, TQueryBatch, TDataRow>
     where TQuery : IExecutableQuery<TDataRow>
     where TBindable : IBindable
     where TQueryBatch : IQueryBatch<TBindable, TDataRow>
@@ -61,11 +61,11 @@ public abstract class AbstractConnection<TQuery, TBindable, TQueryBatch, TDataRo
     public abstract TQuery CreateQuery(string query);
     public abstract TQueryBatch CreateQueryBatch();
 
-    public abstract Task<IAsyncEnumerable<Either<TDataRow, QueryResult>>> ExecuteQueryAsync(
+    public abstract IAsyncEnumerable<Either<TDataRow, QueryResult>> ExecuteQueryAsync(
         TQuery query,
         CancellationToken cancellationToken);
 
-    public abstract Task<IAsyncEnumerable<Either<TDataRow, QueryResult>>> ExecuteQueryBatchAsync(
+    public abstract IAsyncEnumerable<Either<TDataRow, QueryResult>> ExecuteQueryBatchAsync(
         TQueryBatch query,
         CancellationToken cancellationToken);
 

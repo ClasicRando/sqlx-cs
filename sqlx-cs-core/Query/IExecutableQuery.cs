@@ -36,6 +36,6 @@ public interface IExecutableQuery<TDataRow> : IBindable
     /// </summary>
     /// <param name="cancellationToken">cancellation token</param>
     /// <returns>async generator of query result objects</returns>
-    Task<IAsyncEnumerable<Either<TDataRow, QueryResult>>> ExecuteAsync(
-        CancellationToken cancellationToken);
+    IAsyncEnumerable<Either<TDataRow, QueryResult>> ExecuteAsync(
+        CancellationToken cancellationToken = default);
 }

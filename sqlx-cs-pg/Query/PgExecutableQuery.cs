@@ -128,7 +128,7 @@ internal class PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor) : I
         _parameterBuffer.EncodeValue<TValue, TType>(value);
     }
 
-    public Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> ExecuteAsync(
+    public IAsyncEnumerable<Either<IPgDataRow, QueryResult>> ExecuteAsync(
         CancellationToken cancellationToken)
     {
         PgException.ThrowIfNull(_queryExecutor);

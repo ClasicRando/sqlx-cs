@@ -52,14 +52,12 @@ public sealed class QueryBatchResult<TBindable, TDataRow> : IAsyncDisposable
         await _resultStreamEnumerator.DisposeAsync();
     }
 
-    internal static async Task<QueryBatchResult<TBindable, TDataRow>> CreateAsync(
+    internal static QueryBatchResult<TBindable, TDataRow> Create(
         IQueryBatch<TBindable, TDataRow> queryBatch,
         CancellationToken cancellationToken)
     {
-        var resultStream = await queryBatch.ExecuteBatch(cancellationToken);
+        var resultStream = queryBatch.ExecuteBatch(cancellationToken);
         var resultStreamEnumerator = resultStream.GetAsyncEnumerator(cancellationToken);
-        return new QueryBatchResult<TBindable, TDataRow>(
-            queryBatch,
-            resultStreamEnumerator);
+        return new QueryBatchResult<TBindable, TDataRow>(queryBatch, resultStreamEnumerator);
     }
 }

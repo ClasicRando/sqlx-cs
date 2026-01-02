@@ -26,9 +26,9 @@ public sealed partial class PgStream
     {
         ThrowIfNotOpen();
 
+        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
             Status = ConnectionStatus.Executing;
             await SendQueryMessage(copyOutStatement.ToCopyQuery(), cancellationToken)
@@ -88,9 +88,9 @@ public sealed partial class PgStream
     {
         ThrowIfNotOpen();
 
+        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
             Status = ConnectionStatus.Executing;
             await SendQueryMessage(copyInStatement.ToCopyQuery(), cancellationToken)

@@ -19,8 +19,7 @@ public partial class PgConnectionTest
             """;
         using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(simpleQuery);
-        var flow = await connection.ExecuteQueryAsync(query, ct);
-        var results = await flow.CollectResults();
+        var results = await connection.ExecuteQueryAsync(query, ct).CollectResults();
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
         await Assert.That(result.RowsAffected).IsEqualTo(10);
@@ -39,10 +38,7 @@ public partial class PgConnectionTest
         using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery procedureCall = connection.CreateQuery(OutProcedureCallSimpleQuery);
-        var flow = await connection.ExecuteQueryAsync(
-            procedureCall,
-            ct);
-        var results = await flow.CollectResults();
+        var results = await connection.ExecuteQueryAsync(procedureCall, ct).CollectResults();
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
         await Assert.That(result.RowsAffected).IsEqualTo(0);
@@ -62,10 +58,7 @@ public partial class PgConnectionTest
         using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery multiStatement = connection.CreateQuery(multiStatementQuery);
-        var flow = await connection.ExecuteQueryAsync(
-            multiStatement,
-            ct);
-        var results = await flow.CollectResults();
+        var results = await connection.ExecuteQueryAsync(multiStatement, ct).CollectResults();
         await Assert.That(results.Count).IsEqualTo(2);
         (var firstRows, QueryResult firstResult) = results[0];
         await Assert.That(firstResult.RowsAffected).IsEqualTo(0);
@@ -87,10 +80,7 @@ public partial class PgConnectionTest
         using IPgExecutableQuery multiStatement = connection.CreateQuery(sleepQuery);
         var ex = await Assert.ThrowsAsync<PgException>(async () =>
         {
-            var results = await connection.ExecuteQueryAsync(
-                multiStatement,
-                ct);
-            await results.CollectResults();
+            await connection.ExecuteQueryAsync(multiStatement, ct).CollectResults();
         });
         await Assert.That(ex!.Message).Contains("canceling statement due to statement timeout");
     }

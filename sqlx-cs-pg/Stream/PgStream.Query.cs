@@ -79,9 +79,9 @@ public partial class PgStream
         ArgumentException.ThrowIfNullOrWhiteSpace(sql);
         ThrowIfNotOpen();
 
+        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
             Status = ConnectionStatus.Executing;
             await SendQueryMessage(sql, cancellationToken).ConfigureAwait(false);
@@ -126,9 +126,9 @@ public partial class PgStream
         ArgumentException.ThrowIfNullOrWhiteSpace(executableQuery.Query);
         ThrowIfNotOpen();
 
+        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
             Status = ConnectionStatus.Executing;
             PgPreparedStatement statement = await GetOrPrepareStatement(
@@ -171,9 +171,9 @@ public partial class PgStream
         PgQueryBatch pgQueryBatch = PgException.CheckIfIs<IPgQueryBatch, PgQueryBatch>(queryBatch);
         var syncAll = queryBatch.WrapBatchInTransaction;
 
+        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
             Status = ConnectionStatus.Executing;
             var queries = pgQueryBatch.Queries;

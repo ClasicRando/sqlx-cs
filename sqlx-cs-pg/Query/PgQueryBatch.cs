@@ -27,7 +27,7 @@ public sealed class PgQueryBatch(IPgQueryExecutor queryExecutor) : IPgQueryBatch
         return query;
     }
 
-    public Task<IAsyncEnumerable<Either<IPgDataRow, QueryResult>>> ExecuteBatch(CancellationToken cancellationToken)
+    public IAsyncEnumerable<Either<IPgDataRow, QueryResult>> ExecuteBatch(CancellationToken cancellationToken)
     {
         CheckDisposed();
         return _queryExecutor!.ExecuteQueryBatchAsync(this, cancellationToken);

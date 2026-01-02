@@ -150,9 +150,9 @@ public sealed partial class PgStream : IPooledConnection
     public async Task<bool> IsValidAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfNotOpen();
+        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
             await SendQueryMessage("SELECT 1;", cancellationToken).ConfigureAwait(false);
             var result = await WaitForOrError<ReadyForQueryMessage>(cancellationToken)
@@ -238,9 +238,9 @@ public sealed partial class PgStream : IPooledConnection
         CancellationToken cancellationToken)
     {
         ThrowIfNotOpen();
+        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
             switch (transactionCommand)
             {

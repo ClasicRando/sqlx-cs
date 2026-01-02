@@ -23,8 +23,8 @@ public static class ExecutableQuery
         public async Task<long> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
         {
             long count = 0;
-            var results = await executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            await foreach (var result in results.ConfigureAwait(false).WithCancellation(cancellationToken))
+            var results = executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            await foreach (var result in results)
             {
                 if (result is Either<TDataRow, QueryResult>.Right right)
                 {
@@ -43,13 +43,12 @@ public static class ExecutableQuery
         /// <param name="cancellationToken">optional cancellation token</param>
         /// <typeparam name="TRow">row type to map each row into</typeparam>
         /// <returns>a stream of result set rows mapped to the desired row type</returns>
-        public async IAsyncEnumerable<TRow> FetchAsync<TRow>([EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<TRow> FetchAsync<TRow>(
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            var results = await executableQuery.ExecuteAsync(cancellationToken)
-                .ConfigureAwait(false);
-            await foreach (var result in results.ConfigureAwait(false)
-                               .WithCancellation(cancellationToken))
+            var results = executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            await foreach (var result in results)
             {
                 switch (result)
                 {
@@ -70,7 +69,8 @@ public static class ExecutableQuery
         /// <param name="cancellationToken">optional cancellation token</param>
         /// <typeparam name="TRow">row type to map the row into</typeparam>
         /// <returns>a list of result set rows mapped to the desired row type</returns>
-        public ValueTask<List<TRow>> FetchAllAsync<TRow>(CancellationToken cancellationToken = default)
+        public ValueTask<List<TRow>> FetchAllAsync<TRow>(
+            CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
             return executableQuery.FetchAsync<TDataRow, TRow>(cancellationToken)
@@ -99,7 +99,8 @@ public static class ExecutableQuery
         /// <returns>
         /// the first row found when executing this query or the default value when no rows are found
         /// </returns>
-        public Task<TRow?> FetchFirstOrDefaultAsync<TRow>(CancellationToken cancellationToken = default)
+        public Task<TRow?> FetchFirstOrDefaultAsync<TRow>(
+            CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
             return executableQuery.FetchRowAsync<TDataRow, TRow>(false, false, cancellationToken);
@@ -113,10 +114,14 @@ public static class ExecutableQuery
         /// <typeparam name="TRow">row type to map the row into</typeparam>
         /// <returns>the first row found when executing this query</returns>
         /// <exception cref="SqlxException">if zero or more than 1 row is returned</exception>
-        public async Task<TRow> FetchSingleAsync<TRow>(CancellationToken cancellationToken = default)
+        public async Task<TRow> FetchSingleAsync<TRow>(
+            CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            return await executableQuery.FetchRowAsync<TDataRow, TRow>(true, true, cancellationToken);
+            return await executableQuery.FetchRowAsync<TDataRow, TRow>(
+                true,
+                true,
+                cancellationToken);
         }
 
         /// <summary>
@@ -129,7 +134,8 @@ public static class ExecutableQuery
         /// the first row found when executing this query or the default value when no rows are found
         /// </returns>
         /// <exception cref="SqlxException">if more than 1 row is returned</exception>
-        public Task<TRow?> FetchSingleOrDefaultAsync<TRow>(CancellationToken cancellationToken = default)
+        public Task<TRow?> FetchSingleOrDefaultAsync<TRow>(
+            CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
             return executableQuery.FetchRowAsync<TDataRow, TRow>(true, false, cancellationToken);
@@ -154,8 +160,10 @@ public static class ExecutableQuery
             CancellationToken cancellationToken)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            var results = executableQuery.FetchAsync<TDataRow, TRow>(cancellationToken).ConfigureAwait(false);
-            await using ConfiguredCancelableAsyncEnumerable<TRow>.Enumerator enumerable = results.GetAsyncEnumerator();
+            var results = executableQuery.FetchAsync<TDataRow, TRow>(cancellationToken)
+                .ConfigureAwait(false);
+            await using ConfiguredCancelableAsyncEnumerable<TRow>.Enumerator enumerable =
+                results.GetAsyncEnumerator();
             if (!await enumerable.MoveNextAsync())
             {
                 return requireRow

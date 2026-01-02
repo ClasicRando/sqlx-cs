@@ -14,8 +14,7 @@ public partial class PgConnectionTest
         using IPgQueryBatch queryBatch = connection.CreateQueryBatch();
         using IPgBindable query1 = queryBatch.CreateQuery(sql1);
         using IPgBindable query2 = queryBatch.CreateQuery(sql2);
-        var flow = await connection.ExecuteQueryBatchAsync(queryBatch, ct);
-        var results = await flow.CollectResults();
+        var results = await connection.ExecuteQueryBatchAsync(queryBatch, ct).CollectResults();
         await Assert.That(results.Count).IsEqualTo(2);
         
         (var rows1, QueryResult result1) = results[0];

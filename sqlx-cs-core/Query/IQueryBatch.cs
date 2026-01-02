@@ -140,6 +140,6 @@ public interface IQueryBatch<out TBindable, TDataRow> : IDisposable
     /// <see cref="QueryResult"/>s.
     /// </summary>
     /// <returns>Stream of <typeparamref cref="TDataRow"/>s and <see cref="QueryResult"/>s</returns>
-    Task<IAsyncEnumerable<Either<TDataRow, QueryResult>>> ExecuteBatch(
-        CancellationToken cancellationToken);
+    IAsyncEnumerable<Either<TDataRow, QueryResult>> ExecuteBatch(
+        CancellationToken cancellationToken = default);
 }
