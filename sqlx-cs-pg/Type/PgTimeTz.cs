@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
@@ -25,7 +26,7 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L2335">pg source code</a>
     /// </summary>
-    public static void Encode(PgTimeTz value, WriteBuffer buffer)
+    public static void Encode(PgTimeTz value, IBufferWriter<byte> buffer)
     {
         PgTime.Encode(value.Time, buffer);
         buffer.WriteInt(value.OffsetSeconds);

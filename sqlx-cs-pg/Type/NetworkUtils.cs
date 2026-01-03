@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
 using Sqlx.Core.Buffer;
@@ -33,7 +34,7 @@ internal static class NetworkUtils
         IPAddress value,
         byte prefix,
         PgTypeInfo dataType,
-        WriteBuffer buffer)
+        IBufferWriter<byte> buffer)
         where T : notnull
     {
         var isIpv6 = value.AddressFamily is AddressFamily.InterNetworkV6;

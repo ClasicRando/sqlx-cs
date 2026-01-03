@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Result;
 
@@ -31,7 +32,7 @@ public readonly struct PgPoint(double x, double y)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1853">pg source code</a>
     /// </summary>
-    public static void Encode(PgPoint value, WriteBuffer buffer)
+    public static void Encode(PgPoint value, IBufferWriter<byte> buffer)
     {
         buffer.WriteDouble(value.X);
         buffer.WriteDouble(value.Y);

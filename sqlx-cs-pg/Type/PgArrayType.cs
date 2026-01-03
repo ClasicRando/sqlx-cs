@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
@@ -25,7 +26,7 @@ internal static class PgArrayTypeUtils
     /// <param name="buffer">Buffer to write the metadata to</param>
     /// <typeparam name="TElement">Array element type</typeparam>
     /// <typeparam name="TType">Array element's <see cref="IPgDbType{T}"/></typeparam>
-    public static void EncodeMetaFields<TElement, TType>(int length, WriteBuffer buffer)
+    public static void EncodeMetaFields<TElement, TType>(int length, IBufferWriter<byte> buffer)
         where TType : IPgDbType<TElement>, IHasArrayType
         where TElement : notnull
     {
@@ -52,6 +53,7 @@ internal static class PgArrayTypeUtils
         {
             return 0;
         }
+
         ColumnDecodeException.CheckOrThrow<TElement[]>(
             dimensions == 1,
             value.ColumnMetadata,
@@ -65,15 +67,15 @@ internal static class PgArrayTypeUtils
             elementTypeOid == TType.DbType.TypeOid.Inner,
             value.ColumnMetadata,
             $"Attempted to read an array with another element type. Expected {TType.DbType.TypeOid} but found {elementTypeOid}");
-        
+
         var length = value.Buffer.ReadInt();
         var lowerBound = value.Buffer.ReadInt();
-        
+
         ColumnDecodeException.CheckOrThrow<TElement[]>(
             lowerBound == 1,
             value.ColumnMetadata,
             $"Attempted to read an array with a lower bound other than 1. Got {lowerBound}");
-        
+
         return length;
     }
 
@@ -91,11 +93,12 @@ internal static class PgArrayTypeUtils
                 value.ColumnMetadata,
                 $"Array literal must be enclosed in curly braces. Found '{value}'");
         }
+
         if (value.Chars is "{}")
         {
             return [];
         }
-        
+
         List<string?> result = [];
         using ReadOnlySpan<char>.Enumerator chars = value.Chars[1..^1].GetEnumerator();
         var builder = new StringBuilder();
@@ -106,7 +109,7 @@ internal static class PgArrayTypeUtils
         while (!isDone)
         {
             var foundDelimiter = false;
-            
+
             while (true)
             {
                 if (!chars.MoveNext())
@@ -114,7 +117,7 @@ internal static class PgArrayTypeUtils
                     isDone = true;
                     break;
                 }
-            
+
                 var currentChar = chars.Current;
                 if (inEscape)
                 {
@@ -122,7 +125,7 @@ internal static class PgArrayTypeUtils
                     inEscape = false;
                     continue;
                 }
-            
+
                 switch (currentChar)
                 {
                     case '"':
@@ -138,10 +141,10 @@ internal static class PgArrayTypeUtils
                         builder.Append(currentChar);
                         break;
                 }
-                
+
                 if (foundDelimiter) break;
             }
-            
+
             var slice = builder.ToString();
             result.Add(slice is "NULL" ? null : slice);
             builder.Clear();
@@ -171,7 +174,7 @@ internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/d57b7cc3338e9d9aa1d7c5da1b25a17c5a72dcce/src/backend/utils/adt/arrayfuncs.c#L1272">pg source code</a>
     /// </summary>
-    public static void Encode(TElement?[] value, WriteBuffer buffer)
+    public static void Encode(TElement?[] value, IBufferWriter<byte> buffer)
     {
         PgArrayTypeUtils.EncodeMetaFields<TElement, TType>(value.Length, buffer);
         foreach (TElement? element in value)
@@ -181,9 +184,8 @@ internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[
                 buffer.WriteInt(-1);
                 continue;
             }
-            var startPosition = buffer.StartWritingLengthPrefixed();
-            TType.Encode(element, buffer);
-            buffer.FinishWritingLengthPrefixed(startPosition, includeLength: false);
+
+            buffer.WriteLengthPrefixed(buff => TType.Encode(element, buff), includeLength: false);
         }
     }
 
@@ -237,7 +239,7 @@ internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[
     {
         var slices = PgArrayTypeUtils.DecodeTextSlices<TElement>(ref value);
         var result = new TElement?[slices.Count];
-        
+
         for (var index = 0; index < slices.Count; index++)
         {
             var slice = slices[index];
@@ -254,7 +256,7 @@ internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[
 
         return result;
     }
-    
+
     public static PgTypeInfo DbType => TType.ArrayDbType;
 
     public static bool IsCompatible(PgTypeInfo typeInfo)
@@ -291,7 +293,7 @@ internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/d57b7cc3338e9d9aa1d7c5da1b25a17c5a72dcce/src/backend/utils/adt/arrayfuncs.c#L1272">pg source code</a>
     /// </summary>
-    public static void Encode(TElement?[] value, WriteBuffer buffer)
+    public static void Encode(TElement?[] value, IBufferWriter<byte> buffer)
     {
         PgArrayTypeUtils.EncodeMetaFields<TElement, TType>(value.Length, buffer);
         foreach (var element in value)
@@ -301,9 +303,10 @@ internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?
                 buffer.WriteInt(-1);
                 continue;
             }
-            var startPosition = buffer.StartWritingLengthPrefixed();
-            TType.Encode(element.Value, buffer);
-            buffer.FinishWritingLengthPrefixed(startPosition, includeLength: false);
+
+            buffer.WriteLengthPrefixed(
+                buff => TType.Encode(element.Value, buff),
+                includeLength: false);
         }
     }
 
@@ -357,7 +360,7 @@ internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?
     {
         var slices = PgArrayTypeUtils.DecodeTextSlices<TElement>(ref value);
         var result = new TElement?[slices.Count];
-        
+
         for (var index = 0; index < slices.Count; index++)
         {
             var slice = slices[index];
@@ -374,7 +377,7 @@ internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?
 
         return result;
     }
-    
+
     public static PgTypeInfo DbType => TType.ArrayDbType;
 
     public static bool IsCompatible(PgTypeInfo typeInfo)

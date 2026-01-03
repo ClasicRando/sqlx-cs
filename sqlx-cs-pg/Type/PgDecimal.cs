@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Runtime.InteropServices;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
@@ -61,7 +62,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/a6c21887a9f0251fa2331ea3ad0dd20b31c4d11d/src/backend/utils/adt/numeric.c#L1068">pg source code</a>
     /// </summary>
-    public static void Encode(decimal value, WriteBuffer buffer)
+    public static void Encode(decimal value, IBufferWriter<byte> buffer)
     {
         EncodeDecimal(value, buffer);
     }
@@ -285,7 +286,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
     /// <a href="https://github.com/npgsql/npgsql/blob/19f466e3e12106b9e7a81e67d07c4df56467a861/src/Npgsql/Internal/Converters/Primitive/PgNumeric.cs#L295"></a>
     /// <param name="value">value to encode as a postgres base 10000 set of digits</param>
     /// <param name="buffer">buffer to encode the decimal value into</param>
-    private static void EncodeDecimal(decimal value, WriteBuffer buffer)
+    private static void EncodeDecimal(decimal value, IBufferWriter<byte> buffer)
     {
         if (value == decimal.Zero)
         {

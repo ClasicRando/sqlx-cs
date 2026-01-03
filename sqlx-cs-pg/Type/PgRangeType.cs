@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
@@ -24,7 +25,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/rangetypes.c#L177">pg source code</a>
     /// </summary>
-    public static void Encode(PgRange<TValue> value, WriteBuffer buffer)
+    public static void Encode(PgRange<TValue> value, IBufferWriter<byte> buffer)
     {
         var flags = RangeFlag.Zero;
 
@@ -46,9 +47,9 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
         {
             case BoundType.Included when value.Lower.Value is not null:
             case BoundType.Excluded when value.Lower.Value is not null:
-                var startPosition = buffer.StartWritingLengthPrefixed();
-                TType.Encode(value.Lower.Value, buffer);
-                buffer.FinishWritingLengthPrefixed(startPosition, includeLength: false);
+                buffer.WriteLengthPrefixed(
+                    buff => TType.Encode(value.Lower.Value, buff),
+                    includeLength: false);
                 break;
             case BoundType.Unbounded:
                 break;
@@ -60,9 +61,9 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
         {
             case BoundType.Included when value.Upper.Value is not null:
             case BoundType.Excluded when value.Upper.Value is not null:
-                var startPosition = buffer.StartWritingLengthPrefixed();
-                TType.Encode(value.Upper.Value, buffer);
-                buffer.FinishWritingLengthPrefixed(startPosition, includeLength: false);
+                buffer.WriteLengthPrefixed(
+                    buff => TType.Encode(value.Upper.Value, buff),
+                    includeLength: false);
                 break;
             case BoundType.Unbounded:
                 break;
@@ -126,7 +127,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
                 ? Bound<TValue>.Included(lowerValue)
                 : Bound<TValue>.Excluded(lowerValue);
         }
-            
+
         if (!flags.HasFlag(RangeFlag.UpperBoundInfinite))
         {
             var upperBoundLength = value.Buffer.ReadInt();
@@ -163,7 +164,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
     {
         var start = Bound<TValue>.Unbounded();
         var end = Bound<TValue>.Unbounded();
-        
+
         PgTextValue validChars = value.Slice(1..^1);
         var separatorIndex = FindRangeSeparatorIndex(validChars);
         if (separatorIndex == -1)
@@ -172,7 +173,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
                 value.ColumnMetadata,
                 $"Could not find separator character in '{value}'");
         }
-        
+
         if (separatorIndex != 0)
         {
             PgTextValue startSlice = validChars.Slice(..separatorIndex);
@@ -186,7 +187,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
             TValue upperBoundValue = TType.DecodeText(endSlice);
             end = DecodeBound(value.Chars[^1], upperBoundValue, value.ColumnMetadata);
         }
-        
+
         return new PgRange<TValue>(start, end);
     }
 
@@ -217,7 +218,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
                 inEscape = false;
                 continue;
             }
-            
+
             switch (currentChar)
             {
                 case '"' when inQuotes:
@@ -233,6 +234,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
                     return i;
             }
         }
+
         return -1;
     }
 

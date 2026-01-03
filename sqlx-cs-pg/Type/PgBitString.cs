@@ -22,7 +22,7 @@ public abstract class PgBitString : IPgDbType<BitArray>, IHasArrayType
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/d57b7cc3338e9d9aa1d7c5da1b25a17c5a72dcce/src/backend/utils/adt/varbit.c#L636">pg source code</a>
     /// </summary>
-    public static void Encode(BitArray value, WriteBuffer buffer)
+    public static void Encode(BitArray value, IBufferWriter<byte> buffer)
     {
         var byteCount = GetByteCountFromBitCount(value.Length);
         buffer.WriteInt(value.Length);

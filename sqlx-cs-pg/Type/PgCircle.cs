@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
@@ -28,7 +29,7 @@ public readonly struct PgCircle(PgPoint center, double radius)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L4703">pg source code</a>
     /// </summary>
-    public static void Encode(PgCircle value, WriteBuffer buffer)
+    public static void Encode(PgCircle value, IBufferWriter<byte> buffer)
     {
         PgPoint.Encode(value.Center, buffer);
         buffer.WriteDouble(value.Radius);

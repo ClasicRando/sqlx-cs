@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Result;
 
@@ -29,7 +30,7 @@ public readonly struct PgPolygon(PgPoint[] points)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L3475">pg source code</a>
     /// </summary>
-    public static void Encode(PgPolygon value, WriteBuffer buffer)
+    public static void Encode(PgPolygon value, IBufferWriter<byte> buffer)
     {
         GeometryUtils.EncodePoints(value.Points, buffer);
     }

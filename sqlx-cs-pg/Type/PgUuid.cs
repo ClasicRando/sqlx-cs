@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
@@ -14,7 +15,7 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
     /// Writes the bytes of the <see cref="Guid"/> using
     /// <see cref="Guid.TryWriteBytes(Span{byte}, bool, out int)"/>.
     /// </summary>
-    public static void Encode(Guid value, WriteBuffer buffer)
+    public static void Encode(Guid value, IBufferWriter<byte> buffer)
     {
         var span = buffer.GetSpan(16);
         if (!value.TryWriteBytes(span, bigEndian: false, out _))

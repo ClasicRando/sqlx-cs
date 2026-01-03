@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
@@ -18,7 +19,7 @@ internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayTy
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L209">pg source code</a>
     /// </summary>
-    public static void Encode(DateOnly value, WriteBuffer buffer)
+    public static void Encode(DateOnly value, IBufferWriter<byte> buffer)
     {
         buffer.WriteInt(value.DayNumber - PostgresEpoch.DayNumber);
     }

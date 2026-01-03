@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Net.NetworkInformation;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
@@ -62,7 +63,7 @@ public readonly record struct PgMacAddress8(
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/mac8.c#L253">pg source code - macaddr8</a>
     /// </summary>
-    public static void Encode(PgMacAddress8 value, WriteBuffer buffer)
+    public static void Encode(PgMacAddress8 value, IBufferWriter<byte> buffer)
     {
         buffer.WriteByte(value.A);
         buffer.WriteByte(value.B);

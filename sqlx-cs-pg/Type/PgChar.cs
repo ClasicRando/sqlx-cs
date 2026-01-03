@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
@@ -16,7 +17,7 @@ internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
     /// <summary>
     /// Simply writes the <see cref="sbyte"/> value to the buffer as a <see cref="byte"/>
     /// </summary>
-    public static void Encode(sbyte value, WriteBuffer buffer)
+    public static void Encode(sbyte value, IBufferWriter<byte> buffer)
     {
         buffer.WriteByte((byte)value);
     }

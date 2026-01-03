@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
@@ -42,7 +43,7 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/timestamp.c#L1007">pg source code</a>
     /// </summary>
-    public static void Encode(PgInterval value, WriteBuffer buffer)
+    public static void Encode(PgInterval value, IBufferWriter<byte> buffer)
     {
         buffer.WriteLong(value.Microseconds);
         buffer.WriteInt(value.Days);

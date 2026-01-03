@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Net;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Result;
@@ -18,7 +19,7 @@ internal abstract class PgIpNetwork : IPgDbType<IPNetwork>, IHasArrayType
 {
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <see cref="NetworkUtils.EncodeNetworkValue"/>
-    public static void Encode(IPNetwork value, WriteBuffer buffer)
+    public static void Encode(IPNetwork value, IBufferWriter<byte> buffer)
     {
         NetworkUtils.EncodeNetworkValue<IPNetwork>(
             value.BaseAddress,

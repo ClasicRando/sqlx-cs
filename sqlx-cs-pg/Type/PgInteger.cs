@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Types;
@@ -73,7 +74,7 @@ internal abstract class PgLong : IPgDbType<long>, IHasRangeType, IHasArrayType
     /// <summary>
     /// Writes the <see cref="long"/> value to the buffer
     /// </summary>
-    public static void Encode(long value, WriteBuffer buffer)
+    public static void Encode(long value, IBufferWriter<byte> buffer)
     {
         buffer.WriteLong(value);
     }
@@ -122,7 +123,7 @@ internal abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
     /// <summary>
     /// Writes the <see cref="int"/> value to the buffer
     /// </summary>
-    public static void Encode(int value, WriteBuffer buffer)
+    public static void Encode(int value, IBufferWriter<byte> buffer)
     {
         buffer.WriteInt(value);
     }
@@ -178,7 +179,7 @@ internal abstract class PgShort : IPgDbType<short>, IHasArrayType
     /// <summary>
     /// Writes the <see cref="short"/> value to the buffer
     /// </summary>
-    public static void Encode(short value, WriteBuffer buffer)
+    public static void Encode(short value, IBufferWriter<byte> buffer)
     {
         buffer.WriteShort(value);
     }

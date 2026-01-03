@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
@@ -37,7 +38,7 @@ public readonly struct PgBox : IPgDbType<PgBox>, IGeometryType, IHasArrayType, I
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L466">pg source code</a>
     /// </summary>
-    public static void Encode(PgBox value, WriteBuffer buffer)
+    public static void Encode(PgBox value, IBufferWriter<byte> buffer)
     {
         PgPoint.Encode(value.High, buffer);
         PgPoint.Encode(value.Low, buffer);

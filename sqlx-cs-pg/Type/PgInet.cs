@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Net;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Result;
@@ -47,7 +48,7 @@ public readonly record struct PgInet : IPgDbType<PgInet>, IHasArrayType
     
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <see cref="NetworkUtils.EncodeNetworkValue"/>
-    public static void Encode(PgInet value, WriteBuffer buffer)
+    public static void Encode(PgInet value, IBufferWriter<byte> buffer)
     {
         NetworkUtils.EncodeNetworkValue<PgInet>(value.Address, value.NetmaskSize, DbType, buffer);
     }

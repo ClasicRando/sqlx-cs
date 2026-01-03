@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Query;
@@ -54,7 +55,7 @@ public readonly struct TestCompositeType : IPgUdt<TestCompositeType>, IFromRow<I
     
     public static string TypeName => "composite_type";
     
-    public static void Encode(TestCompositeType value, WriteBuffer buffer)
+    public static void Encode(TestCompositeType value, IBufferWriter<byte> buffer)
     {
         using PgRecordEncoder recordEncoder = new(DbType);
         recordEncoder.Bind(value.Id);

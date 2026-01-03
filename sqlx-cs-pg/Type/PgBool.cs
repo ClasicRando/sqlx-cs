@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
@@ -19,7 +20,7 @@ internal abstract class PgBool : IPgDbType<bool>, IHasArrayType
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/a6c21887a9f0251fa2331ea3ad0dd20b31c4d11d/src/backend/utils/adt/bool.c#L174">pg source code</a>
     /// </summary>
-    public static void Encode(bool value, WriteBuffer buffer)
+    public static void Encode(bool value, IBufferWriter<byte> buffer)
     {
         buffer.WriteByte((byte)(value ? 1 : 0));
     }

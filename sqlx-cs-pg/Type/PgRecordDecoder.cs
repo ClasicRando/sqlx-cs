@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Text;
+using Sqlx.Core;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Result;
@@ -111,9 +112,11 @@ public static class PgRecordDecoder
                 continue;
             }
 
-            var startPosition = writeBuffer.StartWritingLengthPrefixed();
-            writeBuffer.WriteString(attributeLiteral);
-            writeBuffer.FinishWritingLengthPrefixed(startPosition, false);
+            var literalByteCount = Charsets.Default.GetByteCount(attributeLiteral);
+            writeBuffer.WriteInt(literalByteCount);
+            var span = writeBuffer.GetSpan(literalByteCount);
+            Charsets.Default.GetBytes(attributeLiteral, span);
+            writeBuffer.Advance(literalByteCount);
         }
 
         var buffer = ArrayPool<byte>.Shared.Rent(writeBuffer.ReadableSpan.Length);

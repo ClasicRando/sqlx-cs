@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
@@ -28,7 +29,7 @@ public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L2092">pg source code</a>
     /// </summary>
-    public static void Encode(PgLineSegment value, WriteBuffer buffer)
+    public static void Encode(PgLineSegment value, IBufferWriter<byte> buffer)
     {
         PgPoint.Encode(value.Point1, buffer);
         PgPoint.Encode(value.Point2, buffer);

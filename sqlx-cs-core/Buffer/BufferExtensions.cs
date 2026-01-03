@@ -43,14 +43,14 @@ public static class BufferExtensions
 
     extension(IBufferWriter<byte> bufferWriter)
     {
-        public void WriteByte(byte value)
+        public void WriteByte(byte value, bool advance = true)
         {
             var span = bufferWriter.GetSpan();
             span[0] = value;
-            bufferWriter.Advance(sizeof(byte));
+            if (advance) bufferWriter.Advance(sizeof(byte));
         }
 
-        public void WriteShort(short value)
+        public void WriteShort(short value, bool advance = true)
         {
             var span = bufferWriter.GetSpan(sizeof(short));
             if (BitConverter.IsLittleEndian)
@@ -58,10 +58,10 @@ public static class BufferExtensions
                 value = BinaryPrimitives.ReverseEndianness(value);
             }
             BitConverter.TryWriteBytes(span, value);
-            bufferWriter.Advance(sizeof(short));
+            if (advance) bufferWriter.Advance(sizeof(short));
         }
 
-        public void WriteInt(int value)
+        public void WriteInt(int value, bool advance = true)
         {
             var span = bufferWriter.GetSpan(sizeof(int));
             if (BitConverter.IsLittleEndian)
@@ -69,10 +69,10 @@ public static class BufferExtensions
                 value = BinaryPrimitives.ReverseEndianness(value);
             }
             BitConverter.TryWriteBytes(span, value);
-            bufferWriter.Advance(sizeof(int));
+            if (advance) bufferWriter.Advance(sizeof(int));
         }
         
-        public void WriteUInt(uint value)
+        public void WriteUInt(uint value, bool advance = true)
         {
             var span = bufferWriter.GetSpan(sizeof(uint));
             if (BitConverter.IsLittleEndian)
@@ -80,10 +80,10 @@ public static class BufferExtensions
                 value = BinaryPrimitives.ReverseEndianness(value);
             }
             BitConverter.TryWriteBytes(span, value);
-            bufferWriter.Advance(sizeof(uint));
+            if (advance) bufferWriter.Advance(sizeof(uint));
         }
 
-        public void WriteLong(long value)
+        public void WriteLong(long value, bool advance = true)
         {
             var span = bufferWriter.GetSpan(sizeof(long));
             if (BitConverter.IsLittleEndian)
@@ -91,10 +91,10 @@ public static class BufferExtensions
                 value = BinaryPrimitives.ReverseEndianness(value);
             }
             BitConverter.TryWriteBytes(span, value);
-            bufferWriter.Advance(sizeof(long));
+            if (advance) bufferWriter.Advance(sizeof(long));
         }
 
-        public void WriteFloat(float value)
+        public void WriteFloat(float value, bool advance = true)
         {
             var span = bufferWriter.GetSpan(sizeof(float));
             if (BitConverter.IsLittleEndian)
@@ -107,10 +107,10 @@ public static class BufferExtensions
             {
                 BitConverter.TryWriteBytes(span, value);
             }
-            bufferWriter.Advance(sizeof(float));
+            if (advance) bufferWriter.Advance(sizeof(float));
         }
 
-        public void WriteDouble(double value)
+        public void WriteDouble(double value, bool advance = true)
         {
             var span = bufferWriter.GetSpan(sizeof(double));
             if (BitConverter.IsLittleEndian)
@@ -123,38 +123,41 @@ public static class BufferExtensions
             {
                 BitConverter.TryWriteBytes(span, value);
             }
-            bufferWriter.Advance(sizeof(double));
+            if (advance) bufferWriter.Advance(sizeof(double));
         }
 
-        public void WriteBytes(ReadOnlySpan<byte> bytes)
+        public void WriteBytes(ReadOnlySpan<byte> bytes, bool advance = true)
         {
-            bufferWriter.Write(bytes);
+            var span = bufferWriter.GetSpan(bytes.Length);
+            bytes.CopyTo(span);
+            if (advance) bufferWriter.Advance(bytes.Length);
         }
 
-        public void WriteBytes(ReadOnlyMemory<byte> bytes)
+        public void WriteBytes(ReadOnlyMemory<byte> bytes, bool advance = true)
         {
-            bufferWriter.Write(bytes.Span);
+            bufferWriter.WriteBytes(bytes.Span, advance);
         }
 
-        public void WriteString(ReadOnlySpan<char> value)
+        public void WriteString(ReadOnlySpan<char> value, bool advance = true)
         {
             var size = Charsets.Default.GetByteCount(value);
             var span = bufferWriter.GetSpan(size);
             Charsets.Default.GetBytes(value, span);
-            bufferWriter.Advance(size);
+            if (advance) bufferWriter.Advance(size);
         }
 
         /// <summary>
         /// Write the specified chars with a null termination to replicate a CString
         /// </summary>
-        /// <param name="value">string to write</param>
-        public void WriteCString(ReadOnlySpan<char> value)
+        /// <param name="value">String to write</param>
+        /// <param name="advance">True if </param>
+        public void WriteCString(ReadOnlySpan<char> value, bool advance = true)
         {
             if (value.Length != 0)
             {
-                bufferWriter.WriteString(value);
+                bufferWriter.WriteString(value, advance);
             }
-            bufferWriter.WriteByte(0);
+            bufferWriter.WriteByte(0, advance);
         }
 
         /// <summary>

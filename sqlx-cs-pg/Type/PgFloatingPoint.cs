@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Column;
@@ -49,7 +50,7 @@ internal abstract class PgDouble : IPgDbType<double>, IHasArrayType
     /// <summary>
     /// Writes the <see cref="double"/> value to the buffer
     /// </summary>
-    public static void Encode(double value, WriteBuffer buffer)
+    public static void Encode(double value, IBufferWriter<byte> buffer)
     {
         buffer.WriteDouble(value);
     }
@@ -95,7 +96,7 @@ internal abstract class PgFloat : IPgDbType<float>, IHasArrayType
     /// <summary>
     /// Writes the <see cref="float"/> value to the buffer
     /// </summary>
-    public static void Encode(float value, WriteBuffer buffer)
+    public static void Encode(float value, IBufferWriter<byte> buffer)
     {
         buffer.WriteFloat(value);
     }

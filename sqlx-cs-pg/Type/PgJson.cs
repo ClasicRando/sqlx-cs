@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core.Buffer;
@@ -19,13 +20,13 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// <summary>
     /// <para>
     /// Encode a value of type <typeparamref name="T"/> as JSON by deferring to
-    /// <see cref="Encode(T, WriteBuffer, JsonTypeInfo{T})"/>. This method always uses runtime JSON
-    /// serialization which is slower and uses more memory when compared to JSON serialization with
-    /// source generation.
+    /// <see cref="Encode(T, IBufferWriter{byte}, JsonTypeInfo{T})"/>. This method always uses
+    /// runtime JSON serialization which is slower and uses more memory when compared to JSON
+    /// serialization with source generation.
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/jsonb.c#L93">pg source code</a>
     /// </summary>
-    public static void Encode(T value, WriteBuffer buffer)
+    public static void Encode(T value, IBufferWriter<byte> buffer)
     {
         Encode(value, buffer, null);
     }
@@ -44,7 +45,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/jsonb.c#L93">pg source code</a>
     /// </summary>
-    public static void Encode(T value, WriteBuffer buffer, JsonTypeInfo<T>? typeInfo)
+    public static void Encode(T value, IBufferWriter<byte> buffer, JsonTypeInfo<T>? typeInfo)
     {
         buffer.WriteByte(JsonBVersion);
         Json.WriteToBuffer(buffer, value, typeInfo);

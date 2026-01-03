@@ -1,5 +1,4 @@
-using Sqlx.Core.Buffer;
-using Sqlx.Core.Types;
+using System.Buffers;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -19,7 +18,7 @@ public interface IPgDbType<T> where T : notnull
     /// </summary>
     /// <param name="value">Value to encode</param>
     /// <param name="buffer">Buffer to encode into</param>
-    static abstract void Encode(T value, WriteBuffer buffer);
+    static abstract void Encode(T value, IBufferWriter<byte> buffer);
     
     /// <param name="value">Binary encoded value sent from the database</param>
     /// <returns>

@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Result;
 
@@ -13,7 +14,7 @@ internal abstract class PgString : IPgDbType<string>, IHasArrayType
     /// <summary>
     /// Simply writes the characters to the buffer using UTF8 encoding
     /// </summary>
-    public static void Encode(string value, WriteBuffer buffer)
+    public static void Encode(string value, IBufferWriter<byte> buffer)
     {
         buffer.WriteString(value);
     }

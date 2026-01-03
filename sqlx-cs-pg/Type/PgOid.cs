@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Types;
@@ -13,7 +14,7 @@ public readonly struct PgOid(uint inner) : IEquatable<PgOid>, IPgDbType<PgOid>, 
     /// <summary>
     /// Writes the <see cref="uint"/> value to the buffer
     /// </summary>
-    public static void Encode(PgOid value, WriteBuffer buffer)
+    public static void Encode(PgOid value, IBufferWriter<byte> buffer)
     {
         buffer.WriteUInt(value.Inner);
     }

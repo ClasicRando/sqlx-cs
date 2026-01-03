@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
@@ -109,7 +110,7 @@ public static class GeometryUtils
     /// </summary>
     /// <param name="points"><see cref="PgPoint"/>s to encode</param>
     /// <param name="buffer">Buffer to encode the points to</param>
-    public static void EncodePoints(ReadOnlySpan<PgPoint> points, WriteBuffer buffer)
+    public static void EncodePoints(ReadOnlySpan<PgPoint> points, IBufferWriter<byte> buffer)
     {
         buffer.WriteInt(points.Length);
         foreach (PgPoint point in points)

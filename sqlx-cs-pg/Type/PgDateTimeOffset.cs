@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Result;
 
@@ -13,7 +14,7 @@ public abstract class PgDateTimeOffset : IPgDbType<DateTimeOffset>, IHasRangeTyp
     /// <summary>
     /// Writes <see cref="DateTimeOffset.UtcDateTime"/> using <see cref="PgDateTime.Encode"/>
     /// </summary>
-    public static void Encode(DateTimeOffset value, WriteBuffer buffer)
+    public static void Encode(DateTimeOffset value, IBufferWriter<byte> buffer)
     {
         PgDateTime.Encode(value.UtcDateTime, buffer);
     }
