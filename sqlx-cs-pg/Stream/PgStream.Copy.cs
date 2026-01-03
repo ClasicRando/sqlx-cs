@@ -144,7 +144,7 @@ public sealed partial class PgStream
 
             foreach (var chunk in readResult.Buffer)
             {
-                if (_writeBuffer.Remaining < chunk.Length)
+                if (_writeBuffer.RemainingCapacity < chunk.Length)
                 {
                     await Flush(cancellationToken).ConfigureAwait(false);
                 }

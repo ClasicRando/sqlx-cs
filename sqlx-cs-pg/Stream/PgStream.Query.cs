@@ -278,9 +278,9 @@ public partial class PgStream
     /// </param>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
     private Task ExecutePreparedStatement(
-        ReadOnlySpan<char> statementName,
+        string statementName,
         short parameterCount,
-        ReadOnlySpan<byte> encodedParameters,
+        in ReadOnlySpan<byte> encodedParameters,
         bool sendSync,
         CancellationToken cancellationToken)
     {

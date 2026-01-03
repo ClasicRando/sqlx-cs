@@ -45,77 +45,85 @@ public static class BufferExtensions
     {
         public void WriteByte(byte value)
         {
-            Span<byte> tempSpan = stackalloc byte[sizeof(byte)];
-            tempSpan[0] = value;
-            bufferWriter.Write(tempSpan);
+            var span = bufferWriter.GetSpan();
+            span[0] = value;
+            bufferWriter.Advance(sizeof(byte));
         }
 
         public void WriteShort(short value)
         {
-            Span<byte> tempSpan = stackalloc byte[sizeof(short)];
-            BitConverter.TryWriteBytes(
-                tempSpan,
-                BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value);
-            bufferWriter.Write(tempSpan);
+            var span = bufferWriter.GetSpan(sizeof(short));
+            if (BitConverter.IsLittleEndian)
+            {
+                value = BinaryPrimitives.ReverseEndianness(value);
+            }
+            BitConverter.TryWriteBytes(span, value);
+            bufferWriter.Advance(sizeof(short));
         }
 
         public void WriteInt(int value)
         {
-            Span<byte> tempSpan = stackalloc byte[sizeof(int)];
-            BitConverter.TryWriteBytes(
-                tempSpan,
-                BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value);
-            bufferWriter.Write(tempSpan);
+            var span = bufferWriter.GetSpan(sizeof(int));
+            if (BitConverter.IsLittleEndian)
+            {
+                value = BinaryPrimitives.ReverseEndianness(value);
+            }
+            BitConverter.TryWriteBytes(span, value);
+            bufferWriter.Advance(sizeof(int));
         }
         
         public void WriteUInt(uint value)
         {
-            Span<byte> tempSpan = stackalloc byte[sizeof(uint)];
-            BitConverter.TryWriteBytes(
-                tempSpan,
-                BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value);
-            bufferWriter.Write(tempSpan);
+            var span = bufferWriter.GetSpan(sizeof(uint));
+            if (BitConverter.IsLittleEndian)
+            {
+                value = BinaryPrimitives.ReverseEndianness(value);
+            }
+            BitConverter.TryWriteBytes(span, value);
+            bufferWriter.Advance(sizeof(uint));
         }
 
         public void WriteLong(long value)
         {
-            Span<byte> tempSpan = stackalloc byte[sizeof(long)];
-            BitConverter.TryWriteBytes(
-                tempSpan,
-                BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value);
-            bufferWriter.Write(tempSpan);
+            var span = bufferWriter.GetSpan(sizeof(long));
+            if (BitConverter.IsLittleEndian)
+            {
+                value = BinaryPrimitives.ReverseEndianness(value);
+            }
+            BitConverter.TryWriteBytes(span, value);
+            bufferWriter.Advance(sizeof(long));
         }
 
         public void WriteFloat(float value)
         {
-            Span<byte> tempSpan = stackalloc byte[sizeof(float)];
+            var span = bufferWriter.GetSpan(sizeof(float));
             if (BitConverter.IsLittleEndian)
             {
                 BitConverter.TryWriteBytes(
-                    tempSpan,
+                    span,
                     BinaryPrimitives.ReverseEndianness(BitConverter.SingleToInt32Bits(value)));
             }
             else
             {
-                BitConverter.TryWriteBytes(tempSpan, value);
+                BitConverter.TryWriteBytes(span, value);
             }
-            bufferWriter.Write(tempSpan);
+            bufferWriter.Advance(sizeof(float));
         }
 
         public void WriteDouble(double value)
         {
-            Span<byte> tempSpan = stackalloc byte[sizeof(double)];
+            var span = bufferWriter.GetSpan(sizeof(double));
             if (BitConverter.IsLittleEndian)
             {
                 BitConverter.TryWriteBytes(
-                    tempSpan,
+                    span,
                     BinaryPrimitives.ReverseEndianness(BitConverter.DoubleToInt64Bits(value)));
             }
             else
             {
-                BitConverter.TryWriteBytes(tempSpan, value);
+                BitConverter.TryWriteBytes(span, value);
             }
-            bufferWriter.Write(tempSpan);
+            bufferWriter.Advance(sizeof(double));
         }
 
         public void WriteBytes(ReadOnlySpan<byte> bytes)
@@ -130,11 +138,10 @@ public static class BufferExtensions
 
         public void WriteString(ReadOnlySpan<char> value)
         {
-            const int maxStackAllocSize = 1024 / (sizeof(char) / sizeof(byte));
             var size = Charsets.Default.GetByteCount(value);
-            var tempSpan = size > maxStackAllocSize ? new byte[size] : stackalloc byte[size];
-            Charsets.Default.GetBytes(value, tempSpan);
-            bufferWriter.Write(tempSpan);
+            var span = bufferWriter.GetSpan(size);
+            Charsets.Default.GetBytes(value, span);
+            bufferWriter.Advance(size);
         }
 
         /// <summary>
@@ -148,6 +155,36 @@ public static class BufferExtensions
                 bufferWriter.WriteString(value);
             }
             bufferWriter.WriteByte(0);
+        }
+
+        /// <summary>
+        /// Perform the supplied write action, eventually performing the same action against this
+        /// buffer writer. This method should only be used when the write action is completely
+        /// unknown to the caller or the sizing of such an action is impossible or costly.
+        /// Internally this method allocates a <see cref="WriteBuffer"/> to be a proxy for the write
+        /// action after which the number of bytes written during the action (as an
+        /// <see cref="int"/>) is written to this buffer followed by the entire write action
+        /// contents.
+        /// </summary>
+        /// <param name="writeAction">Write actions that must be length prefixed</param>
+        /// <param name="includeLength">
+        /// True to include the number of bytes used to store the length in the length calculation,
+        /// otherwise, just bytes written during the action are included
+        /// </param>
+        public void WriteLengthPrefixed(
+            Action<IBufferWriter<byte>> writeAction,
+            bool includeLength = true)
+        {
+            using WriteBuffer tempWriter = new(initialCapacity: 1024);
+            writeAction(tempWriter);
+            var length = tempWriter.WrittenCount + (includeLength ? sizeof(int) : 0);
+            var totalWritten = sizeof(int) + length;
+            var span = bufferWriter.GetSpan(totalWritten);
+            BitConverter.TryWriteBytes(
+                span,
+                BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(length) : length);
+            tempWriter.ReadableSpan.CopyTo(span[4..]);
+            bufferWriter.Advance(totalWritten);
         }
     }
     
