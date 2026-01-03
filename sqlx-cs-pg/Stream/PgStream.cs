@@ -39,7 +39,6 @@ public sealed partial class PgStream : IPooledConnection
     private bool _disposed;
     private readonly IAsyncStream _asyncStream;
     private readonly ILogger<PgStream> _logger;
-    private readonly WriteBuffer _writeBuffer = new();
 
     private readonly Channel<PgNotification> _notifications =
         Channel.CreateUnbounded<PgNotification>();
@@ -59,6 +58,8 @@ public sealed partial class PgStream : IPooledConnection
     }
 
     private PgConnectOptions ConnectOptions { get; }
+
+    private IBufferWriter<byte> WriteBuffer => _asyncStream.WriteBuffer;
 
     public ConnectionStatus Status { get; private set; } = ConnectionStatus.Closed;
 
@@ -568,14 +569,13 @@ public sealed partial class PgStream : IPooledConnection
     }
 
     /// <summary>
-    /// Write all content in <see cref="_writeBuffer"/> to the <see cref="_asyncStream"/> and reset
-    /// the <see cref="_writeBuffer"/> for future writes.
+    /// Write all content in <see cref="WriteBuffer"/> to the <see cref="_asyncStream"/> and reset
+    /// the <see cref="WriteBuffer"/> for future writes.
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
-    private async Task Flush(CancellationToken cancellationToken)
+    private ValueTask FlushStream(CancellationToken cancellationToken)
     {
-        await _asyncStream.WriteAsync(_writeBuffer.ReadableMemory, cancellationToken);
-        _writeBuffer.Reset();
+        return _asyncStream.FlushAsync(cancellationToken);
     }
 
     /// <summary>
@@ -662,7 +662,6 @@ public sealed partial class PgStream : IPooledConnection
         {
             try
             {
-                _writeBuffer.Reset();
                 SendTerminate().GetAwaiter().GetResult();
             }
             catch (Exception e)
@@ -671,7 +670,6 @@ public sealed partial class PgStream : IPooledConnection
             }
         }
 
-        _writeBuffer.Dispose();
         _asyncStream.Dispose();
     }
 }

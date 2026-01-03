@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.IO.Pipelines;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -16,12 +17,17 @@ public sealed class AsyncStream : IAsyncStream
     internal const int DefaultBufferSize = 1024 * 8;
     private Socket? _socket;
     private System.IO.Stream? _stream;
+    private PipeWriter? _pipeWriter;
 
     private byte[] _innerBuffer = ArrayPool.Rent(DefaultBufferSize);
     private int _bufferPosition;
     private int _bufferLength;
 
     public bool IsConnected => _socket?.Connected ?? false;
+
+    public IBufferWriter<byte> WriteBuffer => _pipeWriter ??
+                                              throw new SqlxException(
+                                                  "Attempted to access the write buffer before opening the stream");
 
     internal int InnerBufferSize => _innerBuffer.Length;
 
@@ -31,13 +37,14 @@ public sealed class AsyncStream : IAsyncStream
         for (var i = 0; i < endPoints.Length; i++)
         {
             IPEndPoint ipEndPoint = endPoints[i];
-        
+
             var socket = new Socket(ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             try
             {
                 await socket.ConnectAsync(ipEndPoint, cancellationToken);
                 _socket = socket;
                 _stream = new NetworkStream(_socket);
+                _pipeWriter = PipeWriter.Create(_stream);
             }
             catch (Exception e)
             {
@@ -49,7 +56,7 @@ public sealed class AsyncStream : IAsyncStream
                 {
                     // ignored
                 }
-                
+
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (i == endPoints.Length - 1)
@@ -64,6 +71,16 @@ public sealed class AsyncStream : IAsyncStream
     {
         SqlxException.ThrowIfNull(_stream);
         return _stream.WriteAsync(buffer, cancellationToken);
+    }
+
+    public async ValueTask FlushAsync(CancellationToken cancellationToken)
+    {
+        SqlxException.ThrowIfNull(_pipeWriter);
+        FlushResult result = await _pipeWriter.FlushAsync(cancellationToken);
+        if (result.IsCanceled)
+        {
+            throw new OperationCanceledException();
+        }
     }
 
     /// <summary>
@@ -112,19 +129,20 @@ public sealed class AsyncStream : IAsyncStream
         while (count > 0)
         {
             var bytesRead = await _stream.ReadAsync(
-                _innerBuffer.AsMemory(_bufferLength),
-                cancellationToken)
+                    _innerBuffer.AsMemory(_bufferLength),
+                    cancellationToken)
                 .ConfigureAwait(false);
             if (bytesRead == 0)
             {
                 throw new IOException("Stream closed unexpectedly");
             }
+
             count -= bytesRead;
             _bufferLength += bytesRead;
         }
 
         return;
-        
+
         void ReallocateInternalBuffer(int newSize)
         {
             var tempBuffer = _innerBuffer;
@@ -208,7 +226,7 @@ public sealed class AsyncStream : IAsyncStream
         {
             // ignored
         }
-        
+
         if (_socket is not null && _socket.Connected)
         {
             try

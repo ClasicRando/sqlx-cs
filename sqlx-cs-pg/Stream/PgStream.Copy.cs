@@ -13,6 +13,8 @@ namespace Sqlx.Postgres.Stream;
 
 public sealed partial class PgStream
 {
+    private const int MaxCopyDataSendSize = 8192;
+    
     /// <summary>
     /// Execute a <c>COPY TO</c> statement against this connection. Initiates the copy operation
     /// followed by yielding each data row until the query execution is complete
@@ -132,6 +134,7 @@ public sealed partial class PgStream
     /// </exception>
     private async Task SendCopyDataAsync(PipeReader data, CancellationToken cancellationToken)
     {
+        var bytesWritten = 0;
         while (true)
         {
             ReadResult readResult = await data.ReadAsync(cancellationToken)
@@ -144,12 +147,13 @@ public sealed partial class PgStream
 
             foreach (var chunk in readResult.Buffer)
             {
-                if (_writeBuffer.RemainingCapacity < chunk.Length)
+                if (bytesWritten > MaxCopyDataSendSize)
                 {
-                    await Flush(cancellationToken).ConfigureAwait(false);
+                    await FlushStream(cancellationToken).ConfigureAwait(false);
                 }
 
                 WriteCopyDataMessage(chunk.Span);
+                bytesWritten += chunk.Length;
             }
 
             data.AdvanceTo(readResult.Buffer.End, readResult.Buffer.End);
@@ -159,7 +163,7 @@ public sealed partial class PgStream
                 continue;
             }
 
-            await Flush(cancellationToken).ConfigureAwait(false);
+            await FlushStream(cancellationToken).ConfigureAwait(false);
             await SendCopyDoneMessage(cancellationToken).ConfigureAwait(false);
             break;
         }

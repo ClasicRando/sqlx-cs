@@ -277,7 +277,7 @@ public partial class PgStream
     /// just flushed to the server
     /// </param>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
-    private Task ExecutePreparedStatement(
+    private ValueTask ExecutePreparedStatement(
         string statementName,
         short parameterCount,
         in ReadOnlySpan<byte> encodedParameters,
@@ -291,7 +291,7 @@ public partial class PgStream
             encodedParameters);
         WriteExecuteMessage(UnnamedPortal, 0);
         WriteCloseMessage(MessageTarget.Portal, UnnamedPortal);
-        return sendSync ? WriteSync(cancellationToken) : Flush(cancellationToken);
+        return sendSync ? WriteSync(cancellationToken) : FlushStream(cancellationToken);
     }
 
     /// <summary>
@@ -374,7 +374,7 @@ public partial class PgStream
     /// should be sent by the server before proceeding with another query flow.
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
-    private async Task WriteSync(CancellationToken cancellationToken)
+    private async ValueTask WriteSync(CancellationToken cancellationToken)
     {
         await SendSyncMessage(cancellationToken).ConfigureAwait(false);
         _pendingReadyForQuery++;

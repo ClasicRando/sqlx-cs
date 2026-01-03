@@ -38,7 +38,7 @@ public sealed partial class PgStream
     private static readonly byte[] DefaultProperties =
         Charsets.Default.GetBytes(DefaultPropertiesStr);
 
-    private Task SendStartupMessage(PgConnectOptions options, CancellationToken cancellationToken)
+    private ValueTask SendStartupMessage(PgConnectOptions options, CancellationToken cancellationToken)
     {
         var extractFloatPointsStr = options.ExtraFloatPoints.ToString();
         var queryTimeout = int.Max((int)options.QueryTimeout.TotalMilliseconds, 0);
@@ -64,32 +64,32 @@ public sealed partial class PgStream
                       Charsets.Default.GetByteCount(options.CurrentSchema) + sizeof(byte);
         }
 
-        _writeBuffer.WriteInt(length);
-        _writeBuffer.WriteShort(MajorVersionNo);
-        _writeBuffer.WriteShort(MinorVersionNo);
-        _writeBuffer.WriteCString(UserProperty);
-        _writeBuffer.WriteCString(options.Username);
+        WriteBuffer.WriteInt(length);
+        WriteBuffer.WriteShort(MajorVersionNo);
+        WriteBuffer.WriteShort(MinorVersionNo);
+        WriteBuffer.WriteCString(UserProperty);
+        WriteBuffer.WriteCString(options.Username);
         if (options.Database is not null)
         {
-            _writeBuffer.WriteCString(DatabaseProperty);
-            _writeBuffer.WriteCString(options.Database);
+            WriteBuffer.WriteCString(DatabaseProperty);
+            WriteBuffer.WriteCString(options.Database);
         }
 
-        _writeBuffer.WriteCString(ExtraFloatDigitsProperty);
-        _writeBuffer.WriteCString(extractFloatPointsStr);
+        WriteBuffer.WriteCString(ExtraFloatDigitsProperty);
+        WriteBuffer.WriteCString(extractFloatPointsStr);
         if (options.CurrentSchema is not null)
         {
-            _writeBuffer.WriteCString(SearchPathProperty);
-            _writeBuffer.WriteCString(options.CurrentSchema);
+            WriteBuffer.WriteCString(SearchPathProperty);
+            WriteBuffer.WriteCString(options.CurrentSchema);
         }
 
-        _writeBuffer.WriteCString(ApplicationNameProperty);
-        _writeBuffer.WriteCString(options.ApplicationName);
-        _writeBuffer.WriteCString(StatementTimeoutProperty);
-        _writeBuffer.WriteCString(queryTimeoutStr);
-        _writeBuffer.WriteBytes(DefaultProperties.AsSpan());
-        _writeBuffer.WriteByte(0);
-        return Flush(cancellationToken);
+        WriteBuffer.WriteCString(ApplicationNameProperty);
+        WriteBuffer.WriteCString(options.ApplicationName);
+        WriteBuffer.WriteCString(StatementTimeoutProperty);
+        WriteBuffer.WriteCString(queryTimeoutStr);
+        WriteBuffer.WriteBytes(DefaultProperties.AsSpan());
+        WriteBuffer.WriteByte(0);
+        return FlushStream(cancellationToken);
     }
 
     private void WriteBindMessage(
@@ -98,74 +98,74 @@ public sealed partial class PgStream
         short argumentsCount,
         in ReadOnlySpan<byte> arguments)
     {
-        _writeBuffer.WriteCode(PgFrontendMessageType.Bind);
+        WriteBuffer.WriteCode(PgFrontendMessageType.Bind);
         var length = portal.Length + sizeof(byte) + statementName.Length + sizeof(byte) +
                      sizeof(short) + sizeof(short) + sizeof(short) + arguments.Length +
                      sizeof(short) + sizeof(short) + sizeof(int);
-        _writeBuffer.WriteInt(length);
-        _writeBuffer.WriteCString(portal);
-        _writeBuffer.WriteCString(statementName);
-        _writeBuffer.WriteShort(1);
-        _writeBuffer.WriteShort(1);
-        _writeBuffer.WriteShort(argumentsCount);
-        _writeBuffer.WriteBytes(arguments);
-        _writeBuffer.WriteShort(1);
-        _writeBuffer.WriteShort(1);
+        WriteBuffer.WriteInt(length);
+        WriteBuffer.WriteCString(portal);
+        WriteBuffer.WriteCString(statementName);
+        WriteBuffer.WriteShort(1);
+        WriteBuffer.WriteShort(1);
+        WriteBuffer.WriteShort(argumentsCount);
+        WriteBuffer.WriteBytes(arguments);
+        WriteBuffer.WriteShort(1);
+        WriteBuffer.WriteShort(1);
     }
 
-    private Task SendSaslInitialMessage(
+    private ValueTask SendSaslInitialMessage(
         in ReadOnlySpan<char> mechanism,
         in ReadOnlySpan<char> saslData,
         CancellationToken cancellationToken)
     {
-        _writeBuffer.WriteCode(PgFrontendMessageType.Password);
+        WriteBuffer.WriteCode(PgFrontendMessageType.Password);
         var length = mechanism.Length + sizeof(byte) + sizeof(int) + saslData.Length + sizeof(int);
-        _writeBuffer.WriteInt(length);
-        _writeBuffer.WriteCString(mechanism);
-        _writeBuffer.WriteInt(saslData.Length);
-        _writeBuffer.WriteString(saslData);
-        return Flush(cancellationToken);
+        WriteBuffer.WriteInt(length);
+        WriteBuffer.WriteCString(mechanism);
+        WriteBuffer.WriteInt(saslData.Length);
+        WriteBuffer.WriteString(saslData);
+        return FlushStream(cancellationToken);
     }
 
-    private Task SendSaslResponseMessage(
+    private ValueTask SendSaslResponseMessage(
         in ReadOnlySpan<char> clientMessage,
         CancellationToken cancellationToken)
     {
-        _writeBuffer.WriteCode(PgFrontendMessageType.Password);
+        WriteBuffer.WriteCode(PgFrontendMessageType.Password);
         var length = clientMessage.Length + sizeof(int);
-        _writeBuffer.WriteInt(length);
-        _writeBuffer.WriteString(clientMessage);
-        return Flush(cancellationToken);
+        WriteBuffer.WriteInt(length);
+        WriteBuffer.WriteString(clientMessage);
+        return FlushStream(cancellationToken);
     }
 
-    private Task SendSimplePasswordMessage(
+    private ValueTask SendSimplePasswordMessage(
         in ReadOnlySpan<byte> passwordBytes,
         CancellationToken cancellationToken)
     {
-        _writeBuffer.WriteCode(PgFrontendMessageType.Password);
+        WriteBuffer.WriteCode(PgFrontendMessageType.Password);
         var length = passwordBytes.Length + sizeof(byte) + sizeof(int);
-        _writeBuffer.WriteInt(length);
-        _writeBuffer.WriteBytes(passwordBytes);
-        _writeBuffer.WriteByte(0);
-        return Flush(cancellationToken);
+        WriteBuffer.WriteInt(length);
+        WriteBuffer.WriteBytes(passwordBytes);
+        WriteBuffer.WriteByte(0);
+        return FlushStream(cancellationToken);
     }
 
     private void WriteExecuteMessage(in ReadOnlySpan<char> portalName, int maxRowCount)
     {
-        _writeBuffer.WriteCode(PgFrontendMessageType.Execute);
+        WriteBuffer.WriteCode(PgFrontendMessageType.Execute);
         var length = portalName.Length + sizeof(byte) + sizeof(int) + sizeof(int);
-        _writeBuffer.WriteInt(length);
-        _writeBuffer.WriteCString(portalName);
-        _writeBuffer.WriteInt(maxRowCount);
+        WriteBuffer.WriteInt(length);
+        WriteBuffer.WriteCString(portalName);
+        WriteBuffer.WriteInt(maxRowCount);
     }
 
     private void WriteCloseMessage(MessageTarget messageTarget, in ReadOnlySpan<char> targetName)
     {
-        _writeBuffer.WriteCode(PgFrontendMessageType.Close);
+        WriteBuffer.WriteCode(PgFrontendMessageType.Close);
         var length = sizeof(byte) + targetName.Length + sizeof(byte) + sizeof(int);
-        _writeBuffer.WriteInt(length);
-        _writeBuffer.WriteByte((byte)messageTarget);
-        _writeBuffer.WriteCString(targetName);
+        WriteBuffer.WriteInt(length);
+        WriteBuffer.WriteByte((byte)messageTarget);
+        WriteBuffer.WriteCString(targetName);
     }
 
     private void WriteParseMessage(
@@ -173,23 +173,23 @@ public sealed partial class PgStream
         in ReadOnlySpan<char> query,
         IReadOnlyList<PgTypeInfo> pgTypes)
     {
-        _writeBuffer.WriteCode(PgFrontendMessageType.Parse);
+        WriteBuffer.WriteCode(PgFrontendMessageType.Parse);
         var queryByteLength = Charsets.Default.GetByteCount(query);
         var length = preparedStatementName.Length + sizeof(byte) +
                      queryByteLength + sizeof(byte) +
                      sizeof(short) + (sizeof(uint) * pgTypes.Count) + sizeof(int);
-        _writeBuffer.WriteInt(length);
-        _writeBuffer.WriteCString(preparedStatementName);
+        WriteBuffer.WriteInt(length);
+        WriteBuffer.WriteCString(preparedStatementName);
         
-        var span = _writeBuffer.GetSpan(queryByteLength);
+        var span = WriteBuffer.GetSpan(queryByteLength);
         Charsets.Default.GetBytes(query, span);
-        _writeBuffer.Advance(queryByteLength);
-        _writeBuffer.WriteByte(0);
+        WriteBuffer.Advance(queryByteLength);
+        WriteBuffer.WriteByte(0);
         
-        _writeBuffer.WriteShort((short)pgTypes.Count);
+        WriteBuffer.WriteShort((short)pgTypes.Count);
         foreach (PgTypeInfo pgType in pgTypes)
         {
-            _writeBuffer.WriteUInt(pgType.TypeOid.Inner);
+            WriteBuffer.WriteUInt(pgType.TypeOid.Inner);
         }
     }
 
@@ -197,64 +197,64 @@ public sealed partial class PgStream
         MessageTarget messageTarget,
         in ReadOnlySpan<char> preparedStatementName)
     {
-        _writeBuffer.WriteCode(PgFrontendMessageType.Describe);
+        WriteBuffer.WriteCode(PgFrontendMessageType.Describe);
         var length = sizeof(byte) + preparedStatementName.Length + sizeof(byte) + sizeof(int);
-        _writeBuffer.WriteInt(length);
-        _writeBuffer.WriteByte((byte)messageTarget);
-        _writeBuffer.WriteCString(preparedStatementName);
+        WriteBuffer.WriteInt(length);
+        WriteBuffer.WriteByte((byte)messageTarget);
+        WriteBuffer.WriteCString(preparedStatementName);
     }
 
-    private Task SendQueryMessage(in ReadOnlySpan<char> query, CancellationToken cancellationToken)
+    private ValueTask SendQueryMessage(in ReadOnlySpan<char> query, CancellationToken cancellationToken)
     {
-        _writeBuffer.WriteCode(PgFrontendMessageType.Query);
+        WriteBuffer.WriteCode(PgFrontendMessageType.Query);
         var queryByteLength = Charsets.Default.GetByteCount(query);
         var length = queryByteLength + sizeof(byte) + sizeof(int);
-        _writeBuffer.WriteInt(length);
+        WriteBuffer.WriteInt(length);
         
-        var span = _writeBuffer.GetSpan(queryByteLength);
+        var span = WriteBuffer.GetSpan(queryByteLength);
         Charsets.Default.GetBytes(query, span);
-        _writeBuffer.Advance(queryByteLength);
-        _writeBuffer.WriteByte(0);
+        WriteBuffer.Advance(queryByteLength);
+        WriteBuffer.WriteByte(0);
         
-        return Flush(cancellationToken);
+        return FlushStream(cancellationToken);
     }
 
-    private Task SendSyncMessage(CancellationToken cancellationToken)
+    private ValueTask SendSyncMessage(CancellationToken cancellationToken)
     {
-        _writeBuffer.WriteCode(PgFrontendMessageType.Sync);
-        _writeBuffer.WriteInt(4);
-        return Flush(cancellationToken);
+        WriteBuffer.WriteCode(PgFrontendMessageType.Sync);
+        WriteBuffer.WriteInt(4);
+        return FlushStream(cancellationToken);
     }
 
     private void WriteCopyDataMessage(in ReadOnlySpan<byte> data)
     {
-        _writeBuffer.WriteCode(PgFrontendMessageType.CopyData);
-        _writeBuffer.WriteInt(data.Length + sizeof(int));
-        _writeBuffer.WriteBytes(data);
+        WriteBuffer.WriteCode(PgFrontendMessageType.CopyData);
+        WriteBuffer.WriteInt(data.Length + sizeof(int));
+        WriteBuffer.WriteBytes(data);
     }
 
-    private Task SendCopyDoneMessage(CancellationToken cancellationToken)
+    private ValueTask SendCopyDoneMessage(CancellationToken cancellationToken)
     {
-        _writeBuffer.WriteCode(PgFrontendMessageType.CopyDone);
-        _writeBuffer.WriteInt(sizeof(int));
-        return Flush(cancellationToken);
+        WriteBuffer.WriteCode(PgFrontendMessageType.CopyDone);
+        WriteBuffer.WriteInt(sizeof(int));
+        return FlushStream(cancellationToken);
     }
 
-    private Task SendCopyFailMessage(
+    private ValueTask SendCopyFailMessage(
         in ReadOnlySpan<char> message,
         CancellationToken cancellationToken)
     {
-        _writeBuffer.WriteCode(PgFrontendMessageType.CopyFail);
+        WriteBuffer.WriteCode(PgFrontendMessageType.CopyFail);
         var length = Charsets.Default.GetByteCount(message) + sizeof(int);
-        _writeBuffer.WriteInt(length);
-        _writeBuffer.WriteCString(message);
-        return Flush(cancellationToken);
+        WriteBuffer.WriteInt(length);
+        WriteBuffer.WriteCString(message);
+        return FlushStream(cancellationToken);
     }
 
-    private Task SendTerminate()
+    private ValueTask SendTerminate()
     {
-        _writeBuffer.WriteCode(PgFrontendMessageType.Terminate);
-        _writeBuffer.WriteInt(sizeof(int));
-        return Flush(CancellationToken.None);
+        WriteBuffer.WriteCode(PgFrontendMessageType.Terminate);
+        WriteBuffer.WriteInt(sizeof(int));
+        return FlushStream(CancellationToken.None);
     }
 }

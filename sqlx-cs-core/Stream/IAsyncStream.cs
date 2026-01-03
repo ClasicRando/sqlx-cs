@@ -1,3 +1,5 @@
+using System.Buffers;
+
 namespace Sqlx.Core.Stream;
 
 /// <summary>
@@ -11,6 +13,8 @@ public interface IAsyncStream : IDisposable
     /// </summary>
     bool IsConnected { get; }
     
+    IBufferWriter<byte> WriteBuffer { get; }
+    
     /// <summary>
     /// Open the stream's connection to a remote host at the specified port
     /// </summary>
@@ -20,11 +24,10 @@ public interface IAsyncStream : IDisposable
     Task OpenAsync(string host, ushort port, CancellationToken cancellationToken);
     
     /// <summary>
-    /// Write the entire memory segment to the stream
+    /// Flush all previously written bytes to <see cref="WriteBuffer"/>
     /// </summary>
-    /// <param name="buffer">memory segment to write to the stream</param>
-    /// <param name="cancellationToken">token to cancel the operation</param>
-    ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken);
+    /// <param name="cancellationToken">Token to cancel the operation</param>
+    ValueTask FlushAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Read a single byte from the stream
