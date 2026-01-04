@@ -57,7 +57,7 @@ public class PgBoxTest
     {
         var expectedValue = new PgBox(new PgPoint(x1, y1), new PgPoint(x2, y2));
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         PgBox actualValue = PgBox.DecodeBytes(ref binaryValue);
 

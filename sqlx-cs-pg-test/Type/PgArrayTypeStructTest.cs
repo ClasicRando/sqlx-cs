@@ -41,7 +41,7 @@ public class PgArrayTypeStructTest
         int?[] expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         var actualValue = PgArrayTypeStruct<int, PgInt>.DecodeBytes(ref binaryValue);
 

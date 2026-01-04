@@ -46,7 +46,7 @@ public class PgInetTest
     {
         var expectedValue = new PgInet(new IPAddress(address), prefixLength);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         PgInet actualValue = PgInet.DecodeBytes(ref binaryValue);
 

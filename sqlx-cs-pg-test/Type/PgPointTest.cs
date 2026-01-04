@@ -31,7 +31,7 @@ public class PgPointTest
             [64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174];
         var expectedValue = new PgPoint(5.63, 8.59);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         PgPoint actualValue = PgPoint.DecodeBytes(ref binaryValue);
 

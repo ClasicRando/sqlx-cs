@@ -29,7 +29,7 @@ public class PgMacAddress8Test
     {
         PgMacAddress8 expectedValue = PgMacAddress8.FromBytes(binaryData);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         PgMacAddress8 actualValue = PgMacAddress8.DecodeBytes(ref binaryValue);
 

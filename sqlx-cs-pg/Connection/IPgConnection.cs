@@ -21,15 +21,15 @@ public interface IPgConnection :
     /// <list type="bullet">
     ///     <item>
     ///     Copy results to stream ->
-    ///     <see cref="PgConnectionExtensions.CopyOut(IPgConnection, ICopyTo, Stream, CancellationToken)"/>
+    ///     <see cref="PgConnectionExtensions.CopyOutAsync(IPgConnection,ICopyTo,Stream,CancellationToken)"/>
     ///     </item>
     ///     <item>
     ///     Copy results to file path ->
-    ///     <see cref="PgConnectionExtensions.CopyOut(IPgConnection, ICopyTo, string, FileMode, CancellationToken)"/>
+    ///     <see cref="PgConnectionExtensions.CopyOutAsync(IPgConnection,ICopyTo,string,FileMode,CancellationToken)"/>
     ///     </item>
     ///     <item>
     ///     Parse results as rows ->
-    ///     <see cref="PgConnectionExtensions.CopyOutRows{TStatement, TRow}(IPgConnection, TStatement, CancellationToken)"/>
+    ///     <see cref="PgConnectionExtensions.CopyOutRowsAsync{TCopyStatement,TRow}"/>
     ///     </item>
     /// </list>
     /// <a href="https://www.postgresql.org/docs/current/sql-copy.html"> postgres docs</a>
@@ -37,7 +37,7 @@ public interface IPgConnection :
     /// <param name="copyOutStatement">COPY statement to execute for data extraction</param>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
     /// <returns>A stream of rows returned as a result of the copy statement</returns>
-    Task<IAsyncEnumerable<byte[]>> CopyOut(
+    IAsyncEnumerable<byte[]> CopyOutAsync(
         ICopyTo copyOutStatement,
         CancellationToken cancellationToken = default);
 
@@ -48,16 +48,16 @@ public interface IPgConnection :
     /// copy in methods:
     /// <list type="bullet">
     ///     <item>
-    ///     Copy results to stream ->
-    ///     <see cref="PgConnectionExtensions.CopyOut(IPgConnection, ICopyTo, Stream, CancellationToken)"/>
+    ///     Send data from stream ->
+    ///     <see cref="PgConnectionExtensions.CopyInAsync(IPgConnection,ICopyFrom,Stream,StreamPipeReaderOptions,CancellationToken)"/>
     ///     </item>
     ///     <item>
-    ///     Copy results to file path ->
-    ///     <see cref="PgConnectionExtensions.CopyOut(IPgConnection, ICopyTo, string, FileMode, CancellationToken)"/>
+    ///     Send data from file path ->
+    ///     <see cref="PgConnectionExtensions.CopyInAsync(IPgConnection,ICopyFrom,string,CancellationToken)"/>
     ///     </item>
     ///     <item>
-    ///     Parse results as rows ->
-    ///     <see cref="PgConnectionExtensions.CopyOutRows{TStatement, TRow}(IPgConnection, TStatement, CancellationToken)"/>
+    ///     Send data as rows ->
+    ///     <see cref="PgConnectionExtensions.CopyInRowsAsync{TCopyStatement,TRow}"/>
     ///     </item>
     /// </list>
     /// <a href="https://www.postgresql.org/docs/current/sql-copy.html"> postgres docs</a>
@@ -68,7 +68,7 @@ public interface IPgConnection :
     /// </param>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
     /// <returns>Query result object with details on what happened during the execution</returns>
-    Task<QueryResult> CopyIn(
+    Task<QueryResult> CopyInAsync(
         ICopyFrom copyInStatement,
         PipeReader data,
         CancellationToken cancellationToken = default);

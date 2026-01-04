@@ -48,7 +48,7 @@ public record TableFromCsv : ICopyFrom, ICopyTable, ICopyCsv
     {
         StringBuilder builder = new("COPY ");
         this.AppendTableDetailsTo(builder);
-        builder.Append(" TO STDIN");
+        builder.Append(" FROM STDIN");
         this.AppendCsvOptions(builder);
         ForceNotNull?.AppendForceNotNullTo(builder);
         ForceNull?.AppendForceNullTo(builder);

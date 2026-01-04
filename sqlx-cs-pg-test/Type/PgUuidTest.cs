@@ -39,7 +39,7 @@ public class PgUuidTest
     {
         Guid expectedValue = Guid.Parse(uuid);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         Guid actualValue = PgUuid.DecodeBytes(ref binaryValue);
 

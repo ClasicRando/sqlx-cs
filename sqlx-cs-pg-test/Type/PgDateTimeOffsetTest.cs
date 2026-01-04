@@ -68,7 +68,7 @@ public class PgDateTimeOffsetTest
             microsecond,
             TimeSpan.Zero);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         DateTimeOffset actualValue = PgDateTimeOffset.DecodeBytes(ref binaryValue);
 

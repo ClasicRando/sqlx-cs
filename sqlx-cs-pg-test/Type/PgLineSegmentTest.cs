@@ -37,7 +37,7 @@ public class PgLineSegmentTest
             71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102,
         ];
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         PgLineSegment actualValue = PgLineSegment.DecodeBytes(ref binaryValue);
 

@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Buffer;
@@ -87,7 +88,7 @@ public sealed partial class PgStream
         Writer.WriteCString(options.ApplicationName);
         Writer.WriteCString(StatementTimeoutProperty);
         Writer.WriteCString(queryTimeoutStr);
-        Writer.WriteBytes(DefaultProperties.AsSpan());
+        Writer.Write(DefaultProperties.AsSpan());
         Writer.WriteByte(0);
         return FlushStream(cancellationToken);
     }
@@ -108,7 +109,7 @@ public sealed partial class PgStream
         Writer.WriteShort(1);
         Writer.WriteShort(1);
         Writer.WriteShort(argumentsCount);
-        Writer.WriteBytes(arguments);
+        Writer.Write(arguments);
         Writer.WriteShort(1);
         Writer.WriteShort(1);
     }
@@ -145,7 +146,7 @@ public sealed partial class PgStream
         Writer.WriteCode(PgFrontendMessageType.Password);
         var length = passwordBytes.Length + sizeof(byte) + sizeof(int);
         Writer.WriteInt(length);
-        Writer.WriteBytes(passwordBytes);
+        Writer.Write(passwordBytes);
         Writer.WriteByte(0);
         return FlushStream(cancellationToken);
     }
@@ -230,7 +231,7 @@ public sealed partial class PgStream
     {
         Writer.WriteCode(PgFrontendMessageType.CopyData);
         Writer.WriteInt(data.Length + sizeof(int));
-        Writer.WriteBytes(data);
+        Writer.Write(data);
     }
 
     private ValueTask SendCopyDoneMessage(CancellationToken cancellationToken)

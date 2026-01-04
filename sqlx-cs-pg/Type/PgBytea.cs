@@ -24,7 +24,7 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
     /// </summary>
     public static void Encode(byte[] value, IBufferWriter<byte> buffer)
     {
-        buffer.WriteBytes(value.AsSpan());
+        buffer.Write(value.AsSpan());
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>

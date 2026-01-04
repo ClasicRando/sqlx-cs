@@ -37,7 +37,7 @@ public class PgShortTest
         short expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         var actualValue = PgShort.DecodeBytes(ref binaryValue);
 
@@ -52,7 +52,7 @@ public class PgShortTest
     public async Task DecodeBytes_Should_Fail_When_OutsideOfShortBounds(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
         try
         {
             var temp = PgShort.DecodeBytes(ref binaryValue);
@@ -79,7 +79,7 @@ public class PgShortTest
     public async Task DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
         try
         {
             PgShort.DecodeBytes(ref binaryValue);

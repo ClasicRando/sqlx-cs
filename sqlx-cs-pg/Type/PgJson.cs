@@ -97,8 +97,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
             }
         }
 
-        var span = value.Buffer.ReadBytesAsSpan();
-        return Json.FromBytes(span, typeInfo);
+        return Json.FromBytes(value.Buffer, typeInfo);
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>

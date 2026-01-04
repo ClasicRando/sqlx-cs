@@ -10,53 +10,215 @@ namespace Sqlx.Core.Buffer;
 
 public static class BufferExtensions
 {
-    extension(ReadOnlySpan<byte> span)
+    extension(ref ReadOnlySpan<byte> span)
     {
-        public ReadOnlySpan<byte> ReadByte(out byte result)
+        /// <summary>
+        /// Modify this <see cref="ReadOnlySpan{byte}"/> reference to skip the desired number of
+        /// bytes
+        /// </summary>
+        /// <param name="count">Number of bytes to skip</param>
+        public void Skip(int count)
+        {
+            span = span[count..];
+        }
+        
+        /// <summary>
+        /// Consume the first byte of this span, returning that byte. The span will now point to all
+        /// bytes after the first byte.
+        /// </summary>
+        /// <returns>First byte of this span</returns>
+        public byte ReadByte()
         {
             if (span.Length < 1)
             {
-                throw new ArgumentOutOfRangeException(
-                    message: "Span must not be empty",
-                    innerException: null);
+                throw new IndexOutOfRangeException("Span must not be empty");
             }
 
-            result = span[0];
-            return span[sizeof(byte)..];
+            var result = span[0];
+            span = span[sizeof(byte)..];
+            return result;
         }
 
-        public ReadOnlySpan<byte> ReadShort(out short result)
+        /// <summary>
+        /// Consume the first 2 bytes of this span, returning them as a <see cref="short"/>. The
+        /// span will now point to all bytes after the consumed bytes.
+        /// </summary>
+        /// <returns>First 2 bytes of this span as a <see cref="short"/></returns>
+        public short ReadShort()
         {
             var temp = BitConverter.ToInt16(span[..sizeof(short)]);
-            result = BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(temp) : temp;
-            return span[sizeof(short)..];
+            var result = BitConverter.IsLittleEndian
+                ? BinaryPrimitives.ReverseEndianness(temp)
+                : temp;
+            span = span[sizeof(short)..];
+            return result;
         }
 
-        public ReadOnlySpan<byte> ReadInt(out int result)
+        /// <summary>
+        /// Consume the first 4 bytes of this span, returning them as a <see cref="int"/>. The span
+        /// will now point to all bytes after the consumed bytes.
+        /// </summary>
+        /// <returns>First 4 bytes of this span as a <see cref="int"/></returns>
+        public int ReadInt()
         {
             var temp = BitConverter.ToInt32(span[..sizeof(int)]);
-            result = BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(temp) : temp;
-            return span[sizeof(int)..];
+            var result = BitConverter.IsLittleEndian
+                ? BinaryPrimitives.ReverseEndianness(temp)
+                : temp;
+            span = span[sizeof(int)..];
+            return result;
         }
 
-        public ReadOnlySpan<byte> ReadLong(out long result)
+        /// <summary>
+        /// Consume the first 4 bytes of this span, returning them as a <see cref="uint"/>. The span
+        /// will now point to all bytes after the consumed bytes.
+        /// </summary>
+        /// <returns>First 4 bytes of this span as a <see cref="uint"/></returns>
+        public uint ReadUInt()
+        {
+            var temp = BitConverter.ToUInt32(span[..sizeof(uint)]);
+            var result = BitConverter.IsLittleEndian
+                ? BinaryPrimitives.ReverseEndianness(temp)
+                : temp;
+            span = span[sizeof(uint)..];
+            return result;
+        }
+
+        /// <summary>
+        /// Consume the first 8 bytes of this span, returning them as a <see cref="long"/>. The span
+        /// will now point to all bytes after the consumed bytes.
+        /// </summary>
+        /// <returns>First 8 bytes of this span as a <see cref="long"/></returns>
+        public long ReadLong()
         {
             var temp = BitConverter.ToInt64(span[..sizeof(long)]);
-            result = BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(temp) : temp;
-            return span[sizeof(long)..];
+            var result = BitConverter.IsLittleEndian
+                ? BinaryPrimitives.ReverseEndianness(temp)
+                : temp;
+            span = span[sizeof(long)..];
+            return result;
+        }
+        
+        /// <summary>
+        /// Consume the first 4 bytes of this span, returning them as a <see cref="float"/>. The
+        /// span will now point to all bytes after the consumed bytes.
+        /// </summary>
+        /// <returns>First 4 bytes of this span as a <see cref="float"/></returns>
+        public float ReadFloat()
+        {
+            var result = BitConverter.IsLittleEndian
+                ? BitConverter.Int32BitsToSingle(BinaryPrimitives.ReverseEndianness(BitConverter.ToInt32(span)))
+                : BitConverter.Int32BitsToSingle(BitConverter.ToInt32(span));
+            span = span[sizeof(float)..];
+            return result;
+        }
+
+        /// <summary>
+        /// Consume the first 8 bytes of this span, returning them as a <see cref="double"/>. The
+        /// span will now point to all bytes after the consumed bytes.
+        /// </summary>
+        /// <returns>First 8 bytes of this span as a <see cref="double"/></returns>
+        public double ReadDouble()
+        {
+            var result = BitConverter.IsLittleEndian
+                ? BitConverter.Int64BitsToDouble(BinaryPrimitives.ReverseEndianness(BitConverter.ToInt64(span)))
+                : BitConverter.Int64BitsToDouble(BitConverter.ToInt64(span));
+            span = span[sizeof(double)..];
+            return result;
+        }
+
+        /// <summary>
+        /// Consume the desired number of bytes as a new span. The span will now point to all bytes
+        /// after the consumed bytes.
+        /// </summary>
+        /// <param name="length"></param>
+        /// <returns>A span of the desired bytes</returns>
+        public ReadOnlySpan<byte> ReadBytesAsSpan(int length)
+        {
+            var result = span[..length];
+            span = span[length..];
+            return result;
+        }
+
+        /// <summary>
+        /// Consume all remaining bytes as a new <see cref="byte"/> array. The span will now point
+        /// to an empty span.
+        /// </summary>
+        /// <returns>A new byte array with all bytes</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public byte[] ReadBytes() => span.ReadBytes(span.Length);
+
+        /// <summary>
+        /// Consume the desired number of bytes as a new <see cref="byte"/> array. The span will now
+        /// point to all bytes after the consumed bytes.
+        /// </summary>
+        /// <param name="length"></param>
+        /// <returns>A new byte array with the desired bytes</returns>
+        public byte[] ReadBytes(int length)
+        {
+            var result = new byte[length];
+            span[..length].CopyTo(result.AsSpan());
+            span = span[length..];
+            return result;
+        }
+
+        /// <summary>
+        /// Consume all remaining bytes as a UTF-8 character string. The span will now point to an
+        /// empty span.
+        /// </summary>
+        /// <returns>UTF-8 character string</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public string ReadString() => span.ReadString(span.Length);
+
+        /// <summary>
+        /// Read the desired number of bytes as a UTF-8 character string. If the number of bytes
+        /// specified will not result in a valid UTF-8 string (e.g. ends with a continuation
+        /// character), this method will fail. The span will now point to all bytes after the
+        /// consumed bytes.
+        /// </summary>
+        /// <param name="length">Number of bytes to convert to a string</param>
+        /// <returns>UTF-8 character string</returns>
+        public string ReadString(int length)
+        {
+            var result = Charsets.Default.GetString(span[..length]);
+            span = span[length..];
+            return result;
+        }
+
+        /// <summary>
+        /// Read as many characters as needed until the buffer contains a null terminator. If the
+        /// entire buffer is the string, but it does not end with a null terminator then the method
+        /// will fail.
+        /// </summary>
+        /// <returns>Next available null terminated string from the buffer</returns>
+        public string ReadCString()
+        {
+            var index = 0;
+            while (span[index++] != 0);
+            var result = Charsets.Default.GetString(span[..(index - 1)]);
+            span = span[(index + 1)..];
+            return result;
         }
     }
 
     extension(IBufferWriter<byte> bufferWriter)
     {
-        public void WriteByte(byte value, bool advance = true)
+        /// <summary>
+        /// Write a single <see cref="byte"/> to this writer 
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteByte(byte value)
         {
             var span = bufferWriter.GetSpan();
             span[0] = value;
-            if (advance) bufferWriter.Advance(sizeof(byte));
+            bufferWriter.Advance(sizeof(byte));
         }
 
-        public void WriteShort(short value, bool advance = true)
+        /// <summary>
+        /// Write a single <see cref="short"/> to this writer 
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteShort(short value)
         {
             var span = bufferWriter.GetSpan(sizeof(short));
             if (BitConverter.IsLittleEndian)
@@ -65,10 +227,14 @@ public static class BufferExtensions
             }
 
             BitConverter.TryWriteBytes(span, value);
-            if (advance) bufferWriter.Advance(sizeof(short));
+            bufferWriter.Advance(sizeof(short));
         }
 
-        public void WriteInt(int value, bool advance = true)
+        /// <summary>
+        /// Write a single <see cref="int"/> to this writer 
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteInt(int value)
         {
             var span = bufferWriter.GetSpan(sizeof(int));
             if (BitConverter.IsLittleEndian)
@@ -77,10 +243,14 @@ public static class BufferExtensions
             }
 
             BitConverter.TryWriteBytes(span, value);
-            if (advance) bufferWriter.Advance(sizeof(int));
+            bufferWriter.Advance(sizeof(int));
         }
 
-        public void WriteUInt(uint value, bool advance = true)
+        /// <summary>
+        /// Write a single <see cref="uint"/> to this writer 
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteUInt(uint value)
         {
             var span = bufferWriter.GetSpan(sizeof(uint));
             if (BitConverter.IsLittleEndian)
@@ -89,10 +259,14 @@ public static class BufferExtensions
             }
 
             BitConverter.TryWriteBytes(span, value);
-            if (advance) bufferWriter.Advance(sizeof(uint));
+            bufferWriter.Advance(sizeof(uint));
         }
 
-        public void WriteLong(long value, bool advance = true)
+        /// <summary>
+        /// Write a single <see cref="long"/> to this writer 
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteLong(long value)
         {
             var span = bufferWriter.GetSpan(sizeof(long));
             if (BitConverter.IsLittleEndian)
@@ -101,10 +275,14 @@ public static class BufferExtensions
             }
 
             BitConverter.TryWriteBytes(span, value);
-            if (advance) bufferWriter.Advance(sizeof(long));
+            bufferWriter.Advance(sizeof(long));
         }
 
-        public void WriteFloat(float value, bool advance = true)
+        /// <summary>
+        /// Write a single <see cref="float"/> to this writer 
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteFloat(float value)
         {
             var span = bufferWriter.GetSpan(sizeof(float));
             if (BitConverter.IsLittleEndian)
@@ -118,10 +296,14 @@ public static class BufferExtensions
                 BitConverter.TryWriteBytes(span, value);
             }
 
-            if (advance) bufferWriter.Advance(sizeof(float));
+            bufferWriter.Advance(sizeof(float));
         }
 
-        public void WriteDouble(double value, bool advance = true)
+        /// <summary>
+        /// Write a single <see cref="double"/> to this writer 
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteDouble(double value)
         {
             var span = bufferWriter.GetSpan(sizeof(double));
             if (BitConverter.IsLittleEndian)
@@ -135,42 +317,35 @@ public static class BufferExtensions
                 BitConverter.TryWriteBytes(span, value);
             }
 
-            if (advance) bufferWriter.Advance(sizeof(double));
+            bufferWriter.Advance(sizeof(double));
         }
 
-        public void WriteBytes(ReadOnlySpan<byte> bytes, bool advance = true)
-        {
-            var span = bufferWriter.GetSpan(bytes.Length);
-            bytes.CopyTo(span);
-            if (advance) bufferWriter.Advance(bytes.Length);
-        }
-
-        public void WriteBytes(ReadOnlyMemory<byte> bytes, bool advance = true)
-        {
-            bufferWriter.WriteBytes(bytes.Span, advance);
-        }
-
-        public void WriteString(ReadOnlySpan<char> value, bool advance = true)
+        /// <summary>
+        /// Write all <see cref="char"/>s to this writer. Uses <see cref="Charsets.Default"/> to
+        /// encode characters to bytes.
+        /// </summary>
+        /// <param name="value">String to write</param>
+        public void WriteString(ReadOnlySpan<char> value)
         {
             var size = Charsets.Default.GetByteCount(value);
             var span = bufferWriter.GetSpan(size);
             Charsets.Default.GetBytes(value, span);
-            if (advance) bufferWriter.Advance(size);
+            bufferWriter.Advance(size);
         }
 
         /// <summary>
-        /// Write the specified chars with a null termination to replicate a CString
+        /// Write the specified chars with a null termination to replicate a CString. Uses
+        /// <see cref="Charsets.Default"/> to encode characters to bytes.
         /// </summary>
         /// <param name="value">String to write</param>
-        /// <param name="advance">True if </param>
-        public void WriteCString(ReadOnlySpan<char> value, bool advance = true)
+        public void WriteCString(ReadOnlySpan<char> value)
         {
             if (value.Length != 0)
             {
-                bufferWriter.WriteString(value, advance);
+                bufferWriter.WriteString(value);
             }
 
-            bufferWriter.WriteByte(0, advance);
+            bufferWriter.WriteByte(0);
         }
 
         /// <summary>
@@ -274,9 +449,9 @@ public static class BufferExtensions
     extension(ref ReadOnlySequence<byte> sequence)
     {
         /// <summary>
-        /// Read a byte from this sequence and return the remaining sequence
+        /// Consume the first byte from this sequence
         /// </summary>
-        /// <returns>Byte read from the sequence</returns>
+        /// <returns>First byte from the sequence</returns>
         public byte ReadByte()
         {
             var reader = new SequenceReader<byte>(sequence);
@@ -290,9 +465,9 @@ public static class BufferExtensions
         }
 
         /// <summary>
-        /// 
+        /// Consume the first 2 bytes from this sequence as a <see cref="short"/>
         /// </summary>
-        /// <returns></returns>
+        /// <returns>First <see cref="short"/> from the sequence</returns>
         public short ReadShort()
         {
             var reader = new SequenceReader<byte>(sequence);
@@ -306,9 +481,9 @@ public static class BufferExtensions
         }
 
         /// <summary>
-        /// 
+        /// Consume the first 4 bytes from this sequence as a <see cref="int"/>
         /// </summary>
-        /// <returns></returns>
+        /// <returns>First <see cref="int"/> from the sequence</returns>
         public int ReadInt()
         {
             var reader = new SequenceReader<byte>(sequence);
@@ -322,9 +497,9 @@ public static class BufferExtensions
         }
 
         /// <summary>
-        /// 
+        /// Consume the first 4 bytes from this sequence as a <see cref="uint"/>
         /// </summary>
-        /// <returns></returns>
+        /// <returns>First <see cref="uint"/> from the sequence</returns>
         public uint ReadUInt()
         {
             uint temp;
@@ -348,10 +523,9 @@ public static class BufferExtensions
         }
 
         /// <summary>
-        /// 
+        /// Consume bytes from this sequence and copy them to the destination
         /// </summary>
-        /// <param name="destination"></param>
-        /// <returns></returns>
+        /// <param name="destination">Target of the byte reading</param>
         public void ReadBytes(in Span<byte> destination)
         {
             var slice = sequence.Slice(0, destination.Length);
@@ -360,7 +534,7 @@ public static class BufferExtensions
         }
 
         /// <summary>
-        /// Read all remaining bytes as a UTF-8 character string
+        /// Consume all remaining bytes as a UTF-8 character string
         /// </summary>
         /// <returns>UTF-8 character string</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -372,7 +546,7 @@ public static class BufferExtensions
         }
 
         /// <summary>
-        /// Read the desired number of bytes as a UTF-8 character string. If the number of bytes
+        /// Consume the desired number of bytes as a UTF-8 character string. If the number of bytes
         /// specified will not result in a valid UTF-8 string (e.g. ends with a continuation
         /// character), this method will fail.
         /// </summary>
@@ -387,7 +561,7 @@ public static class BufferExtensions
         }
 
         /// <summary>
-        /// Read as many characters as needed until the buffer contains a null terminator. If the
+        /// Consume as many characters as needed until the buffer contains a null terminator. If the
         /// entire buffer is the string, but it does not end with a null terminator then the method
         /// will fail.
         /// </summary>
@@ -395,18 +569,11 @@ public static class BufferExtensions
         public string ReadCString()
         {
             var reader = new SequenceReader<byte>(sequence);
-            ReadOnlySequence<byte> slice;
-            SequencePosition nextStart;
-            if (reader.TryReadTo(out ReadOnlySequence<byte> temp, (byte)'\0'))
+            if (!reader.TryReadTo(out ReadOnlySequence<byte> slice, (byte)'\0'))
             {
-                slice = temp;
-                nextStart = reader.Position;
+                ThrowSequenceExhausted();
             }
-            else
-            {
-                slice = sequence;
-                nextStart = sequence.End;
-            }
+            SequencePosition nextStart = reader.Position;
 
             var result = Charsets.Default.GetString(slice);
             sequence = sequence.Slice(nextStart);

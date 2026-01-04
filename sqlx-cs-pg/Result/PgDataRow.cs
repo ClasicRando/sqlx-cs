@@ -26,18 +26,23 @@ internal sealed class PgDataRow : IPgDataRow
     {
         _rowData = rowData;
         _statementMetadata = statementMetadata;
-        var buffer = new ReadBuffer(rowData);
-        int columnCount = buffer.ReadShort();
+        ReadOnlySpan<byte> span = rowData.AsSpan();
+        int columnCount = span.ReadShort();
+        var rowDataIndex = 2;
         _columnValueSlices = new Range?[columnCount];
         for (var i = 0; i < columnCount; i++)
         {
-            var length = buffer.ReadInt();
+            var length = span.ReadInt();
+            rowDataIndex += 4;
             if (length < 0)
             {
                 _columnValueSlices[i] = null;
                 continue;
             }
-            _columnValueSlices[i] = buffer.Skip(length);
+
+            span.Skip(length);
+            _columnValueSlices[i] = new Range(rowDataIndex, rowDataIndex + length);
+            rowDataIndex += length;
         }
     }
     
@@ -164,8 +169,7 @@ internal sealed class PgDataRow : IPgDataRow
                     }
                 }
             case PgFormatCode.Binary:
-                var buffer = new ReadBuffer(bytes);
-                PgBinaryValue binaryValue = new(buffer, ref columnData.ColumnMetadata);
+                PgBinaryValue binaryValue = new(bytes, ref columnData.ColumnMetadata);
                 return PgJson<T>.DecodeBytes(ref binaryValue, jsonTypeInfo);
             default:
                 throw ColumnDecodeException.Create<T>(
@@ -233,8 +237,7 @@ internal sealed class PgDataRow : IPgDataRow
                     }
                 }
             case PgFormatCode.Binary:
-                var buffer = new ReadBuffer(bytes);
-                var value = new PgBinaryValue(buffer, ref columnData.ColumnMetadata);
+                var value = new PgBinaryValue(bytes, ref columnData.ColumnMetadata);
                 return TType.DecodeBytes(ref value);
             default:
                 throw ColumnDecodeException.Create<TResult>(

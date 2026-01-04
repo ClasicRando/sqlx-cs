@@ -86,7 +86,7 @@ internal static class NetworkUtils
         ref PgBinaryValue value)
         where T : notnull
     {
-        var remainingBytes = value.Buffer.Remaining;
+        var remainingBytes = value.Buffer.Length;
         if (remainingBytes < 8)
         {
             throw ColumnDecodeException.Create<T>(
@@ -97,7 +97,7 @@ internal static class NetworkUtils
         var family = value.Buffer.ReadByte();
         var prefix = value.Buffer.ReadByte();
         value.Buffer.Skip(2);
-        var span = value.Buffer.ReadBytesAsSpan();
+        var span = value.Buffer;
         var address = new IPAddress(span);
         return family switch
         {

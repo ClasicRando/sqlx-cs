@@ -85,7 +85,7 @@ public class PgJsonTest
             0,
             0,
             PgFormatCode.Binary);
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         Inner actualValue = PgJson<Inner>.DecodeBytes(
             ref binaryValue,

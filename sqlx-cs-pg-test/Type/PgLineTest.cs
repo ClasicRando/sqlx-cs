@@ -37,7 +37,7 @@ public class PgLineTest
             0, 0, 0,
         ];
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         PgLine actualValue = PgLine.DecodeBytes(ref binaryValue);
 

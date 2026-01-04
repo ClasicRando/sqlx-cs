@@ -23,7 +23,7 @@ internal static class PgInteger
     /// </exception>
     public static long ExtractInteger<T>(ref this PgBinaryValue value) where T : notnull
     {
-        return value.Buffer.Remaining switch
+        return value.Buffer.Length switch
         {
             2 => value.Buffer.ReadShort(),
             4 when typeof(T) == typeof(uint) => value.Buffer.ReadUInt(),
@@ -31,7 +31,7 @@ internal static class PgInteger
             8 => value.Buffer.ReadLong(),
             _ => throw ColumnDecodeException.Create<T>(
                 value.ColumnMetadata,
-                $"Could not extract integer from buffer. Number of bytes = {value.Buffer.Remaining}"),
+                $"Could not extract integer from buffer. Number of bytes = {value.Buffer.Length}"),
         };
     }
 

@@ -46,7 +46,7 @@ public abstract class PgBitString : IPgDbType<BitArray>, IHasArrayType
                 bytes[i] = (byte) currentByte;
             }
             
-            buffer.WriteBytes(bytes);
+            buffer.Write(bytes);
         }
         finally
         {
@@ -72,11 +72,11 @@ public abstract class PgBitString : IPgDbType<BitArray>, IHasArrayType
         var bitsLength = value.Buffer.ReadInt();
         var bytesLength = GetByteCountFromBitCount(bitsLength);
 
-        if (bytesLength != value.Buffer.Remaining)
+        if (bytesLength != value.Buffer.Length)
         {
             throw ColumnDecodeException.Create<BitArray>(
                 value.ColumnMetadata,
-                $"Expected buffer to contain {bytesLength} bytes but found {value.Buffer.Remaining}");
+                $"Expected buffer to contain {bytesLength} bytes but found {value.Buffer.Length}");
         }
 
         var bytes = value.Buffer.ReadBytes();

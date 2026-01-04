@@ -47,7 +47,7 @@ public class PgTimeTest
     {
         var expectedValue = new TimeOnly(hour, minute, second, millisecond, microsecond);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         TimeOnly actualValue = PgTime.DecodeBytes(ref binaryValue);
 

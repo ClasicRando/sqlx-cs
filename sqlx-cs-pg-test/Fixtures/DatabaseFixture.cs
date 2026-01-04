@@ -58,14 +58,15 @@ public sealed class DatabaseFixture : IAsyncInitializer, IAsyncDisposable
 
     public async Task InitializeAsync()
     {
-        await InitializeStoredProcedures();
+        await CreateStoredProcedures();
         await CreateCompositeType();
+        await CreateCopyTable();
     }
 
-    private async Task InitializeStoredProcedures()
+    private async Task CreateStoredProcedures()
     {
         using IPgConnection connection = BasicPool.CreateConnection();
-        using IPgExecutableQuery setUp = connection.CreateQuery(PgConnectionTest.SetUpQuery);
+        using IPgExecutableQuery setUp = connection.CreateQuery(PgConnectionTest.CreateProceduresQuery);
         await setUp.ExecuteNonQueryAsync();
     }
     
@@ -75,6 +76,13 @@ public sealed class DatabaseFixture : IAsyncInitializer, IAsyncDisposable
         using IPgExecutableQuery query = connection.CreateQuery(PgConnectionTest.CreateTypeQuery);
         await query.ExecuteNonQueryAsync();
         await BasicPool.MapCompositeAsync<TestCompositeType>();
+    }
+
+    private async Task CreateCopyTable()
+    {
+        using IPgConnection connection = BasicPool.CreateConnection();
+        using IPgExecutableQuery query = connection.CreateQuery(PgConnectionTest.CreateCopyTables);
+        await query.ExecuteNonQueryAsync();
     }
 
     public async ValueTask DisposeAsync()

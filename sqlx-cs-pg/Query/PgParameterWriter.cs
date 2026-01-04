@@ -1,39 +1,34 @@
+using System.Buffers;
 using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core;
 using Sqlx.Core.Buffer;
-using Sqlx.Core.Result;
-using Sqlx.Postgres.Connection;
-using Sqlx.Postgres.Exceptions;
-using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Query;
 
 /// <summary>
-/// <see cref="IPgExecutableQuery"/> implementation for Postgres. Parameters are encoded into a
-/// buffer using a <see cref="PgParameterWriter"/> and the query is executed using the
-/// <see cref="PgConnection"/> supplied to the constructor.
+/// Buffer writer for binding binary encoded parameters to an underlining
+/// <see cref="IBufferWriter{byte}"/>
 /// </summary>
-internal class PgExecutableQuery : IPgExecutableQuery
+internal sealed class PgParameterWriter : IPgBindable
 {
-    private IPgQueryExecutor? _queryExecutor;
-    private readonly PooledArrayBufferWriter _buffer = new();
-    private readonly PgParameterWriter _parameterBuffer;
+    private readonly IBufferWriter<byte> _buffer;
+    private readonly List<PgTypeInfo> _pgTypes = [];
 
-    public PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor)
+    public PgParameterWriter(IBufferWriter<byte> buffer)
     {
-        _queryExecutor = queryExecutor;
-        Query = sql;
-        _parameterBuffer = new PgParameterWriter(_buffer);
+        _buffer = buffer;
     }
 
-    public string Query { get; }
+    /// <summary>
+    /// Number of parameters encoded
+    /// </summary>
+    public short ParameterCount => (short)_pgTypes.Count;
 
-    public short ParameterCount => _parameterBuffer.ParameterCount;
-
-    public IReadOnlyList<PgTypeInfo> PgTypes => _parameterBuffer.PgTypes;
-
-    public ReadOnlySpan<byte> EncodedParameters => _buffer.ReadableSpan;
+    /// <summary>
+    /// <see cref="PgTypeInfo"/>s encoded into this buffer (in order of encoding)
+    /// </summary>
+    public IReadOnlyList<PgTypeInfo> PgTypes => _pgTypes;
 
     public void Bind(bool value)
     {
@@ -94,7 +89,7 @@ internal class PgExecutableQuery : IPgExecutableQuery
     {
         Bind<decimal, PgDecimal>(value);
     }
-    
+
     public void Bind(byte[]? value)
     {
         this.BindRef<byte[], PgBytea>(value);
@@ -102,7 +97,9 @@ internal class PgExecutableQuery : IPgExecutableQuery
 
     public void Bind(ReadOnlySpan<byte> value)
     {
-        _parameterBuffer.Bind(value);
+        _buffer.WriteInt(value.Length);
+        _buffer.Write(value);
+        _pgTypes.Add(PgBytea.DbType);
     }
 
     public void Bind(string? value)
@@ -112,7 +109,12 @@ internal class PgExecutableQuery : IPgExecutableQuery
 
     public void Bind(ReadOnlySpan<char> value)
     {
-        _parameterBuffer.Bind(value);
+        var byteLength = Charsets.Default.GetByteCount(value);
+        _buffer.WriteInt(byteLength);
+        var span = _buffer.GetSpan(byteLength);
+        Charsets.Default.GetBytes(value, span);
+        _buffer.Advance(byteLength);
+        _pgTypes.Add(PgString.DbType);
     }
 
     public void Bind(Guid value)
@@ -122,31 +124,25 @@ internal class PgExecutableQuery : IPgExecutableQuery
 
     public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
     {
-        _parameterBuffer.BindJson(value, typeInfo);
+        _buffer.WriteLengthPrefixed(buff => PgJson<T>.Encode(value, buff), includeLength: false);
+        _pgTypes.Add(PgJson<T>.DbType);
     }
 
     public void BindNull<T>() where T : notnull
     {
-        _parameterBuffer.BindNull<T>();
+        _buffer.WriteInt(-1);
+        _pgTypes.Add(PgTypeInfo.Unspecified);
     }
 
     public void Bind<TValue, TType>(TValue value)
-        where TValue : notnull
-        where TType : IPgDbType<TValue>
+        where TValue : notnull where TType : IPgDbType<TValue>
     {
-        _parameterBuffer.Bind<TValue, TType>(value);
-    }
-
-    public IAsyncEnumerable<Either<IPgDataRow, QueryResult>> ExecuteAsync(
-        CancellationToken cancellationToken)
-    {
-        PgException.ThrowIfNull(_queryExecutor);
-        return _queryExecutor.ExecuteQueryAsync(this, cancellationToken);
+        _buffer.WriteLengthPrefixed(buff => TType.Encode(value, buff), includeLength: false);
+        _pgTypes.Add(TType.DbType);
     }
 
     public void Dispose()
     {
-        _buffer.Dispose();
-        _queryExecutor = null;
+        if (_buffer is IDisposable disposable) disposable.Dispose();
     }
 }

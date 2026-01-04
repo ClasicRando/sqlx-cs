@@ -134,28 +134,6 @@ public class PooledArrayBufferWriterTest
     }
 
     [Test]
-    public async Task WriteBytes_Should_FillBufferWithBytes_When_Span()
-    {
-        using var buffer = new PooledArrayBufferWriter();
-        byte[] bytes = [1, 2, 3, 255, 4];
-
-        buffer.WriteBytes(bytes.AsSpan(0, 4));
-        
-        await Assert.That(buffer.ReadableSpan.ToArray()).IsEquivalentTo(bytes[..4]);
-    }
-
-    [Test]
-    public async Task WriteBytes_Should_FillBufferWithBytes_When_Memory()
-    {
-        using var buffer = new PooledArrayBufferWriter();
-        byte[] bytes = [1, 2, 3, 255, 4];
-
-        buffer.WriteBytes(bytes.AsMemory(0, 4));
-        
-        await Assert.That(buffer.ReadableSpan.ToArray()).IsEquivalentTo(bytes[..4]);
-    }
-
-    [Test]
     public async Task WriteString_Should_FillBufferWithUtf8Bytes()
     {
         using var buffer = new PooledArrayBufferWriter();
@@ -190,7 +168,7 @@ public class PooledArrayBufferWriterTest
         buffer.FinishWritingLengthPrefixed(startingPosition, includeLength);
 
         var bytes = buffer.ReadableSpan.ToArray();
-        var readBuffer = new ReadBuffer(bytes.AsSpan());
+        ReadOnlySpan<byte> readBuffer = bytes.AsSpan();
 
         var firstInt = readBuffer.ReadInt();
         var firstByte = readBuffer.ReadByte();

@@ -8,7 +8,7 @@ namespace Sqlx.Core.Buffer;
 /// <summary>
 /// Writable buffer of <see cref="byte"/>s that is always backed by a shared array pool value. Bytes
 /// written this buffer and will continue to be written to the end of the buffer until
-/// <see cref="Reset"/> is called. To use the written bytes, reference <see cref="ReadableMemory"/>.
+/// <see cref="Reset"/> is called. To use the written bytes, reference <see cref="ReadableSpan"/>.
 /// To ensure that the <see cref="ArrayPool{T}.Shared"/> pool is not exhausted you must dispose of
 /// each instance created which calls <see cref="ArrayPool{T}.Return"/>.
 /// </summary>
@@ -28,13 +28,7 @@ public sealed class PooledArrayBufferWriter : IBufferWriter<byte>, IDisposable
         _buffer = ArrayPool.Rent(initialCapacity);
     }
 
-    /// <summary>Number writeable bytes remaining in the buffer</summary>
-    public int RemainingCapacity => _buffer.Length - WrittenCount;
-
     public int WrittenCount { get; private set; }
-
-    /// <summary><see cref="ReadOnlyMemory{T}"/> of the bytes written to this buffer</summary>
-    public ReadOnlyMemory<byte> ReadableMemory => _buffer.AsMemory(0, WrittenCount);
 
     /// <summary><see cref="ReadOnlySpan{T}"/> of the bytes written to this buffer</summary>
     public ReadOnlySpan<byte> ReadableSpan => _buffer.AsSpan(0, WrittenCount);
@@ -64,7 +58,7 @@ public sealed class PooledArrayBufferWriter : IBufferWriter<byte>, IDisposable
             _ => sizeHint,
         };
 
-        if (sizeHint <= RemainingCapacity)
+        if (sizeHint <= _buffer.Length - WrittenCount)
         {
             return;
         }
@@ -73,7 +67,7 @@ public sealed class PooledArrayBufferWriter : IBufferWriter<byte>, IDisposable
         var growBy = int.Max(sizeHint, currentLength);
         var newSize = currentLength + growBy;
         var newBuffer = ArrayPool.Rent(newSize);
-        Array.Copy(_buffer, newBuffer, WrittenCount);
+        _buffer.AsSpan(0, WrittenCount).CopyTo(newBuffer);
         ArrayPool.Return(_buffer);
         _buffer = newBuffer;
     }

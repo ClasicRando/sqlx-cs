@@ -97,16 +97,20 @@ public sealed class PgConnection :
         return Task.CompletedTask;
     }
 
-    public async Task<IAsyncEnumerable<byte[]>> CopyOut(
+    public async IAsyncEnumerable<byte[]> CopyOutAsync(
         ICopyTo copyOutStatement,
-        CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        return _pgStream!.CopyOut(copyOutStatement, cancellationToken);
+        var rows = _pgStream!.CopyOut(copyOutStatement, cancellationToken);
+        await foreach (var row in rows.ConfigureAwait(false))
+        {
+            yield return row;
+        }
     }
 
-    public async Task<QueryResult> CopyIn(
+    public async Task<QueryResult> CopyInAsync(
         ICopyFrom copyInStatement,
         PipeReader data,
         CancellationToken cancellationToken = default)
@@ -174,11 +178,14 @@ public sealed class PgConnection :
         _disposed = true;
     }
 
-    internal Task<PgPreparedStatement> GetOrPrepareStatement(
+    internal async Task<PgPreparedStatement> GetOrPrepareStatement(
         string sql,
         CancellationToken cancellationToken)
     {
         CheckDisposed();
-        return _pgStream!.GetOrPrepareStatement(sql, [], cancellationToken);
+        await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
+        await _pgStream!.WaitUntilReady(cancellationToken);
+        return await _pgStream!.GetOrPrepareStatement(sql, [], cancellationToken)
+            .ConfigureAwait(false);
     }
 }

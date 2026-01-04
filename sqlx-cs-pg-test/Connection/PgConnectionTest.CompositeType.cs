@@ -1,5 +1,4 @@
 using System.Buffers;
-using Sqlx.Core.Buffer;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Result;
@@ -61,7 +60,7 @@ public readonly struct TestCompositeType : IPgUdt<TestCompositeType>, IFromRow<I
         recordEncoder.Bind(value.Id);
         recordEncoder.Bind(value.Name);
         recordEncoder.Bind(value.Title);
-        buffer.WriteBytes(recordEncoder.Data);
+        buffer.Write(recordEncoder.Data);
     }
 
     public static TestCompositeType DecodeBytes(ref PgBinaryValue value)

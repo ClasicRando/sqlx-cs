@@ -142,7 +142,7 @@ public sealed partial class PgStream
             if (readResult.IsCanceled)
             {
                 throw new PgException(
-                    $"Data stream supplied to {nameof(PgConnection.CopyIn)} was cancelled before completion");
+                    $"Data stream supplied to {nameof(PgConnection.CopyInAsync)} was cancelled before completion");
             }
 
             foreach (var chunk in readResult.Buffer)

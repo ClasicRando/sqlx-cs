@@ -120,9 +120,10 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
             var lowerBoundLength = value.Buffer.ReadInt();
             var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary);
             var lowerBoundValue = new PgBinaryValue(
-                value.Buffer.Slice(lowerBoundLength),
+                value.Buffer[..lowerBoundLength],
                 ref columnMetadata);
             TValue lowerValue = TType.DecodeBytes(ref lowerBoundValue);
+            value.Buffer = value.Buffer[lowerBoundLength..];
             start = flags.HasFlag(RangeFlag.LowerBoundInclusive)
                 ? Bound<TValue>.Included(lowerValue)
                 : Bound<TValue>.Excluded(lowerValue);
@@ -133,9 +134,10 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
             var upperBoundLength = value.Buffer.ReadInt();
             var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary);
             var upperBoundValue = new PgBinaryValue(
-                value.Buffer.Slice(upperBoundLength),
+                value.Buffer[..upperBoundLength],
                 ref columnMetadata);
             TValue upperValue = TType.DecodeBytes(ref upperBoundValue);
+            value.Buffer = value.Buffer[upperBoundLength..];
             end = flags.HasFlag(RangeFlag.UpperBoundInclusive)
                 ? Bound<TValue>.Included(upperValue)
                 : Bound<TValue>.Excluded(upperValue);

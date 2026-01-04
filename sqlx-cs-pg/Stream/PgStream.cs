@@ -305,7 +305,7 @@ public sealed partial class PgStream : IPooledConnection
     /// <see cref="ReadyForQueryMessage"/>s have been processed
     /// </summary>
     /// <param name="cancellationToken">token to cancel the async operation</param>
-    private async Task WaitUntilReady(CancellationToken cancellationToken)
+    internal async Task WaitUntilReady(CancellationToken cancellationToken)
     {
         while (_pendingReadyForQuery > 0)
         {

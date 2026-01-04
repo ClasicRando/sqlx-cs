@@ -25,7 +25,7 @@ internal abstract class PgString : IPgDbType<string>, IHasArrayType
     /// </summary>
     public static string DecodeBytes(ref PgBinaryValue value)
     {
-        return value.Buffer.ReadText();
+        return value.Buffer.ReadString();
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>

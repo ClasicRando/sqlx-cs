@@ -1,5 +1,4 @@
 using System.Buffers;
-using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
 
@@ -33,7 +32,7 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
     /// </summary>
     public static Guid DecodeBytes(ref PgBinaryValue value)
     {
-        return new Guid(value.Buffer.ReadBytesAsSpan());
+        return new Guid(value.Buffer);
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>

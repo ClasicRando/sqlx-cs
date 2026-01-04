@@ -13,13 +13,13 @@ internal static class PgFloatingPoint
 {
     public static double ExtractFloat<T>(ref this PgBinaryValue value) where T : notnull
     {
-        return value.Buffer.Remaining switch
+        return value.Buffer.Length switch
         {
             4 => value.Buffer.ReadFloat(),
             8 => value.Buffer.ReadDouble(),
             _ => throw ColumnDecodeException.Create<T>(
                 value.ColumnMetadata,
-                $"Could not extract float from buffer. Number of bytes = {value.Buffer.Remaining}"),
+                $"Could not extract float from buffer. Number of bytes = {value.Buffer.Length}"),
         };
     }
     

@@ -82,7 +82,7 @@ public readonly record struct PgMacAddress(
     /// </exception>
     public static PgMacAddress DecodeBytes(ref PgBinaryValue value)
     {
-        var byteCount = value.Buffer.Remaining;
+        var byteCount = value.Buffer.Length;
         if (byteCount != 6)
         {
             throw ColumnDecodeException.Create<PgMacAddress>(
@@ -90,8 +90,7 @@ public readonly record struct PgMacAddress(
                 $"Expected 6 bytes. Found {byteCount}");
         }
 
-        var bytes = value.Buffer.ReadBytesAsSpan();
-        return FromBytes(bytes);
+        return FromBytes(value.Buffer);
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>

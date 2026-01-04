@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization.Metadata;
+using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Pool;
 using Sqlx.Postgres.Query;
@@ -8,19 +9,21 @@ namespace Sqlx.Postgres.Type;
 public sealed class PgRecordEncoder : IPgBindable
 {
     private readonly CompositeType.Attribute[] _attributes;
-    private readonly PgParameterBuffer _parameterBuffer = new();
+    private readonly PooledArrayBufferWriter _buffer = new();
+    private readonly PgParameterWriter _parameterWriter;
 
-    public ReadOnlySpan<byte> Data => _parameterBuffer.Span;
+    public ReadOnlySpan<byte> Data => _buffer.ReadableSpan;
 
     public PgRecordEncoder(PgTypeInfo typeInfo)
     {
+        _parameterWriter = new PgParameterWriter(_buffer);
         if (typeInfo.TypeKind is not CompositeType compositeType)
         {
             throw new PgException(
                 $"Attempted to encode a type using a {nameof(PgRecordEncoder)} but that type if not a composite or the composite type was not mapped to the connection pool using {nameof(PgConnectionPool.MapCompositeAsync)}");
         }
         _attributes = compositeType.Attributes;
-        _parameterBuffer.WriteInt(_attributes.Length);
+        _buffer.WriteInt(_attributes.Length);
     }
     
     public void Bind(bool value)
@@ -90,8 +93,8 @@ public sealed class PgRecordEncoder : IPgBindable
 
     public void Bind(ReadOnlySpan<byte> value)
     {
-        _parameterBuffer.WriteOid(PgBytea.DbType.TypeOid);
-        _parameterBuffer.EncodeBytes(value);
+        _buffer.WriteUInt(PgBytea.DbType.TypeOid.Inner);
+        _parameterWriter.Bind(value);
     }
 
     public void Bind(string? value)
@@ -101,8 +104,8 @@ public sealed class PgRecordEncoder : IPgBindable
 
     public void Bind(ReadOnlySpan<char> value)
     {
-        _parameterBuffer.WriteOid(PgString.DbType.TypeOid);
-        _parameterBuffer.EncodeChars(value);
+        _buffer.WriteUInt(PgString.DbType.TypeOid.Inner);
+        _parameterWriter.Bind(value);
     }
 
     public void Bind(Guid value)
@@ -112,26 +115,26 @@ public sealed class PgRecordEncoder : IPgBindable
 
     public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
     {
-        _parameterBuffer.WriteOid(PgJson<T>.DbType.TypeOid);
-        _parameterBuffer.EncodeJsonValue(value, typeInfo);
+        _buffer.WriteUInt(PgJson<T>.DbType.TypeOid.Inner);
+        _parameterWriter.BindJson(value, typeInfo);
     }
 
     public void BindNull<T>() where T : notnull
     {
-        _parameterBuffer.WriteOid(_attributes[_parameterBuffer.ParameterCount].TypeOid);
-        _parameterBuffer.EncodeNull();
+        _buffer.WriteUInt(_attributes[_parameterWriter.ParameterCount].TypeOid.Inner);
+        _parameterWriter.BindNull<T>();
     }
 
     public void Dispose()
     {
-        _parameterBuffer.Dispose();
+        _parameterWriter.Dispose();
     }
     
     public void Bind<TValue, TType>(TValue value)
         where TType : IPgDbType<TValue>
         where TValue : notnull
     {
-        _parameterBuffer.WriteOid(TType.DbType.TypeOid);
-        _parameterBuffer.EncodeValue<TValue, TType>(value);
+        _buffer.WriteUInt(TType.DbType.TypeOid.Inner);
+        _parameterWriter.Bind<TValue, TType>(value);
     }
 }

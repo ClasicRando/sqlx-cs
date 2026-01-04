@@ -50,7 +50,7 @@ public class PgDateTimeTest
         var expectedValue =
             new DateTime(year, month, day, hour, minute, second, millisecond, microsecond);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         DateTime actualValue = PgDateTime.DecodeBytes(ref binaryValue);
 

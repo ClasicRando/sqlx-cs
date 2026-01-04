@@ -74,7 +74,7 @@ public class PgPolygonTest
 
         var expectedValue = new PgPolygon(points);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         PgPolygon actualValue = PgPolygon.DecodeBytes(ref binaryValue);
 

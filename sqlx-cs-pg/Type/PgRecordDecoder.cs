@@ -55,7 +55,7 @@ public static class PgRecordDecoder
                 continue;
             }
             
-            bufferWriter.WriteBytes(binaryValue.Buffer.ReadBytesAsSpan(attributeLength));
+            bufferWriter.Write(binaryValue.Buffer.ReadBytesAsSpan(attributeLength));
         }
 
         var buffer = ArrayPool<byte>.Shared.Rent(bufferWriter.ReadableSpan.Length);

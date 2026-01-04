@@ -67,7 +67,7 @@ public class PgTimeTzTest
             new TimeOnly(hour, minute, second, millisecond, microsecond),
             offset);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(new ReadBuffer(binaryData), ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
         PgTimeTz actualValue = PgTimeTz.DecodeBytes(ref binaryValue);
 

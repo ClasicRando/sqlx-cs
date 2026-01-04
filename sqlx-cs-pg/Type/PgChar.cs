@@ -31,7 +31,7 @@ internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
     /// </summary>
     public static sbyte DecodeBytes(ref PgBinaryValue value)
     {
-        return value.Buffer.Remaining == 0 ? (sbyte)0 : (sbyte)value.Buffer.ReadByte();
+        return value.Buffer.Length == 0 ? (sbyte)0 : (sbyte)value.Buffer.ReadByte();
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
