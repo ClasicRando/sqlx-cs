@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Copy;
 
@@ -10,10 +11,10 @@ namespace Sqlx.Postgres.Message.Backend;
 /// </summary>
 internal readonly struct CopyResponse(CopyFormat CopyFormat, short ColumnCount)
 {
-    internal static CopyResponse Decode(ReadBuffer buffer)
+    internal static CopyResponse Decode(ReadOnlySequence<byte> buffer)
     {
-        CopyFormat copyFormat = CopyFormat.FromByte(buffer.ReadByte());
+        var copyFormatCode = buffer.ReadByte();
         var columnCount = buffer.ReadShort();
-        return new CopyResponse(copyFormat, columnCount);
+        return new CopyResponse(CopyFormat.FromByte(copyFormatCode), columnCount);
     }
 }

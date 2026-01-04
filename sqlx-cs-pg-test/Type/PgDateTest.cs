@@ -15,7 +15,7 @@ public class PgDateTest
     public async Task Encode_Should_WriteDate(int year, int month, int day, byte[] expectedBytes)
     {
         var value = new DateOnly(year, month, day);
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
 
         PgDate.Encode(value, buffer);
 

@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 
 namespace Sqlx.Postgres.Message.Backend;
@@ -10,7 +11,7 @@ namespace Sqlx.Postgres.Message.Backend;
 internal record ParameterStatusMessage(string Name, string Value)
     : IPgBackendMessage, IPgBackendMessageDecoder<ParameterStatusMessage>
 {
-    public static ParameterStatusMessage Decode(ReadBuffer buffer)
+    public static ParameterStatusMessage Decode(ReadOnlySequence<byte> buffer)
     {
         return new ParameterStatusMessage(buffer.ReadCString(), buffer.ReadCString());
     }

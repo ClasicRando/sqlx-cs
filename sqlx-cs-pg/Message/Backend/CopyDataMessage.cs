@@ -1,3 +1,5 @@
+using System.Buffers;
+
 namespace Sqlx.Postgres.Message.Backend;
 
 /// <summary>
@@ -5,7 +7,12 @@ namespace Sqlx.Postgres.Message.Backend;
 /// copy format used to initialize the <c>COPY TO</c> action, the data might represent text or
 /// binary encoded data.
 /// </summary>
-internal sealed class CopyDataMessage(byte[] data) : IPgBackendDataMessage
+internal sealed class CopyDataMessage(byte[] data) : IPgBackendDataMessage, IPgBackendMessageDecoder<CopyDataMessage>
 {
     public byte[] Data { get; } = data;
+
+    public static CopyDataMessage Decode(ReadOnlySequence<byte> buffer)
+    {
+        return new CopyDataMessage(buffer.ToArray());
+    }
 }

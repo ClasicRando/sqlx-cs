@@ -29,7 +29,7 @@ public class PgArrayTypeClassTest
         })]
     public async Task Encode_Should_WriteStringArray(string[] value, byte[] expectedBytes)
     {
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
 
         PgArrayTypeClass<string, PgString>.Encode(value, buffer);
 

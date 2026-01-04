@@ -19,7 +19,7 @@ public partial class JsonTest
     [Test]
     public async Task WriteToBuffer_Should_WriteJsonValueToBuffer_When_SourceGeneratedType()
     {
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
         
         Json.WriteToBuffer(buffer, _jsonType, SourceGenerationContext.Default.JsonType);
         
@@ -29,7 +29,7 @@ public partial class JsonTest
     [Test]
     public async Task WriteToBuffer_Should_WriteJsonValueToBuffer_When_ReflectionBasedSerialization()
     {
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
         
         Json.WriteToBuffer(buffer, _jsonType, null);
         

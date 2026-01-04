@@ -1,9 +1,7 @@
-using System.Buffers;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
-using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 
 namespace Sqlx.Core.Stream;
@@ -13,23 +11,17 @@ namespace Sqlx.Core.Stream;
 /// </summary>
 public sealed class AsyncStream : IAsyncStream
 {
-    private static readonly ArrayPool<byte> ArrayPool = ArrayPool<byte>.Shared;
-    internal const int DefaultBufferSize = 1024 * 8;
     private Socket? _socket;
     private System.IO.Stream? _stream;
     private PipeWriter? _pipeWriter;
-
-    private byte[] _innerBuffer = ArrayPool.Rent(DefaultBufferSize);
-    private int _bufferPosition;
-    private int _bufferLength;
+    private PipeReader? _pipeReader;
+    private bool _disposed;
 
     public bool IsConnected => _socket?.Connected ?? false;
 
-    public IBufferWriter<byte> WriteBuffer => _pipeWriter ??
-                                              throw new SqlxException(
-                                                  "Attempted to access the write buffer before opening the stream");
+    public PipeWriter Writer => _pipeWriter ?? throw new SqlxException("Attempted to access the write buffer before opening the stream");
 
-    internal int InnerBufferSize => _innerBuffer.Length;
+    public PipeReader Reader => _pipeReader ?? throw new SqlxException("Attempted to access the write buffer before opening the stream");
 
     public async Task OpenAsync(string host, ushort port, CancellationToken cancellationToken)
     {
@@ -45,6 +37,7 @@ public sealed class AsyncStream : IAsyncStream
                 _socket = socket;
                 _stream = new NetworkStream(_socket);
                 _pipeWriter = PipeWriter.Create(_stream);
+                _pipeReader = PipeReader.Create(_stream);
             }
             catch (Exception e)
             {
@@ -67,118 +60,6 @@ public sealed class AsyncStream : IAsyncStream
         }
     }
 
-    public ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)
-    {
-        SqlxException.ThrowIfNull(_stream);
-        return _stream.WriteAsync(buffer, cancellationToken);
-    }
-
-    public async ValueTask FlushAsync(CancellationToken cancellationToken)
-    {
-        SqlxException.ThrowIfNull(_pipeWriter);
-        FlushResult result = await _pipeWriter.FlushAsync(cancellationToken);
-        if (result.IsCanceled)
-        {
-            throw new OperationCanceledException();
-        }
-    }
-
-    /// <summary>
-    /// Fill the internal buffer up the desired length. If the buffer's size meets or exceeds the
-    /// required length, no async operation is performed and the method exists early.
-    /// </summary>
-    /// <param name="length">require length of data in the internal buffer</param>
-    /// <param name="cancellationToken">token to cancel the async operation</param>
-    /// <exception cref="SqlxException">if the stream is closed</exception>
-    private async ValueTask FillBufferAsync(int length, CancellationToken cancellationToken)
-    {
-        SqlxException.ThrowIfNull(_stream);
-        var bytesRemaining = _bufferLength - _bufferPosition;
-        if (bytesRemaining >= length)
-        {
-            return;
-        }
-
-        switch (length + bytesRemaining)
-        {
-            case > DefaultBufferSize:
-            {
-                ReallocateInternalBuffer(length + bytesRemaining);
-                break;
-            }
-            case < DefaultBufferSize when _innerBuffer.Length > DefaultBufferSize:
-            {
-                ReallocateInternalBuffer(DefaultBufferSize);
-                break;
-            }
-            default:
-            {
-                if (_bufferLength > 0)
-                {
-                    _innerBuffer.AsSpan()[_bufferPosition.._bufferLength]
-                        .CopyTo(_innerBuffer);
-                    _bufferLength = bytesRemaining;
-                }
-
-                break;
-            }
-        }
-
-        _bufferPosition = 0;
-        var count = length - bytesRemaining;
-        while (count > 0)
-        {
-            var bytesRead = await _stream.ReadAsync(
-                    _innerBuffer.AsMemory(_bufferLength),
-                    cancellationToken)
-                .ConfigureAwait(false);
-            if (bytesRead == 0)
-            {
-                throw new IOException("Stream closed unexpectedly");
-            }
-
-            count -= bytesRead;
-            _bufferLength += bytesRead;
-        }
-
-        return;
-
-        void ReallocateInternalBuffer(int newSize)
-        {
-            var tempBuffer = _innerBuffer;
-            _innerBuffer = ArrayPool.Rent(newSize);
-            tempBuffer.AsSpan()[_bufferPosition.._bufferLength]
-                .CopyTo(_innerBuffer);
-            ArrayPool.Return(tempBuffer);
-            _bufferLength = bytesRemaining;
-        }
-    }
-
-    public async ValueTask<byte> ReadByteAsync(CancellationToken cancellationToken)
-    {
-        SqlxException.ThrowIfNull(_stream);
-        await FillBufferAsync(1, cancellationToken).ConfigureAwait(false);
-        return _innerBuffer[_bufferPosition++];
-    }
-
-    public async ValueTask<int> ReadIntAsync(CancellationToken cancellationToken)
-    {
-        SqlxException.ThrowIfNull(_stream);
-        await FillBufferAsync(4, cancellationToken).ConfigureAwait(false);
-        var result = new ReadBuffer(_innerBuffer.AsSpan(_bufferPosition))
-            .ReadInt();
-        _bufferPosition += 4;
-        return result;
-    }
-
-    public async ValueTask ReadBufferAsync(Memory<byte> buffer, CancellationToken cancellationToken)
-    {
-        SqlxException.ThrowIfNull(_stream);
-        await FillBufferAsync(buffer.Length, cancellationToken).ConfigureAwait(false);
-        _innerBuffer.AsMemory(_bufferPosition, buffer.Length).CopyTo(buffer);
-        _bufferPosition += buffer.Length;
-    }
-
     private static async Task<IPEndPoint[]> GetIpEndpointsAsync(
         string host,
         ushort port,
@@ -197,6 +78,12 @@ public sealed class AsyncStream : IAsyncStream
 
     public void Dispose()
     {
+        if (_disposed) return;
+        
+        _disposed = true;
+        _pipeWriter?.Complete();
+        _pipeReader?.Complete();
+        
         if (_stream is SslStream sslStream)
         {
             try
@@ -241,9 +128,7 @@ public sealed class AsyncStream : IAsyncStream
 
         _stream = null;
         _socket = null;
-        _bufferLength = 0;
-        _bufferPosition = 0;
-        ArrayPool.Return(_innerBuffer);
-        _innerBuffer = [];
+        _pipeWriter = null;
+        _pipeReader = null;
     }
 }

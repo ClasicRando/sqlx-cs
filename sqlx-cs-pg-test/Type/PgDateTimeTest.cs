@@ -24,7 +24,7 @@ public class PgDateTimeTest
         byte[] expectedBytes)
     {
         var value = new DateTime(year, month, day, hour, minute, second, millisecond, microsecond);
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
 
         PgDateTime.Encode(value, buffer);
 

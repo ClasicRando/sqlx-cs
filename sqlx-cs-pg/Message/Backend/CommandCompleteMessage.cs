@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 
 namespace Sqlx.Postgres.Message.Backend;
@@ -16,7 +17,7 @@ internal sealed class CommandCompleteMessage(long rowCount, string message)
     internal long RowCount { get; } = rowCount;
     internal string Message { get; } = message;
 
-    public static CommandCompleteMessage Decode(ReadBuffer buffer)
+    public static CommandCompleteMessage Decode(ReadOnlySequence<byte> buffer)
     {
         var message = buffer.ReadCString();
         var rowCount = ExtractRowCount(message);

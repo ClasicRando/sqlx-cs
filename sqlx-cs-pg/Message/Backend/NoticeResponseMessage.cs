@@ -1,4 +1,4 @@
-using Sqlx.Core.Buffer;
+using System.Buffers;
 using Sqlx.Postgres.Message.Backend.Information;
 
 namespace Sqlx.Postgres.Message.Backend;
@@ -13,7 +13,7 @@ namespace Sqlx.Postgres.Message.Backend;
 /// </summary>
 internal record NoticeResponseMessage(InformationResponse InformationResponse) : IPgBackendMessage, IPgBackendMessageDecoder<NoticeResponseMessage>
 {
-    public static NoticeResponseMessage Decode(ReadBuffer buffer)
+    public static NoticeResponseMessage Decode(ReadOnlySequence<byte> buffer)
     {
         return new NoticeResponseMessage(InformationResponse.Decode(buffer));
     }

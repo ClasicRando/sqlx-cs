@@ -13,7 +13,7 @@ public class PgArrayTypeStructTest
     [MethodDataSource(nameof(EncodeCases))]
     public async Task Encode_Should_WriteIntArray(int?[] value, byte[] expectedBytes)
     {
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
 
         PgArrayTypeStruct<int, PgInt>.Encode(value, buffer);
 

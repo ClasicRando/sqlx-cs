@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 
 namespace Sqlx.Postgres.Message.Backend;
@@ -12,7 +13,7 @@ internal record NegotiateProtocolVersionMessage(
     string[] ProtocolOptionsNotRecognized)
     : IPgBackendMessage, IPgBackendMessageDecoder<NegotiateProtocolVersionMessage>
 {
-    public static NegotiateProtocolVersionMessage Decode(ReadBuffer buffer)
+    public static NegotiateProtocolVersionMessage Decode(ReadOnlySequence<byte> buffer)
     {
         var newestMinorProtocol = buffer.ReadInt();
         var count = buffer.ReadInt();

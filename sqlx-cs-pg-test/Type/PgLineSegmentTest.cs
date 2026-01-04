@@ -18,7 +18,7 @@ public class PgLineSegmentTest
             71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102,
         ];
         var value = new PgLineSegment(new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8));
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
 
         PgLineSegment.Encode(value, buffer);
 

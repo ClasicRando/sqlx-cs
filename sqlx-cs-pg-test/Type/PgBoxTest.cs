@@ -27,7 +27,7 @@ public class PgBoxTest
         double y2,
         byte[] expectedBytes)
     {
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
         var value = new PgBox(new PgPoint(x1, y1), new PgPoint(x2, y2));
 
         PgBox.Encode(value, buffer);

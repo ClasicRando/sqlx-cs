@@ -15,7 +15,7 @@ public class PgPointTest
         byte[] expectedBytes =
             [64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174];
         var value = new PgPoint(5.63, 8.59);
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
 
         PgPoint.Encode(value, buffer);
 

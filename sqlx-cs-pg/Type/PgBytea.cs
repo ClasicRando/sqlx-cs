@@ -114,7 +114,7 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
     private static byte[] DecodeWithoutPrefix(ReadOnlySpan<char> value)
     {
         var maxIndex = value.Length - 1;
-        using var buffer = new WriteBuffer(maxIndex);
+        using var buffer = new PooledArrayBufferWriter(maxIndex);
         var index = 0;
 
         while (index <= maxIndex)

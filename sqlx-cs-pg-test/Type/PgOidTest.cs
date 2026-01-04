@@ -16,7 +16,7 @@ public class PgOidTest
     [Arguments(uint.MaxValue, new byte[] { 255, 255, 255, 255 })]
     public async Task Encode_Should_WriteInt(uint value, byte[] expectedBytes)
     {
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
 
         PgOid.Encode(new PgOid(value), buffer);
 

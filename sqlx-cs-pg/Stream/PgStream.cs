@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
@@ -33,7 +34,6 @@ public sealed partial class PgStream : IPooledConnection
     private const string CommitQuery = "COMMIT;";
     private const string RollbackQuery = "ROLLBACK;";
 
-    private static readonly ArrayPool<byte> ArrayPool = ArrayPool<byte>.Shared;
     public DateTime LastOpenTimestamp { get; private set; }
     public Guid Id { get; } = Guid.NewGuid();
     private bool _disposed;
@@ -59,7 +59,9 @@ public sealed partial class PgStream : IPooledConnection
 
     private PgConnectOptions ConnectOptions { get; }
 
-    private IBufferWriter<byte> WriteBuffer => _asyncStream.WriteBuffer;
+    private PipeWriter Writer => _asyncStream.Writer;
+
+    private PipeReader Reader => _asyncStream.Reader;
 
     public ConnectionStatus Status { get; private set; } = ConnectionStatus.Closed;
 
@@ -522,27 +524,14 @@ public sealed partial class PgStream : IPooledConnection
     /// <returns>The next message sent by the backend</returns>
     private async Task<IPgBackendMessage> ReceiveNextMessage(CancellationToken cancellationToken)
     {
-        var format =
-            (PgBackendMessageType)await _asyncStream.ReadByteAsync(cancellationToken)
-                .ConfigureAwait(false);
-        var doesOwnData = format.DoesOwnData;
-        var size = await _asyncStream.ReadIntAsync(cancellationToken).ConfigureAwait(false) - 4;
-        var contents = doesOwnData ? new byte[size] : ArrayPool.Rent(size);
-        try
-        {
-            await _asyncStream.ReadBufferAsync(contents.AsMemory(0, size), cancellationToken)
-                .ConfigureAwait(false);
-            return doesOwnData
-                ? ConstructDataMessage(format, contents)
-                : ParseMessage(format, contents.AsSpan(0, size));
-        }
-        finally
-        {
-            if (!doesOwnData)
-            {
-                ArrayPool.Return(contents);
-            }
-        }
+        var format = await Reader.ReadByteAsync(cancellationToken).ConfigureAwait(false);
+        var size = await Reader.ReadIntAsync(cancellationToken).ConfigureAwait(false) - 4;
+        ReadResult readResult = await Reader.ReadAtLeastAsync(size, cancellationToken)
+            .ConfigureAwait(false);
+        var buffer = readResult.Buffer.Slice(0, size);
+        IPgBackendMessage message = ParseMessage((PgBackendMessageType)format, buffer);
+        Reader.AdvanceTo(readResult.Buffer.GetPosition(size));
+        return message;
     }
 
     /// <summary>
@@ -569,35 +558,17 @@ public sealed partial class PgStream : IPooledConnection
     }
 
     /// <summary>
-    /// Write all content in <see cref="WriteBuffer"/> to the <see cref="_asyncStream"/> and reset
-    /// the <see cref="WriteBuffer"/> for future writes.
+    /// Write all content in <see cref="Writer"/> to the <see cref="_asyncStream"/> and reset
+    /// the <see cref="Writer"/> for future writes.
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
-    private ValueTask FlushStream(CancellationToken cancellationToken)
+    private async ValueTask FlushStream(CancellationToken cancellationToken)
     {
-        return _asyncStream.FlushAsync(cancellationToken);
-    }
-
-    /// <summary>
-    /// Pass the contents of the messages data to the constructor for each depending upon the
-    /// <see cref="PgBackendMessageType"/>
-    /// </summary>
-    /// <param name="messageType">Message type</param>
-    /// <param name="contents">Message contents</param>
-    /// <returns>Backend message parsed</returns>
-    /// <exception cref="PgException">If the message type is not supported or expected</exception>
-    private static IPgBackendDataMessage ConstructDataMessage(
-        PgBackendMessageType messageType,
-        byte[] contents)
-    {
-        // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
-        return messageType switch
+        FlushResult result = await Writer.FlushAsync(cancellationToken);
+        if (result.IsCanceled)
         {
-            PgBackendMessageType.CopyData => new CopyDataMessage(contents),
-            PgBackendMessageType.DataRow => new DataRowMessage(contents),
-            _ => throw new PgException(
-                $"Expected backend message type that owns data but found '{messageType}'"),
-        };
+            throw new OperationCanceledException();
+        }
     }
 
     /// <summary>
@@ -609,36 +580,37 @@ public sealed partial class PgStream : IPooledConnection
     /// <exception cref="PgException">If the message type is not supported or expected</exception>
     private static IPgBackendMessage ParseMessage(
         PgBackendMessageType messageType,
-        Span<byte> contents)
+        ReadOnlySequence<byte> contents)
     {
-        ReadBuffer buffer = new(contents);
         // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
         return messageType switch
         {
-            PgBackendMessageType.Authentication => AuthenticationMessage.Decode(buffer),
-            PgBackendMessageType.BackendDataKey => BackendDataKeyMessage.Decode(buffer),
+            PgBackendMessageType.Authentication => AuthenticationMessage.Decode(contents),
+            PgBackendMessageType.BackendDataKey => BackendDataKeyMessage.Decode(contents),
             PgBackendMessageType.BindComplete => BindCompleteMessage.Instance,
             PgBackendMessageType.CloseComplete => CloseCompleteMessage.Instance,
-            PgBackendMessageType.CommandComplete => CommandCompleteMessage.Decode(buffer),
+            PgBackendMessageType.CommandComplete => CommandCompleteMessage.Decode(contents),
+            PgBackendMessageType.CopyData => CopyDataMessage.Decode(contents),
             PgBackendMessageType.CopyDone => CopyDoneMessage.Instance,
-            PgBackendMessageType.CopyInResponse => CopyInResponseMessage.Decode(buffer),
-            PgBackendMessageType.CopyOutResponse => CopyOutResponseMessage.Decode(buffer),
+            PgBackendMessageType.CopyInResponse => CopyInResponseMessage.Decode(contents),
+            PgBackendMessageType.CopyOutResponse => CopyOutResponseMessage.Decode(contents),
             PgBackendMessageType.CopyBothResponse => throw new PgException(
                 "CopyBoth is not supported by this driver"),
+            PgBackendMessageType.DataRow => DataRowMessage.Decode(contents),
             PgBackendMessageType.EmptyQueryResponse => throw new PgException(
                 "Empty query response packet should never be received"),
-            PgBackendMessageType.ErrorResponse => ErrorResponseMessage.Decode(buffer),
+            PgBackendMessageType.ErrorResponse => ErrorResponseMessage.Decode(contents),
             PgBackendMessageType.NegotiateProtocolVersion =>
-                NegotiateProtocolVersionMessage.Decode(buffer),
+                NegotiateProtocolVersionMessage.Decode(contents),
             PgBackendMessageType.NoData => NoDataMessage.Instance,
-            PgBackendMessageType.NoticeResponse => NoticeResponseMessage.Decode(buffer),
-            PgBackendMessageType.NotificationResponse => PgNotification.Decode(buffer),
-            PgBackendMessageType.ParameterDescription => ParameterDescriptionMessage.Decode(buffer),
-            PgBackendMessageType.ParameterStatus => ParameterStatusMessage.Decode(buffer),
+            PgBackendMessageType.NoticeResponse => NoticeResponseMessage.Decode(contents),
+            PgBackendMessageType.NotificationResponse => PgNotification.Decode(contents),
+            PgBackendMessageType.ParameterDescription => ParameterDescriptionMessage.Decode(contents),
+            PgBackendMessageType.ParameterStatus => ParameterStatusMessage.Decode(contents),
             PgBackendMessageType.ParseComplete => ParseCompleteMessage.Instance,
             PgBackendMessageType.PortalSuspend => PortalSuspendedMessage.Instance,
-            PgBackendMessageType.ReadyForQuery => ReadyForQueryMessage.Decode(buffer),
-            PgBackendMessageType.RowDescription => RowDescriptionMessage.Decode(buffer),
+            PgBackendMessageType.ReadyForQuery => ReadyForQueryMessage.Decode(contents),
+            PgBackendMessageType.RowDescription => RowDescriptionMessage.Decode(contents),
             _ => throw new PgException(
                 $"Expected backend message type that does not own data but found '{messageType}'"),
         };

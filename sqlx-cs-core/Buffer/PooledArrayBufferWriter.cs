@@ -12,14 +12,14 @@ namespace Sqlx.Core.Buffer;
 /// To ensure that the <see cref="ArrayPool{T}.Shared"/> pool is not exhausted you must dispose of
 /// each instance created which calls <see cref="ArrayPool{T}.Return"/>.
 /// </summary>
-public sealed class WriteBuffer : IBufferWriter<byte>, IDisposable
+public sealed class PooledArrayBufferWriter : IBufferWriter<byte>, IDisposable
 {
     private const int DefaultCapacity = 8192;
     private static readonly ArrayPool<byte> ArrayPool = ArrayPool<byte>.Shared;
     
     private byte[] _buffer;
 
-    public WriteBuffer(int initialCapacity = DefaultCapacity)
+    public PooledArrayBufferWriter(int initialCapacity = DefaultCapacity)
     {
         if (initialCapacity <= 0)
         {

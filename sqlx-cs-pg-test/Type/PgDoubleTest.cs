@@ -19,7 +19,7 @@ public class PgDoubleTest
     [Arguments(double.MaxValue, new byte[] { 127, 239, 255, 255, 255, 255, 255, 255 })]
     public async Task Encode_Should_WriteDouble(double value, byte[] expectedBytes)
     {
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
 
         PgDouble.Encode(value, buffer);
 

@@ -36,7 +36,7 @@ public class PgJsonTest
         byte[] expectedBytes)
     {
         var value = new Inner(id, name);
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
 
         PgJson<Inner>.Encode(
             value,

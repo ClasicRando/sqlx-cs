@@ -1,4 +1,4 @@
-using Sqlx.Core.Buffer;
+using System.Buffers;
 
 namespace Sqlx.Postgres.Message.Backend;
 
@@ -12,7 +12,13 @@ namespace Sqlx.Postgres.Message.Backend;
 /// are no bytes after the length.
 /// </summary>
 /// <param name="rowData"></param>
-internal sealed class DataRowMessage(byte[] rowData) : IPgBackendDataMessage
+internal sealed class DataRowMessage(byte[] rowData)
+    : IPgBackendDataMessage, IPgBackendMessageDecoder<DataRowMessage>
 {
     public byte[] RowData { get; } = rowData;
+
+    public static DataRowMessage Decode(ReadOnlySequence<byte> buffer)
+    {
+        return new DataRowMessage(buffer.ToArray());
+    }
 }

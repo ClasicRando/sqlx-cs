@@ -26,12 +26,3 @@ internal enum PgBackendMessageType : byte
     ReadyForQuery = (byte)'Z',
     RowDescription = (byte)'T',
 }
-
-internal static class PgBackendMessageTypeExtensions
-{
-    extension(PgBackendMessageType messageType)
-    {
-        public bool DoesOwnData =>
-            messageType is PgBackendMessageType.CopyData or PgBackendMessageType.DataRow;
-    }
-}

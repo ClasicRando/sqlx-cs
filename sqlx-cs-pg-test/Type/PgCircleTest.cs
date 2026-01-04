@@ -18,7 +18,7 @@ public class PgCircleTest
             0, 0, 0,
         ];
         var value = new PgCircle(new PgPoint(5.63, 8.59), 4);
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
 
         PgCircle.Encode(value, buffer);
 

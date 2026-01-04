@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Message.Backend.Information;
 
@@ -14,7 +15,7 @@ namespace Sqlx.Postgres.Message.Backend;
 internal record ErrorResponseMessage(InformationResponse InformationResponse)
     : IPgBackendMessage, IPgBackendMessageDecoder<ErrorResponseMessage>
 {
-    public static ErrorResponseMessage Decode(ReadBuffer buffer)
+    public static ErrorResponseMessage Decode(ReadOnlySequence<byte> buffer)
     {
         return new ErrorResponseMessage(InformationResponse.Decode(buffer));
     }

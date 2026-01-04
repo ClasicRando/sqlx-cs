@@ -15,7 +15,7 @@ public class PgStringTest
     [Arguments("😀", new byte[] { 240, 159, 152, 128 })]
     public async Task Encode_Should_WriteText(string value, byte[] expectedBytes)
     {
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
 
         PgString.Encode(value, buffer);
 

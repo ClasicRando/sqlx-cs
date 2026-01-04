@@ -11,7 +11,7 @@ namespace Sqlx.Postgres.Query;
 /// </summary>
 internal sealed class PgParameterBuffer : IDisposable
 {
-    private readonly WriteBuffer _buffer = new();
+    private readonly PooledArrayBufferWriter _buffer = new();
     private readonly List<PgTypeInfo> _pgTypes = [];
 
     /// <summary>

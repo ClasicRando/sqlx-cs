@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 
 namespace Sqlx.Postgres.Message.Backend;
@@ -12,7 +13,7 @@ namespace Sqlx.Postgres.Message.Backend;
 internal struct CopyInResponseMessage(CopyResponse CopyResponse)
     : IPgBackendMessage, IPgBackendMessageDecoder<CopyInResponseMessage>
 {
-    public static CopyInResponseMessage Decode(ReadBuffer buffer)
+    public static CopyInResponseMessage Decode(ReadOnlySequence<byte> buffer)
     {
         return new CopyInResponseMessage(CopyResponse.Decode(buffer));
     }

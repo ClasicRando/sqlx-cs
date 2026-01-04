@@ -17,7 +17,7 @@ public class PgFloatTest
     [Arguments(float.MaxValue, new byte[] { 127, 127, 255, 255 })]
     public async Task Encode_Should_WriteFloat(float value, byte[] expectedBytes)
     {
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
 
         PgFloat.Encode(value, buffer);
 

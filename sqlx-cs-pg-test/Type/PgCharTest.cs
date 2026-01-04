@@ -15,7 +15,7 @@ public class PgCharTest
     [Arguments(sbyte.MaxValue, new byte[] { 127 })]
     public async Task Encode_Should_WriteByte(sbyte value, byte[] expectedBytes)
     {
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
 
         PgChar.Encode(value, buffer);
 

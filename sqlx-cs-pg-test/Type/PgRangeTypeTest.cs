@@ -13,7 +13,7 @@ public class PgRangeTypeTest
     [MethodDataSource(nameof(EncodeTestCases))]
     public async Task Encode_Should_WriteIntRange(PgRange<int> value, byte[] expectedBytes)
     {
-        using var buffer = new WriteBuffer();
+        using var buffer = new PooledArrayBufferWriter();
 
         PgRangeType<int, PgInt>.Encode(value, buffer);
 

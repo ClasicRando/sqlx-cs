@@ -1,4 +1,4 @@
-using System.Buffers;
+using System.IO.Pipelines;
 
 namespace Sqlx.Core.Stream;
 
@@ -13,7 +13,9 @@ public interface IAsyncStream : IDisposable
     /// </summary>
     bool IsConnected { get; }
     
-    IBufferWriter<byte> WriteBuffer { get; }
+    PipeWriter Writer { get; }
+    
+    PipeReader Reader { get; }
     
     /// <summary>
     /// Open the stream's connection to a remote host at the specified port
@@ -22,31 +24,4 @@ public interface IAsyncStream : IDisposable
     /// <param name="port">host port to connect to</param>
     /// <param name="cancellationToken">token to cancel the operation</param>
     Task OpenAsync(string host, ushort port, CancellationToken cancellationToken);
-    
-    /// <summary>
-    /// Flush all previously written bytes to <see cref="WriteBuffer"/>
-    /// </summary>
-    /// <param name="cancellationToken">Token to cancel the operation</param>
-    ValueTask FlushAsync(CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Read a single byte from the stream
-    /// </summary>
-    /// <param name="cancellationToken">token to cancel the operation</param>
-    /// <returns>the next byte from the stream</returns>
-    ValueTask<byte> ReadByteAsync(CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Read the next 4 bytes from the stream and combine into a single int
-    /// </summary>
-    /// <param name="cancellationToken">token to cancel the operation</param>
-    /// <returns>the next integer from the stream</returns>
-    ValueTask<int> ReadIntAsync(CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Read as many bytes as requested by the supplied buffer and copy those bytes into the buffer
-    /// </summary>
-    /// <param name="buffer">buffer to copy bytes into</param>
-    /// <param name="cancellationToken">token to cancel the operation</param>
-    ValueTask ReadBufferAsync(Memory<byte> buffer, CancellationToken cancellationToken);
 }

@@ -1,4 +1,4 @@
-using Sqlx.Core.Buffer;
+using System.Buffers;
 
 namespace Sqlx.Postgres.Message.Backend;
 
@@ -14,5 +14,5 @@ internal interface IPgBackendMessageDecoder<out TMessage> where TMessage : IPgBa
     /// </summary>
     /// <param name="buffer">Message contents buffer</param>
     /// <returns>A new instance of the message type</returns>
-    internal static abstract TMessage Decode(ReadBuffer buffer);
+    internal static abstract TMessage Decode(ReadOnlySequence<byte> buffer);
 }

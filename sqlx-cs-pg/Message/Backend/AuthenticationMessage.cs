@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Message.Auth;
@@ -16,7 +17,7 @@ namespace Sqlx.Postgres.Message.Backend;
 /// </summary>
 internal abstract class AuthenticationMessage : IPgBackendMessage, IPgBackendMessageDecoder<IAuthMessage>
 {
-    public static IAuthMessage Decode(ReadBuffer buffer)
+    public static IAuthMessage Decode(ReadOnlySequence<byte> buffer)
     {
         var authMethod = buffer.ReadInt();
         switch (authMethod)
@@ -26,18 +27,20 @@ internal abstract class AuthenticationMessage : IPgBackendMessage, IPgBackendMes
             case 3:
                 return ClearTextPasswordAuthMessage.Instance;
             case 5:
-                return new MD5PasswordAuthMessage(buffer.ReadBytes(4));
+                var bytes = new byte[4];
+                buffer.ReadBytes(bytes);
+                return new MD5PasswordAuthMessage(bytes);
             case 10:
                 List<string> authMechanisms = [];
-                while (buffer.Remaining > 0)
+                while (!buffer.IsEmpty)
                 {
                     authMechanisms.Add(buffer.ReadCString());
                 }
                 return new SaslAuthMessage(authMechanisms);
             case 11:
-                return new SaslContinueAuthMessage(buffer.ReadText());
+                return new SaslContinueAuthMessage(buffer.ReadString());
             case 12:
-                return new SaslFinalAuthMessage(buffer.ReadText());
+                return new SaslFinalAuthMessage(buffer.ReadString());
             default:
                 throw new PgException($"Unknown authentication method: {authMethod}");
         }

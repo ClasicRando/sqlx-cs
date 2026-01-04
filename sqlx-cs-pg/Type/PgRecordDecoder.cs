@@ -31,8 +31,8 @@ public static class PgRecordDecoder
         }
 
         var columns = new PgColumnMetadata[attributeCount];
-        using WriteBuffer writeBuffer = new();
-        writeBuffer.WriteShort((short)attributeCount);
+        using PooledArrayBufferWriter bufferWriter = new();
+        bufferWriter.WriteShort((short)attributeCount);
 
         for (var i = 0; i < attributeCount; i++)
         {
@@ -49,19 +49,19 @@ public static class PgRecordDecoder
             binaryValue.Buffer.ReadInt();
 
             var attributeLength = binaryValue.Buffer.ReadInt();
-            writeBuffer.WriteInt(attributeLength);
+            bufferWriter.WriteInt(attributeLength);
             if (attributeLength == -1)
             {
                 continue;
             }
             
-            writeBuffer.WriteBytes(binaryValue.Buffer.ReadBytesAsSpan(attributeLength));
+            bufferWriter.WriteBytes(binaryValue.Buffer.ReadBytesAsSpan(attributeLength));
         }
 
-        var buffer = ArrayPool<byte>.Shared.Rent(writeBuffer.ReadableSpan.Length);
+        var buffer = ArrayPool<byte>.Shared.Rent(bufferWriter.ReadableSpan.Length);
         try
         {
-            writeBuffer.ReadableSpan.CopyTo(buffer);
+            bufferWriter.ReadableSpan.CopyTo(buffer);
             var row = new PgDataRow(buffer, new PgStatementMetadata(columns));
             return T.FromRow(row);
         }
@@ -90,8 +90,8 @@ public static class PgRecordDecoder
         }
         
         var columns = new PgColumnMetadata[attributeLiterals.Count];
-        using WriteBuffer writeBuffer = new();
-        writeBuffer.WriteShort((short)attributeLiterals.Count);
+        using PooledArrayBufferWriter bufferWriter = new();
+        bufferWriter.WriteShort((short)attributeLiterals.Count);
 
         for (var i = 0; i < attributeLiterals.Count; i++)
         {
@@ -108,21 +108,21 @@ public static class PgRecordDecoder
 
             if (attributeLiteral is null)
             {
-                writeBuffer.WriteInt(-1);
+                bufferWriter.WriteInt(-1);
                 continue;
             }
 
             var literalByteCount = Charsets.Default.GetByteCount(attributeLiteral);
-            writeBuffer.WriteInt(literalByteCount);
-            var span = writeBuffer.GetSpan(literalByteCount);
+            bufferWriter.WriteInt(literalByteCount);
+            var span = bufferWriter.GetSpan(literalByteCount);
             Charsets.Default.GetBytes(attributeLiteral, span);
-            writeBuffer.Advance(literalByteCount);
+            bufferWriter.Advance(literalByteCount);
         }
 
-        var buffer = ArrayPool<byte>.Shared.Rent(writeBuffer.ReadableSpan.Length);
+        var buffer = ArrayPool<byte>.Shared.Rent(bufferWriter.ReadableSpan.Length);
         try
         {
-            writeBuffer.ReadableSpan.CopyTo(buffer);
+            bufferWriter.ReadableSpan.CopyTo(buffer);
             var row = new PgDataRow(buffer, new PgStatementMetadata(columns));
             return T.FromRow(row);
         }

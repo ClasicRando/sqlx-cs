@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 
 namespace Sqlx.Postgres.Message.Backend;
@@ -11,7 +12,7 @@ namespace Sqlx.Postgres.Message.Backend;
 internal record ReadyForQueryMessage(TransactionStatus TransactionStatus)
     : IPgBackendMessage, IPgBackendMessageDecoder<ReadyForQueryMessage>
 {
-    public static ReadyForQueryMessage Decode(ReadBuffer buffer)
+    public static ReadyForQueryMessage Decode(ReadOnlySequence<byte> buffer)
     {
         return new ReadyForQueryMessage((TransactionStatus)buffer.ReadByte());
     }
