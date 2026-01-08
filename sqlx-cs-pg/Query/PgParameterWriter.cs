@@ -8,7 +8,9 @@ namespace Sqlx.Postgres.Query;
 
 /// <summary>
 /// Buffer writer for binding binary encoded parameters to an underlining
-/// <see cref="IBufferWriter{byte}"/>
+/// <see cref="IBufferWriter{byte}"/>. All bind operations are written to the buffer with an
+/// <see cref="int"/> length prefix and the type's <see cref="PgTypeInfo"/> added to the list of
+/// types.
 /// </summary>
 internal sealed class PgParameterWriter : IPgBindable
 {

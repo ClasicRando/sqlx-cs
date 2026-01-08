@@ -6,6 +6,32 @@ using Sqlx.Postgres.Query;
 
 namespace Sqlx.Postgres.Type;
 
+/// <summary>
+/// Encoder for Postgres composite types where values are encoded like structs. Note that when
+/// encoding attributes you must follow the exact ordering and types of the attributes found in the
+/// Postgres type definition.
+/// <example>
+/// For this type definition:
+/// <code>
+/// CREATE TYPE example AS (id integer, name text);
+/// </code>
+/// You would write this type:
+/// <code>
+/// public record Example(int Id, string Name) : IPgUdt&lt;Example&gt;
+/// {
+///     public static void Encode(T value, IBufferWriter&lt;byte&gt; buffer)
+///     {
+///         using PgRecordEncoder encoder = new();
+///         encoder.Bind(value.Id);
+///         encoder.Bind(value.Name);
+///         buffer.Write(encoder.Data);
+///     }
+///
+///     // Other IPgUdt methods and properties
+/// }
+/// </code>
+/// </example>
+/// </summary>
 public sealed class PgRecordEncoder : IPgBindable
 {
     private readonly CompositeType.Attribute[] _attributes;

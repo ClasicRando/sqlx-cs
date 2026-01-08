@@ -11,6 +11,40 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
+/// <summary>
+/// Decoder for Postgres composite types where values are decoded using its
+/// <see cref="IFromRow{TDataRow,TResult}"/> implemention. Each decode method takes the value to
+/// decode and converts that to a <see cref="IPgDataRow"/> to allow for decoding the value as if it
+/// were a row.
+/// <example>
+/// For this type definition:
+/// <code>
+/// CREATE TYPE example AS (id integer, name text);
+/// </code>
+/// You would write this type:
+/// <code>
+/// public record Example(int Id, string Name) : IPgUdt&lt;Example&gt;, IFromRow&lt;IPgDataRow, Example&gt;
+/// {
+///     public static Example DecodeBytes(ref PgBinaryValue value)
+///     {
+///         return PgRecordDecoder.DecodeBinary&lt;Example&gt;(ref value);
+///     }
+/// 
+///     public static Example DecodeText(PgTextValue value)
+///     {
+///         return PgRecordDecoder.DecodeText&lt;Example&gt;(in value);
+///     }
+///
+///     public static Example FromRow(IPgDataRow dataRow)
+///     {
+///         return new Example(dataRow.GetIntNotNull("id"), dataRow.GetStringNotNull("name"));
+///     }
+///
+///     // Other IPgUdt methods and properties
+/// }
+/// </code>
+/// </example>
+/// </summary>
 public static class PgRecordDecoder
 {
     public static T DecodeBinary<T>(ref PgBinaryValue binaryValue)

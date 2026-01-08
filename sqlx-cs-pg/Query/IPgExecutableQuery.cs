@@ -18,7 +18,7 @@ public interface IPgExecutableQuery : IExecutableQuery<IPgDataRow>, IPgBindable
     /// Type info for each encoded parameter. Will be <see cref="PgTypeInfo.Unknown"/> when the
     /// parameter value is null.
     /// </summary>
-    IReadOnlyList<PgTypeInfo> PgTypes { get; }
+    IReadOnlyList<PgTypeInfo> ParameterPgTypes { get; }
     
     /// <summary>
     /// Encoded bytes for each parameter. This should only be inspected by

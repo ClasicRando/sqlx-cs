@@ -133,7 +133,7 @@ public partial class PgStream
             Status = ConnectionStatus.Executing;
             PgPreparedStatement statement = await GetOrPrepareStatement(
                     executableQuery.Query,
-                    executableQuery.PgTypes,
+                    executableQuery.ParameterPgTypes,
                     cancellationToken)
                 .ConfigureAwait(false);
             await ExecutePreparedStatement(
@@ -185,7 +185,7 @@ public partial class PgStream
                 PgExecutableQuery executableQuery = queries[i];
                 PgPreparedStatement statement = await GetOrPrepareStatement(
                         executableQuery.Query,
-                        executableQuery.PgTypes,
+                        executableQuery.ParameterPgTypes,
                         cancellationToken)
                     .ConfigureAwait(false);
                 statements[i] = statement;

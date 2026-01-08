@@ -10,8 +10,8 @@ using Sqlx.Postgres.Type;
 namespace Sqlx.Postgres.Query;
 
 /// <summary>
-/// <see cref="IPgExecutableQuery"/> implementation for Postgres. Parameters are encoded into a
-/// buffer using a <see cref="PgParameterWriter"/> and the query is executed using the
+/// Default <see cref="IPgExecutableQuery"/> implementation for Postgres. Parameters are encoded
+/// into a buffer using a <see cref="PgParameterWriter"/> and the query is executed using the
 /// <see cref="PgConnection"/> supplied to the constructor.
 /// </summary>
 internal class PgExecutableQuery : IPgExecutableQuery
@@ -31,7 +31,7 @@ internal class PgExecutableQuery : IPgExecutableQuery
 
     public short ParameterCount => _parameterBuffer.ParameterCount;
 
-    public IReadOnlyList<PgTypeInfo> PgTypes => _parameterBuffer.PgTypes;
+    public IReadOnlyList<PgTypeInfo> ParameterPgTypes => _parameterBuffer.PgTypes;
 
     public ReadOnlySpan<byte> EncodedParameters => _buffer.ReadableSpan;
 
