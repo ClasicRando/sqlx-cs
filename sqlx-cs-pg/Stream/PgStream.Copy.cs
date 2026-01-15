@@ -14,7 +14,7 @@ namespace Sqlx.Postgres.Stream;
 public sealed partial class PgStream
 {
     private const int MaxCopyDataSendSize = 8192;
-    
+
     /// <summary>
     /// Execute a <c>COPY TO</c> statement against this connection. Initiates the copy operation
     /// followed by yielding each data row until the query execution is complete
@@ -43,10 +43,8 @@ public sealed partial class PgStream
             {
                 IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
                     .ConfigureAwait(false);
-                IPgBackendMessage? postProcessMessage = await ApplyStandardMessageProcessing(
-                        backendMessage,
-                        cancellationToken)
-                    .ConfigureAwait(false);
+                IPgBackendMessage? postProcessMessage =
+                    ApplyStandardMessageProcessing(backendMessage);
                 cancellationToken.ThrowIfCancellationRequested();
                 switch (postProcessMessage)
                 {
@@ -201,10 +199,8 @@ public sealed partial class PgStream
         {
             IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
                 .ConfigureAwait(false);
-            IPgBackendMessage? postProcessMessage = await ApplyStandardMessageProcessing(
-                    backendMessage,
-                    cancellationToken)
-                .ConfigureAwait(false);
+            IPgBackendMessage? postProcessMessage = ApplyStandardMessageProcessing(
+                    backendMessage);
             cancellationToken.ThrowIfCancellationRequested();
             switch (postProcessMessage)
             {

@@ -1,7 +1,6 @@
 using System.Buffers;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
-using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Sqlx.Core;
 using Sqlx.Core.Buffer;
@@ -39,9 +38,6 @@ public sealed partial class PgStream : IPooledConnection
     private bool _disposed;
     private readonly IAsyncStream _asyncStream;
     private readonly ILogger<PgStream> _logger;
-
-    private readonly Channel<PgNotification> _notifications =
-        Channel.CreateUnbounded<PgNotification>();
 
     private BackendDataKeyMessage? _backendDataKey;
     private long _inTransaction;
@@ -334,26 +330,34 @@ public sealed partial class PgStream : IPooledConnection
         }
     }
 
-    private async Task<PgNotification> WaitForNotificationOrError(
+    internal async Task<Either<PgNotification, ErrorResponseMessage>> WaitForNotificationOrError(
         CancellationToken cancellationToken)
     {
+        Status = ConnectionStatus.Fetching;
         while (true)
         {
             IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
                 .ConfigureAwait(false);
-            IPgBackendMessage? postProcessMessage = await ApplyStandardMessageProcessing(
+            IPgBackendMessage? postProcessMessage = ApplyStandardMessageProcessing(
                     backendMessage,
-                    cancellationToken,
-                    handleNotification: false)
-                .ConfigureAwait(false);
-            if (postProcessMessage is PgNotification result)
+                    handleNotification: false,
+                    throwOnError: false);
+            switch (postProcessMessage)
             {
-                return result;
+                case null:
+                    break;
+                case PgNotification result:
+                    Status = ConnectionStatus.Idle;
+                    return new Either<PgNotification, ErrorResponseMessage>.Left(result);
+                case ErrorResponseMessage error:
+                    Status = ConnectionStatus.Idle;
+                    return new Either<PgNotification, ErrorResponseMessage>.Right(error);
+                default:
+                    _logger.LogIgnoreUnexpectedMessage(
+                        SqlxConfig.DetailedLoggingLevel,
+                        backendMessage);
+                    break;
             }
-
-            _logger.LogIgnoreUnexpectedMessage(
-                SqlxConfig.DetailedLoggingLevel,
-                backendMessage);
         }
     }
 
@@ -365,7 +369,7 @@ public sealed partial class PgStream : IPooledConnection
     /// <typeparam name="T">Message type to wait for</typeparam>
     /// <returns>The message if received before an error</returns>
     /// <exception cref="PgException">If an error message is sent by the backend</exception>
-    private async Task<T> WaitForOrThrowError<T>(CancellationToken cancellationToken)
+    internal async Task<T> WaitForOrThrowError<T>(CancellationToken cancellationToken)
         where T : IPgBackendMessage
     {
         var result = await WaitForOrError<T>(cancellationToken)
@@ -395,11 +399,9 @@ public sealed partial class PgStream : IPooledConnection
         {
             IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
                 .ConfigureAwait(false);
-            IPgBackendMessage? postProcessMessage = await ApplyStandardMessageProcessing(
+            IPgBackendMessage? postProcessMessage = ApplyStandardMessageProcessing(
                     backendMessage,
-                    cancellationToken,
-                    throwOnError: false)
-                .ConfigureAwait(false);
+                    throwOnError: false);
             switch (postProcessMessage)
             {
                 case null:
@@ -423,7 +425,6 @@ public sealed partial class PgStream : IPooledConnection
     /// database backend.
     /// </summary>
     /// <param name="message">Message to optionally process</param>
-    /// <param name="cancellationToken">Token to cancel async operation</param>
     /// <param name="throwOnError">True if <see cref="ErrorResponseMessage"/> should throw</param>
     /// <param name="handleNotification">
     /// True if <see cref="PgNotification"/>s should be sent to <see cref="OnNotification"/>
@@ -432,9 +433,8 @@ public sealed partial class PgStream : IPooledConnection
     /// <exception cref="PgException">
     /// If <paramref name="throwOnError"/> is true and the message was an error response
     /// </exception>
-    private async Task<IPgBackendMessage?> ApplyStandardMessageProcessing(
+    private IPgBackendMessage? ApplyStandardMessageProcessing(
         IPgBackendMessage message,
-        CancellationToken cancellationToken,
         bool throwOnError = true,
         bool handleNotification = true)
     {
@@ -445,7 +445,7 @@ public sealed partial class PgStream : IPooledConnection
                 return null;
             case PgNotification notification:
                 if (!handleNotification) return notification;
-                await OnNotification(notification, cancellationToken).ConfigureAwait(false);
+                OnNotification(notification);
                 return null;
             case BackendDataKeyMessage backendDataKey:
                 OnBackendDataKey(backendDataKey);
@@ -480,12 +480,9 @@ public sealed partial class PgStream : IPooledConnection
     /// Add notification to notifications channel
     /// </summary>
     /// <param name="notification">Notification sent from database backend</param>
-    /// <param name="cancellationToken">Token to cancel async operation</param>
-    private ValueTask OnNotification(
-        PgNotification notification,
-        CancellationToken cancellationToken)
+    private void OnNotification(PgNotification notification)
     {
-        return _notifications.Writer.WriteAsync(notification, cancellationToken);
+        _logger.LogNotification(SqlxConfig.DetailedLoggingLevel, notification);
     }
 
     /// <summary>
@@ -634,7 +631,7 @@ public sealed partial class PgStream : IPooledConnection
         {
             try
             {
-                SendTerminate().GetAwaiter().GetResult();
+                SendTerminate().AsTask().GetAwaiter().GetResult();
             }
             catch (Exception e)
             {

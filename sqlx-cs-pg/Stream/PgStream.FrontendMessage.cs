@@ -205,7 +205,7 @@ public sealed partial class PgStream
         Writer.WriteCString(preparedStatementName);
     }
 
-    private ValueTask SendQueryMessage(in ReadOnlySpan<char> query, CancellationToken cancellationToken)
+    internal ValueTask SendQueryMessage(in ReadOnlySpan<char> query, CancellationToken cancellationToken)
     {
         Writer.WriteCode(PgFrontendMessageType.Query);
         var queryByteLength = Charsets.Default.GetByteCount(query);

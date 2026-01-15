@@ -8,11 +8,11 @@ namespace Sqlx.Postgres.Fixtures;
 
 public sealed class DatabaseFixture : IAsyncInitializer, IAsyncDisposable
 {
-    public PgConnectionPool BasicPool { get; }
+    public IPgConnectionPool BasicPool { get; }
 
-    public PgConnectionPool SimpleQueryTextPool { get; }
+    public IPgConnectionPool SimpleQueryTextPool { get; }
 
-    public PgConnectionPool QueryTimeoutPool { get; }
+    public IPgConnectionPool QueryTimeoutPool { get; }
 
     public DatabaseFixture()
     {
@@ -66,10 +66,11 @@ public sealed class DatabaseFixture : IAsyncInitializer, IAsyncDisposable
     private async Task CreateStoredProcedures()
     {
         using IPgConnection connection = BasicPool.CreateConnection();
-        using IPgExecutableQuery setUp = connection.CreateQuery(PgConnectionTest.CreateProceduresQuery);
+        using IPgExecutableQuery setUp =
+            connection.CreateQuery(PgConnectionTest.CreateProceduresQuery);
         await setUp.ExecuteNonQueryAsync();
     }
-    
+
     private async Task CreateCompositeType()
     {
         using IPgConnection connection = BasicPool.CreateConnection();

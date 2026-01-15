@@ -6,7 +6,7 @@ namespace Sqlx.Postgres;
 
 public static class Postgres
 {
-    public static PgConnectionPool Pool(PgConnectOptions connectOptions, PoolOptions poolOptions)
+    public static IPgConnectionPool Pool(PgConnectOptions connectOptions, PoolOptions poolOptions)
     {
         return new PgConnectionPool(connectOptions, poolOptions);
     }

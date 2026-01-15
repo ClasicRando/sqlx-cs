@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Sqlx.Postgres.Message.Backend;
+using Sqlx.Postgres.Notify;
 using Sqlx.Postgres.Stream;
 
 namespace Sqlx.Postgres.Logging;
@@ -20,6 +21,19 @@ internal static partial class PgLog
         this ILogger<PgStream> logger,
         LogLevel logLevel,
         NoticeResponseMessage noticeResponse);
+    
+    /// <summary>
+    /// Log a <see cref="PgNotification"/> message sent from the database. These are only received
+    /// from active connections that have listened but is not used by a <see cref="PgListener"/>.
+    /// </summary>
+    /// <param name="logger">The logger</param>
+    /// <param name="logLevel">Log level of the message</param>
+    /// <param name="notification">Notification message</param>
+    [LoggerMessage(Message = "Notification -> {@notification}")]
+    internal static partial void LogNotification(
+        this ILogger<PgStream> logger,
+        LogLevel logLevel,
+        PgNotification notification);
     
     /// <summary>
     /// Log a parameter status update message sent from the database

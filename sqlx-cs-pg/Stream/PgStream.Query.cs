@@ -72,7 +72,7 @@ public partial class PgStream
     /// multi-statement queries, this flow will repeat until all result sets have been sent.
     /// </returns>
     /// <exception cref="ArgumentException">The query is null or whitespace</exception>
-    private async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> SendSimpleQuery(
+    internal async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> SendSimpleQuery(
         string sql,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -325,10 +325,8 @@ public partial class PgStream
         {
             IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
                 .ConfigureAwait(false);
-            IPgBackendMessage? postProcessMessage = await ApplyStandardMessageProcessing(
-                    backendMessage,
-                    cancellationToken)
-                .ConfigureAwait(false);
+            IPgBackendMessage? postProcessMessage = ApplyStandardMessageProcessing(
+                    backendMessage);
             cancellationToken.ThrowIfCancellationRequested();
             switch (postProcessMessage)
             {
@@ -428,10 +426,8 @@ public partial class PgStream
         {
             IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
                 .ConfigureAwait(false);
-            IPgBackendMessage? postProcessMessage = await ApplyStandardMessageProcessing(
-                    backendMessage,
-                    cancellationToken)
-                .ConfigureAwait(false);
+            IPgBackendMessage? postProcessMessage = ApplyStandardMessageProcessing(
+                    backendMessage);
             cancellationToken.ThrowIfCancellationRequested();
             switch (postProcessMessage)
             {
