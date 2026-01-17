@@ -4,7 +4,7 @@ namespace Sqlx.Postgres.Message.Frontend;
 /// Target of a <see cref="PgFrontendMessageType.Close"/> and
 /// <see cref="PgFrontendMessageType.Describe"/> message.
 /// </summary>
-public enum MessageTarget : byte
+internal enum MessageTarget
 {
     PreparedStatement = (byte)'S',
     Portal = (byte)'P',

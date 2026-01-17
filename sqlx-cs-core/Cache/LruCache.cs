@@ -37,6 +37,7 @@ public class LruCache<TKey, TValue> where TKey : notnull
     /// <exception cref="ArgumentOutOfRangeException">if capacity &lt;=0</exception>
     public LruCache(int capacity, Dictionary<TKey, TValue> initialEntries) : this(capacity)
     {
+        ArgumentNullException.ThrowIfNull(initialEntries);
         foreach (var entry in initialEntries)
         {
             Put(entry.Key, entry.Value);

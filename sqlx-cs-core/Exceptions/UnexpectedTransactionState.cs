@@ -4,6 +4,7 @@ namespace Sqlx.Core.Exceptions;
 /// Special <see cref="SqlxException"/> for when the transaction state of a connection is expected
 /// to be specific state, but that is not true. 
 /// </summary>
+#pragma warning disable CA1032
 public sealed class UnexpectedTransactionState : SqlxException
 {
     public UnexpectedTransactionState(bool expectedToBeInTransaction)

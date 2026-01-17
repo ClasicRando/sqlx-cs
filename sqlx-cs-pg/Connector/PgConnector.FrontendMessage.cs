@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Globalization;
 using Sqlx.Core;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Buffer;
@@ -6,9 +7,9 @@ using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Message.Frontend;
 using Sqlx.Postgres.Type;
 
-namespace Sqlx.Postgres.Stream;
+namespace Sqlx.Postgres.Connector;
 
-public sealed partial class PgStream
+public sealed partial class PgConnector
 {
     private const int MajorVersionNo = 3;
     private const int MinorVersionNo = 0;
@@ -41,9 +42,9 @@ public sealed partial class PgStream
 
     private ValueTask SendStartupMessage(PgConnectOptions options, CancellationToken cancellationToken)
     {
-        var extractFloatPointsStr = options.ExtraFloatPoints.ToString();
+        var extractFloatPointsStr = options.ExtraFloatPoints.ToString(CultureInfo.InvariantCulture);
         var queryTimeout = int.Max((int)options.QueryTimeout.TotalMilliseconds, 0);
-        var queryTimeoutStr = queryTimeout.ToString();
+        var queryTimeoutStr = queryTimeout.ToString(CultureInfo.InvariantCulture);
         var length = sizeof(short) + sizeof(short) + UserProperty.Length + sizeof(byte) +
                      Charsets.Default.GetByteCount(options.Username) + sizeof(byte) +
                      ExtraFloatDigitsProperty.Length + sizeof(byte) +

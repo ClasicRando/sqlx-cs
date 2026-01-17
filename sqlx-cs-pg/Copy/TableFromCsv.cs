@@ -12,13 +12,13 @@ public record TableFromCsv : ICopyFrom, ICopyTable, ICopyCsv
 
     public required string TableName { get; init; }
 
-    public string[] ColumnNames { get; init; } = [];
+    public IReadOnlyList<string> ColumnNames { get; init; } = [];
 
     public char Delimiter { get; init; } = ',';
 
     public string NullString { get; init; } = "";
 
-    public string? Default { get; init; }
+    public string? DefaultValue { get; init; }
 
     public CopyHeader? Header { get; init; }
 
@@ -35,14 +35,14 @@ public record TableFromCsv : ICopyFrom, ICopyTable, ICopyCsv
     /// where the null string is empty, this means that empty values will be read as zero-length
     /// strings rather than nulls, even when they are not quoted.
     /// </summary>
-    public ForceAgainstColumns.Select? ForceNotNull { get; init; }
+    public ForceAgainstColumns.SelectNames? ForceNotNull { get; init; }
     
     /// <summary>
     /// Match the specified columns' values against the null string, even if it has been quoted, and
     /// if a match is found set the value to NULL. In the default case where the null string is
     /// empty, this converts a quoted empty string into NULL.
     /// </summary>
-    public ForceAgainstColumns.Select? ForceNull { get; init; }
+    public ForceAgainstColumns.SelectNames? ForceNull { get; init; }
 
     public string ToCopyQuery()
     {

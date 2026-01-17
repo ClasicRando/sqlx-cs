@@ -13,7 +13,7 @@ public interface ICopyText : ICopyStatement
     /// <see cref="CopyFormat.Csv"/>.
     /// </summary>
     char Delimiter { get; }
-    
+
     /// <summary>
     /// Specifies the string that represents a null value. The default is "\N" (backslash-N) in
     /// <see cref="CopyFormat.Text"/> format, and an unquoted empty string in
@@ -21,14 +21,14 @@ public interface ICopyText : ICopyStatement
     /// where you don't want to distinguish nulls from empty strings.
     /// </summary>
     string NullString { get; }
-    
+
     /// <summary>
     /// Specifies the string that represents a default value. Each time the string is found in the
     /// input file, the default value of the corresponding column will be used. This option is
     /// ignored unless the type is <see cref="ICopyFrom"/>.
     /// </summary>
-    string? Default { get; }
-    
+    string? DefaultValue { get; }
+
     /// <summary>
     /// Specifies that the file contains a header line with the names of each column in the file.
     /// On output, the first line contains the column names from the table. On input, the first line
@@ -50,7 +50,7 @@ internal static class CopyText
             builder.Append(" WITH (FORMAT text, DELIMITER '")
                 .Append(copyText.Delimiter == '\'' ? "''" : copyText.Delimiter)
                 .Append("', NULL '")
-                .Append(copyText.NullString.Replace("'", "''"))
+                .Append(copyText.NullString.Replace("'", "''", StringComparison.InvariantCulture))
                 .Append('\'');
             copyText.AppendDefaultOptionTo(builder);
             copyText.AppendHeaderOptionTo(builder);
@@ -59,16 +59,16 @@ internal static class CopyText
 
         internal void AppendDefaultOptionTo(StringBuilder builder)
         {
-            if (copyText.Default is null)
+            if (copyText.DefaultValue is null)
             {
                 return;
             }
-            
+
             builder.Append(", DEFAULT '")
-                .Append(copyText.Default.Replace("'", "''"))
+                .Append(copyText.DefaultValue.Replace("'", "''", StringComparison.InvariantCulture))
                 .Append('\'');
         }
-        
+
         internal void AppendHeaderOptionTo(StringBuilder builder)
         {
             if (copyText.Header is null)
@@ -89,7 +89,9 @@ internal static class CopyText
                     builder.Append("MATCH");
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(ICopyText.Header), copyText.Header, null);
+                    throw new ArgumentOutOfRangeException(
+                        message: $"{nameof(ICopyText.Header)} property is outside of valid options",
+                        innerException: null);
             }
 
             builder.Append('\'');

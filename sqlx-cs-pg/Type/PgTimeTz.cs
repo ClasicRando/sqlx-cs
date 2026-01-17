@@ -28,6 +28,7 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
     /// </summary>
     public static void Encode(PgTimeTz value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         PgTime.Encode(value.Time, buffer);
         buffer.WriteInt(value.OffsetSeconds);
     }
@@ -69,9 +70,9 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.TimetzArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 
     private static int FindOffset(in PgTextValue value, out int offsetStart)
@@ -102,7 +103,7 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
             {
                 throw ColumnDecodeException.Create<PgTimeTz>(
                     value.ColumnMetadata,
-                    $"Could not parse offset from '{value}'");
+                    $"Could not parse offset from '{value.Chars}'");
             }
             offset += result * (int)Math.Pow(60.0, digitMultiplier--);
         }

@@ -1,39 +1,54 @@
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using Sqlx.Core.Exceptions;
 
-namespace Sqlx.Core.Stream;
+namespace Sqlx.Core.Connector;
 
 /// <summary>
-/// Default implementation of <see cref="IAsyncStream"/>
+/// Default implementation of <see cref="IAsyncConnector"/>
 /// </summary>
-public sealed class AsyncStream : IAsyncStream
+[SuppressMessage(
+    "Design",
+    "CA1031:Do not catch general exception types",
+    Justification =
+        "Catches within this type should always be ignored since they indicate something has " +
+        "gone very wrong but there is nothing we can do about it and the caller does not need to " +
+        "be notified of the errors")]
+public sealed class AsyncConnector : IAsyncConnector
 {
     private Socket? _socket;
-    private System.IO.Stream? _stream;
+    private Stream? _stream;
     private PipeWriter? _pipeWriter;
     private PipeReader? _pipeReader;
     private bool _disposed;
 
     public bool IsConnected => _socket?.Connected ?? false;
 
-    public PipeWriter Writer => _pipeWriter ?? throw new SqlxException("Attempted to access the write buffer before opening the stream");
+    public PipeWriter Writer => _pipeWriter ??
+                                throw new InvalidOperationException(
+                                    "Attempted to access the write buffer before opening the stream");
 
-    public PipeReader Reader => _pipeReader ?? throw new SqlxException("Attempted to access the write buffer before opening the stream");
+    public PipeReader Reader => _pipeReader ??
+                                throw new InvalidOperationException(
+                                    "Attempted to access the write buffer before opening the stream");
 
     public async Task OpenAsync(string host, ushort port, CancellationToken cancellationToken)
     {
-        var endPoints = await GetIpEndpointsAsync(host, port, cancellationToken);
+        var endPoints = await GetIpEndpointsAsync(host, port, cancellationToken)
+            .ConfigureAwait(false);
         for (var i = 0; i < endPoints.Length; i++)
         {
             IPEndPoint ipEndPoint = endPoints[i];
 
+#pragma warning disable CA2000
             var socket = new Socket(ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+#pragma warning restore CA2000
             try
             {
-                await socket.ConnectAsync(ipEndPoint, cancellationToken);
+                await socket.ConnectAsync(ipEndPoint, cancellationToken).ConfigureAwait(false);
                 _socket = socket;
                 _stream = new NetworkStream(_socket);
                 _pipeWriter = PipeWriter.Create(_stream);
@@ -54,7 +69,7 @@ public sealed class AsyncStream : IAsyncStream
 
                 if (i == endPoints.Length - 1)
                 {
-                    throw new IOException("Could not connect to host", e);
+                    throw new SqlxException("Could not connect to host", e);
                 }
             }
         }
@@ -79,11 +94,11 @@ public sealed class AsyncStream : IAsyncStream
     public void Dispose()
     {
         if (_disposed) return;
-        
+
         _disposed = true;
         _pipeWriter?.Complete();
         _pipeReader?.Complete();
-        
+
         if (_stream is SslStream sslStream)
         {
             try

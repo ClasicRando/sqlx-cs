@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace Sqlx.Core.Exceptions;
 
+#pragma warning disable CA1032
 public class ColumnEncodeException(
     uint dataTypeId,
     Type encodeType,

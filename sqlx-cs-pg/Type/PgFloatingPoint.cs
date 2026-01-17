@@ -25,11 +25,11 @@ internal static class PgFloatingPoint
     
     public static double ExtractFloat<T>(ref this PgTextValue value) where T : notnull
     {
-        if (!double.TryParse(value, null, out var parseResult))
+        if (!double.TryParse(value.Chars, null, out var parseResult))
         {
             throw ColumnDecodeException.Create<T>(
                 value.ColumnMetadata,
-                $"Could not convert '{value}' into {typeof(T)}");
+                $"Could not convert '{value.Chars}' into {typeof(T)}");
         }
         return parseResult;
     }
@@ -81,9 +81,9 @@ internal abstract class PgDouble : IPgDbType<double>, IHasArrayType
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.Float8Array;
     
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return PgFloatingPoint.IsFloatCompatible(dbType);
+        return PgFloatingPoint.IsFloatCompatible(typeInfo);
     }
 }
 
@@ -143,8 +143,8 @@ internal abstract class PgFloat : IPgDbType<float>, IHasArrayType
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.Float4Array;
     
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return PgFloatingPoint.IsFloatCompatible(dbType);
+        return PgFloatingPoint.IsFloatCompatible(typeInfo);
     }
 }

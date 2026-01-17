@@ -6,39 +6,41 @@ namespace Sqlx.Core.Pool;
 
 public static class ConnectionPoolExtensions
 {
-    /// <summary>
-    /// Acquire a connection from the pool and immediately start a new transaction against the
-    /// connection before returning that rented connection. If starting a transaction fails, the
-    /// underlining connection is returned to the pool.
-    /// </summary>
-    /// <param name="connectionPool">connection pool to begin a transaction against</param>
-    /// <param name="cancellationToken">optional cancellation token</param>
-    /// <returns>a rented connection from the pool that is already within a transaction</returns>
-    public static async Task<TConnection> BeginAsync<TConnection, TBindable, TQuery, TQueryBatch, TDataRow>(
-        this IConnectionPool<TConnection, TBindable, TQuery, TQueryBatch, TDataRow> connectionPool,
-        CancellationToken cancellationToken = default)
+    extension<TConnection, TBindable, TQuery, TQueryBatch, TDataRow>(
+        IConnectionPool<TConnection, TBindable, TQuery, TQueryBatch, TDataRow> connectionPool)
         where TConnection : class, IConnection<TQuery, TBindable, TQueryBatch, TDataRow>
         where TBindable : IBindable
         where TQuery : IExecutableQuery<TDataRow>
         where TQueryBatch : IQueryBatch<TBindable, TDataRow>
         where TDataRow : IDataRow
     {
-        TConnection? connection = null;
-        try
+        /// <summary>
+        /// Acquire a connection from the pool and immediately start a new transaction against the
+        /// connection before returning that rented connection. If starting a transaction fails, the
+        /// underlining connection is returned to the pool.
+        /// </summary>
+        /// <param name="cancellationToken">optional cancellation token</param>
+        /// <returns>a rented connection from the pool that is already within a transaction</returns>
+        public async Task<TConnection> BeginAsync(CancellationToken cancellationToken = default)
         {
-            connection = connectionPool.CreateConnection();
-            if (connection.Status is ConnectionStatus.Closed)
+            TConnection? connection = null;
+            try
             {
-                await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+                connection = connectionPool.CreateConnection();
+                if (connection.Status is ConnectionStatus.Closed)
+                {
+                    await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+                }
+
+                await connection.BeginAsync(cancellationToken).ConfigureAwait(false);
+                return connection;
             }
-            await connection.BeginAsync(cancellationToken).ConfigureAwait(false);
-            return connection;
-        }
-        catch
-        {
-            if (connection == null) throw;
-            await connection.CloseAsync(cancellationToken).ConfigureAwait(false);
-            throw;
+            catch
+            {
+                if (connection == null) throw;
+                await connection.CloseAsync(cancellationToken).ConfigureAwait(false);
+                throw;
+            }
         }
     }
 }

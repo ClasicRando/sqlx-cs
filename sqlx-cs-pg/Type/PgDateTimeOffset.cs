@@ -1,5 +1,4 @@
 using System.Buffers;
-using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -50,8 +49,8 @@ public abstract class PgDateTimeOffset : IPgDbType<DateTimeOffset>, IHasRangeTyp
 
     public static PgTypeInfo RangeArrayType => PgTypeInfo.TstzrangeArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return PgDateTime.IsCompatible(dbType);
+        return PgDateTime.IsCompatible(typeInfo);
     }
 }

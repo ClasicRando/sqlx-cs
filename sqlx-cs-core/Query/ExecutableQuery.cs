@@ -24,7 +24,7 @@ public static class ExecutableQuery
         {
             long count = 0;
             var results = executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            await foreach (var result in results)
+            await foreach (var result in results.ConfigureAwait(false))
             {
                 if (result is Either<TDataRow, QueryResult>.Right right)
                 {
@@ -48,7 +48,7 @@ public static class ExecutableQuery
             where TRow : IFromRow<TDataRow, TRow>
         {
             var results = executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            await foreach (var result in results)
+            await foreach (var result in results.ConfigureAwait(false))
             {
                 switch (result)
                 {
@@ -114,11 +114,11 @@ public static class ExecutableQuery
         /// <typeparam name="TRow">row type to map the row into</typeparam>
         /// <returns>the first row found when executing this query</returns>
         /// <exception cref="SqlxException">if zero or more than 1 row is returned</exception>
-        public async Task<TRow> FetchSingleAsync<TRow>(
+        public Task<TRow> FetchSingleAsync<TRow>(
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            return await executableQuery.FetchRowAsync<TDataRow, TRow>(
+            return executableQuery.FetchRowAsync<TDataRow, TRow>(
                 true,
                 true,
                 cancellationToken);
@@ -163,7 +163,9 @@ public static class ExecutableQuery
             var results = executableQuery.FetchAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
             await using ConfiguredCancelableAsyncEnumerable<TRow>.Enumerator enumerable =
+#pragma warning disable CA2007
                 results.GetAsyncEnumerator();
+#pragma warning restore CA2007
             if (!await enumerable.MoveNextAsync())
             {
                 return requireRow

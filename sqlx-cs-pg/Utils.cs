@@ -8,7 +8,7 @@ internal static class Utils
     {
         internal string QuoteIdentifier()
         {
-            return $"\"{str.Replace("\"", "\"\"")}\"";
+            return $"\"{str.Replace("\"", "\"\"", StringComparison.InvariantCulture)}\"";
         }
     }
     
@@ -17,12 +17,12 @@ internal static class Utils
         internal StringBuilder AppendQuotedIdentifier(string identifier)
         {
             return builder.Append('"')
-                .Append(identifier.Replace("\"", "\"\""))
+                .Append(identifier.Replace("\"", "\"\"", StringComparison.InvariantCulture))
                 .Append('"');
         }
     }
 
-    extension(string[] strings)
+    extension(IReadOnlyList<string> strings)
     {
         internal void JoinTo(
             StringBuilder builder,
@@ -31,13 +31,13 @@ internal static class Utils
             string postFix = "",
             Func<StringBuilder, string, StringBuilder>? append = null)
         {
-            if (strings.Length == 0)
+            if (strings.Count == 0)
             {
                 return;
             }
             
             builder.Append(prefix);
-            for (var i = 0; i < strings.Length; i++)
+            for (var i = 0; i < strings.Count; i++)
             {
                 var item = strings[i];
                 if (append is not null)
@@ -48,7 +48,7 @@ internal static class Utils
                 {
                     builder.Append(item);
                 }
-                if (i != strings.Length - 1)
+                if (i != strings.Count - 1)
                 {
                     builder.Append(separator);
                 }

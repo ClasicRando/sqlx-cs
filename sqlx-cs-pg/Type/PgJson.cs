@@ -36,7 +36,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// <para>
     /// Encode a value of type <typeparamref name="T"/> as JSON. Writes the JSONB version number
     /// (always 1) to the buffer before writing the value as JSON using
-    /// <see cref="Json.WriteToBuffer"/> to encode the value.
+    /// <see cref="JsonHelper.WriteToBuffer"/> to encode the value.
     /// </para>
     /// <para>
     /// This method allows for passing
@@ -48,7 +48,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     public static void Encode(T value, IBufferWriter<byte> buffer, JsonTypeInfo<T>? typeInfo)
     {
         buffer.WriteByte(JsonBVersion);
-        Json.WriteToBuffer(buffer, value, typeInfo);
+        JsonHelper.WriteToBuffer(buffer, value, typeInfo);
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
@@ -73,7 +73,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// Decode a value of type <typeparamref name="T"/> from the binary value as JSON. If the
     /// column's metadata says the type is actually JSONB, read the JSONB version number from the
     /// buffer and ensure it's the expected version code (always 1). The method then passes the
-    /// remaining bytes to be decoded by <see cref="Json.FromBytes"/>.
+    /// remaining bytes to be decoded by <see cref="JsonHelper.FromBytes"/>.
     /// </para>
     /// <para>
     /// This method allows for passing a <see cref="JsonTypeInfo{T}"/> which generally speeds up
@@ -97,7 +97,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
             }
         }
 
-        return Json.FromBytes(value.Buffer, typeInfo);
+        return JsonHelper.FromBytes(value.Buffer, typeInfo);
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
@@ -122,7 +122,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// Decode a value of type <typeparamref name="T"/> from the text value as JSON. If the column's
     /// metadata says the type is actually JSONB, read the JSONB version number as the first
     /// character and ensure it's the expected version code (always 1). The method then passes the
-    /// remaining chars to be decoded by <see cref="Json.FromChars"/>.
+    /// remaining chars to be decoded by <see cref="JsonHelper.FromChars"/>.
     /// </para>
     /// <para>
     /// This method allows for passing a <see cref="JsonTypeInfo{T}"/> which generally speeds up
@@ -134,15 +134,15 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// </summary>
     public static T DecodeText(PgTextValue value, JsonTypeInfo<T>? typeInfo)
     {
-        return Json.FromChars(value.Chars, typeInfo);
+        return JsonHelper.FromChars(value.Chars, typeInfo);
     }
     
     public static PgTypeInfo DbType => PgTypeInfo.Jsonb;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.JsonbArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType || dbType == PgTypeInfo.Json;
+        return typeInfo == DbType || typeInfo == PgTypeInfo.Json;
     }
 }

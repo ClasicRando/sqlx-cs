@@ -100,9 +100,9 @@ public sealed class PgRange<T>(Bound<T> lower, Bound<T> upper) : IEquatable<PgRa
 
 /// <summary>
 /// Bound description of a <see cref="PgRange{T}"/>. You cannot directly construct an instance of
-/// this type. Rather, there are static factory methods <see cref="Included"/>,
-/// <see cref="Excluded"/> and <see cref="Unbounded"/> that create an instance of the desired
-/// <see cref="BoundType"/>. This ensures the consistency of the instances of this class. 
+/// this type. Rather, there are static factory methods <see cref="Bound.Included"/>,
+/// <see cref="Bound.Excluded"/> and <see cref="Bound.Unbounded"/> that create an instance of the
+/// desired <see cref="BoundType"/>. This ensures the consistency of the instances of this class. 
 /// </summary>
 /// <typeparam name="T">Range type</typeparam>
 public sealed class Bound<T> : IEquatable<Bound<T>> where T : notnull
@@ -110,40 +110,10 @@ public sealed class Bound<T> : IEquatable<Bound<T>> where T : notnull
     public T? Value { get; }
     public BoundType Type { get; }
     
-    private Bound(T? value, BoundType type)
+    internal Bound(T? value, BoundType type)
     {
         Value = value;
         Type = type;
-    }
-
-    /// <summary>
-    /// Create a new instance with value specified as an inclusive bound (range includes this value)
-    /// </summary>
-    /// <param name="value">Range bound value</param>
-    /// <returns>Inclusive range bound</returns>
-    public static Bound<T> Included(T value)
-    {
-        return new Bound<T>(value, BoundType.Included);
-    }
-
-    /// <summary>
-    /// Create a new instance with value specified as an exclusive bound (range does not include
-    /// this value)
-    /// </summary>
-    /// <param name="value">Range bound value</param>
-    /// <returns>Exclusive range bound</returns>
-    public static Bound<T> Excluded(T value)
-    {
-        return new Bound<T>(value, BoundType.Excluded);
-    }
-
-    /// <summary>
-    /// Create a new undefined/infinite bound on a range
-    /// </summary>
-    /// <returns>Unbounded range bound</returns>
-    public static Bound<T> Unbounded()
-    {
-        return new Bound<T>(default, BoundType.Unbounded);
     }
 
     public override bool Equals(object? obj)
@@ -172,6 +142,39 @@ public sealed class Bound<T> : IEquatable<Bound<T>> where T : notnull
     public override string ToString()
     {
         return $"{nameof(Bound<T>)}({nameof(Value)}: {Value}, {nameof(Type)}: {Type})";
+    }
+}
+
+public static class Bound
+{
+    /// <summary>
+    /// Create a new instance with value specified as an inclusive bound (range includes this value)
+    /// </summary>
+    /// <param name="value">Range bound value</param>
+    /// <returns>Inclusive range bound</returns>
+    public static Bound<T> Included<T>(T value) where T : notnull
+    {
+        return new Bound<T>(value, BoundType.Included);
+    }
+    
+    /// <summary>
+    /// Create a new instance with value specified as an exclusive bound (range does not include
+    /// this value)
+    /// </summary>
+    /// <param name="value">Range bound value</param>
+    /// <returns>Exclusive range bound</returns>
+    public static Bound<T> Excluded<T>(T value) where T : notnull
+    {
+        return new Bound<T>(value, BoundType.Excluded);
+    }
+
+    /// <summary>
+    /// Create a new undefined/infinite bound on a range
+    /// </summary>
+    /// <returns>Unbounded range bound</returns>
+    public static Bound<T> Unbounded<T>() where T : notnull
+    {
+        return new Bound<T>(default, BoundType.Unbounded);
     }
 }
     

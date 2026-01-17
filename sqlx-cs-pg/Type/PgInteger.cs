@@ -46,11 +46,11 @@ internal static class PgInteger
     /// </exception>
     public static long ExtractInteger<T>(this PgTextValue value) where T : notnull
     {
-        if (!long.TryParse(value, null, out var parseResult))
+        if (!long.TryParse(value.Chars, null, out var parseResult))
         {
             throw ColumnDecodeException.Create<T>(
                 value.ColumnMetadata,
-                $"Could not convert '{value}' into {typeof(T)}");
+                $"Could not convert '{value.Chars}' into {typeof(T)}");
         }
 
         return parseResult;
@@ -108,9 +108,9 @@ internal abstract class PgLong : IPgDbType<long>, IHasRangeType, IHasArrayType
 
     public static PgTypeInfo RangeArrayType => PgTypeInfo.Int8RangeArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return PgInteger.IsIntegerCompatible(dbType);
+        return PgInteger.IsIntegerCompatible(typeInfo);
     }
 }
 
@@ -164,9 +164,9 @@ internal abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
 
     public static PgTypeInfo RangeArrayType => PgTypeInfo.Int4RangeArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return PgInteger.IsIntegerCompatible(dbType);
+        return PgInteger.IsIntegerCompatible(typeInfo);
     }
 }
 
@@ -216,8 +216,8 @@ internal abstract class PgShort : IPgDbType<short>, IHasArrayType
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.Int2Array;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return PgInteger.IsIntegerCompatible(dbType);
+        return PgInteger.IsIntegerCompatible(typeInfo);
     }
 }

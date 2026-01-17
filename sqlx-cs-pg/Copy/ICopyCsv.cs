@@ -31,7 +31,7 @@ public static class CopyCsv
             builder.Append(" WITH (FORMAT csv, DELIMITER '")
                 .Append(copyCsv.Delimiter == '\'' ? "''" : copyCsv.Delimiter)
                 .Append("', NULL '")
-                .Append(copyCsv.NullString.Replace("'", "''"))
+                .Append(copyCsv.NullString.Replace("'", "''", StringComparison.InvariantCulture))
                 .Append('\'');
             copyCsv.AppendDefaultOptionTo(builder);
             copyCsv.AppendHeaderOptionTo(builder);

@@ -5,8 +5,8 @@ using Sqlx.Core.Buffer;
 
 namespace Sqlx.Core.Types;
 
-[TestSubject(typeof(Json))]
-public partial class JsonTest
+[TestSubject(typeof(JsonHelper))]
+public partial class JsonHelperTest
 {
     [JsonSerializable(typeof(JsonType))]
     public partial class SourceGenerationContext : JsonSerializerContext;
@@ -21,7 +21,7 @@ public partial class JsonTest
     {
         using var buffer = new PooledArrayBufferWriter();
         
-        Json.WriteToBuffer(buffer, _jsonType, SourceGenerationContext.Default.JsonType);
+        JsonHelper.WriteToBuffer(buffer, _jsonType, SourceGenerationContext.Default.JsonType);
         
         await Assert.That(Encoding.UTF8.GetString(buffer.ReadableSpan)).IsEqualTo(JsonTypeStr);
     }
@@ -31,7 +31,7 @@ public partial class JsonTest
     {
         using var buffer = new PooledArrayBufferWriter();
         
-        Json.WriteToBuffer(buffer, _jsonType, null);
+        JsonHelper.WriteToBuffer(buffer, _jsonType, null);
         
         await Assert.That(Encoding.UTF8.GetString(buffer.ReadableSpan)).IsEqualTo(JsonTypeStr);
     }
@@ -41,7 +41,7 @@ public partial class JsonTest
     {
         var bytes = Encoding.UTF8.GetBytes(JsonTypeStr);
 
-        var result = Json.FromBytes<JsonType>(bytes, SourceGenerationContext.Default.JsonType);
+        var result = JsonHelper.FromBytes<JsonType>(bytes, SourceGenerationContext.Default.JsonType);
         
         await Assert.That(result).IsEqualTo(_jsonType);
     }
@@ -51,7 +51,7 @@ public partial class JsonTest
     {
         var bytes = Encoding.UTF8.GetBytes(JsonTypeStr);
 
-        var result = Json.FromBytes<JsonType>(bytes);
+        var result = JsonHelper.FromBytes<JsonType>(bytes);
         
         await Assert.That(result).IsEqualTo(_jsonType);
     }
@@ -59,7 +59,7 @@ public partial class JsonTest
     [Test]
     public async Task FromChars_Should_ReadJsonValueFromBytes_When_SourceGeneratedType()
     {
-        var result = Json.FromChars<JsonType>(
+        var result = JsonHelper.FromChars<JsonType>(
             JsonTypeStr,
             SourceGenerationContext.Default.JsonType);
         
@@ -69,7 +69,7 @@ public partial class JsonTest
     [Test]
     public async Task FromChars_Should_ReadJsonValueFromBytes_When_ReflectionBasedSerialization()
     {
-        var result = Json.FromChars<JsonType>(JsonTypeStr);
+        var result = JsonHelper.FromChars<JsonType>(JsonTypeStr);
         
         await Assert.That(result).IsEqualTo(_jsonType);
     }

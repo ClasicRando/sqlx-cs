@@ -15,11 +15,13 @@ namespace Sqlx.Postgres.Query;
 internal sealed class PgParameterWriter : IPgBindable
 {
     private readonly IBufferWriter<byte> _buffer;
+    private readonly bool _disposeInner;
     private readonly List<PgTypeInfo> _pgTypes = [];
 
-    public PgParameterWriter(IBufferWriter<byte> buffer)
+    public PgParameterWriter(IBufferWriter<byte> buffer, bool disposeInner = false)
     {
         _buffer = buffer;
+        _disposeInner = disposeInner;
     }
 
     /// <summary>
@@ -145,6 +147,6 @@ internal sealed class PgParameterWriter : IPgBindable
 
     public void Dispose()
     {
-        if (_buffer is IDisposable disposable) disposable.Dispose();
+        if (_disposeInner && _buffer is IDisposable disposable) disposable.Dispose();
     }
 }

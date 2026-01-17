@@ -18,7 +18,7 @@ public static class PgConnectionExtensions
     {
         /// <summary>
         /// Execute a <c>COPY TO</c> query against the database and forward the fetched rows to the
-        /// supplied <see cref="System.IO.Stream"/>.
+        /// supplied <see cref="Stream"/>.
         /// </summary>
         /// <param name="copyOutStatement">COPY statement to execute for data extraction</param>
         /// <param name="stream">
@@ -27,9 +27,10 @@ public static class PgConnectionExtensions
         /// <param name="cancellationToken">Token to cancel the async operation</param>
         public async Task CopyOutAsync(
             ICopyTo copyOutStatement,
-            System.IO.Stream stream,
+            Stream stream,
             CancellationToken cancellationToken = default)
         {
+            ArgumentNullException.ThrowIfNull(stream);
             var rows = pgConnection.CopyOutAsync(copyOutStatement, cancellationToken);
             await foreach (var row in rows.ConfigureAwait(false))
             {
@@ -54,7 +55,9 @@ public static class PgConnectionExtensions
             FileMode fileMode = FileMode.Open,
             CancellationToken cancellationToken = default)
         {
-            await using var fileStream = new FileStream(path, fileMode);
+            // This is a workaround for calling ConfigureAwait on an IAsyncDisposable
+            var fileStream = new FileStream(path, fileMode);
+            await using var _ = fileStream.ConfigureAwait(false);
             await pgConnection.CopyOutAsync(copyOutStatement, fileStream, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -96,8 +99,17 @@ public static class PgConnectionExtensions
             var rows = pgConnection.CopyOutAsync(copyOutStatement, cancellationToken);
 
             var isFirstRow = true;
-            await foreach (var rowData in rows.ConfigureAwait(false))
+            await foreach (var row in rows.ConfigureAwait(false))
             {
+                var rowData = row;
+                // The first row will always be prefixed by 19 bytes of header data. We can just
+                // skip that
+                if (isFirstRow)
+                {
+                    isFirstRow = false;
+                    rowData = rowData[19..];
+                }
+                
                 // The final row will just be a -1 short value to indicate no more rows are present
                 // so we skip that row. To ensure we complete the async enumeration we continue here
                 // but the enumerable should not yield any more rows
@@ -107,20 +119,8 @@ public static class PgConnectionExtensions
                     continue;
                 }
                 
-                PgDataRow row;
-                // The first row will always be prefixed by 19 bytes of header data. We can just
-                // skip that
-                if (isFirstRow)
-                {
-                    isFirstRow = false;
-                    row = new PgDataRow(rowData[19..], statementMetadata);
-                }
-                else
-                {
-                    row = new PgDataRow(rowData, statementMetadata);
-                }
-
-                yield return TRow.FromRow(row);
+                var dataRow = new PgDataRow(rowData, statementMetadata);
+                yield return TRow.FromRow(dataRow);
             }
         }
 
@@ -149,7 +149,7 @@ public static class PgConnectionExtensions
 
         /// <summary>
         /// Execute a <c>COPY FROM</c> query against the database and forward the data fetched from
-        /// the <see cref="System.IO.Stream"/> as the copied data.
+        /// the <see cref="Stream"/> as the copied data.
         /// </summary>
         /// <param name="copyInStatement">COPY statement to execute for data extraction</param>
         /// <param name="stream">
@@ -161,7 +161,7 @@ public static class PgConnectionExtensions
         /// <param name="cancellationToken">Token to cancel the async operation</param>
         public Task<QueryResult> CopyInAsync(
             ICopyFrom copyInStatement,
-            System.IO.Stream stream,
+            Stream stream,
             StreamPipeReaderOptions? pipeReaderOptions = null,
             CancellationToken cancellationToken = default)
         {
@@ -183,7 +183,9 @@ public static class PgConnectionExtensions
             string path,
             CancellationToken cancellationToken = default)
         {
-            await using var fileStream = new FileStream(path, FileMode.Open);
+            // This is a workaround for calling ConfigureAwait on an IAsyncDisposable
+            var fileStream = new FileStream(path, FileMode.Open);
+            await using var _ = fileStream.ConfigureAwait(false);
             return await pgConnection.CopyInAsync(copyInStatement, fileStream, null, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -210,8 +212,8 @@ public static class PgConnectionExtensions
                 () => WriteBinaryRowsToPipe(rows, pipe.Writer, cancellationToken),
                 cancellationToken);
             var copyTask = pgConnection.CopyInAsync(copyInStatement, pipe.Reader, cancellationToken);
-            await dataStreamTask;
-            return await copyTask;
+            await dataStreamTask.ConfigureAwait(false);
+            return await copyTask.ConfigureAwait(false);
         }
     }
 
@@ -234,7 +236,7 @@ public static class PgConnectionExtensions
         await foreach (TCopyRow row in rows.ConfigureAwait(false)
                            .WithCancellation(cancellationToken))
         {
-            PgParameterWriter parameterWriter = new(buffer);
+            using PgParameterWriter parameterWriter = new(buffer);
             buffer.WriteShort(TCopyRow.ColumnCount);
             row.BindValues(parameterWriter);
 
@@ -254,7 +256,7 @@ public static class PgConnectionExtensions
             await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        await writer.CompleteAsync();
+        await writer.CompleteAsync().ConfigureAwait(false);
     }
 
     internal readonly record struct CopyTableMetadata(

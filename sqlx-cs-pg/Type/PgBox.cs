@@ -1,5 +1,4 @@
 using System.Buffers;
-using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
 
@@ -74,7 +73,7 @@ public readonly struct PgBox : IPgDbType<PgBox>, IGeometryType, IHasArrayType, I
     /// </exception>
     public static PgBox DecodeText(PgTextValue value)
     {
-        var indexPairs = GeometryUtils.ExtractPointRanges(value);
+        var indexPairs = GeometryUtils.ExtractPointRanges(value.Chars);
         if (indexPairs.Length != 2)
         {
             throw ColumnDecodeException.Create<PgBox>(
@@ -97,9 +96,9 @@ public readonly struct PgBox : IPgDbType<PgBox>, IGeometryType, IHasArrayType, I
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.BoxArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 
     public bool Equals(PgBox other)

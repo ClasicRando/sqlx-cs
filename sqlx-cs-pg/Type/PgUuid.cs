@@ -16,6 +16,7 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
     /// </summary>
     public static void Encode(Guid value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         var span = buffer.GetSpan(16);
         if (!value.TryWriteBytes(span, bigEndian: false, out _))
         {
@@ -45,11 +46,11 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
     /// </exception>
     public static Guid DecodeText(PgTextValue value)
     {
-        if (!Guid.TryParse(value, out Guid guid))
+        if (!Guid.TryParse(value.Chars, out Guid guid))
         {
             throw ColumnDecodeException.Create<Guid>(
                 value.ColumnMetadata,
-                $"Could not parse '{value}' into a Guid");
+                $"Could not parse '{value.Chars}' into a Guid");
         }
 
         return guid;
@@ -59,8 +60,8 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.UuidArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 }

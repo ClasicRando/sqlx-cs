@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Copy;
 
@@ -9,7 +10,8 @@ namespace Sqlx.Postgres.Message.Backend;
 /// columns. Technically the contents of the message also contain the format of each column but that
 /// will not deviate from the overall format so keeping that data in the message is not important.
 /// </summary>
-internal readonly struct CopyResponse(CopyFormat CopyFormat, short ColumnCount)
+[SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
+internal record struct CopyResponse(CopyFormat CopyFormat, short ColumnCount)
 {
     internal static CopyResponse Decode(ReadOnlySequence<byte> buffer)
     {

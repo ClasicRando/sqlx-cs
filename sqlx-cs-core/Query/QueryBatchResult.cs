@@ -49,7 +49,7 @@ public sealed class QueryBatchResult<TBindable, TDataRow> : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _queryBatch.Dispose();
-        await _resultStreamEnumerator.DisposeAsync();
+        await _resultStreamEnumerator.DisposeAsync().ConfigureAwait(false);
     }
 
     internal static QueryBatchResult<TBindable, TDataRow> Create(

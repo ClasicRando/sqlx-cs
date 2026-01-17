@@ -29,9 +29,9 @@ public static class BufferExtensions
         /// <returns>First byte of this span</returns>
         public byte ReadByte()
         {
-            if (span.Length < 1)
+            if (span.IsEmpty)
             {
-                throw new IndexOutOfRangeException("Span must not be empty");
+                throw new SourceExhaustedException("Span must not be empty");
             }
 
             var result = span[0];
@@ -373,6 +373,7 @@ public static class BufferExtensions
             Action<IBufferWriter<byte>> writeAction,
             bool includeLength = true)
         {
+            ArgumentNullException.ThrowIfNull(writeAction);
             if (bufferWriter is PooledArrayBufferWriter wb)
             {
                 var startLocation = wb.StartWritingLengthPrefixed();
@@ -443,7 +444,7 @@ public static class BufferExtensions
     [DoesNotReturn]
     private static void ThrowSequenceExhausted()
     {
-        throw new SqlxException("Not enough bytes available. Please submit bug report.");
+        throw new SourceExhaustedException("Not enough bytes available in sequence");
     }
 
     extension(ref ReadOnlySequence<byte> sequence)
@@ -579,5 +580,20 @@ public static class BufferExtensions
             sequence = sequence.Slice(nextStart);
             return result;
         }
+    }
+}
+
+public class SourceExhaustedException : Exception
+{
+    public SourceExhaustedException() : base("Source was exhausted")
+    {
+    }
+    
+    public SourceExhaustedException(string message) : base(message)
+    {
+    }
+    
+    public SourceExhaustedException(string message, Exception exception) : base(message, exception)
+    {
     }
 }

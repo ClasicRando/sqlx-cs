@@ -24,6 +24,8 @@ public abstract class PgBitString : IPgDbType<BitArray>, IHasArrayType
     /// </summary>
     public static void Encode(BitArray value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(value);
+        ArgumentNullException.ThrowIfNull(buffer);
         var byteCount = GetByteCountFromBitCount(value.Length);
         buffer.WriteInt(value.Length);
         byte[]? borrowedArray = null;
@@ -119,7 +121,7 @@ public abstract class PgBitString : IPgDbType<BitArray>, IHasArrayType
                 '1' => true,
                 _ => throw ColumnDecodeException.Create<BitArray>(
                     value.ColumnMetadata,
-                    $"Could not decode char #{i} in {value}"),
+                    $"Could not decode char #{i} in {value.Chars}"),
             };
         }
 
@@ -130,9 +132,9 @@ public abstract class PgBitString : IPgDbType<BitArray>, IHasArrayType
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.VarbitArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType || dbType == PgTypeInfo.Bit;
+        return typeInfo == DbType || typeInfo == PgTypeInfo.Bit;
     }
 
     private static int GetByteCountFromBitCount(int bitCount)

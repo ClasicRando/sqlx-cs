@@ -117,11 +117,11 @@ public static class ExecutableQuery
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchSingleAsync{TDataRow,TRow}"/>>
-        public async Task<TRow> FetchSingleAsync<TRow>(
+        public Task<TRow> FetchSingleAsync<TRow>(
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<IPgDataRow, TRow>
         {
-            return await executableQuery.FetchSingleAsync<IPgDataRow, TRow>(cancellationToken);
+            return executableQuery.FetchSingleAsync<IPgDataRow, TRow>(cancellationToken);
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchSingleOrDefaultAsync{TDataRow,TRow}"/>>

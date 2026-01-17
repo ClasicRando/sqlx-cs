@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Sqlx.Core.Column;
 
@@ -14,6 +15,7 @@ namespace Sqlx.Core.Exceptions;
 /// <param name="decodeType">desired CLR type to decode a database value to</param>
 /// <param name="reason">optional reason for the decoding failure</param>
 /// <param name="cause">optional cause for the decoding failure</param>
+#pragma warning disable CA1032
 public class ColumnDecodeException(
     uint dataTypeId,
     string typeName,
@@ -40,9 +42,10 @@ public class ColumnDecodeException(
         string reason = "",
         Exception? cause = null) where T : notnull
     {
+        ArgumentNullException.ThrowIfNull(metadata);
         return new ColumnDecodeException(
             metadata.DataType,
-            metadata.DataType.ToString(),
+            metadata.DataType.ToString(CultureInfo.InvariantCulture),
             metadata.FieldName,
             typeof(T),
             reason,
@@ -72,10 +75,9 @@ public class ColumnDecodeException(
         IColumnMetadata metadata,
         Func<string> reason) where T : notnull
     {
-        if (!check)
-        {
-            throw Create<T>(metadata, reason());
-        }
+        if (check) return;
+        ArgumentNullException.ThrowIfNull(reason);
+        throw Create<T>(metadata, reason());
     }
 
     /// <summary>

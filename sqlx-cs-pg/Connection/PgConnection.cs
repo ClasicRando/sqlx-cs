@@ -9,7 +9,7 @@ using Sqlx.Postgres.Copy;
 using Sqlx.Postgres.Pool;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Result;
-using Sqlx.Postgres.Stream;
+using PgConnector = Sqlx.Postgres.Connector.PgConnector;
 
 namespace Sqlx.Postgres.Connection;
 
@@ -22,7 +22,7 @@ public sealed class PgConnection :
     AbstractConnection<IPgExecutableQuery, IPgBindable, IPgQueryBatch, IPgDataRow>, IPgConnection
 {
     private bool _disposed;
-    private PgStream? _pgStream;
+    private PgConnector? _pgConnector;
     private readonly PgConnectionPool _pool;
 
     internal PgConnection(PgConnectionPool pool)
@@ -30,15 +30,15 @@ public sealed class PgConnection :
         _pool = pool;
     }
 
-    public override ConnectionStatus Status => _pgStream?.Status ?? ConnectionStatus.Closed;
+    public override ConnectionStatus Status => _pgConnector?.Status ?? ConnectionStatus.Closed;
 
-    public override bool InTransaction => _pgStream?.InTransaction ?? false;
+    public override bool InTransaction => _pgConnector?.InTransaction ?? false;
 
     public override async Task OpenAsync(CancellationToken cancellationToken = default)
     {
         CheckClosed();
-        PgStream stream = await _pool.AcquireStreamAsync(cancellationToken).ConfigureAwait(false);
-        _pgStream = stream;
+        PgConnector connector = await _pool.AcquireStreamAsync(cancellationToken).ConfigureAwait(false);
+        _pgConnector = connector;
     }
 
     public override IPgExecutableQuery CreateQuery(string query)
@@ -57,7 +57,7 @@ public sealed class PgConnection :
     {
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        await foreach (var item in _pgStream!.ExecuteQuery(query, cancellationToken)
+        await foreach (var item in _pgConnector!.ExecuteQuery(query, cancellationToken)
                            .ConfigureAwait(false))
         {
             yield return item;
@@ -70,7 +70,7 @@ public sealed class PgConnection :
     {
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        await foreach (var item in _pgStream!.ExecuteQueryBatch(query, cancellationToken)
+        await foreach (var item in _pgConnector!.ExecuteQueryBatch(query, cancellationToken)
                            .ConfigureAwait(false))
         {
             yield return item;
@@ -87,11 +87,11 @@ public sealed class PgConnection :
                 return Task.CompletedTask;
             }
 
-            _pool.Return(_pgStream!);
+            _pool.Return(_pgConnector!);
         }
         finally
         {
-            _pgStream = null;
+            _pgConnector = null;
         }
 
         return Task.CompletedTask;
@@ -101,9 +101,10 @@ public sealed class PgConnection :
         ICopyTo copyOutStatement,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(copyOutStatement);
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        var rows = _pgStream!.CopyOut(copyOutStatement, cancellationToken);
+        var rows = _pgConnector!.CopyOut(copyOutStatement, cancellationToken);
         await foreach (var row in rows.ConfigureAwait(false))
         {
             yield return row;
@@ -115,9 +116,11 @@ public sealed class PgConnection :
         PipeReader data,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(copyInStatement);
+        ArgumentNullException.ThrowIfNull(data);
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        return await _pgStream!.CopyIn(copyInStatement, data, cancellationToken)
+        return await _pgConnector!.CopyIn(copyInStatement, data, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -141,7 +144,7 @@ public sealed class PgConnection :
     {
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        await _pgStream!.ExecuteTransactionCommand(transactionCommand, cancellationToken)
+        await _pgConnector!.ExecuteTransactionCommand(transactionCommand, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -184,8 +187,8 @@ public sealed class PgConnection :
     {
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        await _pgStream!.WaitUntilReady(cancellationToken);
-        return await _pgStream!.GetOrPrepareStatement(sql, [], cancellationToken)
+        await _pgConnector!.WaitUntilReady(cancellationToken).ConfigureAwait(false);
+        return await _pgConnector!.GetOrPrepareStatement(sql, [], cancellationToken)
             .ConfigureAwait(false);
     }
 }

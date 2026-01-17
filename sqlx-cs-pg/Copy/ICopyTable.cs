@@ -22,7 +22,7 @@ public interface ICopyTable : ICopyStatement
     /// Optional column names that will be copied. If no column list is specified then all columns
     /// of the table except for the generated columns will be copied.
     /// </summary>
-    string[] ColumnNames { get; }
+    IReadOnlyList<string> ColumnNames { get; }
 }
 
 internal static class CopyTable
@@ -35,7 +35,7 @@ internal static class CopyTable
                 .Append('.')
                 .AppendQuotedIdentifier(copyTable.TableName);
 
-            if (copyTable.ColumnNames.Length == 0)
+            if (copyTable.ColumnNames.Count == 0)
             {
                 return;
             }

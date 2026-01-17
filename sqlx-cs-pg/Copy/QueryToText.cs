@@ -14,7 +14,7 @@ public record QueryToText : ICopyQuery, ICopyText
 
     public string NullString { get; init; } = "\\N";
     
-    public string? Default { get; init; }
+    public string? DefaultValue { get; init; }
     
     public CopyHeader? Header { get; init; }
     

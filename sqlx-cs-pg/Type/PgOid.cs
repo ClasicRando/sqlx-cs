@@ -16,6 +16,7 @@ public readonly struct PgOid(uint inner) : IEquatable<PgOid>, IPgDbType<PgOid>, 
     /// </summary>
     public static void Encode(PgOid value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteUInt(value.Inner);
     }
 
@@ -51,9 +52,9 @@ public readonly struct PgOid(uint inner) : IEquatable<PgOid>, IPgDbType<PgOid>, 
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.OidArray;
     
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return PgInteger.IsIntegerCompatible(dbType);
+        return PgInteger.IsIntegerCompatible(typeInfo);
     }
 
     public bool Equals(PgOid other)

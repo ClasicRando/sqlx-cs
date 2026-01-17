@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Exceptions;
@@ -34,22 +35,24 @@ namespace Sqlx.Postgres.Type;
 /// </summary>
 public sealed class PgRecordEncoder : IPgBindable
 {
-    private readonly CompositeType.Attribute[] _attributes;
-    private readonly PooledArrayBufferWriter _buffer = new();
+    private readonly ImmutableArray<CompositeField> _compositeFields;
+    private readonly PooledArrayBufferWriter _buffer;
     private readonly PgParameterWriter _parameterWriter;
 
     public ReadOnlySpan<byte> Data => _buffer.ReadableSpan;
 
     public PgRecordEncoder(PgTypeInfo typeInfo)
     {
+        ArgumentNullException.ThrowIfNull(typeInfo);
+        _buffer = new PooledArrayBufferWriter();
         _parameterWriter = new PgParameterWriter(_buffer);
         if (typeInfo.TypeKind is not CompositeType compositeType)
         {
             throw new PgException(
                 $"Attempted to encode a type using a {nameof(PgRecordEncoder)} but that type if not a composite or the composite type was not mapped to the connection pool using {nameof(PgConnectionPool.MapCompositeAsync)}");
         }
-        _attributes = compositeType.Attributes;
-        _buffer.WriteInt(_attributes.Length);
+        _compositeFields = compositeType.Fields;
+        _buffer.WriteInt(_compositeFields.Length);
     }
     
     public void Bind(bool value)
@@ -147,12 +150,13 @@ public sealed class PgRecordEncoder : IPgBindable
 
     public void BindNull<T>() where T : notnull
     {
-        _buffer.WriteUInt(_attributes[_parameterWriter.ParameterCount].TypeOid.Inner);
+        _buffer.WriteUInt(_compositeFields[_parameterWriter.ParameterCount].TypeOid.Inner);
         _parameterWriter.BindNull<T>();
     }
 
     public void Dispose()
     {
+        _buffer.Dispose();
         _parameterWriter.Dispose();
     }
     

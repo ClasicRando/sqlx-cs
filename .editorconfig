@@ -25,6 +25,7 @@ dotnet_style_qualification_for_method = false:suggestion
 dotnet_style_qualification_for_property = false:suggestion
 dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggestion
 csharp_arguments_named = named
+dotnet_code_quality.ca1051.exclude_structs = true
 
 # ReSharper properties
 resharper_csharp_insert_final_newline = true

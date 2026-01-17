@@ -7,10 +7,10 @@ using Sqlx.Core.Buffer;
 using Sqlx.Core.Cache;
 using Sqlx.Core.Config;
 using Sqlx.Core.Connection;
+using Sqlx.Core.Connector;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Pool;
 using Sqlx.Core.Result;
-using Sqlx.Core.Stream;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Logging;
@@ -21,13 +21,13 @@ using Sqlx.Postgres.Notify;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Result;
 
-namespace Sqlx.Postgres.Stream;
+namespace Sqlx.Postgres.Connector;
 
 /// <summary>
 /// Underlining connection to a Postgres database backend. Performs all the IO operations through an
-/// <see cref="IAsyncStream"/>.
+/// <see cref="IAsyncConnector"/>.
 /// </summary>
-public sealed partial class PgStream : IPooledConnection
+public sealed partial class PgConnector : IPooledConnection
 {
     private const string BeginQuery = "BEGIN;";
     private const string CommitQuery = "COMMIT;";
@@ -36,28 +36,28 @@ public sealed partial class PgStream : IPooledConnection
     public DateTime LastOpenTimestamp { get; private set; }
     public Guid Id { get; } = Guid.NewGuid();
     private bool _disposed;
-    private readonly IAsyncStream _asyncStream;
-    private readonly ILogger<PgStream> _logger;
+    private readonly IAsyncConnector _asyncConnector;
+    private readonly ILogger<PgConnector> _logger;
 
     private BackendDataKeyMessage? _backendDataKey;
     private long _inTransaction;
     private int _pendingReadyForQuery;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    internal PgStream(IAsyncStream asyncStream, PgConnectOptions connectOptions)
+    internal PgConnector(IAsyncConnector asyncConnector, PgConnectOptions connectOptions)
     {
         ConnectOptions = connectOptions;
-        _asyncStream = asyncStream;
-        _logger = connectOptions.LoggerFactory.CreateLogger<PgStream>();
+        _asyncConnector = asyncConnector;
+        _logger = connectOptions.LoggerFactory.CreateLogger<PgConnector>();
         _statementCache = new LruCache<string, PgPreparedStatement>(
             connectOptions.StatementCacheCapacity);
     }
 
     private PgConnectOptions ConnectOptions { get; }
 
-    private PipeWriter Writer => _asyncStream.Writer;
+    private PipeWriter Writer => _asyncConnector.Writer;
 
-    private PipeReader Reader => _asyncStream.Reader;
+    private PipeReader Reader => _asyncConnector.Reader;
 
     public ConnectionStatus Status { get; private set; } = ConnectionStatus.Closed;
 
@@ -74,7 +74,7 @@ public sealed partial class PgStream : IPooledConnection
         Status = ConnectionStatus.Connecting;
         try
         {
-            await _asyncStream.OpenAsync(
+            await _asyncConnector.OpenAsync(
                     ConnectOptions.Host,
                     ConnectOptions.Port,
                     cancellationToken)
@@ -116,19 +116,12 @@ public sealed partial class PgStream : IPooledConnection
                 break;
             case ClearTextPasswordAuthMessage:
                 ArgumentNullException.ThrowIfNull(ConnectOptions.Password);
-                await SimplePasswordAuthFlow(
-                    ConnectOptions.Username,
-                    ConnectOptions.Password,
-                    cancellationToken: cancellationToken).ConfigureAwait(false);
+                await SimplePasswordAuthFlow(ConnectOptions.Password, cancellationToken)
+                    .ConfigureAwait(false);
                 break;
-            case MD5PasswordAuthMessage md5PasswordAuthMessage:
-                ArgumentNullException.ThrowIfNull(ConnectOptions.Password);
-                await SimplePasswordAuthFlow(
-                    ConnectOptions.Username,
-                    ConnectOptions.Password,
-                    salt: md5PasswordAuthMessage.Salt,
-                    cancellationToken: cancellationToken).ConfigureAwait(false);
-                break;
+            case MD5PasswordAuthMessage:
+                throw new PgException(
+                    "MD5 passwords are not supported by sqlx-cs-pg. They have been deprecated for removal by Postgres in version 18 so we will not support their usage");
             case SaslAuthMessage saslAuthMessage:
                 ArgumentNullException.ThrowIfNull(ConnectOptions.Password);
                 await SaslAuthFlow(ConnectOptions.Password, saslAuthMessage, cancellationToken)
@@ -177,7 +170,7 @@ public sealed partial class PgStream : IPooledConnection
 
     /// <summary>
     /// Execute the query as either a simple query or extended query based upon the checks performed
-    /// in <see cref="IsSimpleQuery"/>.
+    /// in <see cref="PgConnector.IsSimpleQuery"/>.
     /// </summary>
     /// <param name="query">Query to execute</param>
     /// <param name="cancellationToken">Token to cancel async operation</param>
@@ -190,6 +183,7 @@ public sealed partial class PgStream : IPooledConnection
         IPgExecutableQuery query,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(query);
         var results = IsSimpleQuery(query)
             ? SendSimpleQuery(query.Query, cancellationToken)
             : SendExtendedQuery(query, cancellationToken);
@@ -200,6 +194,7 @@ public sealed partial class PgStream : IPooledConnection
         IPgQueryBatch queryBatch,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(queryBatch);
         return PipelineQueries(queryBatch, cancellationToken);
     }
 
@@ -283,7 +278,9 @@ public sealed partial class PgStream : IPooledConnection
                 await WaitForOrError<ReadyForQueryMessage>(cancellationToken)
                     .ConfigureAwait(false);
             }
+#pragma warning disable CA1031
             catch
+#pragma warning restore CA1031
             {
                 // ignored
             }
@@ -320,13 +317,13 @@ public sealed partial class PgStream : IPooledConnection
     {
         if (--_pendingReadyForQuery < 0)
         {
-            _logger.LogWarning("Received more ReadyForQuery messages than expected");
+            _logger.LogReceivedMoreReadyForQueryThanExpected();
             _pendingReadyForQuery = 0;
         }
 
         if (readyForQuery.TransactionStatus is TransactionStatus.FailedTransaction)
         {
-            _logger.LogWarning("Server reported failed transaction");
+            _logger.LogServerReportedFailedTransaction();
         }
     }
 
@@ -555,13 +552,13 @@ public sealed partial class PgStream : IPooledConnection
     }
 
     /// <summary>
-    /// Write all content in <see cref="Writer"/> to the <see cref="_asyncStream"/> and reset
+    /// Write all content in <see cref="Writer"/> to the <see cref="_asyncConnector"/> and reset
     /// the <see cref="Writer"/> for future writes.
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
     private async ValueTask FlushStream(CancellationToken cancellationToken)
     {
-        FlushResult result = await Writer.FlushAsync(cancellationToken);
+        FlushResult result = await Writer.FlushAsync(cancellationToken).ConfigureAwait(false);
         if (result.IsCanceled)
         {
             throw new OperationCanceledException();
@@ -633,12 +630,15 @@ public sealed partial class PgStream : IPooledConnection
             {
                 SendTerminate().AsTask().GetAwaiter().GetResult();
             }
+#pragma warning disable CA1031
             catch (Exception e)
+#pragma warning restore CA1031
             {
-                _logger.LogError(e, "Error closing PgStream");
+                _logger.LogErrorWhileClosingConnector(e);
             }
         }
 
-        _asyncStream.Dispose();
+        _asyncConnector.Dispose();
+        _semaphore.Dispose();
     }
 }

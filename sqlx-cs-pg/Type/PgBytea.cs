@@ -51,17 +51,17 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
     public static byte[] DecodeText(PgTextValue value)
     {
         return value.Chars.StartsWith(HexStart)
-            ? DecodeWithPrefix(value, value.ColumnMetadata)
-            : DecodeWithoutPrefix(value);
+            ? DecodeWithPrefix(value.Chars, value.ColumnMetadata)
+            : DecodeWithoutPrefix(value.Chars);
     }
     
     public static PgTypeInfo DbType => PgTypeInfo.Bytea;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.ByteaArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 
     private const string HexStart = @"\x";

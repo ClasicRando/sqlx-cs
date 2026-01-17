@@ -4,7 +4,7 @@ namespace Sqlx.Postgres.Copy;
 
 /// <summary>
 /// All possible options for forcing columns to follow some behaviour. The only allowed subclasses
-/// are <see cref="Select"/> with specific named columns and <see cref="All"/> where all columns are
+/// are <see cref="SelectNames"/> with specific named columns and <see cref="All"/> where all columns are
 /// given the forced behaviour.
 /// </summary>
 public abstract record ForceAgainstColumns
@@ -13,7 +13,7 @@ public abstract record ForceAgainstColumns
     {
     }
 
-    public record Select(string[] Columns) : ForceAgainstColumns;
+    public record SelectNames(IReadOnlyList<string> Columns) : ForceAgainstColumns;
 
     public record All : ForceAgainstColumns;
 
@@ -34,14 +34,15 @@ public abstract record ForceAgainstColumns
 
     private void AppendTo(StringBuilder builder, string name)
     {
+        ArgumentNullException.ThrowIfNull(builder);
         switch (this)
         {
             case All:
                 AppendOptionName(builder, name);
                 builder.Append('*');
                 break;
-            case Select select:
-                if (select.Columns.Length == 0)
+            case SelectNames select:
+                if (select.Columns.Count == 0)
                 {
                     return;
                 }

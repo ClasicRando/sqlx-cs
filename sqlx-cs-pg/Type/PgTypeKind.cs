@@ -1,9 +1,10 @@
+using System.Collections.Immutable;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public interface IPgTypeKind;
+internal interface IPgTypeKind;
 
 public readonly record struct SimpleType : IPgTypeKind;
 
@@ -16,22 +17,23 @@ public readonly record struct DomainType : IPgTypeKind
 
 public readonly record struct CompositeType : IPgTypeKind
 {
-    public readonly record struct Attribute : IFromRow<IPgDataRow, Attribute>
-    {
-        public required string Name { get; init; }
-        public required PgOid TypeOid { get; init; }
+    public required ImmutableArray<CompositeField> Fields { get; init; }
+}
 
-        public static Attribute FromRow(IPgDataRow dataRow)
+public readonly record struct CompositeField : IFromRow<IPgDataRow, CompositeField>
+{
+    public required string Name { get; init; }
+    public required PgOid TypeOid { get; init; }
+
+    public static CompositeField FromRow(IPgDataRow dataRow)
+    {
+        ArgumentNullException.ThrowIfNull(dataRow);
+        return new CompositeField
         {
-            return new Attribute
-            {
-                Name = dataRow.GetStringNotNull("attname"),
-                TypeOid = dataRow.GetPgNotNull<PgOid>("atttypid"),
-            };
-        }
+            Name = dataRow.GetStringNotNull("attname"),
+            TypeOid = dataRow.GetPgNotNull<PgOid>("atttypid"),
+        };
     }
-    
-    public required Attribute[] Attributes { get; init; }
 }
 
 public readonly record struct ArrayType : IPgTypeKind

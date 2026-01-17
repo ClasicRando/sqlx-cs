@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.Net;
-using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -25,6 +24,7 @@ public readonly record struct PgInet : IPgDbType<PgInet>, IHasArrayType
 
     public PgInet(IPAddress address, byte netmaskSize)
     {
+        ArgumentNullException.ThrowIfNull(address);
         Address = address;
         NetmaskSize = Address.IsIPv6() switch
         {
@@ -41,15 +41,12 @@ public readonly record struct PgInet : IPgDbType<PgInet>, IHasArrayType
         NetworkUtils.GetDefaultNetworkMaskSize(ipAddress))
     {
     }
-
-    public static implicit operator PgInet(IPAddress address) => new(address);
-
-    public static implicit operator IPAddress(PgInet inet) => inet.Address;
     
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <see cref="NetworkUtils.EncodeNetworkValue"/>
     public static void Encode(PgInet value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         NetworkUtils.EncodeNetworkValue<PgInet>(value.Address, value.NetmaskSize, DbType, buffer);
     }
 
@@ -75,8 +72,8 @@ public readonly record struct PgInet : IPgDbType<PgInet>, IHasArrayType
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.InetArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return NetworkUtils.IsNetworkValueCompatible(dbType);
+        return NetworkUtils.IsNetworkValueCompatible(typeInfo);
     }
 }

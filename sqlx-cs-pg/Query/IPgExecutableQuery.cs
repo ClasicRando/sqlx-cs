@@ -1,4 +1,5 @@
 using Sqlx.Core.Query;
+using Sqlx.Postgres.Connector;
 using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
 
@@ -22,7 +23,7 @@ public interface IPgExecutableQuery : IExecutableQuery<IPgDataRow>, IPgBindable
     
     /// <summary>
     /// Encoded bytes for each parameter. This should only be inspected by
-    /// <see cref="Sqlx.Postgres.Stream.PgStream"/>.
+    /// <see cref="Connector.PgConnector"/>.
     /// </summary>
     ReadOnlySpan<byte> EncodedParameters { get; }
 }

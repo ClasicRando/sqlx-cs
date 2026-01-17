@@ -4,7 +4,7 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace Sqlx.Core.Types;
 
-public static class Json
+public static class JsonHelper
 {
     /// <summary>
     /// Write the value as JSON to the supplied buffer. Although the type info parameter is

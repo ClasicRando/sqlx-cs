@@ -11,6 +11,7 @@ public ref struct PgBinaryValue(ReadOnlySpan<byte> buffer, ref PgColumnMetadata 
     /// Readable buffer of binary encoded data
     /// </summary>
     public ReadOnlySpan<byte> Buffer = buffer;
+
     /// <summary>
     /// Metadata of the column to read
     /// </summary>

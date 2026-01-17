@@ -1,7 +1,5 @@
-using System.Buffers;
 using System.Buffers.Binary;
 using JetBrains.Annotations;
-using NSubstitute;
 
 namespace Sqlx.Core.Buffer;
 
@@ -37,7 +35,7 @@ public class BufferExtensionsTest
             }
             catch (Exception e)
             {
-                await Assert.That(e).IsTypeOf<IndexOutOfRangeException>();
+                await Assert.That(e).IsTypeOf<SourceExhaustedException>();
             }
         }
 

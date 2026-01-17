@@ -47,7 +47,7 @@ public partial class PgConnectionTest(DatabaseFixture databaseFixture)
     public static readonly string CreateCopyTables =
         $"""
         DROP TABLE IF EXISTS public.copy_in_test;
-        CREATE TABLE public.copy_in_test(id int not null, text_field text not null);
+        CREATE TABLE public.copy_in_test(id int primary key, text_field text not null);
         
         DROP TABLE IF EXISTS public.copy_out_test;
         CREATE TABLE public.copy_out_test(id int not null, text_field text not null);

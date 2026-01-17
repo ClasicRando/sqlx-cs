@@ -14,9 +14,9 @@ using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
 
-namespace Sqlx.Postgres.Stream;
+namespace Sqlx.Postgres.Connector;
 
-public partial class PgStream
+public partial class PgConnector
 {
     private const string UnnamedPortal = "";
     private readonly LruCache<string, PgPreparedStatement> _statementCache;
@@ -41,7 +41,7 @@ public partial class PgStream
             return true;
         }
 
-        if (executableQuery.Query.Contains('$'))
+        if (executableQuery.Query.Contains('$', StringComparison.InvariantCulture))
         {
             return true;
         }

@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Runtime.CompilerServices;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
@@ -14,7 +15,7 @@ namespace Sqlx.Postgres.Type;
 /// </summary>
 public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<PgMoney>
 {
-    private static readonly System.Buffers.SearchValues<char> SearchValues = System.Buffers.SearchValues.Create("0123456789.-");
+    private static readonly SearchValues<char> SearchValues = System.Buffers.SearchValues.Create("0123456789.-");
     private readonly long _inner;
     
     private PgMoney(long integer)
@@ -45,6 +46,7 @@ public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<P
     /// </summary>
     public static void Encode(PgMoney value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteLong(value._inner);
     }
 
@@ -103,16 +105,16 @@ public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<P
             
         throw ColumnDecodeException.Create<PgMoney>(
             value.ColumnMetadata,
-            $"Could not parse '{value}' into a money value");
+            $"Could not parse '{value.Chars}' into a money value");
     }
 
     public static PgTypeInfo DbType => PgTypeInfo.Money;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.MoneyArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 
     public override string ToString()
@@ -149,11 +151,23 @@ public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<P
 
     public static PgMoney operator +(PgMoney left, PgMoney right)
     {
-        return new PgMoney(left._inner + right._inner);
+        return left.Add(right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public PgMoney Add(PgMoney other)
+    {
+        return new PgMoney(_inner + other._inner);
     }
 
     public static PgMoney operator -(PgMoney left, PgMoney right)
     {
-        return new PgMoney(left._inner - right._inner);
+        return left.Subtract(right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public PgMoney Subtract(PgMoney other)
+    {
+        return new PgMoney(_inner - other._inner);
     }
 }

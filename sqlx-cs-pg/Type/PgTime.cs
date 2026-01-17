@@ -50,11 +50,11 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
     /// </exception>
     public static TimeOnly DecodeText(PgTextValue value)
     {
-        if (!TimeOnly.TryParse(value, out TimeOnly time))
+        if (!TimeOnly.TryParse(value.Chars, out TimeOnly time))
         {
             throw ColumnDecodeException.Create<TimeOnly>(
                 value.ColumnMetadata,
-                $"Could not parse '{value}' into a time value");
+                $"Could not parse '{value.Chars}' into a time value");
         }
         
         return time;
@@ -64,8 +64,8 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.TimeArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 }

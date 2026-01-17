@@ -24,7 +24,7 @@ public static class QueryExecutor
             CancellationToken cancellationToken = default)
         {
             using TQuery query = queryExecutor.CreateQuery(nonQuery);
-            return await query.ExecuteNonQueryAsync(cancellationToken);
+            return await query.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

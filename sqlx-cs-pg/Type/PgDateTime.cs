@@ -25,6 +25,7 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
     /// </summary>
     public static void Encode(DateTime value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteLong((value.Ticks - PostgresEpochTicks) / TimeSpan.TicksPerMicrosecond);
     }
 
@@ -53,14 +54,14 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
     /// </exception>
     public static DateTime DecodeText(PgTextValue value)
     {
-        if (DateTime.TryParse(value, null, DateTimeStyles.AdjustToUniversal, out DateTime dateTime))
+        if (DateTime.TryParse(value.Chars, null, DateTimeStyles.AdjustToUniversal, out DateTime dateTime))
         {
             return dateTime;
         }
         
         throw ColumnDecodeException.Create<DateTime>(
             value.ColumnMetadata,
-            $"Cannot parse '{value}' as a DateTime");
+            $"Cannot parse '{value.Chars}' as a DateTime");
     }
     
     public static PgTypeInfo DbType => PgTypeInfo.Timestamp;
@@ -71,8 +72,8 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
 
     public static PgTypeInfo RangeArrayType => PgTypeInfo.TsrangeArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType || dbType == PgTypeInfo.Timestamptz;
+        return typeInfo == DbType || typeInfo == PgTypeInfo.Timestamptz;
     }
 }

@@ -46,11 +46,18 @@ public readonly record struct PgMacAddress(
                 nameof(bytes)),
         };
     }
-    
-    public static implicit operator PgMacAddress(PhysicalAddress address)
-        => FromBytes(address.GetAddressBytes());
 
-    public static implicit operator PhysicalAddress(PgMacAddress address) => address.ToPhysicalAddress();
+    public static implicit operator PgMacAddress(PhysicalAddress address) =>
+        FromPhysicalAddress(address);
+
+    public static PgMacAddress FromPhysicalAddress(PhysicalAddress address)
+    {
+        ArgumentNullException.ThrowIfNull(address);
+        return FromBytes(address.GetAddressBytes());
+    }
+
+    public static implicit operator PhysicalAddress(PgMacAddress address) =>
+        address.ToPhysicalAddress();
 
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -61,6 +68,7 @@ public readonly record struct PgMacAddress(
     /// </summary>
     public static void Encode(PgMacAddress value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteByte(value.A);
         buffer.WriteByte(value.B);
         buffer.WriteByte(value.C);
@@ -124,7 +132,7 @@ public readonly record struct PgMacAddress(
             {
                 throw ColumnDecodeException.Create<PgMacAddress>(
                     value.ColumnMetadata,
-                    $"Could not parse network location bytes from '{value}'");
+                    $"Could not parse network location bytes from '{value.Chars}'");
             }
 
             bytes[i] = (byte)HexUtils.CharsToDigit<PgMacAddress>(
@@ -140,8 +148,8 @@ public readonly record struct PgMacAddress(
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.MacaddrArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 }

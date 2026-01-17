@@ -36,7 +36,7 @@ public class PgPolygonTest
             points[i] = new PgPoint(x, y);
         }
 
-        var value = new PgPolygon(points);
+        var value = new PgPolygon([..points]);
 
         PgPolygon.Encode(value, buffer);
 
@@ -72,7 +72,7 @@ public class PgPolygonTest
             points[i] = new PgPoint(x, y);
         }
 
-        var expectedValue = new PgPolygon(points);
+        var expectedValue = new PgPolygon([..points]);
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
 
@@ -101,7 +101,7 @@ public class PgPolygonTest
             points[i] = new PgPoint(x, y);
         }
 
-        var expectedValue = new PgPolygon(points);
+        var expectedValue = new PgPolygon([..points]);
         var columnMetadata = new PgColumnMetadata();
         var textValue = new PgTextValue(textData, ref columnMetadata);
 

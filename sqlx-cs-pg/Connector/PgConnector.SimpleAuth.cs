@@ -3,37 +3,24 @@ using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Message.Auth;
 using Sqlx.Postgres.Message.Frontend;
 
-namespace Sqlx.Postgres.Stream;
+namespace Sqlx.Postgres.Connector;
 
-public partial class PgStream
+public partial class PgConnector
 {
     /// <summary>
-    /// Handle simple password auth flow. This sends the password as a simple message of bytes
-    /// optionally MD5 hashed if a salt is specified.
+    /// Handle simple password auth flow. This sends the password as a simple message of bytes.
     /// </summary>
-    /// <param name="username">Username to include in the MD5 hash (if needed)</param>
     /// <param name="password">Password to encode/hash</param>
-    /// <param name="salt">Optional salt if MD5 hash is required</param>
     /// <param name="cancellationToken">Token to cancel async operation</param>
     private async Task SimplePasswordAuthFlow(
-        string username,
         string password,
-        byte[]? salt = null,
         CancellationToken cancellationToken = default)
     {
-        var isSimplePassword = salt is null;
-        var bufferSize = isSimplePassword ? Charsets.Default.GetByteCount(password) : 35;
+        var bufferSize = Charsets.Default.GetByteCount(password);
         var passwordBytes = bufferSize > 256
             ? new byte[bufferSize]
             : stackalloc byte[bufferSize];
-        if (isSimplePassword)
-        {
-            Charsets.Default.GetBytes(password, passwordBytes);
-        }
-        else
-        {
-            PasswordHelper.CreateMd5HashedPassword(username, password, salt, passwordBytes);
-        }
+        Charsets.Default.GetBytes(password, passwordBytes);
         
         await SendSimplePasswordMessage(passwordBytes, cancellationToken)
             .ConfigureAwait(false);

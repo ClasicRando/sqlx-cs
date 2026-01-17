@@ -121,14 +121,14 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
     /// </exception>
     public static decimal DecodeText(PgTextValue value)
     {
-        if (decimal.TryParse(value, null, out var result))
+        if (decimal.TryParse(value.Chars, null, out var result))
         {
             return result;
         }
 
         throw ColumnDecodeException.Create<decimal>(
             value.ColumnMetadata,
-            $"Cannot convert '{value}' to a decimal value");
+            $"Cannot convert '{value.Chars}' to a decimal value");
     }
 
     public static PgTypeInfo DbType => PgTypeInfo.Numeric;
@@ -139,9 +139,9 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
 
     public static PgTypeInfo RangeArrayType => PgTypeInfo.NumrangeArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 
     /// <summary>

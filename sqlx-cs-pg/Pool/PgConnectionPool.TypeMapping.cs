@@ -27,7 +27,8 @@ internal sealed partial class PgConnectionPool
 
         try
         {
-            var oid = await typeOidQuery.ExecuteScalar<PgOid>(cancellationToken);
+            PgOid oid = await typeOidQuery.ExecuteScalar<PgOid>(cancellationToken)
+                .ConfigureAwait(false);
             TType.DbType = new PgTypeInfo(oid.Inner, new EnumType());
         }
         catch (PgException e)
@@ -68,7 +69,7 @@ internal sealed partial class PgConnectionPool
         PgOid oid;
         try
         {
-            oid = await typeOidQuery.ExecuteScalar<PgOid>(cancellationToken);
+            oid = await typeOidQuery.ExecuteScalar<PgOid>(cancellationToken).ConfigureAwait(false);
         }
         catch (PgException e)
         {
@@ -82,11 +83,12 @@ internal sealed partial class PgConnectionPool
         attributeOidsQuery.Bind(oid);
 
         var attributeOids = await attributeOidsQuery
-            .FetchAsync<CompositeType.Attribute>(cancellationToken)
-            .ToArrayAsync(cancellationToken);
+            .FetchAsync<CompositeField>(cancellationToken)
+            .ToArrayAsync(cancellationToken)
+            .ConfigureAwait(false);
         TComposite.DbType = new PgTypeInfo(
             oid.Inner,
-            new CompositeType { Attributes = attributeOids });
+            new CompositeType { Fields = [..attributeOids] });
     }
 
     private static void AddTypeNameAndSchemaToQuery<TType>(IBindable query)
@@ -94,7 +96,7 @@ internal sealed partial class PgConnectionPool
     {
         const string defaultSchemaName = "public";
         var typeName = TType.TypeName;
-        var schemeQualifierIndex = typeName.IndexOf('.');
+        var schemeQualifierIndex = typeName.IndexOf('.', StringComparison.InvariantCulture);
         if (schemeQualifierIndex > -1)
         {
             query.Bind(typeName[(schemeQualifierIndex + 1)..]);

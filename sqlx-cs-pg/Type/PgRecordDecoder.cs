@@ -58,10 +58,10 @@ public static class PgRecordDecoder
         }
 
         var attributeCount = binaryValue.Buffer.ReadInt();
-        if (attributeCount != compositeType.Attributes.Length)
+        if (attributeCount != compositeType.Fields.Length)
         {
             throw new PgException(
-                $"Mismatch in attribute counts. Expected {compositeType.Attributes.Length}, Found {attributeCount}");
+                $"Mismatch in attribute counts. Expected {compositeType.Fields.Length}, Found {attributeCount}");
         }
 
         var columns = new PgColumnMetadata[attributeCount];
@@ -70,7 +70,7 @@ public static class PgRecordDecoder
 
         for (var i = 0; i < attributeCount; i++)
         {
-            CompositeType.Attribute attribute = compositeType.Attributes[i];
+            CompositeField attribute = compositeType.Fields[i];
             columns[i] = new PgColumnMetadata(
                 attribute.Name,
                 0,
@@ -117,10 +117,10 @@ public static class PgRecordDecoder
 
         var attributeLiterals = ParseCompositeLiteralToValueRanges<T>(in textValue);
 
-        if (attributeLiterals.Count != compositeType.Attributes.Length)
+        if (attributeLiterals.Count != compositeType.Fields.Length)
         {
             throw new PgException(
-                $"Mismatch in attribute counts. Expected {compositeType.Attributes.Length}, Found {attributeLiterals.Count}");
+                $"Mismatch in attribute counts. Expected {compositeType.Fields.Length}, Found {attributeLiterals.Count}");
         }
         
         var columns = new PgColumnMetadata[attributeLiterals.Count];
@@ -130,12 +130,12 @@ public static class PgRecordDecoder
         for (var i = 0; i < attributeLiterals.Count; i++)
         {
             var attributeLiteral = attributeLiterals[i];
-            CompositeType.Attribute attribute = compositeType.Attributes[i];
+            CompositeField field = compositeType.Fields[i];
             columns[i] = new PgColumnMetadata(
-                attribute.Name,
+                field.Name,
                 0,
                 0,
-                PgTypeInfo.FromOid(attribute.TypeOid),
+                PgTypeInfo.FromOid(field.TypeOid),
                 0,
                 0,
                 PgFormatCode.Text);
@@ -173,7 +173,7 @@ public static class PgRecordDecoder
         {
             throw ColumnDecodeException.Create<T>(
                 value.ColumnMetadata,
-                $"Composite literal must be enclosed in parenthesis. Found '{value}'");
+                $"Composite literal must be enclosed in parenthesis. Found '{value.Chars}'");
         }
         
         List<string?> result = [];

@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Collections.Immutable;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Result;
 
@@ -10,7 +11,7 @@ namespace Sqlx.Postgres.Type;
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-geometric.html#DATATYPE-GEOMETRIC-PATHS">docs</a>
 /// </summary>
-public readonly struct PgPath(bool isClosed, PgPoint[] points)
+public readonly struct PgPath(bool isClosed, ImmutableArray<PgPoint> points)
     : IPgDbType<PgPath>, IGeometryType, IHasArrayType, IEquatable<PgPath>
 {
     private readonly Lazy<string> _geometryLiteral = new(
@@ -18,7 +19,7 @@ public readonly struct PgPath(bool isClosed, PgPoint[] points)
 
     public bool IsClosed { get; } = isClosed;
 
-    public PgPoint[] Points { get; } = points;
+    public ImmutableArray<PgPoint> Points { get; } = points;
 
     public string GeometryLiteral => _geometryLiteral.Value;
 
@@ -32,6 +33,7 @@ public readonly struct PgPath(bool isClosed, PgPoint[] points)
     /// </summary>
     public static void Encode(PgPath value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteByte((byte)(value.IsClosed ? 1 : 0));
         GeometryUtils.EncodePoints(value.Points, buffer);
     }
@@ -73,14 +75,14 @@ public readonly struct PgPath(bool isClosed, PgPoint[] points)
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.PathArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 
     public bool Equals(PgPath other)
     {
-        return IsClosed == other.IsClosed && Points.AsSpan().SequenceEqual(other.Points);
+        return IsClosed == other.IsClosed && Points.SequenceEqual(other.Points);
     }
 
     public override bool Equals(object? obj)

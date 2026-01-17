@@ -170,7 +170,9 @@ public enum SqlState
     InvalidForeignKey,
     InvalidName,
     NameTooLong,
+#pragma warning disable CA1700
     ReservedName,
+#pragma warning restore CA1700
     DatatypeMismatch,
     IndeterminateDatatype,
     CollationMismatch,

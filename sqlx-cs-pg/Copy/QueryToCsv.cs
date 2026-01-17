@@ -14,7 +14,7 @@ public record QueryToCsv : ICopyQuery, ICopyCsv
 
     public string NullString { get; init; } = "";
     
-    public string? Default { get; init; }
+    public string? DefaultValue { get; init; }
     
     public CopyHeader? Header { get; init; }
 

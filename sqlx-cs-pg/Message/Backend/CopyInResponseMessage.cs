@@ -1,5 +1,5 @@
 using System.Buffers;
-using Sqlx.Core.Buffer;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Sqlx.Postgres.Message.Backend;
 
@@ -10,7 +10,8 @@ namespace Sqlx.Postgres.Message.Backend;
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-COPYINRESPONSE">docs</a>
 /// </summary>
-internal struct CopyInResponseMessage(CopyResponse CopyResponse)
+[SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
+internal record struct CopyInResponseMessage(CopyResponse CopyResponse)
     : IPgBackendMessage, IPgBackendMessageDecoder<CopyInResponseMessage>
 {
     public static CopyInResponseMessage Decode(ReadOnlySequence<byte> buffer)

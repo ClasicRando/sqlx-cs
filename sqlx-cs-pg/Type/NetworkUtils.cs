@@ -131,7 +131,7 @@ internal static class NetworkUtils
         {
             throw ColumnDecodeException.Create<T>(
                 value.ColumnMetadata,
-                $"Could not parse '{value}' into a network value");
+                $"Could not parse '{value.Chars}' into a network value");
         }
 
         if (mid == value.Chars.Length)
@@ -143,7 +143,7 @@ internal static class NetworkUtils
         {
             throw ColumnDecodeException.Create<T>(
                 value.ColumnMetadata,
-                $"Could not parse '{value}' into a network value");
+                $"Could not parse '{value.Chars}' into a network value");
         }
 
         return (ipAddress, parsedPrefix);

@@ -24,6 +24,4 @@ public readonly ref struct PgTextValue(
     /// <param name="range"></param>
     /// <returns>A sliced subset of this text value with the same column metadata</returns>
     public PgTextValue Slice(Range range) => new(Chars[range], ref ColumnMetadata);
-
-    public static implicit operator ReadOnlySpan<char>(PgTextValue value) => value.Chars;
 }

@@ -76,9 +76,9 @@ public readonly struct PgCircle(PgPoint center, double radius)
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.CircleArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 
     public bool Equals(PgCircle other)

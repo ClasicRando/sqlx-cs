@@ -1,4 +1,4 @@
-namespace Sqlx.Core.Stream;
+namespace Sqlx.Core.Connector;
 
 public enum SslMode
 {

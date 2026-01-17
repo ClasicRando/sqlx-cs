@@ -63,7 +63,7 @@ internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
             0 => 0,
             _ => throw ColumnDecodeException.Create<sbyte>(
                 value.ColumnMetadata,
-                $"Received invalid \"char\" text, {value}"),
+                $"Received invalid \"char\" text, {value.Chars}"),
         };
     }
 
@@ -71,8 +71,8 @@ internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.CharArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 }

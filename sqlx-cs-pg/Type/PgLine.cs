@@ -32,6 +32,7 @@ public readonly struct PgLine(double a, double b, double c)
     /// </summary>
     public static void Encode(PgLine value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteDouble(value.A);
         buffer.WriteDouble(value.B);
         buffer.WriteDouble(value.C);
@@ -100,9 +101,9 @@ public readonly struct PgLine(double a, double b, double c)
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.LineArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 
     public bool Equals(PgLine other)

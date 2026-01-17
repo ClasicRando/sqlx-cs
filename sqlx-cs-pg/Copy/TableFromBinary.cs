@@ -12,7 +12,7 @@ public record TableFromBinary : ICopyFrom, ICopyTable, ICopyBinary
 
     public required string TableName { get; init; }
 
-    public string[] ColumnNames { get; init; } = [];
+    public IReadOnlyList<string> ColumnNames { get; init; } = [];
 
     public string ToCopyQuery()
     {

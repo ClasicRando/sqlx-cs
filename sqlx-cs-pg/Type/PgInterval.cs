@@ -45,6 +45,7 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
     /// </summary>
     public static void Encode(PgInterval value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteLong(value.Microseconds);
         buffer.WriteInt(value.Days);
         buffer.WriteInt(value.Months);
@@ -171,7 +172,7 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
                 default:
                     throw ColumnDecodeException.Create<PgInterval>(
                         value.ColumnMetadata,
-                        $"Unexpected character in interval. Interval: '{value}', char: '{currentChar}'");
+                        $"Unexpected character in interval. Interval: '{value.Chars}', char: '{currentChar}'");
             }
         }
 
@@ -234,9 +235,9 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.IntervalArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 
     private const long MinutesPerHour = 60L;

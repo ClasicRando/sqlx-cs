@@ -3,14 +3,16 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Sqlx.Core;
+using Sqlx.Core.Exceptions;
 using Sqlx.Core.Pool;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Exceptions;
+using Sqlx.Postgres.Logging;
 using Sqlx.Postgres.Message.Backend;
 using Sqlx.Postgres.Message.Backend.Information;
 using Sqlx.Postgres.Pool;
 using Sqlx.Postgres.Result;
-using Sqlx.Postgres.Stream;
+using PgConnector = Sqlx.Postgres.Connector.PgConnector;
 
 namespace Sqlx.Postgres.Notify;
 
@@ -21,7 +23,7 @@ internal sealed class PgListener : IPgListener
     private bool _disposed;
     private readonly List<string> _channels = [];
     private readonly PgConnectionPool _pool;
-    private PgStream? _pgStream;
+    private PgConnector? _pgConnector;
     private readonly ILogger<PgListener> _logger;
 
     internal PgListener(PgConnectionPool pool)
@@ -30,16 +32,19 @@ internal sealed class PgListener : IPgListener
         _logger = pool.ConnectOptions.LoggerFactory.CreateLogger<PgListener>();
     }
 
-    private ConnectionStatus Status => _pgStream?.Status ?? ConnectionStatus.Closed;
+    private ConnectionStatus Status => _pgConnector?.Status ?? ConnectionStatus.Closed;
 
     internal IReadOnlyList<string> Channels => _channels;
 
     public async Task ListenAsync(string channel, CancellationToken cancellationToken = default)
     {
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        await _pgStream!.SendQueryMessage($"LISTEN {channel.QuoteIdentifier()};", cancellationToken)
+        await _pgConnector!.SendQueryMessage(
+                $"LISTEN {channel.QuoteIdentifier()};",
+                cancellationToken)
             .ConfigureAwait(false);
-        await _pgStream.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken).ConfigureAwait(false);
+        await _pgConnector.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)
+            .ConfigureAwait(false);
         _channels.Add(channel);
     }
 
@@ -52,9 +57,10 @@ internal sealed class PgListener : IPgListener
         var query = BuildListenAllQuery(CollectionsMarshal.AsSpan(_channels)[startIndex..]);
 
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        await _pgStream!.SendQueryMessage(query, cancellationToken)
+        await _pgConnector!.SendQueryMessage(query, cancellationToken)
             .ConfigureAwait(false);
-        await _pgStream.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken).ConfigureAwait(false);
+        await _pgConnector.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)
+            .ConfigureAwait(false);
     }
 
     public async Task UnlistenAsync(string channel, CancellationToken cancellationToken = default)
@@ -65,10 +71,11 @@ internal sealed class PgListener : IPgListener
             return;
         }
 
-        await _pgStream!.SendQueryMessage(
+        await _pgConnector!.SendQueryMessage(
             $"UNLISTEN {channel.QuoteIdentifier()};",
             cancellationToken).ConfigureAwait(false);
-        await _pgStream.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken).ConfigureAwait(false);
+        await _pgConnector.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)
+            .ConfigureAwait(false);
     }
 
     public async Task UnlistenAllAsync(CancellationToken cancellationToken = default)
@@ -79,8 +86,9 @@ internal sealed class PgListener : IPgListener
             return;
         }
 
-        await _pgStream!.SendQueryMessage(UnlistenAll, cancellationToken).ConfigureAwait(false);
-        await _pgStream.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken).ConfigureAwait(false);
+        await _pgConnector!.SendQueryMessage(UnlistenAll, cancellationToken).ConfigureAwait(false);
+        await _pgConnector.WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)
+            .ConfigureAwait(false);
     }
 
     public async ValueTask<PgNotification> ReceiveNextAsync(
@@ -97,7 +105,7 @@ internal sealed class PgListener : IPgListener
             Either<PgNotification, ErrorResponseMessage> nextMessage;
             try
             {
-                nextMessage = await _pgStream!.WaitForNotificationOrError(cancellationToken)
+                nextMessage = await _pgConnector!.WaitForNotificationOrError(cancellationToken)
                     .ConfigureAwait(false);
             }
             catch (OperationCanceledException)
@@ -106,7 +114,9 @@ internal sealed class PgListener : IPgListener
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Error receiving message. Attempting reconnect.");
+                if (e is not (IOException or SqlxException)) throw;
+
+                _logger.LogErrorWaitingForNotification();
                 await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
                 continue;
             }
@@ -150,8 +160,9 @@ internal sealed class PgListener : IPgListener
             return;
         }
 
-        PgStream stream = await _pool.AcquireStreamAsync(cancellationToken).ConfigureAwait(false);
-        _pgStream = stream;
+        PgConnector connector =
+            await _pool.AcquireStreamAsync(cancellationToken).ConfigureAwait(false);
+        _pgConnector = connector;
 
         if (_channels.Count == 0)
         {
@@ -159,14 +170,14 @@ internal sealed class PgListener : IPgListener
         }
 
         var query = BuildListenAllQuery(CollectionsMarshal.AsSpan(_channels));
-        await _pgStream.SendQueryMessage(query, cancellationToken).ConfigureAwait(false);
+        await _pgConnector.SendQueryMessage(query, cancellationToken).ConfigureAwait(false);
     }
 
     internal async IAsyncEnumerable<string> QueryChannels(
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        var stream = _pgStream!.SendSimpleQuery(ListenersQuery, cancellationToken);
+        var stream = _pgConnector!.SendSimpleQuery(ListenersQuery, cancellationToken);
         await foreach (var item in stream.ConfigureAwait(false))
         {
             if (item is Either<IPgDataRow, QueryResult>.Left row)
@@ -202,9 +213,9 @@ internal sealed class PgListener : IPgListener
         _disposed = true;
 
         UnlistenAllAsync().GetAwaiter().GetResult();
-        if (_pgStream != null)
+        if (_pgConnector != null)
         {
-            _pool.Return(_pgStream);
+            _pool.Return(_pgConnector);
         }
     }
 
@@ -214,9 +225,9 @@ internal sealed class PgListener : IPgListener
         _disposed = true;
 
         await UnlistenAllAsync().ConfigureAwait(false);
-        if (_pgStream != null)
+        if (_pgConnector != null)
         {
-            _pool.Return(_pgStream);
+            _pool.Return(_pgConnector);
         }
     }
 }

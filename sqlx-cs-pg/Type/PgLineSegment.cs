@@ -63,7 +63,7 @@ public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
     public static PgLineSegment DecodeText(PgTextValue value)
     {
         PgTextValue pointChars = value.Slice(1..^1);
-        var indexPairs = GeometryUtils.ExtractPointRanges(pointChars);
+        var indexPairs = GeometryUtils.ExtractPointRanges(pointChars.Chars);
         if (indexPairs.Length != 2)
         {
             throw ColumnDecodeException.Create<PgLineSegment>(
@@ -82,9 +82,9 @@ public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.LsegArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 
     public bool Equals(PgLineSegment other)

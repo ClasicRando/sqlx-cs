@@ -12,13 +12,13 @@ public record TableFromText : ICopyFrom, ICopyTable, ICopyText
 
     public required string TableName { get; init; }
 
-    public string[] ColumnNames { get; init; } = [];
+    public IReadOnlyList<string> ColumnNames { get; init; } = [];
 
     public char Delimiter { get; init; } = ',';
 
     public string NullString { get; init; } = "";
 
-    public string? Default { get; init; }
+    public string? DefaultValue { get; init; }
 
     public CopyHeader? Header { get; init; }
 

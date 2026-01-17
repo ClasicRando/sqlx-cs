@@ -31,7 +31,9 @@ public sealed class PooledArrayBufferWriter : IBufferWriter<byte>, IDisposable
     public int WrittenCount { get; private set; }
 
     /// <summary><see cref="ReadOnlySpan{T}"/> of the bytes written to this buffer</summary>
-    public ReadOnlySpan<byte> ReadableSpan => _buffer.AsSpan(0, WrittenCount);
+    public ReadOnlySpan<byte> ReadableSpan => WrittenCount == 0
+        ? default(ReadOnlySpan<byte>)
+        : _buffer.AsSpan(0, WrittenCount);
 
     internal int StartWritingLengthPrefixed()
     {

@@ -9,9 +9,9 @@ using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Logging;
 using Sqlx.Postgres.Message.Backend;
 
-namespace Sqlx.Postgres.Stream;
+namespace Sqlx.Postgres.Connector;
 
-public sealed partial class PgStream
+public sealed partial class PgConnector
 {
     private const int MaxCopyDataSendSize = 8192;
 
@@ -35,8 +35,10 @@ public sealed partial class PgStream
             Status = ConnectionStatus.Executing;
             await SendQueryMessage(copyOutStatement.ToCopyQuery(), cancellationToken)
                 .ConfigureAwait(false);
-            await WaitForOrThrowError<CopyOutResponseMessage>(cancellationToken);
+            CopyOutResponseMessage message = await WaitForOrThrowError<CopyOutResponseMessage>(cancellationToken)
+                .ConfigureAwait(false);
             _pendingReadyForQuery++;
+            _logger.LogCopyOutResponse(message);
 
             Status = ConnectionStatus.Fetching;
             while (true)
@@ -95,16 +97,19 @@ public sealed partial class PgStream
             Status = ConnectionStatus.Executing;
             await SendQueryMessage(copyInStatement.ToCopyQuery(), cancellationToken)
                 .ConfigureAwait(false);
-            await WaitForOrThrowError<CopyInResponseMessage>(cancellationToken);
+            CopyInResponseMessage message = await WaitForOrThrowError<CopyInResponseMessage>(cancellationToken)
+                .ConfigureAwait(false);
             _pendingReadyForQuery++;
+            _logger.LogCopyInResponse(message);
 
             try
             {
-                await SendCopyDataAsync(data, cancellationToken);
+                await SendCopyDataAsync(data, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception e)
             {
-                await SendCopyFailAsync(cancellationToken: cancellationToken, failCause: e);
+                await SendCopyFailAsync(cancellationToken: cancellationToken, failCause: e)
+                    .ConfigureAwait(false);
                 throw;
             }
 
@@ -179,8 +184,11 @@ public sealed partial class PgStream
             var message = $"Exception collecting/sending data.\nError:\n{failCause}";
             await SendCopyFailMessage(message, cancellationToken).ConfigureAwait(false);
         }
-        catch
+#pragma warning disable CA1031
+        catch (Exception e)
+#pragma warning restore CA1031
         {
+            _logger.LogErrorWhileSendingCopyFail(e);
             BreakConnection();
         }
     }
@@ -211,7 +219,8 @@ public sealed partial class PgStream
                     HandleReadyForQuery(readyForQueryMessage);
                     return result;
                 default:
-                    _logger.LogIgnoreUnexpectedMessage(
+                    PgLog.LogIgnoreUnexpectedMessage(
+                        _logger,
                         SqlxConfig.DetailedLoggingLevel,
                         backendMessage);
                     break;

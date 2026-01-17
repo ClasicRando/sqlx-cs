@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Runtime.CompilerServices;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Result;
 
@@ -21,9 +22,21 @@ public readonly struct PgPoint(double x, double y)
 
     public string GeometryLiteral => _geometryLiteral.Value;
 
-    public static PgPoint operator +(PgPoint p1, PgPoint p2) => new(p1.X + p2.X, p1.Y + p2.Y);
+    public static PgPoint operator +(PgPoint p1, PgPoint p2) => p1.Add(p2);
 
-    public static PgPoint operator -(PgPoint p1, PgPoint p2) => new(p1.X - p2.X, p1.Y - p2.Y);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public PgPoint Add(PgPoint other)
+    {
+        return new PgPoint(X + other.X, Y + other.Y);
+    }
+
+    public static PgPoint operator -(PgPoint p1, PgPoint p2) => p1.Subtract(p2);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public PgPoint Subtract(PgPoint other)
+    {
+        return new PgPoint(X - other.X, Y - other.Y);
+    }
 
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -34,6 +47,7 @@ public readonly struct PgPoint(double x, double y)
     /// </summary>
     public static void Encode(PgPoint value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteDouble(value.X);
         buffer.WriteDouble(value.Y);
     }
@@ -62,9 +76,9 @@ public readonly struct PgPoint(double x, double y)
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.PointArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 
     public bool Equals(PgPoint other)

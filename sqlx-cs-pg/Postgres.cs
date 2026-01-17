@@ -4,10 +4,17 @@ using Sqlx.Postgres.Pool;
 
 namespace Sqlx.Postgres;
 
-public static class Postgres
+public static class PostgresPool
 {
-    public static IPgConnectionPool Pool(PgConnectOptions connectOptions, PoolOptions poolOptions)
+    extension(IPgConnectionPool)
     {
-        return new PgConnectionPool(connectOptions, poolOptions);
+        public static IPgConnectionPool Create(
+            PgConnectOptions connectOptions,
+            PoolOptions poolOptions)
+        {
+            ArgumentNullException.ThrowIfNull(connectOptions);
+            ArgumentNullException.ThrowIfNull(poolOptions);
+            return new PgConnectionPool(connectOptions, poolOptions);
+        }
     }
 }

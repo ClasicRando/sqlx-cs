@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.Net;
-using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -50,8 +49,8 @@ internal abstract class PgIpNetwork : IPgDbType<IPNetwork>, IHasArrayType
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.CidrArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return NetworkUtils.IsNetworkValueCompatible(dbType);
+        return NetworkUtils.IsNetworkValueCompatible(typeInfo);
     }
 }

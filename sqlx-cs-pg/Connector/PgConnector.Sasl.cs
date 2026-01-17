@@ -1,12 +1,13 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Sqlx.Core;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Message.Auth;
 
-namespace Sqlx.Postgres.Stream;
+namespace Sqlx.Postgres.Connector;
 
-public partial class PgStream
+public partial class PgConnector
 {
     private const string Mechanism = "SCRAM-SHA-256";
     private const string CbindFlag = "n";
@@ -168,7 +169,7 @@ public partial class PgStream
             }
             else if (part.StartsWith("i=", StringComparison.Ordinal))
             {
-                iteration = int.Parse(part[2..]);
+                iteration = int.Parse(part[2..], provider: CultureInfo.InvariantCulture);
             }
             else
             {

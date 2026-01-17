@@ -13,26 +13,22 @@ public static class CopyFormatExtensions
 {
     extension(CopyFormat copyFormat)
     {
-        public ReadOnlySpan<char> GetName()
-        {
-            return copyFormat switch
+        public ReadOnlySpan<char> GetName =>
+            copyFormat switch
             {
                 CopyFormat.Text => "text",
                 CopyFormat.Csv => "csv",
                 CopyFormat.Binary => "binary",
-                _ => throw new ArgumentOutOfRangeException(nameof(copyFormat), copyFormat, null),
+                _ => throw new NotSupportedException($"Invalid copy format '{copyFormat}'"),
             };
-        }
 
-        public PgFormatCode GetFormatCode()
-        {
-            return copyFormat switch
+        public PgFormatCode GetFormatCode =>
+            copyFormat switch
             {
                 CopyFormat.Text or CopyFormat.Csv => PgFormatCode.Text,
                 CopyFormat.Binary => PgFormatCode.Binary,
-                _ => throw new ArgumentOutOfRangeException(nameof(copyFormat), copyFormat, null),
+                _ => throw new NotSupportedException($"Invalid copy format '{copyFormat}'"),
             };
-        }
 
         public static CopyFormat FromByte(byte value)
         {

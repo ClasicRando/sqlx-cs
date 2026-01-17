@@ -53,16 +53,18 @@ internal abstract class PgBool : IPgDbType<bool>, IHasArrayType
         {
             't' => true,
             'f' => false,
-            _ => throw ColumnDecodeException.Create<bool>(value.ColumnMetadata, $"First character must be 't' or 'f'. Found '{value}'"),
+            _ => throw ColumnDecodeException.Create<bool>(
+                value.ColumnMetadata,
+                $"First character must be 't' or 'f'. Found '{value.Chars}'"),
         };
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Bool;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.BoolArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 }

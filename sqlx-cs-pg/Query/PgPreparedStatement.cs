@@ -1,3 +1,4 @@
+using System.Globalization;
 using Sqlx.Postgres.Column;
 
 namespace Sqlx.Postgres.Query;
@@ -7,6 +8,6 @@ namespace Sqlx.Postgres.Query;
 /// </summary>
 internal record PgPreparedStatement(string Sql, int StatementId)
 {
-    public string StatementName { get; } = StatementId.ToString();
+    public string StatementName { get; } = StatementId.ToString(CultureInfo.InvariantCulture);
     public PgColumnMetadata[] ColumnMetadata { get; set; } = [];
 }

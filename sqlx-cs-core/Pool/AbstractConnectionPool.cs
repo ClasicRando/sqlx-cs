@@ -18,6 +18,7 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
 {
     public PoolOptions PoolOptions { get; }
 
+    private bool _disposed;
     private readonly TimeSpan _connectTimeout;
     private readonly ILogger<TSelf> _logger;
     private readonly ChannelReader<TConnection?> _idleConnectionReader;
@@ -30,8 +31,9 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
     private readonly PeriodicTimer _idleCleanupTimer;
     private readonly Task _idleCleanupTask;
     private volatile bool _idleTimerEnabled;
-    
-    internal AbstractConnectionPool(PoolOptions poolOptions,
+
+    internal AbstractConnectionPool(
+        PoolOptions poolOptions,
         TimeSpan connectTimeout,
         ILogger<TSelf> logger)
     {
@@ -45,6 +47,8 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
         _idleCleanupTimer = new PeriodicTimer(poolOptions.IdleCleanupInterval);
         _idleCleanupTask = Task.Run(() => IdleCleanupActionAsync(_idleCleanupCts.Token));
     }
+
+    ~AbstractConnectionPool() => Dispose(false);
 
     internal ValueTask<TConnection> AcquireStreamAsync(CancellationToken cancellationToken)
     {
@@ -60,7 +64,8 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
 
             do
             {
-                TConnection? s = await OpenNewStreamAsync(acquireTimeoutToken).ConfigureAwait(false);
+                TConnection? s =
+                    await OpenNewStreamAsync(acquireTimeoutToken).ConfigureAwait(false);
                 if (s is not null)
                 {
                     return s;
@@ -142,9 +147,9 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
             try
             {
                 TConnection stream = CreateNewConnection();
-                var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 cts.CancelAfter(_connectTimeout);
-                await stream.OpenAsync(cts.Token);
+                await stream.OpenAsync(cts.Token).ConfigureAwait(false);
 
                 var i = 0;
                 for (; i < PoolOptions.MaxConnections; i++)
@@ -210,6 +215,12 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
         return true;
     }
 
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification =
+            "Exceptions while disposing of a stream do not really matter as to what caused them " +
+            "and should not be propagated")]
     private void CloseStream(TConnection stream)
     {
         try
@@ -269,7 +280,8 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
         try
         {
             while (!cancellationToken.IsCancellationRequested
-                   && await _idleCleanupTimer.WaitForNextTickAsync(cancellationToken))
+                   && await _idleCleanupTimer.WaitForNextTickAsync(cancellationToken)
+                       .ConfigureAwait(false))
             {
                 var idleStreamCount = _idleConnectionCount;
                 samples.Add(idleStreamCount);
@@ -314,10 +326,20 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
 
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (!disposing) return;
+
         _idleCleanupCts.Cancel();
         _idleCleanupTask.GetAwaiter().GetResult();
         _idleCleanupCts.Dispose();
         _idleCleanupTimer.Dispose();
-        GC.SuppressFinalize(this);
+
+        _disposed = true;
     }
 }

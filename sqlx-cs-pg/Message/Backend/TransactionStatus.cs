@@ -5,7 +5,7 @@ namespace Sqlx.Postgres.Message.Backend;
 /// indicates if a transaction is still active once completing the query or if the current
 /// transaction failed and should be rolled back.
 /// </summary>
-public enum TransactionStatus : byte
+internal enum TransactionStatus
 {
     Idle = (byte)'I',
     InTransaction = (byte)'T',

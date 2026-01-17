@@ -1,14 +1,14 @@
 using Microsoft.Extensions.Logging;
+using Sqlx.Core.Connector;
 using Sqlx.Core.Pool;
-using Sqlx.Core.Stream;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Notify;
-using Sqlx.Postgres.Stream;
+using PgConnector = Sqlx.Postgres.Connector.PgConnector;
 
 namespace Sqlx.Postgres.Pool;
 
 internal sealed partial class PgConnectionPool
-    : AbstractConnectionPool<PgStream, PgConnectionPool>, IPgConnectionPool
+    : AbstractConnectionPool<PgConnector, PgConnectionPool>, IPgConnectionPool
 {
     public PgConnectOptions ConnectOptions { get; }
 
@@ -20,9 +20,9 @@ internal sealed partial class PgConnectionPool
         ConnectOptions = options;
     }
 
-    protected override PgStream CreateNewConnection()
+    protected override PgConnector CreateNewConnection()
     {
-        return new PgStream(new AsyncStream(), ConnectOptions);
+        return new PgConnector(new AsyncConnector(), ConnectOptions);
     }
 
     public IPgConnection CreateConnection()

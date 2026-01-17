@@ -1,5 +1,5 @@
 using System.Buffers;
-using Sqlx.Core.Buffer;
+using System.Collections.Immutable;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -10,10 +10,10 @@ namespace Sqlx.Postgres.Type;
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-geometric.html#DATATYPE-POLYGON">docs</a>
 /// </summary>
-public readonly struct PgPolygon(PgPoint[] points)
+public readonly struct PgPolygon(ImmutableArray<PgPoint> points)
     : IPgDbType<PgPolygon>, IGeometryType, IHasArrayType, IEquatable<PgPolygon>
 {
-    public PgPoint[] Points { get; } = points;
+    public ImmutableArray<PgPoint> Points { get; } = points;
 
     /// <summary>
     /// The bounding box of the polygon. This is the smallest box object that fully covers the
@@ -32,6 +32,7 @@ public readonly struct PgPolygon(PgPoint[] points)
     /// </summary>
     public static void Encode(PgPolygon value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         GeometryUtils.EncodePoints(value.Points, buffer);
     }
 
@@ -68,12 +69,12 @@ public readonly struct PgPolygon(PgPoint[] points)
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.PolygonArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 
-    private static PgBox MakeBoundingBox(PgPoint[] points)
+    private static PgBox MakeBoundingBox(ImmutableArray<PgPoint> points)
     {
         if (points.Length == 0)
         {
@@ -113,7 +114,7 @@ public readonly struct PgPolygon(PgPoint[] points)
 
     public bool Equals(PgPolygon other)
     {
-        return Points.AsSpan().SequenceEqual(other.Points);
+        return Points.SequenceEqual(other.Points);
     }
 
     public override bool Equals(object? obj)

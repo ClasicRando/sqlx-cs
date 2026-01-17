@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using Sqlx.Core.Stream;
+using Sqlx.Core.Connector;
 using Sqlx.Postgres.Auth.Sasl;
 
 namespace Sqlx.Postgres.Connection;

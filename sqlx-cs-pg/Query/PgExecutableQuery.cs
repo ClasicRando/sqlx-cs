@@ -17,13 +17,14 @@ namespace Sqlx.Postgres.Query;
 internal class PgExecutableQuery : IPgExecutableQuery
 {
     private IPgQueryExecutor? _queryExecutor;
-    private readonly PooledArrayBufferWriter _buffer = new();
+    private readonly PooledArrayBufferWriter _buffer;
     private readonly PgParameterWriter _parameterBuffer;
 
     public PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor)
     {
         _queryExecutor = queryExecutor;
         Query = sql;
+        _buffer = new PooledArrayBufferWriter();
         _parameterBuffer = new PgParameterWriter(_buffer);
     }
 
@@ -147,6 +148,7 @@ internal class PgExecutableQuery : IPgExecutableQuery
     public void Dispose()
     {
         _buffer.Dispose();
+        _parameterBuffer.Dispose();
         _queryExecutor = null;
     }
 }

@@ -49,14 +49,14 @@ internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayTy
     /// </exception>
     public static DateOnly DecodeText(PgTextValue value)
     {
-        if (DateOnly.TryParseExact(value, "yyyy-MM-dd", out DateOnly date))
+        if (DateOnly.TryParseExact(value.Chars, "yyyy-MM-dd", out DateOnly date))
         {
             return date;
         }
         
         throw ColumnDecodeException.Create<DateOnly>(
             value.ColumnMetadata,
-            $"Cannot parse '{value}' as a DateOnly");
+            $"Cannot parse '{value.Chars}' as a DateOnly");
     }
     
     public static PgTypeInfo DbType => PgTypeInfo.Date;
@@ -67,8 +67,8 @@ internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayTy
 
     public static PgTypeInfo RangeArrayType => PgTypeInfo.DaterangeArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType;
+        return typeInfo == DbType;
     }
 }

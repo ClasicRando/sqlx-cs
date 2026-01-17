@@ -91,7 +91,7 @@ internal static class PgArrayTypeUtils
         {
             throw ColumnDecodeException.Create<TElement[]>(
                 value.ColumnMetadata,
-                $"Array literal must be enclosed in curly braces. Found '{value}'");
+                $"Array literal must be enclosed in curly braces. Found '{value.Chars}'");
         }
 
         if (value.Chars is "{}")

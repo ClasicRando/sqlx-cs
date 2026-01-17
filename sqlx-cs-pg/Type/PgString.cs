@@ -41,12 +41,12 @@ internal abstract class PgString : IPgDbType<string>, IHasArrayType
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.TextArray;
 
-    public static bool IsCompatible(PgTypeInfo dbType)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType == DbType
-               || dbType == PgTypeInfo.Varchar
-               || dbType == PgTypeInfo.Xml
-               || dbType == PgTypeInfo.Name
-               || dbType == PgTypeInfo.Bpchar;
+        return typeInfo == DbType
+               || typeInfo == PgTypeInfo.Varchar
+               || typeInfo == PgTypeInfo.Xml
+               || typeInfo == PgTypeInfo.Name
+               || typeInfo == PgTypeInfo.Bpchar;
     }
 }
