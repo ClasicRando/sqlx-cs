@@ -44,7 +44,7 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
     /// <exception cref="ColumnDecodeException">
     /// If the characters cannot be parsed into a <see cref="Guid"/>
     /// </exception>
-    public static Guid DecodeText(PgTextValue value)
+    public static Guid DecodeText(in PgTextValue value)
     {
         if (!Guid.TryParse(value.Chars, out Guid guid))
         {

@@ -119,7 +119,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
     /// <exception cref="ColumnDecodeException">
     /// If the value cannot be parsed into a <see cref="decimal"/>
     /// </exception>
-    public static decimal DecodeText(PgTextValue value)
+    public static decimal DecodeText(in PgTextValue value)
     {
         if (decimal.TryParse(value.Chars, null, out var result))
         {

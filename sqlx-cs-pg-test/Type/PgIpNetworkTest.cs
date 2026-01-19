@@ -46,7 +46,7 @@ public class PgIpNetworkTest
     {
         var expectedValue = new IPNetwork(new IPAddress(address), prefixLength);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         IPNetwork actualValue = PgIpNetwork.DecodeBytes(ref binaryValue);
 
@@ -71,7 +71,7 @@ public class PgIpNetworkTest
     {
         var expectedValue = new IPNetwork(new IPAddress(address), prefixLength);
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         IPNetwork actualValue = PgIpNetwork.DecodeText(textValue);
 
@@ -88,7 +88,7 @@ public class PgIpNetworkTest
     public async Task DecodeText_Should_Fail_When_InvalidIPNetwork(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

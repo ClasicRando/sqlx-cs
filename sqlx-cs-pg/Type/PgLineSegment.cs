@@ -60,7 +60,7 @@ public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
     /// <exception cref="ColumnDecodeException">
     /// If the inner characters are not 2 points or either point cannot be parsed
     /// </exception>
-    public static PgLineSegment DecodeText(PgTextValue value)
+    public static PgLineSegment DecodeText(in PgTextValue value)
     {
         PgTextValue pointChars = value.Slice(1..^1);
         var indexPairs = GeometryUtils.ExtractPointRanges(pointChars.Chars);

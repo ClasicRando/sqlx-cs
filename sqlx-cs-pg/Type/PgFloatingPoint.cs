@@ -23,7 +23,7 @@ internal static class PgFloatingPoint
         };
     }
     
-    public static double ExtractFloat<T>(ref this PgTextValue value) where T : notnull
+    public static double ExtractFloat<T>(in this PgTextValue value) where T : notnull
     {
         if (!double.TryParse(value.Chars, null, out var parseResult))
         {
@@ -72,7 +72,7 @@ internal abstract class PgDouble : IPgDbType<double>, IHasArrayType
     /// <exception cref="ColumnDecodeException">
     /// If the characters are not a <see cref="double"/>
     /// </exception>
-    public static double DecodeText(PgTextValue value)
+    public static double DecodeText(in PgTextValue value)
     {
         return value.ExtractFloat<double>();
     }
@@ -123,7 +123,7 @@ internal abstract class PgFloat : IPgDbType<float>, IHasArrayType
     /// If the characters are not a <see cref="double"/> or the <see cref="double"/> value is not a
     /// valid float
     /// </exception>
-    public static float DecodeText(PgTextValue value)
+    public static float DecodeText(in PgTextValue value)
     {
         return ValidateFloat(value.ExtractFloat<float>(), value.ColumnMetadata);
     }

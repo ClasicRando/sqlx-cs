@@ -41,7 +41,7 @@ public class PgLongTest
         long expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         var actualValue = PgLong.DecodeBytes(ref binaryValue);
 
@@ -58,7 +58,7 @@ public class PgLongTest
     public async Task DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
         try
         {
             PgLong.DecodeBytes(ref binaryValue);
@@ -88,7 +88,7 @@ public class PgLongTest
         long expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         var actualValue = PgLong.DecodeText(textValue);
 
@@ -100,7 +100,7 @@ public class PgLongTest
     public async Task DecodeText_Should_Fail_When_InvalidLongString(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

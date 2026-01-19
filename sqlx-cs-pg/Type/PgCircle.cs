@@ -58,7 +58,7 @@ public readonly struct PgCircle(PgPoint center, double radius)
     /// <exception cref="ColumnDecodeException">
     /// If parsing the point fails or the radius component is not a double
     /// </exception>
-    public static PgCircle DecodeText(PgTextValue value)
+    public static PgCircle DecodeText(in PgTextValue value)
     {
         var midIndex = value.Chars.IndexOf("),") + 1;
         PgTextValue pointSlice = value.Slice(1..midIndex);

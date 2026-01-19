@@ -38,7 +38,7 @@ public class PgBitStringTest
     {
         var expectedValue = new BitArray(bits);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         BitArray actualValue = PgBitString.DecodeBytes(ref binaryValue);
 
@@ -54,7 +54,7 @@ public class PgBitStringTest
     {
         var expectedValue = new BitArray(bits);
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         BitArray actualValue = PgBitString.DecodeText(textValue);
 
@@ -66,7 +66,7 @@ public class PgBitStringTest
     public async Task DecodeText_Should_Fail_When_AnyCharacterIsInvalid(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

@@ -11,7 +11,7 @@ namespace Sqlx.Postgres.Message.Backend;
 /// will not deviate from the overall format so keeping that data in the message is not important.
 /// </summary>
 [SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
-internal record struct CopyResponse(CopyFormat CopyFormat, short ColumnCount)
+internal record CopyResponse(CopyFormat CopyFormat, short ColumnCount)
 {
     internal static CopyResponse Decode(ReadOnlySequence<byte> buffer)
     {

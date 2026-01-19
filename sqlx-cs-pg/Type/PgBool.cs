@@ -47,7 +47,7 @@ internal abstract class PgBool : IPgDbType<bool>, IHasArrayType
     /// <exception cref="ColumnDecodeException">
     /// If the first character is not 't' or 'f'
     /// </exception>
-    public static bool DecodeText(PgTextValue value)
+    public static bool DecodeText(in PgTextValue value)
     {
         return value.Chars[0] switch
         {

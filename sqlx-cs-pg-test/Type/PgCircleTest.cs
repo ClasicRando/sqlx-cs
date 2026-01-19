@@ -37,7 +37,7 @@ public class PgCircleTest
             0, 0, 0,
         ];
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         PgCircle actualValue = PgCircle.DecodeBytes(ref binaryValue);
 
@@ -50,7 +50,7 @@ public class PgCircleTest
         const string textData = "<(5.63,8.59),4>";
         var expectedValue = new PgCircle(new PgPoint(5.63, 8.59), 4);
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         PgCircle actualValue = PgCircle.DecodeText(textValue);
 
@@ -65,7 +65,7 @@ public class PgCircleTest
         string contains)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

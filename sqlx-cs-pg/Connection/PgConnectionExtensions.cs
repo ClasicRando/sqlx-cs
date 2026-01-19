@@ -259,14 +259,14 @@ public static class PgConnectionExtensions
         await writer.CompleteAsync().ConfigureAwait(false);
     }
 
-    internal readonly record struct CopyTableMetadata(
+    private readonly record struct CopyTableMetadata(
         int TableOid,
         string ColumnName,
         short ColumnOrder,
         PgTypeInfo PgTypeInfo,
         short ColumnLength) : IFromRow<IPgDataRow, CopyTableMetadata>
     {
-        internal const string Query =
+        public const string Query =
             """
             SELECT
                 c.oid table_oid, attname AS column_name, attnum column_order, atttypid AS type_oid,

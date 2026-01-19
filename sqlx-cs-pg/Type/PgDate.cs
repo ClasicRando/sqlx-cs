@@ -47,7 +47,7 @@ internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayTy
     /// <exception cref="ColumnDecodeException">
     /// If a date cannot be parsed from the characters
     /// </exception>
-    public static DateOnly DecodeText(PgTextValue value)
+    public static DateOnly DecodeText(in PgTextValue value)
     {
         if (DateOnly.TryParseExact(value.Chars, "yyyy-MM-dd", out DateOnly date))
         {

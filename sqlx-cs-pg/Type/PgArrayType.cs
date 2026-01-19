@@ -84,7 +84,7 @@ internal static class PgArrayTypeUtils
     /// </summary>
     /// <param name="value">Text encoded value</param>
     /// <returns>List of substrings for each array element in buffer</returns>
-    public static List<string?> DecodeTextSlices<TElement>(ref PgTextValue value)
+    public static List<string?> DecodeTextSlices<TElement>(in PgTextValue value)
         where TElement : notnull
     {
         if (!value.Chars.StartsWith("{") || !value.Chars.EndsWith("}"))
@@ -235,9 +235,9 @@ internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1842">pg source code</a>
     /// </summary>
-    public static TElement?[] DecodeText(PgTextValue value)
+    public static TElement?[] DecodeText(in PgTextValue value)
     {
-        var slices = PgArrayTypeUtils.DecodeTextSlices<TElement>(ref value);
+        var slices = PgArrayTypeUtils.DecodeTextSlices<TElement>(in value);
         var result = new TElement?[slices.Count];
 
         for (var index = 0; index < slices.Count; index++)
@@ -250,7 +250,7 @@ internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[
             }
 
             var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Text);
-            var elementValue = new PgTextValue(slice, ref columnMetadata);
+            var elementValue = new PgTextValue(slice, in columnMetadata);
             result[index] = TType.DecodeText(elementValue);
         }
 
@@ -356,9 +356,9 @@ internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1842">pg source code</a>
     /// </summary>
-    public static TElement?[] DecodeText(PgTextValue value)
+    public static TElement?[] DecodeText(in PgTextValue value)
     {
-        var slices = PgArrayTypeUtils.DecodeTextSlices<TElement>(ref value);
+        var slices = PgArrayTypeUtils.DecodeTextSlices<TElement>(in value);
         var result = new TElement?[slices.Count];
 
         for (var index = 0; index < slices.Count; index++)
@@ -371,7 +371,7 @@ internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?
             }
 
             var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Text);
-            var elementValue = new PgTextValue(slice, ref columnMetadata);
+            var elementValue = new PgTextValue(slice, in columnMetadata);
             result[index] = TType.DecodeText(elementValue);
         }
 

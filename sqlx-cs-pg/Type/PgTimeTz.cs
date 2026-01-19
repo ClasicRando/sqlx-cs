@@ -59,7 +59,7 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
     /// <exception cref="ColumnDecodeException">
     /// If the offset cannot be parsed or a time value cannot be extracted
     /// </exception>
-    public static PgTimeTz DecodeText(PgTextValue value)
+    public static PgTimeTz DecodeText(in PgTextValue value)
     {
         var offsetSeconds = FindOffset(value, out var offsetStart);
         TimeOnly time = PgTime.DecodeText(value.Slice(..offsetStart));

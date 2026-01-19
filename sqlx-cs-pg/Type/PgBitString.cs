@@ -109,7 +109,7 @@ public abstract class PgBitString : IPgDbType<BitArray>, IHasArrayType
     /// <exception cref="ColumnDecodeException">
     /// If any character is not 0 or 1
     /// </exception>
-    public static BitArray DecodeText(PgTextValue value)
+    public static BitArray DecodeText(in PgTextValue value)
     {
         var bitArray = new BitArray(value.Chars.Length);
         

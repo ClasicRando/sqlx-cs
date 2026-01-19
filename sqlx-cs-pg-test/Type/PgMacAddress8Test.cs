@@ -29,7 +29,7 @@ public class PgMacAddress8Test
     {
         PgMacAddress8 expectedValue = PgMacAddress8.FromBytes(binaryData);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         PgMacAddress8 actualValue = PgMacAddress8.DecodeBytes(ref binaryValue);
 
@@ -44,7 +44,7 @@ public class PgMacAddress8Test
     {
         PgMacAddress8 expectedValue = PgMacAddress8.FromBytes(address);
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         PgMacAddress8 actualValue = PgMacAddress8.DecodeText(textValue);
 
@@ -57,7 +57,7 @@ public class PgMacAddress8Test
     public async Task DecodeText_Should_Fail_When_InvalidPgMacAddress8(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

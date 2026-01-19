@@ -32,7 +32,7 @@ internal abstract class PgString : IPgDbType<string>, IHasArrayType
     /// <summary>
     /// Convert the characters into a new <see cref="string"/>
     /// </summary>
-    public static string DecodeText(PgTextValue value)
+    public static string DecodeText(in PgTextValue value)
     {
         return new string(value.Chars);
     }

@@ -34,7 +34,7 @@ public class PgPathTest
         PgPath expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         PgPath actualValue = PgPath.DecodeBytes(ref binaryValue);
 
@@ -54,7 +54,7 @@ public class PgPathTest
         PgPath expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         PgPath actualValue = PgPath.DecodeText(textValue);
 

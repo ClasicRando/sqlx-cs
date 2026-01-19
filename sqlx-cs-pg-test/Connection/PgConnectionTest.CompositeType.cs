@@ -68,7 +68,7 @@ public readonly struct TestCompositeType : IPgUdt<TestCompositeType>, IFromRow<I
         return PgRecordDecoder.DecodeBinary<TestCompositeType>(ref value);
     }
 
-    public static TestCompositeType DecodeText(PgTextValue value)
+    public static TestCompositeType DecodeText(in PgTextValue value)
     {
         return PgRecordDecoder.DecodeText<TestCompositeType>(in value);
     }

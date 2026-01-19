@@ -42,7 +42,7 @@ public readonly struct PgOid(uint inner) : IEquatable<PgOid>, IPgDbType<PgOid>, 
     /// <exception cref="ColumnDecodeException">
     /// If the characters are not an <see cref="uint"/> value
     /// </exception>
-    public static PgOid DecodeText(PgTextValue value)
+    public static PgOid DecodeText(in PgTextValue value)
     {
         var integer = value.ExtractInteger<uint>();
         return new PgOid(Integers.ValidateUInt(integer, value.ColumnMetadata));

@@ -64,7 +64,7 @@ public class PgDecimalTest
         decimal expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         var actualValue = PgDecimal.DecodeBytes(ref binaryValue);
 
@@ -95,7 +95,7 @@ public class PgDecimalTest
         decimal expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         var actualValue = PgDecimal.DecodeText(textValue);
 
@@ -107,7 +107,7 @@ public class PgDecimalTest
     public async Task DecodeText_Should_Fail_When_InvalidDecimalString(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

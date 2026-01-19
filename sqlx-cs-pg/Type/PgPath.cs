@@ -65,7 +65,7 @@ public readonly struct PgPath(bool isClosed, ImmutableArray<PgPoint> points)
     /// <exception cref="Sqlx.Core.Exceptions.ColumnDecodeException">
     /// If characters do not represent a collection of points
     /// </exception>
-    public static PgPath DecodeText(PgTextValue value)
+    public static PgPath DecodeText(in PgTextValue value)
     {
         var isClosed = value.Chars[0] == '(';
         return new PgPath(isClosed, GeometryUtils.DecodePoints<PgPath>(value));

@@ -31,7 +31,7 @@ public class PgPointTest
             [64, 22, 133, 30, 184, 81, 235, 133, 64, 33, 46, 20, 122, 225, 71, 174];
         var expectedValue = new PgPoint(5.63, 8.59);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         PgPoint actualValue = PgPoint.DecodeBytes(ref binaryValue);
 
@@ -44,7 +44,7 @@ public class PgPointTest
         const string textData = "(5.63,8.59)";
         var expectedValue = new PgPoint(5.63, 8.59);
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         PgPoint actualValue = PgPoint.DecodeText(textValue);
 
@@ -58,7 +58,7 @@ public class PgPointTest
     public async Task DecodeText_Should_Fail_When_InvalidText(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

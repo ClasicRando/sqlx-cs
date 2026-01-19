@@ -71,7 +71,7 @@ public readonly struct PgBox : IPgDbType<PgBox>, IGeometryType, IHasArrayType, I
     /// <exception cref="ColumnDecodeException">
     /// If 2 points cannot be found within the characters or the points cannot be parsed
     /// </exception>
-    public static PgBox DecodeText(PgTextValue value)
+    public static PgBox DecodeText(in PgTextValue value)
     {
         var indexPairs = GeometryUtils.ExtractPointRanges(value.Chars);
         if (indexPairs.Length != 2)

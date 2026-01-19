@@ -37,7 +37,7 @@ public class PgRangeTypeTest
         PgRange<int> expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         var actualValue = PgRangeType<int, PgInt>.DecodeBytes(ref binaryValue);
 
@@ -59,7 +59,7 @@ public class PgRangeTypeTest
         PgRange<int> expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         var actualValue = PgRangeType<int, PgInt>.DecodeText(textValue);
 
@@ -79,7 +79,7 @@ public class PgRangeTypeTest
     public async Task DecodeText_Should_Fail_When_InvalidArrayLiteral(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

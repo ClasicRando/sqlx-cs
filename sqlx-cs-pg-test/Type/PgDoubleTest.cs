@@ -41,7 +41,7 @@ public class PgDoubleTest
         double expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         var actualValue = PgDouble.DecodeBytes(ref binaryValue);
 
@@ -59,7 +59,7 @@ public class PgDoubleTest
     public async Task DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
         try
         {
             PgDouble.DecodeBytes(ref binaryValue);
@@ -87,7 +87,7 @@ public class PgDoubleTest
         double expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         var actualValue = PgDouble.DecodeText(textValue);
 
@@ -99,7 +99,7 @@ public class PgDoubleTest
     public async Task DecodeText_Should_Fail_When_InvalidDoubleString(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

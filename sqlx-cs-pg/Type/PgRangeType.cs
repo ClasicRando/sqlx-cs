@@ -121,7 +121,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
             var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary);
             var lowerBoundValue = new PgBinaryValue(
                 value.Buffer[..lowerBoundLength],
-                ref columnMetadata);
+                in columnMetadata);
             TValue lowerValue = TType.DecodeBytes(ref lowerBoundValue);
             value.Buffer = value.Buffer[lowerBoundLength..];
             start = flags.HasFlag(RangeMetadata.LowerBoundInclusive)
@@ -135,7 +135,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
             var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary);
             var upperBoundValue = new PgBinaryValue(
                 value.Buffer[..upperBoundLength],
-                ref columnMetadata);
+                in columnMetadata);
             TValue upperValue = TType.DecodeBytes(ref upperBoundValue);
             value.Buffer = value.Buffer[upperBoundLength..];
             end = flags.HasFlag(RangeMetadata.UpperBoundInclusive)
@@ -162,7 +162,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
     /// If the number of bounds in the range literal is > 2 or decoding a bound value fails
     /// </exception>
     [SuppressMessage("ReSharper", "InvertIf")]
-    public static PgRange<TValue> DecodeText(PgTextValue value)
+    public static PgRange<TValue> DecodeText(in PgTextValue value)
     {
         var start = Bound.Unbounded<TValue>();
         var end = Bound.Unbounded<TValue>();

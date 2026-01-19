@@ -95,7 +95,7 @@ internal abstract class PgLong : IPgDbType<long>, IHasRangeType, IHasArrayType
     /// <exception cref="ColumnDecodeException">
     /// If the characters are not a <see cref="long"/> value
     /// </exception>
-    public static long DecodeText(PgTextValue value)
+    public static long DecodeText(in PgTextValue value)
     {
         return value.ExtractInteger<long>();
     }
@@ -150,7 +150,7 @@ internal abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
     /// <exception cref="ColumnDecodeException">
     /// If the characters are not an <see cref="int"/> value
     /// </exception>
-    public static int DecodeText(PgTextValue value)
+    public static int DecodeText(in PgTextValue value)
     {
         var integer = value.ExtractInteger<int>();
         return Integers.ValidateInt(integer, value.ColumnMetadata);
@@ -206,7 +206,7 @@ internal abstract class PgShort : IPgDbType<short>, IHasArrayType
     /// <exception cref="ColumnDecodeException">
     /// If the characters are not a <see cref="short"/> value
     /// </exception>
-    public static short DecodeText(PgTextValue value)
+    public static short DecodeText(in PgTextValue value)
     {
         var integer = value.ExtractInteger<short>();
         return Integers.ValidateShort(integer, value.ColumnMetadata);

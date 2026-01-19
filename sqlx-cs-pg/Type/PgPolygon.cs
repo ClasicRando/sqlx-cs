@@ -60,7 +60,7 @@ public readonly struct PgPolygon(ImmutableArray<PgPoint> points)
     /// <exception cref="Sqlx.Core.Exceptions.ColumnDecodeException">
     /// If characters do not represent a collection of points
     /// </exception>
-    public static PgPolygon DecodeText(PgTextValue value)
+    public static PgPolygon DecodeText(in PgTextValue value)
     {
         return new PgPolygon(GeometryUtils.DecodePoints<PgPolygon>(value));
     }

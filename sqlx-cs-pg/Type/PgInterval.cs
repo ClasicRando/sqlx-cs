@@ -82,7 +82,7 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
     /// <exception cref="ColumnDecodeException">
     /// If either characters are not a valid ISO-8601 interval
     /// </exception>
-    public static PgInterval DecodeText(PgTextValue value)
+    public static PgInterval DecodeText(in PgTextValue value)
     {
         char currentChar;
         var currentNumber = 0;

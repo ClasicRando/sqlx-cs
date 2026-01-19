@@ -119,7 +119,7 @@ public readonly record struct PgMacAddress8(
     /// <exception cref="ColumnDecodeException">
     /// If the characters do not match the expected format of a Postgres MacAddress literal
     /// </exception>
-    public static PgMacAddress8 DecodeText(PgTextValue value)
+    public static PgMacAddress8 DecodeText(in PgTextValue value)
     {
         Span<Range> splits = stackalloc Range[8];
         var splitCount = value.Chars.Split(splits, ':');

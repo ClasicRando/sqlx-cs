@@ -67,7 +67,7 @@ public class PgTimeTzTest
             new TimeOnly(hour, minute, second, millisecond, microsecond),
             offset);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         PgTimeTz actualValue = PgTimeTz.DecodeBytes(ref binaryValue);
 
@@ -92,7 +92,7 @@ public class PgTimeTzTest
             new TimeOnly(hour, minute, second, millisecond, microsecond),
             offset);
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         PgTimeTz actualValue = PgTimeTz.DecodeText(textValue);
 
@@ -113,7 +113,7 @@ public class PgTimeTzTest
         string contains)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

@@ -11,7 +11,7 @@ namespace Sqlx.Postgres.Message.Backend;
 /// <a href="https://www.postgresql.org/docs/current/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-COPYOUTRESPONSE">docs</a>
 /// </summary>
 [SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
-internal record struct CopyOutResponseMessage(CopyResponse Response)
+internal record CopyOutResponseMessage(CopyResponse Response)
     : IPgBackendMessage, IPgBackendMessageDecoder<CopyOutResponseMessage>
 {
     public static CopyOutResponseMessage Decode(ReadOnlySequence<byte> buffer)

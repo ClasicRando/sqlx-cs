@@ -17,7 +17,7 @@ public class PgByteaTest
         byte[] expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         var actualValue = PgBytea.DecodeText(textValue);
 
@@ -31,7 +31,7 @@ public class PgByteaTest
         string contains)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

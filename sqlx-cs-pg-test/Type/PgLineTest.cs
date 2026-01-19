@@ -37,7 +37,7 @@ public class PgLineTest
             0, 0, 0,
         ];
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         PgLine actualValue = PgLine.DecodeBytes(ref binaryValue);
 
@@ -50,7 +50,7 @@ public class PgLineTest
         const string textData = "{5.63,8.59,4}";
         var expectedValue = new PgLine(5.63, 8.59, 4);
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         PgLine actualValue = PgLine.DecodeText(textValue);
 
@@ -66,7 +66,7 @@ public class PgLineTest
         string contains)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

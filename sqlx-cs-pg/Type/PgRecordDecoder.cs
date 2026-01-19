@@ -30,7 +30,7 @@ namespace Sqlx.Postgres.Type;
 ///         return PgRecordDecoder.DecodeBinary&lt;Example&gt;(ref value);
 ///     }
 /// 
-///     public static Example DecodeText(PgTextValue value)
+///     public static Example DecodeText(in PgTextValue value)
 ///     {
 ///         return PgRecordDecoder.DecodeText&lt;Example&gt;(in value);
 ///     }

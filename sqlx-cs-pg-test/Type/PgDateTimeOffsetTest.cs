@@ -68,7 +68,7 @@ public class PgDateTimeOffsetTest
             microsecond,
             TimeSpan.Zero);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         DateTimeOffset actualValue = PgDateTimeOffset.DecodeBytes(ref binaryValue);
 
@@ -103,7 +103,7 @@ public class PgDateTimeOffsetTest
             microsecond,
             TimeSpan.Zero);
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         DateTimeOffset actualValue = PgDateTimeOffset.DecodeText(textValue);
 
@@ -115,7 +115,7 @@ public class PgDateTimeOffsetTest
     public async Task DecodeText_Should_Fail_When_InvalidDatetimeString(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

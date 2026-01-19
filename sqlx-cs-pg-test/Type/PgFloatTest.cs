@@ -39,7 +39,7 @@ public class PgFloatTest
         float expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         var actualValue = PgFloat.DecodeBytes(ref binaryValue);
 
@@ -52,7 +52,7 @@ public class PgFloatTest
     public async Task DecodeBytes_Should_Fail_When_OutsideOfFloatBounds(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
         try
         {
             var temp = PgFloat.DecodeBytes(ref binaryValue);
@@ -80,7 +80,7 @@ public class PgFloatTest
     public async Task DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
         try
         {
             PgFloat.DecodeBytes(ref binaryValue);
@@ -108,7 +108,7 @@ public class PgFloatTest
         float expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         var actualValue = PgFloat.DecodeText(textValue);
 
@@ -122,7 +122,7 @@ public class PgFloatTest
     public async Task DecodeText_Should_Fail_When_InvalidFloatString(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

@@ -30,7 +30,7 @@ public interface IPgDbType<T> where T : notnull
     /// <returns>
     /// A new instance of <typeparamref name="T"/> decoded from the text encoded value
     /// </returns>
-    static abstract T DecodeText(PgTextValue value);
+    static abstract T DecodeText(in PgTextValue value);
     
     /// <summary>
     /// <see cref="PgTypeInfo"/> definition for this type

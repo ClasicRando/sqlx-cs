@@ -36,7 +36,7 @@ public abstract class PgDateTimeOffset : IPgDbType<DateTimeOffset>, IHasRangeTyp
     /// <see cref="TimeSpan.Zero"/>. This is because the client's Timezone parameter is assumed to
     /// be UTC.
     /// </summary>
-    public static DateTimeOffset DecodeText(PgTextValue value)
+    public static DateTimeOffset DecodeText(in PgTextValue value)
     {
         return new DateTimeOffset(PgDateTime.DecodeText(value), TimeSpan.Zero);
     }

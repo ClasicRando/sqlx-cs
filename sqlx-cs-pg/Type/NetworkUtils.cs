@@ -118,7 +118,7 @@ internal static class NetworkUtils
     /// a <see cref="byte"/>
     /// </exception>
     public static (IPAddress Address, byte? Prefix) DecodeNetworkValuesAsText<T>(
-        ref PgTextValue value)
+        in PgTextValue value)
         where T : notnull
     {
         var mid = value.Chars.IndexOf('/');

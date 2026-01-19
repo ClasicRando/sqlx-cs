@@ -104,14 +104,14 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// <summary>
     /// <para>
     /// Decode a value of type <typeparamref name="T"/> as JSON by deferring to
-    /// <see cref="DecodeText(PgTextValue, JsonTypeInfo{T})"/>. This method always uses runtime
+    /// <see cref="DecodeText(in PgTextValue, JsonTypeInfo{T})"/>. This method always uses runtime
     /// JSON serialization which is slower and uses more memory when compared to JSON serialization
     /// with source generation.
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/jsonb.c#L112">pg source code</a>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/json.c#L124">pg source code</a>
     /// </summary>
-    public static T DecodeText(PgTextValue value)
+    public static T DecodeText(in PgTextValue value)
     {
         return DecodeText(value, null);
     }
@@ -132,7 +132,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/jsonb.c#L128">pg source code</a>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/json.c#L136">pg source code</a>
     /// </summary>
-    public static T DecodeText(PgTextValue value, JsonTypeInfo<T>? typeInfo)
+    public static T DecodeText(in PgTextValue value, JsonTypeInfo<T>? typeInfo)
     {
         return JsonHelper.FromChars(value.Chars, typeInfo);
     }

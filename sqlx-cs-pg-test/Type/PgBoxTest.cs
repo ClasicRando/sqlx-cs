@@ -57,7 +57,7 @@ public class PgBoxTest
     {
         var expectedValue = new PgBox(new PgPoint(x1, y1), new PgPoint(x2, y2));
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         PgBox actualValue = PgBox.DecodeBytes(ref binaryValue);
 
@@ -75,7 +75,7 @@ public class PgBoxTest
     {
         var expectedValue = new PgBox(new PgPoint(x1, y1), new PgPoint(x2, y2));
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         PgBox actualValue = PgBox.DecodeText(textValue);
 
@@ -88,7 +88,7 @@ public class PgBoxTest
     public async Task DecodeText_Should_Fail_When_LiteralDoesNotHave2Points(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

@@ -37,7 +37,7 @@ public class PgLineSegmentTest
             71, 174, 20, 123, 64, 6, 102, 102, 102, 102, 102, 102,
         ];
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         PgLineSegment actualValue = PgLineSegment.DecodeBytes(ref binaryValue);
 
@@ -50,7 +50,7 @@ public class PgLineSegmentTest
         const string textData = "((5.63,8.59),(4.87,2.8))";
         var expectedValue = new PgLineSegment(new PgPoint(5.63, 8.59), new PgPoint(4.87, 2.8));
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         PgLineSegment actualValue = PgLineSegment.DecodeText(textValue);
 
@@ -63,7 +63,7 @@ public class PgLineSegmentTest
     public async Task DecodeText_Should_Fail_When_InvalidText(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

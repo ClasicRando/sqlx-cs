@@ -48,7 +48,7 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/varlena.c#L388">pg source code</a>
     /// </summary>
-    public static byte[] DecodeText(PgTextValue value)
+    public static byte[] DecodeText(in PgTextValue value)
     {
         return value.Chars.StartsWith(HexStart)
             ? DecodeWithPrefix(value.Chars, value.ColumnMetadata)

@@ -34,7 +34,7 @@ public class PgCharTest
         sbyte expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         var actualValue = PgChar.DecodeBytes(ref binaryValue);
 
@@ -50,7 +50,7 @@ public class PgCharTest
         sbyte expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         var actualValue = PgChar.DecodeText(textValue);
 
@@ -65,7 +65,7 @@ public class PgCharTest
     public async Task DecodeText_Should_Fail_When_InvalidNumberOfCharacters(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

@@ -48,7 +48,7 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
     /// <exception cref="ColumnDecodeException">
     /// If the characters cannot be parsed as a <see cref="TimeOnly"/>
     /// </exception>
-    public static TimeOnly DecodeText(PgTextValue value)
+    public static TimeOnly DecodeText(in PgTextValue value)
     {
         if (!TimeOnly.TryParse(value.Chars, out TimeOnly time))
         {

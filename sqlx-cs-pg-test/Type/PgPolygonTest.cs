@@ -74,7 +74,7 @@ public class PgPolygonTest
 
         var expectedValue = new PgPolygon([..points]);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         PgPolygon actualValue = PgPolygon.DecodeBytes(ref binaryValue);
 
@@ -103,7 +103,7 @@ public class PgPolygonTest
 
         var expectedValue = new PgPolygon([..points]);
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         PgPolygon actualValue = PgPolygon.DecodeText(textValue);
 

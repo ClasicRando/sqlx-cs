@@ -52,7 +52,7 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
     /// <exception cref="ColumnDecodeException">
     /// If the characters cannot be parsed into a <see cref="DateTime"/>
     /// </exception>
-    public static DateTime DecodeText(PgTextValue value)
+    public static DateTime DecodeText(in PgTextValue value)
     {
         if (DateTime.TryParse(value.Chars, null, DateTimeStyles.AdjustToUniversal, out DateTime dateTime))
         {

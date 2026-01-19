@@ -39,7 +39,7 @@ public class PgOidTest
         uint expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         PgOid actualValue = PgOid.DecodeBytes(ref binaryValue);
 
@@ -52,7 +52,7 @@ public class PgOidTest
     public async Task DecodeBytes_Should_Fail_When_OutsideOfIntBounds(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
         try
         {
             PgOid temp = PgOid.DecodeBytes(ref binaryValue);
@@ -79,7 +79,7 @@ public class PgOidTest
     public async Task DecodeBytes_Should_Fail_When_InvalidNumberOfBytes(byte[] binaryData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
         try
         {
             PgOid.DecodeBytes(ref binaryValue);
@@ -106,7 +106,7 @@ public class PgOidTest
         uint expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         PgOid actualValue = PgOid.DecodeText(textValue);
 
@@ -120,7 +120,7 @@ public class PgOidTest
     public async Task DecodeText_Should_Fail_When_InvalidIntString(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

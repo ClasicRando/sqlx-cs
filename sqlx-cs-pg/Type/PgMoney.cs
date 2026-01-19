@@ -74,7 +74,7 @@ public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<P
     /// <exception cref="ColumnDecodeException">
     /// If the characters cannot be parsed into a decimal value
     /// </exception>
-    public static PgMoney DecodeText(PgTextValue value)
+    public static PgMoney DecodeText(in PgTextValue value)
     {
         if (value.Chars.ContainsAnyExcept(SearchValues))
         {

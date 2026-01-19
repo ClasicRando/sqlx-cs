@@ -54,7 +54,7 @@ internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
     /// <exception cref="ColumnDecodeException">
     /// If the text representation is not the expected length
     /// </exception>
-    public static sbyte DecodeText(PgTextValue value)
+    public static sbyte DecodeText(in PgTextValue value)
     {
         return value.Chars.Length switch
         {

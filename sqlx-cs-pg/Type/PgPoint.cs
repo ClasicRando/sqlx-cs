@@ -67,7 +67,7 @@ public readonly struct PgPoint(double x, double y)
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
     /// <seealso cref="GeometryUtils.DecodePoint"/>
-    public static PgPoint DecodeText(PgTextValue value)
+    public static PgPoint DecodeText(in PgTextValue value)
     {
         return GeometryUtils.DecodePoint<PgPoint>(value);
     }

@@ -85,7 +85,7 @@ public class PgJsonTest
             0,
             0,
             PgFormatCode.Binary);
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         Inner actualValue = PgJson<Inner>.DecodeBytes(
             ref binaryValue,
@@ -113,7 +113,7 @@ public class PgJsonTest
             0,
             0,
             PgFormatCode.Binary);
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         Inner actualValue = PgJson<Inner>.DecodeText(
             textValue,
@@ -127,7 +127,7 @@ public class PgJsonTest
     {
         const string textData = "null";
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {
@@ -158,7 +158,7 @@ public class PgJsonTest
     public async Task DecodeText_Should_Fail_When_InvalidJson(string textData, string message)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

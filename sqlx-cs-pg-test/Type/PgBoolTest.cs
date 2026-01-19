@@ -32,7 +32,7 @@ public class PgBoolTest
         bool expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         var actualValue = PgBool.DecodeBytes(ref binaryValue);
 
@@ -48,7 +48,7 @@ public class PgBoolTest
         bool expectedValue)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         var actualValue = PgBool.DecodeText(textValue);
 
@@ -60,7 +60,7 @@ public class PgBoolTest
     public async Task DecodeText_Should_Fail_When_FirstCharacterIsNotValid(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {

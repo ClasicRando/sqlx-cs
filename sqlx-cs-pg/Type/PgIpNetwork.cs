@@ -38,10 +38,10 @@ internal abstract class PgIpNetwork : IPgDbType<IPNetwork>, IHasArrayType
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
     /// <see cref="NetworkUtils.DecodeNetworkValuesAsText{T}"/>
-    public static IPNetwork DecodeText(PgTextValue value)
+    public static IPNetwork DecodeText(in PgTextValue value)
     {
         (IPAddress address, var prefix) = NetworkUtils.DecodeNetworkValuesAsText<IPNetwork>(
-            ref value);
+            in value);
         return new IPNetwork(address, prefix ?? NetworkUtils.GetDefaultNetworkMaskSize(address));
     }
 

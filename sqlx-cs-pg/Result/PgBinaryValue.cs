@@ -5,7 +5,7 @@ namespace Sqlx.Postgres.Result;
 /// <summary>
 /// Container for binary encoded data. Used to deserialize binary data into column values.
 /// </summary>
-public ref struct PgBinaryValue(ReadOnlySpan<byte> buffer, ref PgColumnMetadata columnMetadata)
+public ref struct PgBinaryValue(ReadOnlySpan<byte> buffer, in PgColumnMetadata columnMetadata)
 {
     /// <summary>
     /// Readable buffer of binary encoded data
@@ -15,7 +15,7 @@ public ref struct PgBinaryValue(ReadOnlySpan<byte> buffer, ref PgColumnMetadata 
     /// <summary>
     /// Metadata of the column to read
     /// </summary>
-    public readonly ref PgColumnMetadata ColumnMetadata = ref columnMetadata;
+    public readonly ref readonly PgColumnMetadata ColumnMetadata = ref columnMetadata;
 }
 
 public static class PgBinaryValueExtensions
@@ -34,7 +34,7 @@ public static class PgBinaryValueExtensions
         {
             var span = pgBinaryValue.Buffer;
             pgBinaryValue.Buffer = span[length..];
-            return new PgBinaryValue(span[..length], ref pgBinaryValue.ColumnMetadata);
+            return new PgBinaryValue(span[..length], in pgBinaryValue.ColumnMetadata);
         }
     }
 }

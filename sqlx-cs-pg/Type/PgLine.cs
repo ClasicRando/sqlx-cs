@@ -64,7 +64,7 @@ public readonly struct PgLine(double a, double b, double c)
     /// If the characters do not match the expected format or any part of the line cannot be
     /// converted to a <see cref="double"/>
     /// </exception>
-    public static PgLine DecodeText(PgTextValue value)
+    public static PgLine DecodeText(in PgTextValue value)
     {
         var commaIndex = value.Chars.IndexOf(',');
         var firstPointSpan = value.Chars[1..commaIndex];

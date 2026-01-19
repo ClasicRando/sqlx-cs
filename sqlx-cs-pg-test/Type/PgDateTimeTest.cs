@@ -50,7 +50,7 @@ public class PgDateTimeTest
         var expectedValue =
             new DateTime(year, month, day, hour, minute, second, millisecond, microsecond);
         var columnMetadata = new PgColumnMetadata();
-        var binaryValue = new PgBinaryValue(binaryData, ref columnMetadata);
+        var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         DateTime actualValue = PgDateTime.DecodeBytes(ref binaryValue);
 
@@ -77,7 +77,7 @@ public class PgDateTimeTest
         var expectedValue =
             new DateTime(year, month, day, hour, minute, second, millisecond, microsecond);
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         DateTime actualValue = PgDateTime.DecodeText(textValue);
 
@@ -89,7 +89,7 @@ public class PgDateTimeTest
     public async Task DecodeText_Should_Fail_When_InvalidDatetimeString(string textData)
     {
         var columnMetadata = new PgColumnMetadata();
-        var textValue = new PgTextValue(textData, ref columnMetadata);
+        var textValue = new PgTextValue(textData, in columnMetadata);
 
         try
         {
