@@ -238,7 +238,7 @@ public static class PgConnectionExtensions
         {
             using PgParameterWriter parameterWriter = new(buffer);
             buffer.WriteShort(TCopyRow.ColumnCount);
-            row.BindValues(parameterWriter);
+            row.BindMany(parameterWriter);
 
             if (buffer.WrittenCount < MaxCopyBufferSize)
             {

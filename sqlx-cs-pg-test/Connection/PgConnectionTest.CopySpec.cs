@@ -190,7 +190,7 @@ public partial class PgConnectionTest
 
         public static short ColumnCount => 2;
 
-        public void BindValues(IPgBindable bindable)
+        public void BindMany(IPgBindable bindable)
         {
             bindable.Bind(Id);
             bindable.Bind(TextField);
