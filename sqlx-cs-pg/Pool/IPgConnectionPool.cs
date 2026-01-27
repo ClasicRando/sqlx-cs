@@ -41,9 +41,13 @@ public interface IPgConnectionPool : IConnectionPool<IPgConnection, IPgBindable,
     /// </para>
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
-    /// <typeparam name="TType">User defined enum that represents a Postgres enum UDT</typeparam>
-    Task MapEnumAsync<TType>(CancellationToken cancellationToken = default)
-        where TType : Enum, IPgUdt<TType>;
+    /// <typeparam name="TEnum">
+    /// User defined enum that represents a Postgres enum UDT or simple integer wrapper
+    /// </typeparam>
+    /// <typeparam name="TType">Wrapper type definition to add behaviour to enums</typeparam>
+    ValueTask MapEnumAsync<TEnum, TType>(CancellationToken cancellationToken = default)
+        where TEnum : Enum
+        where TType : IPgUdt<TEnum>;
 
     /// <summary>
     /// <para>

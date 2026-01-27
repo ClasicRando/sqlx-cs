@@ -8,8 +8,9 @@ namespace Sqlx.Postgres.Pool;
 
 internal sealed partial class PgConnectionPool
 {
-    public async Task MapEnumAsync<TType>(CancellationToken cancellationToken = default)
-        where TType : Enum, IPgUdt<TType>
+    public async ValueTask MapEnumAsync<TEnum, TType>(CancellationToken cancellationToken = default)
+        where TEnum : Enum
+        where TType : IPgUdt<TEnum>
     {
         const string pgEnumTypeByName =
             """
@@ -23,7 +24,7 @@ internal sealed partial class PgConnectionPool
             """;
         using IPgConnection connection = CreateConnection();
         using IPgExecutableQuery typeOidQuery = connection.CreateQuery(pgEnumTypeByName);
-        AddTypeNameAndSchemaToQuery<TType>(typeOidQuery);
+        AddTypeNameAndSchemaToQuery<TEnum, TType>(typeOidQuery);
 
         try
         {
@@ -64,7 +65,7 @@ internal sealed partial class PgConnectionPool
             """;
         using IPgConnection connection = CreateConnection();
         using IPgExecutableQuery typeOidQuery = connection.CreateQuery(pgCompositeTypeByName);
-        AddTypeNameAndSchemaToQuery<TComposite>(typeOidQuery);
+        AddTypeNameAndSchemaToQuery<TComposite, TComposite>(typeOidQuery);
 
         PgOid oid;
         try
@@ -91,8 +92,9 @@ internal sealed partial class PgConnectionPool
             new CompositeType { Fields = [..attributeOids] });
     }
 
-    private static void AddTypeNameAndSchemaToQuery<TType>(IBindable query)
-        where TType : IPgUdt<TType>
+    private static void AddTypeNameAndSchemaToQuery<TValue, TType>(IBindable query)
+        where TValue : notnull
+        where TType : IPgUdt<TValue>
     {
         const string defaultSchemaName = "public";
         var typeName = TType.TypeName;
