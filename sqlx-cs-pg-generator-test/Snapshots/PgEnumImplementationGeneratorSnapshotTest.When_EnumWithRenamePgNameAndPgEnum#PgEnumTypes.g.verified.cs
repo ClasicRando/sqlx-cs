@@ -11,10 +11,15 @@ using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
 
-namespace Sqlx.Postgres.Generated.Type;
+namespace Sqlx.Postgres.Generator.Type;
 
 public static class PgEnumTypes
 {
+    public static ValueTask MapTestEnumAsync(this IPgConnectionPool pgConnectionPool, CancellationToken cancellationToken = default)
+    {
+        return pgConnectionPool.MapEnumAsync<TestEnum, PgTestEnum>(cancellationToken);
+    }
+
     extension(TestEnum enumValue)
     {
         public ReadOnlySpan<char> ToEncodeString()
@@ -23,8 +28,7 @@ public static class PgEnumTypes
             {
                 TestEnum.None => "none",
                 TestEnum.Single => "single",
-                TestEnum.MultipleWords => "multiple_words",
-                TestEnum.Value_With4Words => "value__with4_words",
+                TestEnum.MultipleWords => "multi_words",
                 _ => throw ColumnEncodeException.Create<TestEnum>(PgTestEnum.DbType.TypeOid.Inner, $"Attempted to encode an unknown enum variant, '{enumValue}'"),
             };
         }
@@ -35,8 +39,7 @@ public static class PgEnumTypes
             {
                 "none" => TestEnum.None,
                 "single" => TestEnum.Single,
-                "multiple_words" => TestEnum.MultipleWords,
-                "value__with4_words" => TestEnum.Value_With4Words,
+                "multi_words" => TestEnum.MultipleWords,
                 _ => throw ColumnDecodeException.Create<TestEnum>(columnMetadata, $"Attempted to decode an unknown enum variant with name, '{chars}'"),
             };
         }

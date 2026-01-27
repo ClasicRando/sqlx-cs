@@ -4,5 +4,4 @@ internal enum EnumRepresentation
 {
     Int,
     Text,
-    PgEnum,
 }

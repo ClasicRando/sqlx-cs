@@ -7,7 +7,7 @@ using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
 
-namespace Sqlx.Postgres.Generated.Type;
+namespace Sqlx.Postgres.Generator.Type;
 
 public abstract class PgTestEnum : IPgUdt<TestEnum>
 {

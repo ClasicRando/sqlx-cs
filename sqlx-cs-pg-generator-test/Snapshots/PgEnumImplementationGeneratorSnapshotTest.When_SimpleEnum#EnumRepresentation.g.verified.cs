@@ -8,5 +8,4 @@ public enum EnumRepresentation
 {
     Int,
     Text,
-    PgEnum,
 }

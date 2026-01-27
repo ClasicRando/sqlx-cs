@@ -1,5 +1,7 @@
 using Sqlx.Core.Pool;
+using Sqlx.Core.Query;
 using Sqlx.Postgres.Connection;
+using Sqlx.Postgres.Generator.Type;
 using Sqlx.Postgres.Pool;
 using Sqlx.Postgres.Query;
 using TUnit.Core.Interfaces;
@@ -60,6 +62,7 @@ public sealed class DatabaseFixture : IAsyncInitializer, IAsyncDisposable
     {
         await CreateStoredProcedures();
         await CreateCompositeType();
+        await CreateEnumType();
         await CreateCopyTable();
     }
 
@@ -77,6 +80,13 @@ public sealed class DatabaseFixture : IAsyncInitializer, IAsyncDisposable
         using IPgExecutableQuery query = connection.CreateQuery(PgConnectionTest.CreateTypeQuery);
         await query.ExecuteNonQueryAsync();
         await BasicPool.MapCompositeAsync<TestCompositeType>();
+    }
+
+    private async Task CreateEnumType()
+    {
+        using IPgConnection connection = BasicPool.CreateConnection();
+        await connection.ExecuteNonQueryAsync(PgConnectionTest.CreateEnumQuery);
+        await BasicPool.MapTestPgEnumAsync();
     }
 
     private async Task CreateCopyTable()

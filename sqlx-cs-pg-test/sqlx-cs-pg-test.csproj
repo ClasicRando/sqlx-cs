@@ -16,7 +16,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\sqlx-cs-pg\sqlx-cs-pg.csproj" />
+        <ProjectReference Include="..\sqlx-cs-pg\sqlx-cs-pg.csproj" />
+        <ProjectReference Include="..\sqlx-cs-pg-generator\sqlx-cs-pg-generator.csproj"
+                          OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
 </Project>

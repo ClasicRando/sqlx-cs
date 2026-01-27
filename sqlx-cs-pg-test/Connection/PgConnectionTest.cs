@@ -43,6 +43,16 @@ public partial class PgConnectionTest(DatabaseFixture databaseFixture)
             title text
         );
         """;
+    
+    public const string CreateEnumQuery =
+        """
+        DROP TYPE IF EXISTS public.enum_type;
+        CREATE TYPE public.enum_type AS ENUM
+        (
+            'None',
+            'Something'
+        );
+        """;
 
     public static readonly string CreateCopyTables =
         $"""

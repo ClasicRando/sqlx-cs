@@ -9,7 +9,5 @@ public sealed class PgEnumAttribute : global::System.Attribute
 {
     public required string Name { get; set; }
 
-    public Sqlx.Postgres.Generator.Type.EnumRepresentation Representation  { get; init; } = Sqlx.Postgres.Generator.Type.EnumRepresentation.PgEnum;
-
     public Sqlx.Postgres.Generator.Rename RenameAll { get; init; } = Sqlx.Postgres.Generator.Rename.None;
 }

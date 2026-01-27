@@ -7,11 +7,20 @@ using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
 
-namespace Sqlx.Postgres.Generated.Type;
+namespace Sqlx.Postgres.Generator.Type;
 
-public abstract class PgTestEnum : IPgDbType<TestEnum>
+public abstract class PgTestEnum : IPgUdt<TestEnum>
 {
     private PgTestEnum() {}
+
+    public static PgTypeInfo DbType { get; set; } = PgTypeInfo.Unknown;
+    
+    public static string TypeName => "test_enum";
+    
+    public static bool IsCompatible(PgTypeInfo typeInfo)
+    {
+        return typeInfo == DbType;
+    }
 
     public static void Encode(TestEnum value, IBufferWriter<byte> buffer)
     {
@@ -26,12 +35,5 @@ public abstract class PgTestEnum : IPgDbType<TestEnum>
     public static TestEnum DecodeText(in PgTextValue value)
     {
         return TestEnum.FromChars(value.Chars, value.ColumnMetadata);
-    }
-
-    public static PgTypeInfo DbType { get; } = PgTypeInfo.Text;
-    
-    public static bool IsCompatible(PgTypeInfo typeInfo)
-    {
-        return typeInfo == DbType;
     }
 }

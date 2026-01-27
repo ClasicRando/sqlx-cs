@@ -11,7 +11,7 @@ using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
 
-namespace Sqlx.Postgres.Generated.Type;
+namespace Sqlx.Postgres.Generator.Type;
 
 public static class PgEnumTypes
 {

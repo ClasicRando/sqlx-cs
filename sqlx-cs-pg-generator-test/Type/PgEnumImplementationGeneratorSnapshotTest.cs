@@ -20,7 +20,7 @@ public class PgEnumImplementationGeneratorSnapshotTest
             }
             """;
 
-        await TestHelper.VerifyPgEnumImplementationGenerator(source);
+        await TestHelper.VerifyPgTypeImplementationGenerator(source);
     }
     
     [Test]
@@ -31,8 +31,7 @@ public class PgEnumImplementationGeneratorSnapshotTest
             using Sqlx.Postgres.Generator;
             using Sqlx.Postgres.Generator.Type;
 
-            [PgEnum(
-                Name = "test_enum",
+            [WrapperEnum(
                 RenameAll = Rename.SnakeCase,
                 Representation = EnumRepresentation.Text)]
             public enum TestEnum
@@ -44,7 +43,7 @@ public class PgEnumImplementationGeneratorSnapshotTest
             }
             """;
 
-        await TestHelper.VerifyPgEnumImplementationGenerator(source);
+        await TestHelper.VerifyPgTypeImplementationGenerator(source);
     }
     
     [Test]
@@ -55,8 +54,7 @@ public class PgEnumImplementationGeneratorSnapshotTest
             using Sqlx.Postgres.Generator;
             using Sqlx.Postgres.Generator.Type;
 
-            [PgEnum(
-                Name = "test_enum",
+            [WrapperEnum(
                 RenameAll = Rename.CamelCase,
                 Representation = EnumRepresentation.Int)]
             public enum TestEnum
@@ -68,12 +66,12 @@ public class PgEnumImplementationGeneratorSnapshotTest
             }
             """;
 
-        await TestHelper.VerifyPgEnumImplementationGenerator(source);
+        await TestHelper.VerifyPgTypeImplementationGenerator(source);
     }
     
     
     [Test]
-    public async Task When_EnumWithRenamePgNameAndSimpleIntWrapper()
+    public async Task When_EnumWithRenamePgNameAndPgEnum()
     {
         const string source = 
             """
@@ -90,6 +88,6 @@ public class PgEnumImplementationGeneratorSnapshotTest
             }
             """;
 
-        await TestHelper.VerifyPgEnumImplementationGenerator(source);
+        await TestHelper.VerifyPgTypeImplementationGenerator(source);
     }
 }

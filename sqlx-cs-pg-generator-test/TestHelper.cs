@@ -6,7 +6,7 @@ namespace Sqlx.Postgres.Generator.Tests;
 
 public static class TestHelper
 {
-    public static Task VerifyPgEnumImplementationGenerator(string source)
+    public static Task VerifyPgTypeImplementationGenerator(string source)
     {
         SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
         IEnumerable<PortableExecutableReference> references =
@@ -19,7 +19,7 @@ public static class TestHelper
             syntaxTrees: [syntaxTree],
             references: references);
 
-        var generator = new PgEnumImplementationGenerator();
+        var generator = new PgTypeImplementationGenerator();
         
         GeneratorDriver driver = CSharpGeneratorDriver.Create(generator)
             .RunGenerators(compilation);
