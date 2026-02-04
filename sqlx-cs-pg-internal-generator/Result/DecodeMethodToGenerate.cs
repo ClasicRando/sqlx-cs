@@ -81,14 +81,14 @@ public class DecodeMethodToGenerate
 
         IParameterSymbol dataRowParameter = _templateMethod.Parameters[0];
         IParameterSymbol columnIndexerParameter = _templateMethod.Parameters[1];
-        if (dataRowParameter.Type.Name != "IDataRow")
+        if (dataRowParameter.Type.Name != "IPgDataRow")
         {
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     MethodIsNotDecodeTemplate,
                     Location.None,
                     Name,
-                    "First parameter must be IDataRow"));
+                    "First parameter must be IPgDataRow"));
             return false;
         }
         if (columnIndexerParameter.Type.ToDisplayString() != "string"

@@ -15,7 +15,6 @@ namespace Sqlx.Core.Exceptions;
 /// <param name="decodeType">desired CLR type to decode a database value to</param>
 /// <param name="reason">optional reason for the decoding failure</param>
 /// <param name="cause">optional cause for the decoding failure</param>
-#pragma warning disable CA1032
 public class ColumnDecodeException(
     uint dataTypeId,
     string typeName,

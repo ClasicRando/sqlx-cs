@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Sqlx.Postgres.Generator.Type;
 
-internal readonly struct PgEnumToGenerate
+internal readonly struct PgEnumToGenerate : IFullNameType
 {
     private readonly INamedTypeSymbol _enumType;
 
@@ -12,7 +12,7 @@ internal readonly struct PgEnumToGenerate
         _enumType = namedTypeSymbol;
         ContainingNamespace = namedTypeSymbol.ContainingNamespace.GetFullNamespaceName();
         var namedArguments = namedTypeSymbol.GetAttributes()
-            .FirstOrDefault()
+            .FirstOrDefault(attr => attr.AttributeClass!.Name == "PgEnumAttribute")
             !.NamedArguments;
         PgTypeName = (string)namedArguments
             .FirstOrDefault(arg => arg.Key == "Name")

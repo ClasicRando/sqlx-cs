@@ -1,6 +1,8 @@
+using System.Buffers;
 using System.Collections.Immutable;
 using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core.Buffer;
+using Sqlx.Core.Query;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Pool;
 using Sqlx.Postgres.Query;
@@ -18,14 +20,17 @@ namespace Sqlx.Postgres.Type;
 /// </code>
 /// You would write this type:
 /// <code>
-/// public record Example(int Id, string Name) : IPgUdt&lt;Example&gt;
+/// public record Example(int Id, string Name) : IPgUdt&lt;Example&gt;, IBindMany&lt;IPgBindable&gt;
 /// {
 ///     public static void Encode(T value, IBufferWriter&lt;byte&gt; buffer)
 ///     {
-///         using PgRecordEncoder encoder = new();
-///         encoder.Bind(value.Id);
-///         encoder.Bind(value.Name);
-///         buffer.Write(encoder.Data);
+///         PgRecordEncoder.EncodeRecord(value, buffer);
+///     }
+///
+///     public void BindMany(IPgBindable bindable)
+///     {
+///         bindable.Bind(Id);
+///         bindable.Bind(Name);
 ///     }
 ///
 ///     // Other IPgUdt methods and properties
@@ -39,9 +44,9 @@ public sealed class PgRecordEncoder : IPgBindable
     private readonly PooledArrayBufferWriter _buffer;
     private readonly PgParameterWriter _parameterWriter;
 
-    public ReadOnlySpan<byte> Data => _buffer.ReadableSpan;
+    private ReadOnlySpan<byte> Data => _buffer.ReadableSpan;
 
-    public PgRecordEncoder(PgTypeInfo typeInfo)
+    private PgRecordEncoder(PgTypeInfo typeInfo)
     {
         ArgumentNullException.ThrowIfNull(typeInfo);
         _buffer = new PooledArrayBufferWriter();
@@ -166,5 +171,13 @@ public sealed class PgRecordEncoder : IPgBindable
     {
         _buffer.WriteUInt(TType.DbType.TypeOid.Inner);
         _parameterWriter.Bind<TValue, TType>(value);
+    }
+
+    public static void EncodeRecord<T>(T value, IBufferWriter<byte> buffer)
+        where T : IPgDbType<T>, IBindMany<IPgBindable>
+    {
+        using PgRecordEncoder recordEncoder = new(T.DbType);
+        value.BindMany(recordEncoder);
+        buffer.Write(recordEncoder.Data);
     }
 }

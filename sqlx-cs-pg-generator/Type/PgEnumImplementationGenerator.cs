@@ -131,7 +131,7 @@ internal static class PgEnumImplementationGenerator
             "Async(this IPgConnectionPool pgConnectionPool, CancellationToken cancellationToken = default)");
         builder.AppendLine("    {");
         builder.Append("        return pgConnectionPool.MapEnumAsync<")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .Append(", ")
             .Append(name)
             .AppendLine(">(cancellationToken);");
@@ -139,7 +139,7 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine();
 
         builder.Append("    extension(")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .AppendLine(" enumValue)");
         builder.AppendLine("    {");
 
@@ -150,7 +150,7 @@ internal static class PgEnumImplementationGenerator
         foreach (var kvp in pgEnumToGenerate.ValueNames)
         {
             builder.Append("                ")
-                .AppendFullPgEnumTypeName(pgEnumToGenerate)
+                .AppendFullName(pgEnumToGenerate)
                 .Append('.')
                 .Append(kvp.Key)
                 .Append(" => \"")
@@ -159,7 +159,7 @@ internal static class PgEnumImplementationGenerator
         }
 
         builder.Append("                _ => throw ColumnEncodeException.Create<")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .Append(">(")
             .Append(pgEnumToGenerate.TypeDefName)
             .AppendLine(
@@ -169,7 +169,7 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine();
 
         builder.Append("        public static ")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .AppendLine(" FromChars(in ReadOnlySpan<char> chars, in PgColumnMetadata columnMetadata)");
         builder.AppendLine("        {");
         builder.AppendLine("            return chars switch");
@@ -179,14 +179,14 @@ internal static class PgEnumImplementationGenerator
             builder.Append("                \"")
                 .Append(kvp.Value)
                 .Append("\" => ")
-                .AppendFullPgEnumTypeName(pgEnumToGenerate)
+                .AppendFullName(pgEnumToGenerate)
                 .Append('.')
                 .Append(kvp.Key)
                 .AppendLine(",");
         }
 
         builder.Append("                _ => throw ColumnDecodeException.Create<")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .AppendLine(
                 ">(columnMetadata, $\"Attempted to decode an unknown enum variant with name, '{chars}'\"),");
         builder.AppendLine("            };");
@@ -196,11 +196,11 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine();
 
         builder.Append("    public static void Bind(this IPgBindable pgBindable, ");
-        builder.AppendFullPgEnumTypeName(pgEnumToGenerate);
+        builder.AppendFullName(pgEnumToGenerate);
         builder.AppendLine(" enumValue)");
         builder.AppendLine("    {");
         builder.Append("        pgBindable.Bind<")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .Append(", ")
             .Append(name)
             .AppendLine(">(enumValue);");
@@ -208,11 +208,11 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine();
 
         builder.Append("    public static void Bind(this IPgBindable pgBindable, ");
-        builder.AppendFullPgEnumTypeName(pgEnumToGenerate);
+        builder.AppendFullName(pgEnumToGenerate);
         builder.AppendLine("? enumValue)");
         builder.AppendLine("    {");
         builder.Append("        pgBindable.BindVal<")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .Append(", ")
             .Append(name)
             .AppendLine(">(enumValue);");
@@ -220,13 +220,13 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine();
 
         builder.Append("    public static ")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .Append(" Get")
             .Append(pgEnumToGenerate.ShortName)
             .AppendLine("NotNull(this IPgDataRow pgDataRow, int index)");
         builder.AppendLine("    {");
         builder.Append("        return pgDataRow.GetPgNotNull<")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .Append(", ")
             .Append(name)
             .AppendLine(">(index);");
@@ -234,13 +234,13 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine();
 
         builder.Append("    public static ")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .Append(" Get")
             .Append(pgEnumToGenerate.ShortName)
             .AppendLine("NotNull(this IPgDataRow pgDataRow, string name)");
         builder.AppendLine("    {");
         builder.Append("        return pgDataRow.GetPgNotNull<")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .Append(", ")
             .Append(name)
             .AppendLine(">(name);");
@@ -248,13 +248,13 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine();
 
         builder.Append("    public static ")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .Append("? Get")
             .Append(pgEnumToGenerate.ShortName)
             .AppendLine("(this IPgDataRow pgDataRow, int index)");
         builder.AppendLine("    {");
         builder.Append("        return pgDataRow.GetPgVal<")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .Append(", ")
             .Append(name)
             .AppendLine(">(index);");
@@ -262,13 +262,13 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine();
 
         builder.Append("    public static ")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .Append("? Get")
             .Append(pgEnumToGenerate.ShortName)
             .AppendLine("(this IPgDataRow pgDataRow, string name)");
         builder.AppendLine("    {");
         builder.Append("        return pgDataRow.GetPgVal<")
-            .AppendFullPgEnumTypeName(pgEnumToGenerate)
+            .AppendFullName(pgEnumToGenerate)
             .Append(", ")
             .Append(name)
             .AppendLine(">(name);");

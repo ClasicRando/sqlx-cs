@@ -425,7 +425,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool? GetBoolean(string name)
         {
-            return GetBoolean(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetBoolean(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -437,7 +437,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public sbyte? GetByte(string name)
         {
-            return GetByte(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetByte(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -449,7 +449,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public short? GetShort(string name)
         {
-            return GetShort(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetShort(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -461,7 +461,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int? GetInt(string name)
         {
-            return GetInt(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetInt(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -472,7 +472,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public long? GetLong(string name)
         {
-            return GetLong(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetLong(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -485,7 +485,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float? GetFloat(string name)
         {
-            return GetFloat(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetFloat(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -497,7 +497,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double? GetDouble(string name)
         {
-            return GetDouble(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetDouble(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -508,7 +508,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TimeOnly? GetTime(string name)
         {
-            return GetTime(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetTime(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -519,7 +519,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DateOnly? GetDate(string name)
         {
-            return GetDate(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetDate(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -531,7 +531,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DateTime? GetDateTime(string name)
         {
-            return GetDateTime(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetDateTime(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -545,7 +545,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DateTimeOffset? GetDateTimeOffset(string name)
         {
-            return GetDateTimeOffset(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetDateTimeOffset(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -556,7 +556,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public decimal? GetDecimal(string name)
         {
-            return GetDecimal(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetDecimal(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -568,7 +568,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte[]? GetBytes(string name)
         {
-            return GetBytes(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetBytes(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -580,7 +580,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string? GetString(string name)
         {
-            return GetString(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetString(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -593,7 +593,7 @@ public static class DataRowExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Guid? GetGuid(string name)
         {
-            return GetGuid(dataRow, dataRow.IndexOf(name));
+            return dataRow.GetGuid(dataRow.IndexOf(name));
         }
 
         /// <summary>
@@ -611,7 +611,7 @@ public static class DataRowExtensions
             JsonTypeInfo<T>? jsonTypeInfo = null)
             where T : notnull
         {
-            return GetJson(dataRow, dataRow.IndexOf(name), jsonTypeInfo);
+            return dataRow.GetJson(dataRow.IndexOf(name), jsonTypeInfo);
         }
 
         /// <summary>

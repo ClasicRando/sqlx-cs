@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Sqlx.Postgres.Generator.Type;
 
-internal readonly struct WrapperEnumToGenerate
+internal readonly struct WrapperEnumToGenerate : IFullNameType
 {
     private readonly INamedTypeSymbol _enumType;
 
@@ -12,7 +12,7 @@ internal readonly struct WrapperEnumToGenerate
         _enumType = namedTypeSymbol;
         ContainingNamespace = namedTypeSymbol.ContainingNamespace.GetFullNamespaceName();
         var namedArguments = namedTypeSymbol.GetAttributes()
-            .FirstOrDefault()
+            .FirstOrDefault(attr => attr.AttributeClass!.Name == "WrapperEnumAttribute")
             !.NamedArguments;
         Representation = (EnumRepresentation)namedArguments
             .FirstOrDefault(arg => arg.Key == "Representation")
@@ -72,8 +72,7 @@ internal readonly struct WrapperEnumToGenerate
                 Diagnostic.Create(
                     SourceGenerationHelper.IntWrapperEnumNotIntBacked,
                     Location.None,
-                    ShortName,
-                    "Int wrapper enums must have an underlining type of int"));
+                    ShortName));
             return false;
         }
 

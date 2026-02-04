@@ -4,7 +4,7 @@
 
 namespace Sqlx.Postgres.Generator;
 
-[global::System.AttributeUsage(validOn: global::System.AttributeTargets.Enum)]
+[global::System.AttributeUsage(validOn: global::System.AttributeTargets.Property | global::System.AttributeTargets.Parameter)]
 public class PgNameAttribute : global::System.Attribute
 {
     public string Value { get; }
