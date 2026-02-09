@@ -14,7 +14,7 @@ public partial class PgConnectionTest
         CancellationToken ct)
     {
         var value = new BitArray(bits);
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 varbit_col;");
         query.Bind(value);
         BitArray result = await query.ExecuteScalar<BitArray, PgBitString>(ct);
@@ -31,7 +31,7 @@ public partial class PgConnectionTest
     {
         var value = new BitArray(bits);
         using IPgConnection
-            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         BitArray result = await query.ExecuteScalar<BitArray, PgBitString>(ct);
         await Assert.That(result).IsEquivalentTo(value);

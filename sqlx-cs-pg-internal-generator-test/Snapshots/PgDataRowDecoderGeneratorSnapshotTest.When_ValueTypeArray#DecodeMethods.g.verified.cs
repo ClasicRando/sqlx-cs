@@ -10,13 +10,12 @@ namespace Sqlx.Postgres.Result;
 
 public static partial class DataRowExtensions
 {
-    public static partial bool?[]? GetPgBooleanArray(this IDataRow dataRow, int index)
+    public static partial bool?[]? GetPgBooleanArray(this IPgDataRow dataRow, int index)
     {
         if (dataRow.IsNull(index))
         {
             return null;
         }
-        return PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)
-            .GetPgNotNull<bool?[], PgArrayTypeStruct<bool, PgBool>>(index);
+        return dataRow.GetPgNotNull<bool?[], PgArrayTypeStruct<bool, PgBool>>(index);
     }
 }

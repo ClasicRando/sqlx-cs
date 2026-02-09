@@ -9,7 +9,7 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_PointAndDefaultEncoding(CancellationToken ct)
     {
         var value = new PgPoint(5.63, 8.59);
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 point_col;");
         query.Bind(value);
         var result = await query.ExecuteScalar<PgPoint>(ct);
@@ -22,7 +22,7 @@ public partial class PgConnectionTest
         const string sql = "SELECT '(5.63,8.59)'::point;";
         var value = new PgPoint(5.63, 8.59);
         using IPgConnection
-            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalar<PgPoint>(ct);
         await Assert.That(result).IsEqualTo(value);

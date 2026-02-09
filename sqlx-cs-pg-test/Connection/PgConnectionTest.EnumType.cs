@@ -11,7 +11,7 @@ public partial class PgConnectionTest
     [Arguments(TestPgEnum.Something)]
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_PgEnumAndDefaultEncoding(TestPgEnum value, CancellationToken ct)
     {
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 pg_enum_col;");
         query.Bind(value);
         TestPgEnum result = await query.ExecuteScalar<TestPgEnum, PgTestPgEnum>(ct);
@@ -25,7 +25,7 @@ public partial class PgConnectionTest
     {
         var sql = $"SELECT '{literal}'::enum_type;";
         using IPgConnection
-            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         TestPgEnum result = await query.ExecuteScalar<TestPgEnum, PgTestPgEnum>(ct);
         await Assert.That(result).IsEqualTo(value);
@@ -36,7 +36,7 @@ public partial class PgConnectionTest
     [Arguments(TestIntEnum.Something)]
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_IntEnumAndDefaultEncoding(TestIntEnum value, CancellationToken ct)
     {
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 int_enum_col;");
         query.Bind(value);
         TestIntEnum result = await ExecuteScalarEnumWrapperExtract(query, WrapperEnumTypes.GetTestIntEnumNotNull);
@@ -49,7 +49,7 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_Decode_When_IntEnumAndTextEncoding(int intValue, TestIntEnum value, CancellationToken ct)
     {
         var sql = $"SELECT {intValue};";
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         TestIntEnum result = await ExecuteScalarEnumWrapperExtract(query, WrapperEnumTypes.GetTestIntEnumNotNull);
         await Assert.That(result).IsEqualTo(value);
@@ -60,7 +60,7 @@ public partial class PgConnectionTest
     [Arguments(TestTextEnum.Something)]
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_TextEnumAndDefaultEncoding(TestTextEnum value, CancellationToken ct)
     {
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 text_enum_col;");
         query.Bind(value);
         TestTextEnum result = await ExecuteScalarEnumWrapperExtract(query, WrapperEnumTypes.GetTestTextEnumNotNull);
@@ -73,7 +73,7 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_Decode_When_TextEnumAndTextEncoding(string literal, TestTextEnum value, CancellationToken ct)
     {
         var sql = $"SELECT '{literal}';";
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         TestTextEnum result = await ExecuteScalarEnumWrapperExtract(query, WrapperEnumTypes.GetTestTextEnumNotNull);
         await Assert.That(result).IsEqualTo(value);

@@ -10,7 +10,5 @@ namespace Sqlx.Postgres.Result;
 
 public static partial class DataRowExtensions
 {
-    public static partial string GetStringNotNull(this IDataRow dataRow, string name) =>
-        PgException.CheckIfIs<IDataRow, IPgDataRow>(dataRow)
-            .GetPgNotNull<string, PgString>(dataRow.IndexOf(name));
+    public static partial string GetStringNotNull(this IPgDataRow dataRow, string name) => dataRow.GetPgNotNull<string, PgString>(dataRow.IndexOf(name));
 }

@@ -9,7 +9,7 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_IntRangeAndDefaultEncoding(CancellationToken ct)
     {
         var value = new PgRange<int>(Bound.Included(-1), Bound.Excluded(11));
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 range_col;");
         query.Bind(value);
         var result = await query.ExecuteScalar<PgRange<int>, PgRangeType<int, PgInt>>(ct);
@@ -22,7 +22,7 @@ public partial class PgConnectionTest
         const string sql = "SELECT '[-1,11)'::int4range;";
         var value = new PgRange<int>(Bound.Included(-1), Bound.Excluded(11));
         using IPgConnection
-            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalar<PgRange<int>, PgRangeType<int, PgInt>>(ct);
         await Assert.That(result).IsEqualTo(value);

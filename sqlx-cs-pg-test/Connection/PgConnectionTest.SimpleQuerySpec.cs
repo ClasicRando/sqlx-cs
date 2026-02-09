@@ -17,7 +17,7 @@ public partial class PgConnectionTest
             SELECT s.s, 'Regular Query' t
             FROM generate_series(1, 10) s
             """;
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(simpleQuery);
         var results = await connection.ExecuteQueryAsync(query, ct).CollectResults();
         await Assert.That(results).IsSingleElement();
@@ -35,7 +35,7 @@ public partial class PgConnectionTest
     public async Task
         ExecuteQuery_Should_ReturnOneResultSet_When_SimpleQueryStoredProcedureWithOutParameter(CancellationToken ct)
     {
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery procedureCall = connection.CreateQuery(OutProcedureCallSimpleQuery);
         var results = await connection.ExecuteQueryAsync(procedureCall, ct).CollectResults();
@@ -55,7 +55,7 @@ public partial class PgConnectionTest
              {OutProcedureCallSimpleQuery}
              SELECT 1 test_i;
              """;
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery multiStatement = connection.CreateQuery(multiStatementQuery);
         var results = await connection.ExecuteQueryAsync(multiStatement, ct).CollectResults();
@@ -75,7 +75,7 @@ public partial class PgConnectionTest
     public async Task ExecuteQuery_Should_Throw_When_SimpleQueryTimesOut(CancellationToken ct)
     {
         const string sleepQuery = "SELECT pg_sleep(5);";
-        using IPgConnection connection = databaseFixture.QueryTimeoutPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.QueryTimeoutPool.CreateConnection();
 
         using IPgExecutableQuery multiStatement = connection.CreateQuery(sleepQuery);
         var ex = await Assert.ThrowsAsync<PgException>(async () =>

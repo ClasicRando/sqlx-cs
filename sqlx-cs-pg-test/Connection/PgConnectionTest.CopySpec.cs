@@ -17,7 +17,7 @@ public partial class PgConnectionTest
         var tempPath = Path.Join(Path.GetTempPath(), "copy-out-file.csv");
         try
         {
-            using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+            using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
             ICopyTo copyStatement = new TableToCsv
             {
                 SchemaName = "public",
@@ -74,7 +74,7 @@ public partial class PgConnectionTest
     private async Task CopyOutRowsAsyncTest<T>(T copyStatement, CancellationToken ct)
         where T : ICopyTo, ICopyBinary
     {
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
 
         var rows = await connection.CopyOutRowsAsync<T, CopyRow>(copyStatement, ct)
             .OrderBy(cr => cr.Id)
@@ -101,7 +101,7 @@ public partial class PgConnectionTest
                 Enumerable.Range(1, CopyRowCount)
                     .Select(rowIndex => $"{rowIndex},{rowIndex} Value"),
                 ct);
-            using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+            using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
             using IPgExecutableQuery
                 query = connection.CreateQuery("TRUNCATE public.copy_out_test");
             await query.ExecuteNonQueryAsync(ct);
@@ -126,7 +126,7 @@ public partial class PgConnectionTest
     public async Task CopyInRowsAsync_Should_CopyDataFromRows_When_CopyTableAndRows(
         CancellationToken ct)
     {
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         var copyStatement = new TableFromBinary
         {
             SchemaName = "public",

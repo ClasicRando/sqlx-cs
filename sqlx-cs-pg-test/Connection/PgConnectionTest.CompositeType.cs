@@ -15,7 +15,7 @@ public partial class PgConnectionTest
             Name = "name",
             Title = null,
         };
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 comp_col;");
         query.Bind(value);
         var result = await query.ExecuteScalar<TestCompositeType>(ct);
@@ -33,7 +33,7 @@ public partial class PgConnectionTest
             Title = null,
         };
         using IPgConnection
-            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalar<TestCompositeType>(ct);
         await Assert.That(result).IsEqualTo(value);

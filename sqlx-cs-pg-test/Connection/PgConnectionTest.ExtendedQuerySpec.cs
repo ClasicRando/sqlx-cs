@@ -15,7 +15,7 @@ public partial class PgConnectionTest
             SELECT s.s, 'Regular Query' t
             FROM generate_series($1, $2) s
             """;
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(extendedQuery);
         query.Bind(1);
         query.Bind(10);
@@ -36,7 +36,7 @@ public partial class PgConnectionTest
         ExecuteQuery_Should_ReturnOneResultSet_When_ExtendedQueryStoredProcedureWithOutParameter(CancellationToken ct)
     {
         const string procedureCallQuery = $"CALL public.{OutProcedureName}($1, $2);";
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall.Bind((int?)null);
@@ -55,7 +55,7 @@ public partial class PgConnectionTest
         ExecuteQuery_Should_ReturnOneResultSet_When_ExtendedQueryStoredProcedureWithInOutParameter(CancellationToken ct)
     {
         const string procedureCallQuery = $"CALL public.{InOutProcedureName}($1, $2);";
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall.Bind(2);
@@ -73,7 +73,7 @@ public partial class PgConnectionTest
     public async Task ExecuteQuery_Should_Throw_When_ExtendedQueryTimesOut(CancellationToken ct)
     {
         const string sleepQuery = "SELECT pg_sleep($1);";
-        using IPgConnection connection = databaseFixture.QueryTimeoutPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.QueryTimeoutPool.CreateConnection();
 
         using IPgExecutableQuery sleepStatement = connection.CreateQuery(sleepQuery);
         sleepStatement.Bind(5);

@@ -9,7 +9,7 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_RefTypeArrayAndDefaultEncoding(CancellationToken ct)
     {
         string?[] input = ["this", "is", null, "a", "test"];
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 text_array_col;");
         query.Bind(input);
         var result = await query.ExecuteScalar<string?[], PgArrayTypeClass<string, PgString>>(ct);
@@ -21,7 +21,7 @@ public partial class PgConnectionTest
     {
         string?[] input = ["this", "is", null, "a", "test"];
         using IPgConnection
-            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query =
             connection.CreateQuery("SELECT '{this,is,NULL,a,test}'::text[];");
         query.Bind(input);
@@ -33,7 +33,7 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_ValueTypeArrayAndDefaultEncoding(CancellationToken ct)
     {
         int?[] input = [-493, 0, null, 34, 68095];
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 int_array_col;");
         query.Bind(input);
         var result = await query.ExecuteScalar<int?[], PgArrayTypeStruct<int, PgInt>>(ct);
@@ -45,7 +45,7 @@ public partial class PgConnectionTest
     {
         int?[] input = [-493, 0, null, 34, 68095];
         using IPgConnection
-            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query =
             connection.CreateQuery("SELECT '{-493,0,NULL,34,68095}'::int[];");
         query.Bind(input);

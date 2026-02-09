@@ -14,7 +14,7 @@ public class PgDataRowDecoderGeneratorSnapshotTest
             public static class TestExtensions
             {
                 [GeneratePgDecodeMethod(Decoder = typeof(PgString))]
-                public static partial string GetStringNotNull(this IDataRow dataRow, string name);
+                public static partial string GetStringNotNull(this IPgDataRow dataRow, string name);
             }
             """;
 
@@ -33,7 +33,7 @@ public class PgDataRowDecoderGeneratorSnapshotTest
             public static class TestExtensions
             {
                 [GeneratePgDecodeMethod(Decoder = typeof(PgString))]
-                public static partial string? GetString(this IDataRow dataRow, int index);
+                public static partial string? GetString(this IPgDataRow dataRow, int index);
             }
             """;
 
@@ -52,7 +52,7 @@ public class PgDataRowDecoderGeneratorSnapshotTest
             public static class TestExtensions
             {
                 [GeneratePgDecodeMethod(Decoder = typeof(PgInt))]
-                public static partial int? GetInt(this IDataRow dataRow, int index);
+                public static partial int? GetInt(this IPgDataRow dataRow, int index);
             }
             """;
 
@@ -71,7 +71,7 @@ public class PgDataRowDecoderGeneratorSnapshotTest
             public static class TestExtensions
             {
                 [GeneratePgDecodeMethod(Decoder = typeof(PgBool))]
-                public static partial bool?[]? GetPgBooleanArray(this IDataRow dataRow, int index);
+                public static partial bool?[]? GetPgBooleanArray(this IPgDataRow dataRow, int index);
             }
             """;
 
@@ -90,7 +90,7 @@ public class PgDataRowDecoderGeneratorSnapshotTest
             public static class TestExtensions
             {
                 [GeneratePgDecodeMethod(Decoder = typeof(PgString))]
-                public static partial string?[]? GetPgStringArray(this IDataRow dataRow, int index);
+                public static partial string?[]? GetPgStringArray(this IPgDataRow dataRow, int index);
             }
             """;
 

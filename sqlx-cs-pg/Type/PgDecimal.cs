@@ -146,7 +146,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
 
     /// <summary>
     /// Conversion method from Postgres numeric value to a <see cref="decimal"/>. Code is taken
-    /// mostly as is from the npgsql repo with some small changes since there is no wrapper type,
+    /// mostly as is from the Npgsql repo with some small changes since there is no wrapper type,
     /// and we throw our own custom exceptions.
     /// <p>
     /// Copyright (c) 2002-2025, Npgsql
@@ -167,8 +167,8 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
     /// HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS,
     /// OR MODIFICATIONS.
     /// </p>
-    /// </summary>
     /// <a href="https://github.com/npgsql/npgsql/blob/19f466e3e12106b9e7a81e67d07c4df56467a861/src/Npgsql/Internal/Converters/Primitive/PgNumeric.cs#L295"></a>
+    /// </summary>
     /// <param name="digits"></param>
     /// <param name="weight"></param>
     /// <param name="sign"></param>

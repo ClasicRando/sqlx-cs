@@ -3,10 +3,12 @@ using Sqlx.Postgres.Fixtures;
 
 namespace Sqlx.Postgres.Connection;
 
-[ClassDataSource<DatabaseFixture>(Shared = SharedType.PerClass)]
 [TestSubject(typeof(PgConnection))]
-public partial class PgConnectionTest(DatabaseFixture databaseFixture)
+public partial class PgConnectionTest
 {
+    [ClassDataSource<DatabaseFixture>(Shared = SharedType.PerClass)]
+    public required DatabaseFixture DatabaseFixture { get; init; }
+    
     private const string OutProcedureName = "test_proc_out";
     private const string InOutProcedureName = "test_proc_in_out";
 

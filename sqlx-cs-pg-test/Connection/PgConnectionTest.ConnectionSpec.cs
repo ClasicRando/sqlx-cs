@@ -11,7 +11,7 @@ public partial class PgConnectionTest
     [Test]
     public async Task OpenAsync_Should_SucceedWithSaslAuth_When_DefaultAuth(CancellationToken ct)
     {
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         await connection.OpenAsync(ct);
         await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Idle);
         using IPgExecutableQuery query = connection.CreateQuery("SELECT 1;");
@@ -22,7 +22,7 @@ public partial class PgConnectionTest
     [Test]
     public async Task CloseAsync_Should_Succeed_When_OpenConnection(CancellationToken ct)
     {
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         await connection.OpenAsync(ct);
         await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Idle);
         await connection.CloseAsync(ct);
@@ -32,7 +32,7 @@ public partial class PgConnectionTest
     [Test]
     public async Task CloseAsync_Should_Succeed_When_ClosedConnection(CancellationToken ct)
     {
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Closed);
         await connection.CloseAsync(ct);
         await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Closed);
@@ -41,7 +41,7 @@ public partial class PgConnectionTest
     [Test]
     public async Task CloseAsync_Should_Fail_When_DisposedConnection(CancellationToken ct)
     {
-        IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Closed);
         connection.Dispose();
         await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
@@ -51,7 +51,7 @@ public partial class PgConnectionTest
     [Test]
     public async Task CommitAsync_Should_SucceedAndIncrementTransactionId(CancellationToken ct)
     {
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         await connection.OpenAsync(ct);
         await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Idle);
         var transactionIdStart = await GetConnectionTransactionId(connection, ct);
@@ -68,7 +68,7 @@ public partial class PgConnectionTest
     [Test]
     public async Task RollbackAsync_Should_SucceedAndIncrementTransactionId(CancellationToken ct)
     {
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         await connection.OpenAsync(ct);
         await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Idle);
         var transactionIdStart = await GetConnectionTransactionId(connection, ct);

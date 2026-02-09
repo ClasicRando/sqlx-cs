@@ -13,7 +13,7 @@ public partial class PgConnectionTest
         CancellationToken ct)
     {
         var value = new Inner(1, "Test1");
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 json_col;");
         query.BindJson(value, useSourceGeneration ? SourceGenerationContext.Default.Inner : null);
         Inner result = await query.ExecuteScalarJson(
@@ -32,7 +32,7 @@ public partial class PgConnectionTest
         const string sql = "SELECT '{\"Id\":1,\"Name\":\"Test1\"}'::jsonb;";
         var value = new Inner(1, "Test1");
         using IPgConnection
-            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         Inner result = await query.ExecuteScalarJson(
             useSourceGeneration ? SourceGenerationContext.Default.Inner : null,
@@ -50,7 +50,7 @@ public partial class PgConnectionTest
         const string sql = "SELECT '{\"Id\":1,\"Name\":\"Test1\"}'::json;";
         var value = new Inner(1, "Test1");
         using IPgConnection
-            connection = databaseFixture.SimpleQueryTextPool.CreateConnection();
+            connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
         Inner result = await query.ExecuteScalarJson(
             useSourceGeneration ? SourceGenerationContext.Default.Inner : null,

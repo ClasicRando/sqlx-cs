@@ -8,7 +8,6 @@ namespace Sqlx.Postgres.Exceptions;
 /// <summary>
 /// Specialized <see cref="SqlxException"/> for Postgres related errors.
 /// </summary>
-#pragma warning disable CA1032
 public class PgException : SqlxException
 {
     internal PgException(string message, Exception exception) : base(message, exception) {}

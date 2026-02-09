@@ -6,7 +6,6 @@ namespace Sqlx.Core.Exceptions;
 /// <summary>
 /// Base exception used in the SQLx library. 
 /// </summary>
-#pragma warning disable CA1032
 public class SqlxException : Exception
 {
     public SqlxException(string message) : base(message)

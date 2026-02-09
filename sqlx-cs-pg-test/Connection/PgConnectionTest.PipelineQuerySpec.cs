@@ -10,7 +10,7 @@ public partial class PgConnectionTest
     {
         const string sql1 = "SELECT 1 col1;";
         const string sql2 = "SELECT 2 col1;";
-        using IPgConnection connection = databaseFixture.BasicPool.CreateConnection();
+        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgQueryBatch queryBatch = connection.CreateQueryBatch();
         using IPgBindable query1 = queryBatch.CreateQuery(sql1);
         using IPgBindable query2 = queryBatch.CreateQuery(sql2);
