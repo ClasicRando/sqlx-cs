@@ -112,16 +112,17 @@ public static class PgConnectionExtensions
             }
         }
 
-        private ValueTask<PgColumnMetadata[]> QueryTableMetadataAsync(
+        private async ValueTask<PgColumnMetadata[]> QueryTableMetadataAsync(
             TableToBinary copyTable,
             CancellationToken cancellationToken)
         {
             using IPgExecutableQuery query = pgConnection.CreateQuery(CopyTableMetadata.Query);
             query.Bind(copyTable.TableName);
             query.Bind(copyTable.SchemaName);
-            return query.FetchAsync<CopyTableMetadata>(cancellationToken)
+            return await query.FetchAsync<CopyTableMetadata>(cancellationToken)
                 .Select(m => m.GetColumnMetadata())
-                .ToArrayAsync(cancellationToken);
+                .ToArrayAsync(cancellationToken)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
