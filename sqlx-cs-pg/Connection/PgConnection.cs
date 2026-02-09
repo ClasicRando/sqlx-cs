@@ -180,15 +180,4 @@ public sealed class PgConnection :
         if (disposing) CloseAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         _disposed = true;
     }
-
-    internal async Task<PgPreparedStatement> GetOrPrepareStatement(
-        string sql,
-        CancellationToken cancellationToken)
-    {
-        CheckDisposed();
-        await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        await _pgConnector!.WaitUntilReady(cancellationToken).ConfigureAwait(false);
-        return await _pgConnector!.GetOrPrepareStatement(sql, [], cancellationToken)
-            .ConfigureAwait(false);
-    }
 }

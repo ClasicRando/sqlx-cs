@@ -5,7 +5,6 @@ using Sqlx.Core.Buffer;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Copy;
-using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
@@ -63,37 +62,26 @@ public static class PgConnectionExtensions
         }
 
         /// <summary>
-        /// Execute a <c>COPY TO</c> statement and collect the results into the desired row type.
-        /// This method expects a binary <c>COPY TO</c> statement since that format is the same as
-        /// rows sent during regular query execution and is easily mapped 
+        /// Execute a <c>COPY {Table} TO BINARY</c> statement and collect the results into the
+        /// desired row type. This is possible because the copy binary format is the same as rows
+        /// sent during regular query execution and is easily mapped to a row type. 
         /// </summary>
         /// <param name="copyOutStatement">Binary copy out statement to execute</param>
         /// <param name="cancellationToken">Token to cancel async operation</param>
-        /// <typeparam name="TCopyStatement">Copy statement type</typeparam>
         /// <typeparam name="TRow">Row type to decode to</typeparam>
         /// <returns>Stream of rows from the copy statement</returns>
         /// <exception cref="ArgumentOutOfRangeException">
         /// If the copy statement is not <see cref="ICopyQuery"/> or <see cref="ICopyTable"/>
         /// </exception>
-        public async IAsyncEnumerable<TRow> CopyOutRowsAsync<TCopyStatement, TRow>(
-            TCopyStatement copyOutStatement,
+        public async IAsyncEnumerable<TRow> CopyOutRowsAsync<TRow>(
+            TableToBinary copyOutStatement,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
-            where TCopyStatement : ICopyTo, ICopyBinary
             where TRow : IFromRow<IPgDataRow, TRow>
         {
-            var columns = copyOutStatement switch
-            {
-                ICopyQuery copyQuery => await pgConnection
-                    .FetchQueryMetadataAsync(copyQuery, cancellationToken)
-                    .ConfigureAwait(false),
-                ICopyTable copyTable => await pgConnection
-                    .QueryTableMetadataAsync(copyTable, cancellationToken)
-                    .ConfigureAwait(false),
-                _ => throw new ArgumentOutOfRangeException(
-                    nameof(copyOutStatement),
-                    copyOutStatement,
-                    null),
-            };
+            ArgumentNullException.ThrowIfNull(copyOutStatement);
+            var columns = await pgConnection
+                .QueryTableMetadataAsync(copyOutStatement, cancellationToken)
+                .ConfigureAwait(false);
             var statementMetadata = new PgStatementMetadata(columns);
 
             var rows = pgConnection.CopyOutAsync(copyOutStatement, cancellationToken);
@@ -124,19 +112,8 @@ public static class PgConnectionExtensions
             }
         }
 
-        private async Task<PgColumnMetadata[]> FetchQueryMetadataAsync(
-            ICopyQuery copyQuery,
-            CancellationToken cancellationToken)
-        {
-            PgConnection conn = PgException.CheckIfIs<IPgConnection, PgConnection>(pgConnection);
-            PgPreparedStatement preparedStatement = await conn
-                .GetOrPrepareStatement(copyQuery.Query, cancellationToken)
-                .ConfigureAwait(false);
-            return preparedStatement.ColumnMetadata;
-        }
-
         private ValueTask<PgColumnMetadata[]> QueryTableMetadataAsync(
-            ICopyTable copyTable,
+            TableToBinary copyTable,
             CancellationToken cancellationToken)
         {
             using IPgExecutableQuery query = pgConnection.CreateQuery(CopyTableMetadata.Query);

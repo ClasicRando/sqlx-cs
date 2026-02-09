@@ -241,7 +241,7 @@ public partial class PgConnector
     /// </param>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
     /// <returns>The prepared statement to execute the desired query</returns>
-    internal async Task<PgPreparedStatement> GetOrPrepareStatement(
+    private async Task<PgPreparedStatement> GetOrPrepareStatement(
         string sql,
         IReadOnlyList<PgTypeInfo> parameterTypes,
         CancellationToken cancellationToken)

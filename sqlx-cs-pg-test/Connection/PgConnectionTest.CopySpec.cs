@@ -48,19 +48,6 @@ public partial class PgConnectionTest
     }
 
     [Test]
-    public async Task CopyOutRowsAsync_Should_CopyRows_When_CopyQuery(CancellationToken ct)
-    {
-        var copyStatement = new QueryToBinary
-        {
-            Query = $"""
-                     SELECT t.t id, t.t || ' Value' text_field
-                     FROM generate_series(1, {CopyRowCount}) t
-                     """,
-        };
-        await CopyOutRowsAsyncTest(copyStatement, ct);
-    }
-
-    [Test]
     public async Task CopyOutRowsAsync_Should_CopyRows_When_CopyTable(CancellationToken ct)
     {
         var copyStatement = new TableToBinary
@@ -68,15 +55,10 @@ public partial class PgConnectionTest
             SchemaName = "public",
             TableName = "copy_out_test",
         };
-        await CopyOutRowsAsyncTest(copyStatement, ct);
-    }
-
-    private async Task CopyOutRowsAsyncTest<T>(T copyStatement, CancellationToken ct)
-        where T : ICopyTo, ICopyBinary
-    {
+        
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
 
-        var rows = await connection.CopyOutRowsAsync<T, CopyRow>(copyStatement, ct)
+        var rows = await connection.CopyOutRowsAsync<CopyRow>(copyStatement, ct)
             .OrderBy(cr => cr.Id)
             .ToListAsync(ct);
         var rowIndex = 0;
