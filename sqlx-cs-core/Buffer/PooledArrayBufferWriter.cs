@@ -31,9 +31,20 @@ public sealed class PooledArrayBufferWriter : IBufferWriter<byte>, IDisposable
     public int WrittenCount { get; private set; }
 
     /// <summary><see cref="ReadOnlySpan{T}"/> of the bytes written to this buffer</summary>
-    public ReadOnlySpan<byte> ReadableSpan => WrittenCount == 0
-        ? default(ReadOnlySpan<byte>)
-        : _buffer.AsSpan(0, WrittenCount);
+    public ReadOnlySpan<byte> ReadableSpan
+    {
+        get
+        {
+            return WrittenCount switch
+            {
+                < 0 => throw new InvalidOperationException($"Negative written count: {WrittenCount}. Probably disposed?"),
+                0 => default,
+                _ when WrittenCount > _buffer.Length => throw new InvalidOperationException(
+                    $"Written count is beyond buffer size. Buffer Size: {_buffer.Length}, Written Count: {WrittenCount}: Bytes: [{string.Join(",", _buffer)}]"),
+                _ => _buffer.AsSpan(0, WrittenCount),
+            };
+        }
+    }
 
     internal int StartWritingLengthPrefixed()
     {
