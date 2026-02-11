@@ -179,7 +179,7 @@ internal static class SourceGenerationHelper
 
         public bool IsValidDbType()
         {
-            return typeSymbol.GetDecodeMethodSuffixInner() is not null;
+            return typeSymbol.AsNotNullType().GetDecodeMethodSuffixInner() is not null;
         }
     }
 

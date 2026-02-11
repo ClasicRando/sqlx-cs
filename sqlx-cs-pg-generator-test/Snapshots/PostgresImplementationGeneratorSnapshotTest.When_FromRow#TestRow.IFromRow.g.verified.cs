@@ -37,6 +37,7 @@ public partial struct TestRow : IFromRow<IPgDataRow, TestRow>
             BytesField: dataRow.GetBytesNotNull("BytesField"),
             PointField: dataRow.GetPgNotNull("PointField"),
             IntArrayField: dataRow.GetIntArrayNotNull("IntArrayField"),
+            NullableIntField: dataRow.GetInt("NullableIntField"),
             WrapperEnumTypeField: dataRow.GetWrapperEnumTypeNotNull("WrapperEnumTypeField"),
             PostgresEnumTypeField: dataRow.GetPostgresEnumTypeNotNull("PostgresEnumTypeField"));
     }

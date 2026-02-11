@@ -168,6 +168,7 @@ public class PostgresImplementationGeneratorSnapshotTest
                 byte[] BytesField,
                 PgPoint PointField,
                 int[] IntArrayField,
+                int? NullableIntField,
                 WrapperEnumType WrapperEnumTypeField,
                 PostgresEnumType PostgresEnumTypeField)
             {
