@@ -1,5 +1,3 @@
-using System.Buffers;
-
 namespace Sqlx.Postgres.Message.Backend;
 
 /// <summary>
@@ -11,7 +9,7 @@ internal sealed class CopyDataMessage(byte[] data) : IPgBackendDataMessage, IPgB
 {
     public byte[] Data { get; } = data;
 
-    public static CopyDataMessage Decode(ReadOnlySequence<byte> buffer)
+    public static CopyDataMessage Decode(ReadOnlySpan<byte> buffer)
     {
         return new CopyDataMessage(buffer.ToArray());
     }

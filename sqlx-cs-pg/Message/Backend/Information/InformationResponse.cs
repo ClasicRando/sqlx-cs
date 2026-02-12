@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Exceptions;
@@ -166,7 +165,7 @@ internal class InformationResponse
     /// </summary>
     /// <param name="buffer">Buffer of message contents to parse</param>
     /// <returns>Deserialized information response object</returns>
-    public static InformationResponse Decode(ReadOnlySequence<byte> buffer)
+    public static InformationResponse Decode(ReadOnlySpan<byte> buffer)
     {
         Dictionary<byte, string> fields = [];
         while (!buffer.IsEmpty)

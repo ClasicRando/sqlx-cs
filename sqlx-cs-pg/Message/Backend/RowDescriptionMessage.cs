@@ -1,4 +1,3 @@
-using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Type;
@@ -13,7 +12,7 @@ namespace Sqlx.Postgres.Message.Backend;
 internal record RowDescriptionMessage(PgColumnMetadata[] ColumnMetadata)
     : IPgBackendMessage, IPgBackendMessageDecoder<RowDescriptionMessage>
 {
-    public static RowDescriptionMessage Decode(ReadOnlySequence<byte> buffer)
+    public static RowDescriptionMessage Decode(ReadOnlySpan<byte> buffer)
     {
         var columnCount = buffer.ReadShort();
         var metadata = new PgColumnMetadata[columnCount];

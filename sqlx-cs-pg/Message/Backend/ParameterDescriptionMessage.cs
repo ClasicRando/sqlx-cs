@@ -1,4 +1,3 @@
-using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Type;
 
@@ -12,7 +11,7 @@ namespace Sqlx.Postgres.Message.Backend;
 internal record ParameterDescriptionMessage(PgOid[] ParameterTypes)
     : IPgBackendMessage, IPgBackendMessageDecoder<ParameterDescriptionMessage>
 {
-    public static ParameterDescriptionMessage Decode(ReadOnlySequence<byte> buffer)
+    public static ParameterDescriptionMessage Decode(ReadOnlySpan<byte> buffer)
     {
         var parameterCount = buffer.ReadShort();
         var parameterTypes = new PgOid[parameterCount];

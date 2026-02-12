@@ -1,5 +1,3 @@
-using System.Buffers;
-
 namespace Sqlx.Postgres.Message.Backend;
 
 /// <summary>
@@ -17,7 +15,7 @@ internal sealed class DataRowMessage(byte[] rowData)
 {
     public byte[] RowData { get; } = rowData;
 
-    public static DataRowMessage Decode(ReadOnlySequence<byte> buffer)
+    public static DataRowMessage Decode(ReadOnlySpan<byte> buffer)
     {
         return new DataRowMessage(buffer.ToArray());
     }

@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Sqlx.Postgres.Message.Backend;
@@ -14,7 +13,7 @@ namespace Sqlx.Postgres.Message.Backend;
 internal record CopyOutResponseMessage(CopyResponse Response)
     : IPgBackendMessage, IPgBackendMessageDecoder<CopyOutResponseMessage>
 {
-    public static CopyOutResponseMessage Decode(ReadOnlySequence<byte> buffer)
+    public static CopyOutResponseMessage Decode(ReadOnlySpan<byte> buffer)
     {
         return new CopyOutResponseMessage(CopyResponse.Decode(buffer));
     }

@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Copy;
@@ -13,7 +12,7 @@ namespace Sqlx.Postgres.Message.Backend;
 [SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
 internal record CopyResponse(CopyFormat CopyFormat, short ColumnCount)
 {
-    internal static CopyResponse Decode(ReadOnlySequence<byte> buffer)
+    internal static CopyResponse Decode(ReadOnlySpan<byte> buffer)
     {
         var copyFormatCode = buffer.ReadByte();
         var columnCount = buffer.ReadShort();

@@ -15,7 +15,7 @@ public interface IAsyncConnector : IDisposable
     
     PipeWriter Writer { get; }
     
-    PipeReader Reader { get; }
+    ReadOnlySpan<byte> ReadBuffer { get; }
     
     /// <summary>
     /// Open the stream's connection to a remote host at the specified port
@@ -24,4 +24,12 @@ public interface IAsyncConnector : IDisposable
     /// <param name="port">Host port to connect to</param>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
     Task OpenAsync(string host, ushort port, CancellationToken cancellationToken);
+
+    ValueTask<byte> ReadByteAsync(CancellationToken cancellationToken);
+
+    ValueTask<int> ReadIntAsync(CancellationToken cancellationToken);
+
+    ValueTask EnsureBufferFilled(int size, CancellationToken cancellationToken);
+
+    void AdvanceBufferPosition(int bytesConsumed);
 }

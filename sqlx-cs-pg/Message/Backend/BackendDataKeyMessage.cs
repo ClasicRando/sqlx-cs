@@ -1,4 +1,3 @@
-using System.Buffers;
 using Sqlx.Core.Buffer;
 
 namespace Sqlx.Postgres.Message.Backend;
@@ -17,7 +16,7 @@ internal sealed class BackendDataKeyMessage(int processId, int secretKey)
     internal int ProcessId { get; } = processId;
     internal int SecretKey { get; } = secretKey;
 
-    public static BackendDataKeyMessage Decode(ReadOnlySequence<byte> buffer)
+    public static BackendDataKeyMessage Decode(ReadOnlySpan<byte> buffer)
     {
         return new BackendDataKeyMessage(buffer.ReadInt(), buffer.ReadInt());
     }

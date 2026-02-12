@@ -1,4 +1,3 @@
-using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Message.Backend;
 
@@ -15,7 +14,7 @@ namespace Sqlx.Postgres.Notify;
 public record PgNotification(int ProcessId, string ChannelName, string Payload)
     : IPgBackendMessage, IPgBackendMessageDecoder<PgNotification>
 {
-    public static PgNotification Decode(ReadOnlySequence<byte> buffer)
+    public static PgNotification Decode(ReadOnlySpan<byte> buffer)
     {
         return new PgNotification(buffer.ReadInt(), buffer.ReadCString(), buffer.ReadCString());
     }

@@ -194,9 +194,9 @@ public static class BufferExtensions
         public string ReadCString()
         {
             var index = 0;
-            while (span[index++] != 0);
+            while (index < span.Length && span[index++] != 0);
             var result = Charsets.Default.GetString(span[..(index - 1)]);
-            span = span[(index + 1)..];
+            span = index == span.Length ? default : span[index..];
             return result;
         }
     }

@@ -1,9 +1,7 @@
-using System.Buffers;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Sqlx.Core;
-using Sqlx.Core.Buffer;
 using Sqlx.Core.Cache;
 using Sqlx.Core.Config;
 using Sqlx.Core.Connection;
@@ -57,8 +55,6 @@ public sealed partial class PgConnector : IPooledConnection
 
     private PipeWriter Writer => _asyncConnector.Writer;
 
-    private PipeReader Reader => _asyncConnector.Reader;
-
     public ConnectionStatus Status { get; private set; } = ConnectionStatus.Closed;
 
     public bool InTransaction => Interlocked.Read(ref _inTransaction) == 1;
@@ -93,7 +89,10 @@ public sealed partial class PgConnector : IPooledConnection
         }
         finally
         {
-            _semaphore.Release();
+            if (Status is not ConnectionStatus.Broken)
+            {
+                _semaphore.Release();
+            }
         }
     }
 
@@ -298,7 +297,7 @@ public sealed partial class PgConnector : IPooledConnection
     /// <see cref="ReadyForQueryMessage"/>s have been processed
     /// </summary>
     /// <param name="cancellationToken">token to cancel the async operation</param>
-    internal async Task WaitUntilReady(CancellationToken cancellationToken)
+    private async Task WaitUntilReady(CancellationToken cancellationToken)
     {
         while (_pendingReadyForQuery > 0)
         {
@@ -518,13 +517,13 @@ public sealed partial class PgConnector : IPooledConnection
     /// <returns>The next message sent by the backend</returns>
     private async Task<IPgBackendMessage> ReceiveNextMessage(CancellationToken cancellationToken)
     {
-        var format = await Reader.ReadByteAsync(cancellationToken).ConfigureAwait(false);
-        var size = await Reader.ReadIntAsync(cancellationToken).ConfigureAwait(false) - 4;
-        ReadResult readResult = await Reader.ReadAtLeastAsync(size, cancellationToken)
-            .ConfigureAwait(false);
-        var buffer = readResult.Buffer.Slice(0, size);
-        IPgBackendMessage message = ParseMessage((PgBackendMessageType)format, buffer);
-        Reader.AdvanceTo(readResult.Buffer.GetPosition(size));
+        var format = await _asyncConnector.ReadByteAsync(cancellationToken).ConfigureAwait(false);
+        var size = await _asyncConnector.ReadIntAsync(cancellationToken).ConfigureAwait(false) - 4;
+        await _asyncConnector.EnsureBufferFilled(size, cancellationToken).ConfigureAwait(false);
+        IPgBackendMessage message = ParseMessage(
+            (PgBackendMessageType)format,
+            _asyncConnector.ReadBuffer[..size]);
+        _asyncConnector.AdvanceBufferPosition(size);
         return message;
     }
 
@@ -574,7 +573,7 @@ public sealed partial class PgConnector : IPooledConnection
     /// <exception cref="PgException">If the message type is not supported or expected</exception>
     private static IPgBackendMessage ParseMessage(
         PgBackendMessageType messageType,
-        ReadOnlySequence<byte> contents)
+        ReadOnlySpan<byte> contents)
     {
         // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
         return messageType switch

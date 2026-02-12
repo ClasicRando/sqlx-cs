@@ -1,4 +1,3 @@
-using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Message.Auth;
@@ -17,7 +16,7 @@ namespace Sqlx.Postgres.Message.Backend;
 /// </summary>
 internal abstract class AuthenticationMessage : IPgBackendMessage, IPgBackendMessageDecoder<IAuthMessage>
 {
-    public static IAuthMessage Decode(ReadOnlySequence<byte> buffer)
+    public static IAuthMessage Decode(ReadOnlySpan<byte> buffer)
     {
         var authMethod = buffer.ReadInt();
         switch (authMethod)
@@ -27,8 +26,7 @@ internal abstract class AuthenticationMessage : IPgBackendMessage, IPgBackendMes
             case 3:
                 return ClearTextPasswordAuthMessage.Instance;
             case 5:
-                var bytes = new byte[4];
-                buffer.ReadBytes(bytes);
+                var bytes = buffer.ReadBytes(4);
                 return new MD5PasswordAuthMessage(bytes);
             case 10:
                 List<string> authMechanisms = [];
