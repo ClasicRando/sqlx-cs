@@ -1,5 +1,6 @@
 using Sqlx.Core;
 using Sqlx.Core.Pool;
+using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Result;

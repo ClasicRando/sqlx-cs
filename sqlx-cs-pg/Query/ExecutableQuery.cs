@@ -67,12 +67,6 @@ public static class ExecutableQuery
             return result ?? throw new PgException("Query returned no rows");
         }
 
-        /// <inheritdoc cref="Core.Query.ExecutableQuery.ExecuteNonQueryAsync{TDataRow}"/>>
-        public ValueTask<long> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
-        {
-            return executableQuery.ExecuteNonQueryAsync(cancellationToken);
-        }
-
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchAsync{TDataRow,TRow}"/>>
         public IAsyncEnumerable<TRow> FetchAsync<TRow>(
             CancellationToken cancellationToken = default)

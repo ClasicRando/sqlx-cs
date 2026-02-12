@@ -38,9 +38,7 @@ public sealed partial class PgConnector : IPooledConnection
     private readonly ILogger<PgConnector> _logger;
 
     private BackendDataKeyMessage? _backendDataKey;
-    private long _inTransaction;
     private int _pendingReadyForQuery;
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     internal PgConnector(IAsyncConnector asyncConnector, PgConnectOptions connectOptions)
     {
@@ -55,9 +53,39 @@ public sealed partial class PgConnector : IPooledConnection
 
     private PipeWriter Writer => _asyncConnector.Writer;
 
-    public ConnectionStatus Status { get; private set; } = ConnectionStatus.Closed;
+    private int _connectionStatus = (int)ConnectionStatus.Closed;
+    public ConnectionStatus Status
+    {
+        get => (ConnectionStatus)_connectionStatus;
+        private set
+        {
+            var newStatus = (int)value;
 
-    public bool InTransaction => Interlocked.Read(ref _inTransaction) == 1;
+            if (newStatus == _connectionStatus)
+            {
+                return;
+            }
+
+            if (newStatus is < 0 or > (int)ConnectionStatus.Closed)
+            {
+                throw new InvalidOperationException("Cannot set status to invalid state");
+            }
+
+            Interlocked.Exchange(ref _connectionStatus, newStatus);
+        }
+    }
+
+    private bool IsIdle => Status is ConnectionStatus.Idle;
+
+    private bool IsConnected => Status is not (ConnectionStatus.Closed
+        or ConnectionStatus.Connecting or ConnectionStatus.Broken);
+
+    private long _inTransaction;
+    public bool InTransaction
+    {
+        get => Interlocked.Read(ref _inTransaction) == 1;
+        private set => Interlocked.Exchange(ref _inTransaction, value ? 1 : 0);
+    }
 
     /// <summary>
     /// Open the underlining stream and initiate the connection with the database backend 
@@ -66,8 +94,7 @@ public sealed partial class PgConnector : IPooledConnection
     public async Task OpenAsync(CancellationToken cancellationToken)
     {
         CheckDisposed();
-        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-        Status = ConnectionStatus.Connecting;
+        using UserAction _ = StartUserAction(newStatus: ConnectionStatus.Connecting);
         try
         {
             await _asyncConnector.OpenAsync(
@@ -86,13 +113,6 @@ public sealed partial class PgConnector : IPooledConnection
         {
             BreakConnection();
             throw;
-        }
-        finally
-        {
-            if (Status is not ConnectionStatus.Broken)
-            {
-                _semaphore.Release();
-            }
         }
     }
 
@@ -141,7 +161,7 @@ public sealed partial class PgConnector : IPooledConnection
     public async Task<bool> IsValidAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfNotOpen();
-        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        using UserAction _ = StartUserAction();
         try
         {
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
@@ -158,10 +178,6 @@ public sealed partial class PgConnector : IPooledConnection
         {
             BreakConnection();
             return false;
-        }
-        finally
-        {
-            _semaphore.Release();
         }
 
         return true;
@@ -231,7 +247,7 @@ public sealed partial class PgConnector : IPooledConnection
         CancellationToken cancellationToken)
     {
         ThrowIfNotOpen();
-        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        using UserAction _ = StartUserAction();
         try
         {
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
@@ -254,9 +270,7 @@ public sealed partial class PgConnector : IPooledConnection
             await SendQueryMessage(sql, cancellationToken).ConfigureAwait(false);
             await WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)
                 .ConfigureAwait(false);
-            Interlocked.Exchange(
-                ref _inTransaction,
-                transactionCommand is TransactionCommand.Begin ? 1 : 0);
+            InTransaction = transactionCommand is TransactionCommand.Begin;
         }
         catch (OutOfMemoryException)
         {
@@ -285,10 +299,6 @@ public sealed partial class PgConnector : IPooledConnection
             }
 
             throw;
-        }
-        finally
-        {
-            _semaphore.Release();
         }
     }
 
@@ -609,6 +619,48 @@ public sealed partial class PgConnector : IPooledConnection
         };
     }
 
+    struct UserAction : IDisposable
+    {
+        private readonly PgConnector _connector;
+        public UserAction(PgConnector connector) => _connector = connector;
+        public void Dispose() => _connector.EndUserAction();
+    }
+
+    private UserAction StartUserAction(ConnectionStatus newStatus = ConnectionStatus.Executing)
+    {
+        ConnectionStatus currentStatus = Status;
+        switch (currentStatus)
+        {
+            case ConnectionStatus.Idle:
+            case ConnectionStatus.Closed when newStatus is ConnectionStatus.Connecting:
+                break;
+            case ConnectionStatus.Broken:
+            case ConnectionStatus.Closed:
+                throw new InvalidOperationException("The connection is not open");
+            case ConnectionStatus.Connecting:
+            case ConnectionStatus.Executing:
+            case ConnectionStatus.Fetching:
+                throw new InvalidOperationException("Action against this connection is already in progress");
+            default:
+#pragma warning disable CA2208
+                throw new ArgumentOutOfRangeException(nameof(Status), "Invalid status flag");
+#pragma warning restore CA2208
+        }
+
+        Status = newStatus;
+        return new UserAction(this);
+    }
+
+    private void EndUserAction()
+    {
+        if (IsIdle || !IsConnected)
+        {
+            return;
+        }
+        
+        Status = ConnectionStatus.Idle;
+    }
+
     private void BreakConnection()
     {
         Status = ConnectionStatus.Broken;
@@ -638,6 +690,5 @@ public sealed partial class PgConnector : IPooledConnection
         }
 
         _asyncConnector.Dispose();
-        _semaphore.Dispose();
     }
 }

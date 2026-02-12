@@ -28,49 +28,41 @@ public sealed partial class PgConnector
     {
         ThrowIfNotOpen();
 
-        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            await WaitUntilReady(cancellationToken).ConfigureAwait(false);
-            Status = ConnectionStatus.Executing;
-            await SendQueryMessage(copyOutStatement.ToCopyQuery(), cancellationToken)
-                .ConfigureAwait(false);
-            CopyOutResponseMessage message = await WaitForOrThrowError<CopyOutResponseMessage>(cancellationToken)
-                .ConfigureAwait(false);
-            _pendingReadyForQuery++;
-            _logger.LogCopyOutResponse(message);
+        using UserAction _ = StartUserAction();
+        
+        await WaitUntilReady(cancellationToken).ConfigureAwait(false);
+        await SendQueryMessage(copyOutStatement.ToCopyQuery(), cancellationToken)
+            .ConfigureAwait(false);
+        CopyOutResponseMessage message = await WaitForOrThrowError<CopyOutResponseMessage>(cancellationToken)
+            .ConfigureAwait(false);
+        _pendingReadyForQuery++;
+        _logger.LogCopyOutResponse(message);
 
-            Status = ConnectionStatus.Fetching;
-            while (true)
-            {
-                IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
-                    .ConfigureAwait(false);
-                IPgBackendMessage? postProcessMessage =
-                    ApplyStandardMessageProcessing(backendMessage);
-                cancellationToken.ThrowIfCancellationRequested();
-                switch (postProcessMessage)
-                {
-                    case CopyDataMessage copyDataMessage:
-                        yield return copyDataMessage.Data;
-                        break;
-                    case CopyDoneMessage:
-                    case CommandCompleteMessage:
-                        break;
-                    case ReadyForQueryMessage readyForQueryMessage:
-                        HandleReadyForQuery(readyForQueryMessage);
-                        yield break;
-                    default:
-                        _logger.LogIgnoreUnexpectedMessage(
-                            SqlxConfig.DetailedLoggingLevel,
-                            backendMessage);
-                        break;
-                }
-            }
-        }
-        finally
+        Status = ConnectionStatus.Fetching;
+        while (true)
         {
-            Status = ConnectionStatus.Idle;
-            _semaphore.Release();
+            IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
+                .ConfigureAwait(false);
+            IPgBackendMessage? postProcessMessage =
+                ApplyStandardMessageProcessing(backendMessage);
+            cancellationToken.ThrowIfCancellationRequested();
+            switch (postProcessMessage)
+            {
+                case CopyDataMessage copyDataMessage:
+                    yield return copyDataMessage.Data;
+                    break;
+                case CopyDoneMessage:
+                case CommandCompleteMessage:
+                    break;
+                case ReadyForQueryMessage readyForQueryMessage:
+                    HandleReadyForQuery(readyForQueryMessage);
+                    yield break;
+                default:
+                    _logger.LogIgnoreUnexpectedMessage(
+                        SqlxConfig.DetailedLoggingLevel,
+                        backendMessage);
+                    break;
+            }
         }
     }
 
@@ -90,11 +82,10 @@ public sealed partial class PgConnector
     {
         ThrowIfNotOpen();
 
-        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        using UserAction _ = StartUserAction();
         try
         {
             await WaitUntilReady(cancellationToken).ConfigureAwait(false);
-            Status = ConnectionStatus.Executing;
             await SendQueryMessage(copyInStatement.ToCopyQuery(), cancellationToken)
                 .ConfigureAwait(false);
             CopyInResponseMessage message = await WaitForOrThrowError<CopyInResponseMessage>(cancellationToken)
@@ -120,8 +111,6 @@ public sealed partial class PgConnector
         finally
         {
             await data.CompleteAsync().ConfigureAwait(false);
-            Status = ConnectionStatus.Idle;
-            _semaphore.Release();
         }
     }
 
@@ -219,8 +208,7 @@ public sealed partial class PgConnector
                     HandleReadyForQuery(readyForQueryMessage);
                     return result;
                 default:
-                    PgLog.LogIgnoreUnexpectedMessage(
-                        _logger,
+                    _logger.LogIgnoreUnexpectedMessage(
                         SqlxConfig.DetailedLoggingLevel,
                         backendMessage);
                     break;

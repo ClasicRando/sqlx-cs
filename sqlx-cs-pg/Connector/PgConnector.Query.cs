@@ -79,25 +79,16 @@ public partial class PgConnector
         ArgumentException.ThrowIfNullOrWhiteSpace(sql);
         ThrowIfNotOpen();
 
-        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            await WaitUntilReady(cancellationToken).ConfigureAwait(false);
-            Status = ConnectionStatus.Executing;
-            await SendQueryMessage(sql, cancellationToken).ConfigureAwait(false);
-            _pendingReadyForQuery++;
+        using UserAction _ = StartUserAction();
+        await WaitUntilReady(cancellationToken).ConfigureAwait(false);
+        await SendQueryMessage(sql, cancellationToken).ConfigureAwait(false);
+        _pendingReadyForQuery++;
 
-            Status = ConnectionStatus.Fetching;
-            var items = CollectResult(null, false, cancellationToken).ConfigureAwait(false);
-            await foreach (var item in items)
-            {
-                yield return item;
-            }
-        }
-        finally
+        Status = ConnectionStatus.Fetching;
+        var items = CollectResult(null, false, cancellationToken).ConfigureAwait(false);
+        await foreach (var item in items)
         {
-            Status = ConnectionStatus.Idle;
-            _semaphore.Release();
+            yield return item;
         }
     }
 
@@ -126,34 +117,25 @@ public partial class PgConnector
         ArgumentException.ThrowIfNullOrWhiteSpace(executableQuery.Query);
         ThrowIfNotOpen();
 
-        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
+        using UserAction _ = StartUserAction();
+        await WaitUntilReady(cancellationToken).ConfigureAwait(false);
+        PgPreparedStatement statement = await GetOrPrepareStatement(
+                executableQuery.Query,
+                executableQuery.ParameterPgTypes,
+                cancellationToken)
+            .ConfigureAwait(false);
+        await ExecutePreparedStatement(
+                statement.StatementName,
+                executableQuery.ParameterCount,
+                executableQuery.EncodedParameters,
+                true,
+                cancellationToken)
+            .ConfigureAwait(false);
+        Status = ConnectionStatus.Fetching;
+        var items = CollectResult(statement, false, cancellationToken).ConfigureAwait(false);
+        await foreach (var item in items)
         {
-            await WaitUntilReady(cancellationToken).ConfigureAwait(false);
-            Status = ConnectionStatus.Executing;
-            PgPreparedStatement statement = await GetOrPrepareStatement(
-                    executableQuery.Query,
-                    executableQuery.ParameterPgTypes,
-                    cancellationToken)
-                .ConfigureAwait(false);
-            await ExecutePreparedStatement(
-                    statement.StatementName,
-                    executableQuery.ParameterCount,
-                    executableQuery.EncodedParameters,
-                    true,
-                    cancellationToken)
-                .ConfigureAwait(false);
-            Status = ConnectionStatus.Fetching;
-            var items = CollectResult(statement, false, cancellationToken).ConfigureAwait(false);
-            await foreach (var item in items)
-            {
-                yield return item;
-            }
-        }
-        finally
-        {
-            Status = ConnectionStatus.Idle;
-            _semaphore.Release();
+            yield return item;
         }
     }
 
@@ -171,56 +153,48 @@ public partial class PgConnector
         PgQueryBatch pgQueryBatch = PgException.CheckIfIs<IPgQueryBatch, PgQueryBatch>(queryBatch);
         var syncAll = queryBatch.WrapBatchInTransaction;
 
-        await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
+        using UserAction _ = StartUserAction();
+
+        await WaitUntilReady(cancellationToken).ConfigureAwait(false);
+        var queries = pgQueryBatch.Queries;
+        var queryCount = queries.Count;
+        var statements = new PgPreparedStatement[queryCount];
+
+        for (var i = 0; i < queryCount; i++)
         {
-            await WaitUntilReady(cancellationToken).ConfigureAwait(false);
-            Status = ConnectionStatus.Executing;
-            var queries = pgQueryBatch.Queries;
-            var queryCount = queries.Count;
-            var statements = new PgPreparedStatement[queryCount];
-
-            for (var i = 0; i < queryCount; i++)
-            {
-                PgExecutableQuery executableQuery = queries[i];
-                PgPreparedStatement statement = await GetOrPrepareStatement(
-                        executableQuery.Query,
-                        executableQuery.ParameterPgTypes,
-                        cancellationToken)
-                    .ConfigureAwait(false);
-                statements[i] = statement;
-            }
-
-            for (var i = 0; i < statements.Length; i++)
-            {
-                PgExecutableQuery executableQuery = queries[i];
-                PgPreparedStatement statement = statements[i];
-                await ExecutePreparedStatement(
-                        statement.StatementName,
-                        executableQuery.ParameterCount,
-                        executableQuery.EncodedParameters,
-                        syncAll || i == queryCount - 1,
-                        cancellationToken)
-                    .ConfigureAwait(false);
-            }
-
-            Status = ConnectionStatus.Fetching;
-            for (var i = 0; i < statements.Length; i++)
-            {
-                PgPreparedStatement statement = statements[i];
-                var breakOnCommandComplete = !syncAll && i != queryCount - 1;
-                var items = CollectResult(statement, breakOnCommandComplete, cancellationToken)
-                    .ConfigureAwait(false);
-                await foreach (var item in items)
-                {
-                    yield return item;
-                }
-            }
+            PgExecutableQuery executableQuery = queries[i];
+            PgPreparedStatement statement = await GetOrPrepareStatement(
+                    executableQuery.Query,
+                    executableQuery.ParameterPgTypes,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            statements[i] = statement;
         }
-        finally
+
+        for (var i = 0; i < statements.Length; i++)
         {
-            Status = ConnectionStatus.Idle;
-            _semaphore.Release();
+            PgExecutableQuery executableQuery = queries[i];
+            PgPreparedStatement statement = statements[i];
+            await ExecutePreparedStatement(
+                    statement.StatementName,
+                    executableQuery.ParameterCount,
+                    executableQuery.EncodedParameters,
+                    syncAll || i == queryCount - 1,
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        Status = ConnectionStatus.Fetching;
+        for (var i = 0; i < statements.Length; i++)
+        {
+            PgPreparedStatement statement = statements[i];
+            var breakOnCommandComplete = !syncAll && i != queryCount - 1;
+            var items = CollectResult(statement, breakOnCommandComplete, cancellationToken)
+                .ConfigureAwait(false);
+            await foreach (var item in items)
+            {
+                yield return item;
+            }
         }
     }
 

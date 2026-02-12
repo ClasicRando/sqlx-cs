@@ -1,3 +1,4 @@
+using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Copy;
 using Sqlx.Postgres.Query;
