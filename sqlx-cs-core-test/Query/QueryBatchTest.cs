@@ -29,28 +29,28 @@ public class QueryBatchTest
         yield return () =>
         (
             [
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(20, string.Empty)),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(10, string.Empty)),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(20, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(10, string.Empty)),
             ],
             30
         );
         yield return () =>
         (
             [
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(10, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(10, string.Empty)),
             ],
             10
         );
         yield return () =>
         (
             [
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(5, string.Empty)),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(5, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(5, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(5, string.Empty)),
             ],
             10
         );
@@ -61,10 +61,10 @@ public class QueryBatchTest
     {
         List<Either<IDataRow, QueryResult>> lst =
         [
-            new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-            new Either<IDataRow, QueryResult>.Right(new QueryResult(5, string.Empty)),
-            new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-            new Either<IDataRow, QueryResult>.Right(new QueryResult(5, string.Empty)),
+            Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+            Either.Right<IDataRow, QueryResult>(new QueryResult(5, string.Empty)),
+            Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+            Either.Right<IDataRow, QueryResult>(new QueryResult(5, string.Empty)),
         ];
         var query = Substitute.For<MockQueryBatch>();
         query.ExecuteBatch(Arg.Any<CancellationToken>())

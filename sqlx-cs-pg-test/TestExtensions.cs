@@ -16,12 +16,12 @@ public static class TestExtensions
             {
                 switch (item)
                 {
-                    case Either<IPgDataRow, QueryResult>.Right right:
-                        result.Add((rowBuffer, right.Value));
+                    case { IsRight: true }:
+                        result.Add((rowBuffer, item.Right));
                         rowBuffer = [];
                         break;
-                    case Either<IPgDataRow, QueryResult>.Left left:
-                        rowBuffer.Add(left.Value);
+                    case { IsLeft: true }:
+                        rowBuffer.Add(item.Left);
                         break;
                 }
             }

@@ -22,8 +22,8 @@ public static class ExecutableQuery
         public ValueTask<long> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
         {
             return executableQuery.ExecuteAsync(cancellationToken)
-                .OfType<Either<TDataRow, QueryResult>.Right>()
-                .Select(result => result.Value.RowsAffected)
+                .Where(item => item.IsRight)
+                .Select(result => result.Right.RowsAffected)
                 .SumAsync(cancellationToken);
         }
 
@@ -39,9 +39,8 @@ public static class ExecutableQuery
             where TRow : IFromRow<TDataRow, TRow>
         {
             return executableQuery.ExecuteAsync(cancellationToken)
-                .Where(result => result is Either<TDataRow, QueryResult>.Left)
-                .OfType<Either<TDataRow, QueryResult>.Left>()
-                .Select(row => TRow.FromRow(row.Value));
+                .Where(result => result.IsLeft)
+                .Select(row => TRow.FromRow(row.Left));
         }
 
         /// <summary>

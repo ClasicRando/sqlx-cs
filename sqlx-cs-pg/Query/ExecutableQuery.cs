@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization.Metadata;
-using Sqlx.Core;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Exceptions;
@@ -26,8 +25,8 @@ public static class ExecutableQuery
             where TValue : notnull
         {
             return executableQuery.ExecuteAsync(cancellationToken)
-                .OfType<Either<IPgDataRow, QueryResult>.Left>()
-                .Select(item => item.Value.GetPgNotNull<TValue, TType>(0))
+                .Where(item => item.IsLeft)
+                .Select(item => item.Left.GetPgNotNull<TValue, TType>(0))
                 .FirstAsync(cancellationToken);
         }
 
@@ -60,8 +59,8 @@ public static class ExecutableQuery
             where TValue : notnull
         {
             TValue? result = await executableQuery.ExecuteAsync(cancellationToken)
-                .OfType<Either<IPgDataRow, QueryResult>.Left>()
-                .Select(item => item.Value.GetJsonNotNull(0, jsonTypeInfo))
+                .Where(item => item.IsLeft)
+                .Select(item => item.Left.GetJsonNotNull(0, jsonTypeInfo))
                 .FirstOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
             return result ?? throw new PgException("Query returned no rows");

@@ -30,9 +30,9 @@ public class ExecutableQueryTest
     {
         List<Either<IDataRow, QueryResult>> lst =
         [
-            new Either<IDataRow, QueryResult>.Right(new QueryResult(20, string.Empty)),
-            new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-            new Either<IDataRow, QueryResult>.Right(new QueryResult(10, string.Empty)),
+            Either.Right<IDataRow, QueryResult>(new QueryResult(20, string.Empty)),
+            Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+            Either.Right<IDataRow, QueryResult>(new QueryResult(10, string.Empty)),
         ];
         var query = Substitute.For<MockQuery>();
         query.ExecuteAsync(Arg.Any<CancellationToken>())
@@ -66,9 +66,9 @@ public class ExecutableQueryTest
         [
             new List<Either<IDataRow, QueryResult>>
             {
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(20, string.Empty)),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(10, string.Empty)),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(20, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(10, string.Empty)),
             },
             0,
         ];
@@ -76,8 +76,8 @@ public class ExecutableQueryTest
         [
             new List<Either<IDataRow, QueryResult>>
             {
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(10, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(10, string.Empty)),
             },
             1,
         ];
@@ -85,10 +85,10 @@ public class ExecutableQueryTest
         [
             new List<Either<IDataRow, QueryResult>>
             {
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(10, string.Empty)),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(10, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
             },
             2,
         ];
@@ -101,8 +101,8 @@ public class ExecutableQueryTest
         {
             List<Either<IDataRow, QueryResult>> lst =
             [
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(0, string.Empty)),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(0, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
@@ -119,8 +119,8 @@ public class ExecutableQueryTest
         {
             List<Either<IDataRow, QueryResult>> lst =
             [
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(1, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(1, string.Empty)),
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
@@ -138,9 +138,9 @@ public class ExecutableQueryTest
             firstRow.GetIntNotNull(0).Returns(10);
             List<Either<IDataRow, QueryResult>> lst =
             [
-                new Either<IDataRow, QueryResult>.Left(firstRow),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(2, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(firstRow),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(2, string.Empty)),
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
@@ -159,8 +159,8 @@ public class ExecutableQueryTest
         {
             List<Either<IDataRow, QueryResult>> lst =
             [
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(0, string.Empty)),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(0, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
@@ -176,8 +176,8 @@ public class ExecutableQueryTest
         {
             List<Either<IDataRow, QueryResult>> lst =
             [
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(0, string.Empty)),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(0, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
@@ -193,8 +193,8 @@ public class ExecutableQueryTest
         {
             List<Either<IDataRow, QueryResult>> lst =
             [
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(1, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(1, string.Empty)),
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
@@ -212,9 +212,9 @@ public class ExecutableQueryTest
             firstRow.GetIntNotNull(0).Returns(10);
             List<Either<IDataRow, QueryResult>> lst =
             [
-                new Either<IDataRow, QueryResult>.Left(firstRow),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(2, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(firstRow),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(2, string.Empty)),
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
@@ -233,8 +233,8 @@ public class ExecutableQueryTest
         {
             List<Either<IDataRow, QueryResult>> lst =
             [
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(0, string.Empty)),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(0, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
@@ -251,8 +251,8 @@ public class ExecutableQueryTest
         {
             List<Either<IDataRow, QueryResult>> lst =
             [
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(1, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(1, string.Empty)),
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
@@ -268,9 +268,9 @@ public class ExecutableQueryTest
         {
             List<Either<IDataRow, QueryResult>> lst =
             [
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(2, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(2, string.Empty)),
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
@@ -290,8 +290,8 @@ public class ExecutableQueryTest
         {
             List<Either<IDataRow, QueryResult>> lst =
             [
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(0, string.Empty)),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(0, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
@@ -307,8 +307,8 @@ public class ExecutableQueryTest
         {
             List<Either<IDataRow, QueryResult>> lst =
             [
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(0, string.Empty)),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(0, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
@@ -324,8 +324,8 @@ public class ExecutableQueryTest
         {
             List<Either<IDataRow, QueryResult>> lst =
             [
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(1, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(1, string.Empty)),
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
@@ -341,9 +341,9 @@ public class ExecutableQueryTest
         {
             List<Either<IDataRow, QueryResult>> lst =
             [
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Left(Substitute.For<IDataRow>()),
-                new Either<IDataRow, QueryResult>.Right(new QueryResult(2, string.Empty)),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
+                Either.Right<IDataRow, QueryResult>(new QueryResult(2, string.Empty)),
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())

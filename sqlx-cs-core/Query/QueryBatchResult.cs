@@ -35,12 +35,12 @@ public sealed class QueryBatchResult<TBindable, TDataRow> : IAsyncDisposable
         while (await _resultStreamEnumerator.MoveNextAsync().ConfigureAwait(false))
         {
             var item = _resultStreamEnumerator.Current;
-            if (item is not Either<TDataRow, QueryResult>.Left row)
+            if (item.IsRight)
             {
                 return result;
             }
             
-            result.Add(TRow.FromRow(row.Value));
+            result.Add(TRow.FromRow(item.Left));
         }
 
         throw new QueryBatchExhausted();

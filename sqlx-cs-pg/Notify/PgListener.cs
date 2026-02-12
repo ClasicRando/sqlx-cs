@@ -5,13 +5,11 @@ using Microsoft.Extensions.Logging;
 using Sqlx.Core;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Pool;
-using Sqlx.Core.Result;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Logging;
 using Sqlx.Postgres.Message.Backend;
 using Sqlx.Postgres.Message.Backend.Information;
 using Sqlx.Postgres.Pool;
-using Sqlx.Postgres.Result;
 using PgConnector = Sqlx.Postgres.Connector.PgConnector;
 
 namespace Sqlx.Postgres.Notify;
@@ -121,17 +119,15 @@ internal sealed class PgListener : IPgListener
                 continue;
             }
 
-            switch (nextMessage)
+            if (nextMessage.IsLeft)
             {
-                case Either<PgNotification, ErrorResponseMessage>.Left left:
-                    return left.Value;
-                case Either<PgNotification, ErrorResponseMessage>.Right right:
-                    if (right.Value.InformationResponse.Code.IsCriticalConnectionError)
-                    {
-                        throw new PgException(right.Value);
-                    }
+                return nextMessage.Left;
+            }
 
-                    continue;
+            ErrorResponseMessage errorResponseMessage = nextMessage.Right;
+            if (errorResponseMessage.InformationResponse.Code.IsCriticalConnectionError)
+            {
+                throw new PgException(errorResponseMessage);
             }
         }
     }
@@ -180,9 +176,9 @@ internal sealed class PgListener : IPgListener
         var stream = _pgConnector!.SendSimpleQuery(ListenersQuery, cancellationToken);
         await foreach (var item in stream.ConfigureAwait(false))
         {
-            if (item is Either<IPgDataRow, QueryResult>.Left row)
+            if (item.IsLeft)
             {
-                yield return row.Value.GetStringNotNull(0);
+                yield return item.Left.GetStringNotNull(0);
             }
         }
     }

@@ -21,8 +21,8 @@ public static class QueryBatch
         public async Task<long> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
         {
             return await queryBatch.ExecuteBatch(cancellationToken)
-                .OfType<Either<TDataRow, QueryResult>.Right>()
-                .Select(result => result.Value.RowsAffected)
+                .Where(item => item.IsRight)
+                .Select(result => result.Right.RowsAffected)
                 .SumAsync(cancellationToken)
                 .ConfigureAwait(false);
         }

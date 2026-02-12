@@ -168,7 +168,7 @@ public sealed partial class PgConnector : IPooledConnection
             await SendQueryMessage("SELECT 1;", cancellationToken).ConfigureAwait(false);
             var result = await WaitForOrError<ReadyForQueryMessage>(cancellationToken)
                 .ConfigureAwait(false);
-            if (result is Either<ReadyForQueryMessage, ErrorResponseMessage>.Right)
+            if (result.IsRight)
             {
                 BreakConnection();
                 return false;
@@ -354,10 +354,10 @@ public sealed partial class PgConnector : IPooledConnection
                     break;
                 case PgNotification result:
                     Status = ConnectionStatus.Idle;
-                    return new Either<PgNotification, ErrorResponseMessage>.Left(result);
+                    return Either.Left<PgNotification, ErrorResponseMessage>(result);
                 case ErrorResponseMessage error:
                     Status = ConnectionStatus.Idle;
-                    return new Either<PgNotification, ErrorResponseMessage>.Right(error);
+                    return Either.Right<PgNotification, ErrorResponseMessage>(error);
                 default:
                     _logger.LogIgnoreUnexpectedMessage(
                         SqlxConfig.DetailedLoggingLevel,
@@ -380,12 +380,7 @@ public sealed partial class PgConnector : IPooledConnection
     {
         var result = await WaitForOrError<T>(cancellationToken)
             .ConfigureAwait(false);
-        return result switch
-        {
-            Either<T, ErrorResponseMessage>.Left left => left.Value,
-            Either<T, ErrorResponseMessage>.Right right => throw new PgException(right.Value),
-            _ => throw new PgException("Found another Either type. How weird?"),
-        };
+        return result.IsLeft ? result.Left : throw new PgException(result.Right);
     }
 
     /// <summary>
@@ -413,9 +408,9 @@ public sealed partial class PgConnector : IPooledConnection
                 case null:
                     continue;
                 case ErrorResponseMessage errorResponse:
-                    return new Either<T, ErrorResponseMessage>.Right(errorResponse);
+                    return Either.Right<T, ErrorResponseMessage>(errorResponse);
                 case T result:
-                    return new Either<T, ErrorResponseMessage>.Left(result);
+                    return Either.Left<T, ErrorResponseMessage>(result);
                 default:
                     _logger.LogIgnoreUnexpectedMessage(
                         SqlxConfig.DetailedLoggingLevel,

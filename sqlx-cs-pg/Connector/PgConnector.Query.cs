@@ -309,13 +309,13 @@ public partial class PgConnector
                     break;
                 case DataRowMessage dataRowMessage:
                     var dataRow = new PgDataRow(dataRowMessage.RowData, statementMetadata);
-                    yield return new Either<IPgDataRow, QueryResult>.Left(dataRow);
+                    yield return Either.Left<IPgDataRow, QueryResult>(dataRow);
                     break;
                 case CommandCompleteMessage commandCompleteMessage:
                     var queryResult = new QueryResult(
                         commandCompleteMessage.RowCount,
                         commandCompleteMessage.Message);
-                    yield return new Either<IPgDataRow, QueryResult>.Right(queryResult);
+                    yield return Either.Right<IPgDataRow, QueryResult>(queryResult);
                     if (breakOnCommandComplete)
                     {
                         yield break;

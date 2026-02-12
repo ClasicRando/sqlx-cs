@@ -8,22 +8,34 @@ namespace Sqlx.Core;
 /// </summary>
 /// <typeparam name="TLeft">First possible type</typeparam>
 /// <typeparam name="TRight">Second possible type</typeparam>
-public abstract record Either<TLeft, TRight>
+#nullable disable
+public readonly record struct Either<TLeft, TRight>
 {
-    private Either()
+    public Either(TLeft left, TRight right, bool isLeft)
     {
+        Left = left;
+        Right = right;
+        IsLeft = isLeft;
     }
+    
+    public bool IsLeft { get; }
 
-    /// <summary>
-    /// The first variant of <see cref="Either{TLeft,TRight}"/> that represents an instance of the
-    /// left type.
-    /// </summary>
-    /// <param name="Value">Inner value</param>
-    public sealed record Left(TLeft Value) : Either<TLeft, TRight>;
-    /// <summary>
-    /// The second variant of <see cref="Either{TLeft,TRight}"/> that represents an instance of the
-    /// right type.
-    /// </summary>
-    /// <param name="Value">Inner value</param>
-    public sealed record Right(TRight Value) : Either<TLeft, TRight>;
+    public bool IsRight => !IsLeft;
+
+    public TLeft Left => IsLeft ? field : throw new InvalidOperationException($"Tried to access {nameof(Left)} when value is {nameof(Right)}");
+
+    public TRight Right => !IsLeft ? field : throw new InvalidOperationException($"Tried to access {nameof(Left)} when value is {nameof(Right)}");
+}
+
+public static class Either
+{
+    public static Either<TLeft, TRight> Left<TLeft, TRight>(TLeft left)
+    {
+        return new Either<TLeft, TRight>(left, default, true);
+    }
+    
+    public static Either<TLeft, TRight> Right<TLeft, TRight>(TRight right)
+    {
+        return new Either<TLeft, TRight>(default, right, false);
+    }
 }

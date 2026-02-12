@@ -87,8 +87,8 @@ public partial class PgConnectionTest
     {
         using IPgExecutableQuery query = connection.CreateQuery("SELECT txid_current();");
         return await query.ExecuteAsync(ct)
-            .OfType<Either<IPgDataRow, QueryResult>.Left>()
-            .Select(row => row.Value.GetLongNotNull(0))
+            .Where(item => item.IsLeft)
+            .Select(row => row.Left.GetLongNotNull(0))
             .FirstAsync(ct);
     }
 }
