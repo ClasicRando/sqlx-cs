@@ -2,6 +2,7 @@ using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Types;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -62,6 +63,54 @@ internal static class PgInteger
                || dbType == PgTypeInfo.Int4
                || dbType == PgTypeInfo.Int2
                || dbType == PgTypeInfo.Oid;
+    }
+    
+    /// <summary>
+    /// Check to see if this <see cref="long"/> value is a valid <see cref="uint"/>
+    /// </summary>
+    /// <param name="value">long value to check</param>
+    /// <param name="columnMetadata">column metadata to construct the exception</param>
+    /// <returns>the value cast to an uint</returns>
+    /// <exception cref="ColumnDecodeException">if the value is not a valid uint</exception>
+    public static uint ValidateUInt(long value, in PgColumnMetadata columnMetadata)
+    {
+        if (!Integers.IsValidUInt(value))
+        {
+            Integers.ThrowColumnDecodeException<uint>(columnMetadata);
+        }
+        return (uint)value;
+    }
+    
+    /// <summary>
+    /// Check to see if this <see cref="long"/> value is a valid int
+    /// </summary>
+    /// <param name="value">long value to check</param>
+    /// <param name="columnMetadata">column metadata to construct the exception</param>
+    /// <returns>the value cast to an int</returns>
+    /// <exception cref="ColumnDecodeException">if the value is not a valid int</exception>
+    public static int ValidateInt(long value, in PgColumnMetadata columnMetadata)
+    {
+        if (!Integers.IsValidInt(value))
+        {
+            Integers.ThrowColumnDecodeException<int>(columnMetadata);
+        }
+        return (int)value;
+    }
+    
+    /// <summary>
+    /// Check to see if this <see cref="long"/> value is a valid short
+    /// </summary>
+    /// <param name="value">long value to check</param>
+    /// <param name="columnMetadata">column metadata to construct the exception</param>
+    /// <returns>the value cast to a short</returns>
+    /// <exception cref="ColumnDecodeException">if the value is not a valid short</exception>
+    public static short ValidateShort(long value, in PgColumnMetadata columnMetadata)
+    {
+        if (!Integers.IsValidShort(value))
+        {
+            Integers.ThrowColumnDecodeException<short>(columnMetadata);
+        }
+        return (short)value;
     }
 }
 
@@ -139,7 +188,7 @@ internal abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
     public static int DecodeBytes(ref PgBinaryValue value)
     {
         var integer = value.ExtractInteger<int>();
-        return Integers.ValidateInt(integer, value.ColumnMetadata);
+        return PgInteger.ValidateInt(integer, value.ColumnMetadata);
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -153,7 +202,7 @@ internal abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
     public static int DecodeText(in PgTextValue value)
     {
         var integer = value.ExtractInteger<int>();
-        return Integers.ValidateInt(integer, value.ColumnMetadata);
+        return PgInteger.ValidateInt(integer, value.ColumnMetadata);
     }
 
     public static PgTypeInfo DbType => PgTypeInfo.Int4;
@@ -195,7 +244,7 @@ internal abstract class PgShort : IPgDbType<short>, IHasArrayType
     public static short DecodeBytes(ref PgBinaryValue value)
     {
         var integer = value.ExtractInteger<short>();
-        return Integers.ValidateShort(integer, value.ColumnMetadata);
+        return PgInteger.ValidateShort(integer, value.ColumnMetadata);
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -209,7 +258,7 @@ internal abstract class PgShort : IPgDbType<short>, IHasArrayType
     public static short DecodeText(in PgTextValue value)
     {
         var integer = value.ExtractInteger<short>();
-        return Integers.ValidateShort(integer, value.ColumnMetadata);
+        return PgInteger.ValidateShort(integer, value.ColumnMetadata);
     }
 
     public static PgTypeInfo DbType => PgTypeInfo.Int2;

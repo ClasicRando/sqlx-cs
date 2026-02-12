@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Result;
 
@@ -20,19 +19,12 @@ public static class ExecutableQuery
         /// </summary>
         /// <param name="cancellationToken">optional cancellation token</param>
         /// <returns>total number of rows impacted by the query</returns>
-        public async Task<long> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
+        public ValueTask<long> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
         {
-            long count = 0;
-            var results = executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            await foreach (var result in results.ConfigureAwait(false))
-            {
-                if (result is Either<TDataRow, QueryResult>.Right right)
-                {
-                    count += right.Value.RowsAffected;
-                }
-            }
-
-            return count;
+            return executableQuery.ExecuteAsync(cancellationToken)
+                .OfType<Either<TDataRow, QueryResult>.Right>()
+                .Select(result => result.Value.RowsAffected)
+                .SumAsync(cancellationToken);
         }
 
         /// <summary>
@@ -43,22 +35,13 @@ public static class ExecutableQuery
         /// <param name="cancellationToken">optional cancellation token</param>
         /// <typeparam name="TRow">row type to map each row into</typeparam>
         /// <returns>a stream of result set rows mapped to the desired row type</returns>
-        public async IAsyncEnumerable<TRow> FetchAsync<TRow>(
-            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public IAsyncEnumerable<TRow> FetchAsync<TRow>(CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            var results = executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            await foreach (var result in results.ConfigureAwait(false))
-            {
-                switch (result)
-                {
-                    case Either<TDataRow, QueryResult>.Right:
-                        yield break;
-                    case Either<TDataRow, QueryResult>.Left left:
-                        yield return TRow.FromRow(left.Value);
-                        break;
-                }
-            }
+            return executableQuery.ExecuteAsync(cancellationToken)
+                .Where(result => result is Either<TDataRow, QueryResult>.Left)
+                .OfType<Either<TDataRow, QueryResult>.Left>()
+                .Select(row => TRow.FromRow(row.Value));
         }
 
         /// <summary>
@@ -160,26 +143,24 @@ public static class ExecutableQuery
             CancellationToken cancellationToken)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            var results = executableQuery.FetchAsync<TDataRow, TRow>(cancellationToken)
+            var results = await executableQuery.FetchAsync<TDataRow, TRow>(cancellationToken)
+                .Take(2)
+                .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
-            await using ConfiguredCancelableAsyncEnumerable<TRow>.Enumerator enumerable =
-#pragma warning disable CA2007
-                results.GetAsyncEnumerator();
-#pragma warning restore CA2007
-            if (!await enumerable.MoveNextAsync())
+
+            if (results.Count == 0)
             {
                 return requireRow
                     ? throw new SqlxException("Expected at least 1 row but found 0")
                     : default;
             }
 
-            TRow row = enumerable.Current;
-            if (assumeSingleRow && await enumerable.MoveNextAsync())
+            if (assumeSingleRow && results.Count == 2)
             {
                 throw new SqlxException("Expected a single row but found multiple");
             }
 
-            return row;
+            return results[0];
         }
     }
 }

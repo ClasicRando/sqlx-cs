@@ -20,21 +20,15 @@ public static class ExecutableQuery
         /// <typeparam name="TValue">Final type to decode a scalar value for</typeparam>
         /// <returns>The first row's first column decoded as the desired value type</returns>
         /// <exception cref="Exception">If the query or column decoding fails</exception>
-        public async Task<TValue> ExecuteScalar<TValue, TType>(
+        public ValueTask<TValue> ExecuteScalar<TValue, TType>(
             CancellationToken cancellationToken = default)
             where TType : IPgDbType<TValue>
             where TValue : notnull
         {
-            var flow = executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            await foreach (var item in flow)
-            {
-                if (item is Either<IPgDataRow, QueryResult>.Left left)
-                {
-                    return left.Value.GetPgNotNull<TValue, TType>(0);
-                }
-            }
-
-            throw new PgException("Query returned no rows");
+            return executableQuery.ExecuteAsync(cancellationToken)
+                .OfType<Either<IPgDataRow, QueryResult>.Left>()
+                .Select(item => item.Value.GetPgNotNull<TValue, TType>(0))
+                .FirstAsync(cancellationToken);
         }
 
         /// <summary>
@@ -44,7 +38,7 @@ public static class ExecutableQuery
         /// <typeparam name="TType">Type that can decode itself from a row column</typeparam>
         /// <returns>The first row's first column decoded as the desired type</returns>
         /// <exception cref="Exception">If the query or column decoding fails</exception>
-        public Task<TType> ExecuteScalar<TType>(CancellationToken cancellationToken = default)
+        public ValueTask<TType> ExecuteScalar<TType>(CancellationToken cancellationToken = default)
             where TType : IPgDbType<TType>
         {
             return executableQuery.ExecuteScalar<TType, TType>(cancellationToken);
@@ -65,24 +59,18 @@ public static class ExecutableQuery
             CancellationToken cancellationToken = default)
             where TValue : notnull
         {
-            var flow = executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            await foreach (var item in flow)
-            {
-                if (item is Either<IPgDataRow, QueryResult>.Left left)
-                {
-                    return left.Value.GetJsonNotNull(0, jsonTypeInfo);
-                }
-            }
-
-            throw new PgException("Query returned no rows");
+            TValue? result = await executableQuery.ExecuteAsync(cancellationToken)
+                .OfType<Either<IPgDataRow, QueryResult>.Left>()
+                .Select(item => item.Value.GetJsonNotNull(0, jsonTypeInfo))
+                .FirstOrDefaultAsync(cancellationToken)
+                .ConfigureAwait(false);
+            return result ?? throw new PgException("Query returned no rows");
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.ExecuteNonQueryAsync{TDataRow}"/>>
-        public Task<long> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
+        public ValueTask<long> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
         {
-            return Core.Query.ExecutableQuery.ExecuteNonQueryAsync(
-                executableQuery,
-                cancellationToken);
+            return executableQuery.ExecuteNonQueryAsync(cancellationToken);
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchAsync{TDataRow,TRow}"/>>

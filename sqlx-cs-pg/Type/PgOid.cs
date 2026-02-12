@@ -1,7 +1,6 @@
 using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
-using Sqlx.Core.Types;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -31,7 +30,7 @@ public readonly struct PgOid(uint inner) : IEquatable<PgOid>, IPgDbType<PgOid>, 
     public static PgOid DecodeBytes(ref PgBinaryValue value)
     {
         var integer = value.ExtractInteger<uint>();
-        return new PgOid(Integers.ValidateUInt(integer, value.ColumnMetadata));
+        return new PgOid(PgInteger.ValidateUInt(integer, value.ColumnMetadata));
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -45,7 +44,7 @@ public readonly struct PgOid(uint inner) : IEquatable<PgOid>, IPgDbType<PgOid>, 
     public static PgOid DecodeText(in PgTextValue value)
     {
         var integer = value.ExtractInteger<uint>();
-        return new PgOid(Integers.ValidateUInt(integer, value.ColumnMetadata));
+        return new PgOid(PgInteger.ValidateUInt(integer, value.ColumnMetadata));
     }
 
     public static PgTypeInfo DbType => PgTypeInfo.Oid;

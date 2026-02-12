@@ -1,7 +1,4 @@
 using JetBrains.Annotations;
-using NSubstitute;
-using Sqlx.Core.Column;
-using Sqlx.Core.Exceptions;
 
 namespace Sqlx.Core.Types;
 
@@ -15,14 +12,10 @@ public class IntegersTest
     [Arguments(2561651)]
     [Arguments(int.MinValue)]
     [Arguments(int.MaxValue)]
-    public async Task ValidateInt_Should_ReturnValue_WhenInt(long value)
+    public async Task IsValidInt_Should_ReturnTrue_When_Int(long value)
     {
-        var columnMetadata = Substitute.For<IColumnMetadata>();
-        columnMetadata.DataType.Returns(0u);
-        columnMetadata.FieldName.Returns("field");
-
-        var actual = Integers.ValidateInt(value, columnMetadata);
-        await Assert.That(actual).IsEqualTo((int)value);
+        var actual = Integers.IsValidInt(value);
+        await Assert.That(actual).IsTrue();
     }
     
     [Test]
@@ -30,14 +23,10 @@ public class IntegersTest
     [Arguments(int.MaxValue + 1L)]
     [Arguments(long.MinValue)]
     [Arguments(long.MaxValue)]
-    public async Task ValidateInt_Should_Thrown_WhenOutsideOfInt(long value)
+    public async Task IsValidInt_Should_ReturnFalse_When_OutsideOfInt(long value)
     {
-        var columnMetadata = Substitute.For<IColumnMetadata>();
-        columnMetadata.DataType.Returns(0u);
-        columnMetadata.FieldName.Returns("field");
-        
-        var e = Assert.Throws<ColumnDecodeException>(() => Integers.ValidateInt(value, columnMetadata));
-        await Assert.That(e.Message).Contains("Value is outside of valid int");
+        var actual = Integers.IsValidInt(value);
+        await Assert.That(actual).IsFalse();
     }
     
     [Test]
@@ -47,14 +36,10 @@ public class IntegersTest
     [Arguments(25616)]
     [Arguments(short.MinValue)]
     [Arguments(short.MaxValue)]
-    public async Task ValidateShort_Should_ReturnValueWhenShort(long value)
+    public async Task IsValidShort_Should_ReturnTrue_When_Short(long value)
     {
-        var columnMetadata = Substitute.For<IColumnMetadata>();
-        columnMetadata.DataType.Returns(0u);
-        columnMetadata.FieldName.Returns("field");
-
-        var actual = Integers.ValidateShort(value, columnMetadata);
-        await Assert.That(actual).IsEqualTo((short)value);
+        var actual = Integers.IsValidShort(value);
+        await Assert.That(actual).IsTrue();
     }
     
     [Test]
@@ -62,14 +47,10 @@ public class IntegersTest
     [Arguments(short.MaxValue + 1L)]
     [Arguments(long.MinValue)]
     [Arguments(long.MaxValue)]
-    public async Task ValidateShort_Should_Thrown_WhenOutsideOfShort(long value)
+    public async Task IsValidShort_Should_ReturnFalse_When_OutsideOfShort(long value)
     {
-        var columnMetadata = Substitute.For<IColumnMetadata>();
-        columnMetadata.DataType.Returns(0u);
-        columnMetadata.FieldName.Returns("field");
-        
-        var e = Assert.Throws<ColumnDecodeException>(() => Integers.ValidateShort(value, columnMetadata));
-        await Assert.That(e.Message).Contains("Value is outside of valid short");
+        var actual = Integers.IsValidShort(value);
+        await Assert.That(actual).IsFalse();
     }
     
     [Test]
@@ -78,14 +59,10 @@ public class IntegersTest
     [Arguments(125)]
     [Arguments(byte.MinValue)]
     [Arguments(byte.MaxValue)]
-    public async Task ValidateByte_Should_ReturnValueWhenByte(long value)
+    public async Task IsValidByte_Should_ReturnTrue_When_Byte(long value)
     {
-        var columnMetadata = Substitute.For<IColumnMetadata>();
-        columnMetadata.DataType.Returns(0u);
-        columnMetadata.FieldName.Returns("field");
-
-        var actual = Integers.ValidateByte(value, columnMetadata);
-        await Assert.That(actual).IsEqualTo((byte)value);
+        var actual = Integers.IsValidByte(value);
+        await Assert.That(actual).IsTrue();
     }
     
     [Test]
@@ -93,13 +70,9 @@ public class IntegersTest
     [Arguments(byte.MaxValue + 1L)]
     [Arguments(long.MinValue)]
     [Arguments(long.MaxValue)]
-    public async Task ValidateByte_Should_Thrown_WhenOutsideOfByte(long value)
+    public async Task IsValidByte_Should_ReturnFalse_when_OutsideOfByte(long value)
     {
-        var columnMetadata = Substitute.For<IColumnMetadata>();
-        columnMetadata.DataType.Returns(0u);
-        columnMetadata.FieldName.Returns("field");
-        
-        var e = Assert.Throws<ColumnDecodeException>(() => Integers.ValidateByte(value, columnMetadata));
-        await Assert.That(e.Message).Contains("Value is outside of valid byte");
+        var actual = Integers.IsValidByte(value);
+        await Assert.That(actual).IsFalse();
     }
 }
