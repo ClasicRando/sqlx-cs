@@ -7,19 +7,19 @@ namespace Sqlx.Core.Query;
 /// </summary>
 /// <typeparam name="TBindable">Database specific bindable type</typeparam>
 /// <typeparam name="TDataRow">Database specific row type</typeparam>
-public sealed class QueryBatchResult<TBindable, TDataRow> : IAsyncDisposable
+public sealed class QueryBatchResult<TBindable, TDataRow> : IDisposable
     where TBindable : IBindable
     where TDataRow : IDataRow
 {
     private readonly IQueryBatch<TBindable, TDataRow> _queryBatch;
-    private readonly IAsyncEnumerator<Either<TDataRow, QueryResult>> _resultStreamEnumerator;
+    private readonly IAsyncResultSet<TDataRow> _asyncResultSet;
 
     private QueryBatchResult(
         IQueryBatch<TBindable, TDataRow> queryBatch,
-        IAsyncEnumerator<Either<TDataRow, QueryResult>> resultStreamEnumerator)
+        IAsyncResultSet<TDataRow> asyncResultSet)
     {
         _queryBatch = queryBatch;
-        _resultStreamEnumerator = resultStreamEnumerator;
+        _asyncResultSet = asyncResultSet;
     }
 
     /// <summary>
@@ -32,9 +32,9 @@ public sealed class QueryBatchResult<TBindable, TDataRow> : IAsyncDisposable
         where TRow : IFromRow<TDataRow, TRow>
     {
         List<TRow> result = [];
-        while (await _resultStreamEnumerator.MoveNextAsync().ConfigureAwait(false))
+        while (await _asyncResultSet.MoveNextAsync().ConfigureAwait(false))
         {
-            var item = _resultStreamEnumerator.Current;
+            var item = _asyncResultSet.Current;
             if (item.IsRight)
             {
                 return result;
@@ -46,18 +46,17 @@ public sealed class QueryBatchResult<TBindable, TDataRow> : IAsyncDisposable
         throw new QueryBatchExhausted();
     }
 
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
         _queryBatch.Dispose();
-        await _resultStreamEnumerator.DisposeAsync().ConfigureAwait(false);
+        _asyncResultSet.Dispose();
     }
 
-    internal static QueryBatchResult<TBindable, TDataRow> Create(
+    internal static async Task<QueryBatchResult<TBindable, TDataRow>> Create(
         IQueryBatch<TBindable, TDataRow> queryBatch,
         CancellationToken cancellationToken)
     {
-        var resultStream = queryBatch.ExecuteBatch(cancellationToken);
-        var resultStreamEnumerator = resultStream.GetAsyncEnumerator(cancellationToken);
-        return new QueryBatchResult<TBindable, TDataRow>(queryBatch, resultStreamEnumerator);
+        var resultStream = await queryBatch.ExecuteBatch(cancellationToken).ConfigureAwait(false);
+        return new QueryBatchResult<TBindable, TDataRow>(queryBatch, resultStream);
     }
 }

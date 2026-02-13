@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Result;
 
@@ -19,12 +20,20 @@ public static class ExecutableQuery
         /// </summary>
         /// <param name="cancellationToken">optional cancellation token</param>
         /// <returns>total number of rows impacted by the query</returns>
-        public ValueTask<long> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
+        public async Task<long> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
         {
-            return executableQuery.ExecuteAsync(cancellationToken)
-                .Where(item => item.IsRight)
-                .Select(result => result.Right.RowsAffected)
-                .SumAsync(cancellationToken);
+            var result = 0L;
+            using var resultSet = await executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            while (await resultSet.MoveNextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var current = resultSet.Current;
+                if (current.IsRight)
+                {
+                    result += current.Right.RowsAffected;
+                }
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -35,12 +44,21 @@ public static class ExecutableQuery
         /// <param name="cancellationToken">optional cancellation token</param>
         /// <typeparam name="TRow">row type to map each row into</typeparam>
         /// <returns>a stream of result set rows mapped to the desired row type</returns>
-        public IAsyncEnumerable<TRow> FetchAsync<TRow>(CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<TRow> FetchAsync<TRow>(
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            return executableQuery.ExecuteAsync(cancellationToken)
-                .Where(result => result.IsLeft)
-                .Select(row => TRow.FromRow(row.Left));
+            using var resultSet = await executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            while (await resultSet.MoveNextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var current = resultSet.Current;
+                if (current.IsLeft)
+                {
+                    yield return TRow.FromRow(current.Left);
+                    continue;
+                }
+                yield break;
+            }
         }
 
         /// <summary>

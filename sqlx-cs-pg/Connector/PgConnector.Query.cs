@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-using Sqlx.Core;
 using Sqlx.Core.Cache;
 using Sqlx.Core.Config;
 using Sqlx.Core.Pool;
@@ -72,24 +70,20 @@ public partial class PgConnector
     /// multi-statement queries, this flow will repeat until all result sets have been sent.
     /// </returns>
     /// <exception cref="ArgumentException">The query is null or whitespace</exception>
-    internal async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> SendSimpleQuery(
+    internal async Task<IAsyncResultSet<IPgDataRow>> SendSimpleQuery(
         string sql,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sql);
         ThrowIfNotOpen();
 
-        using UserAction _ = StartUserAction();
+        UserAction userAction = StartUserAction();
         await WaitUntilReady(cancellationToken).ConfigureAwait(false);
         await SendQueryMessage(sql, cancellationToken).ConfigureAwait(false);
         _pendingReadyForQuery++;
 
         Status = ConnectionStatus.Fetching;
-        var items = CollectResult(null, false, cancellationToken).ConfigureAwait(false);
-        await foreach (var item in items)
-        {
-            yield return item;
-        }
+        return new PgAsyncResultSet(this, userAction, null);
     }
 
     /// <summary>
@@ -110,14 +104,14 @@ public partial class PgConnector
     /// If connection status is <see cref="ConnectionStatus.Broken"/> or
     /// <see cref="ConnectionStatus.Closed"/>.
     /// </exception>
-    private async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> SendExtendedQuery(
+    private async Task<IAsyncResultSet<IPgDataRow>> SendExtendedQuery(
         IPgExecutableQuery executableQuery,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(executableQuery.Query);
         ThrowIfNotOpen();
 
-        using UserAction _ = StartUserAction();
+        UserAction userAction = StartUserAction();
         await WaitUntilReady(cancellationToken).ConfigureAwait(false);
         PgPreparedStatement statement = await GetOrPrepareStatement(
                 executableQuery.Query,
@@ -132,11 +126,7 @@ public partial class PgConnector
                 cancellationToken)
             .ConfigureAwait(false);
         Status = ConnectionStatus.Fetching;
-        var items = CollectResult(statement, false, cancellationToken).ConfigureAwait(false);
-        await foreach (var item in items)
-        {
-            yield return item;
-        }
+        return new PgAsyncResultSet(this, userAction, statement);
     }
 
     /// <summary>
@@ -145,15 +135,15 @@ public partial class PgConnector
     /// <param name="queryBatch"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    private async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> PipelineQueries(
+    private async Task<IAsyncResultSet<IPgDataRow>> PipelineQueries(
         IPgQueryBatch queryBatch,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         ThrowIfNotOpen();
         PgQueryBatch pgQueryBatch = PgException.CheckIfIs<IPgQueryBatch, PgQueryBatch>(queryBatch);
         var syncAll = queryBatch.WrapBatchInTransaction;
 
-        using UserAction _ = StartUserAction();
+        UserAction userAction = StartUserAction();
 
         await WaitUntilReady(cancellationToken).ConfigureAwait(false);
         var queries = pgQueryBatch.Queries;
@@ -185,17 +175,7 @@ public partial class PgConnector
         }
 
         Status = ConnectionStatus.Fetching;
-        for (var i = 0; i < statements.Length; i++)
-        {
-            PgPreparedStatement statement = statements[i];
-            var breakOnCommandComplete = !syncAll && i != queryCount - 1;
-            var items = CollectResult(statement, breakOnCommandComplete, cancellationToken)
-                .ConfigureAwait(false);
-            await foreach (var item in items)
-            {
-                yield return item;
-            }
-        }
+        return new PgBatchAsyncResultSet(this, userAction, statements, syncAll);
     }
 
     /// <summary>
@@ -266,78 +246,6 @@ public partial class PgConnector
         WriteExecuteMessage(UnnamedPortal, 0);
         WriteCloseMessage(MessageTarget.Portal, UnnamedPortal);
         return sendSync ? WriteSync(cancellationToken) : FlushStream(cancellationToken);
-    }
-
-    /// <summary>
-    /// Collects all results from the prepared statement or simple query execution. This is an async
-    /// statement machine that processes messages until finding a specific message then it exists
-    /// the state machine loop. Along the way, <see cref="IDataRow"/> and <see cref="QueryResult"/>
-    /// instances are emitted for downstream processing.
-    /// </summary>
-    /// <param name="preparedStatement">
-    /// Optional prepared statement. If specified the query flow is the extended query protocol and
-    /// a row description message is not expected before query response. If null, the query flow is
-    /// the simple query protocol and a row description message is expected before the query
-    /// response.
-    /// </param>
-    /// <param name="breakOnCommandComplete">
-    /// True if the enumerable should break when <c>COMMAND COMPLETE</c> is sent by the server. This
-    /// should only be true for pipelined queries where <c>SYNC</c> is not sent for every query in
-    /// the batch. In other words, this parameter is telling the method that <c>READY FOR QUERY</c>
-    /// is not the only exit condition and command complete should also be considered a condition to
-    /// exit result collection.
-    /// </param>
-    /// <param name="cancellationToken">Token to cancel the async operation</param>
-    /// <returns>An async stream of result rows and query results</returns>
-    private async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> CollectResult(
-        PgPreparedStatement? preparedStatement,
-        bool breakOnCommandComplete,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        var statementMetadata = new PgStatementMetadata(preparedStatement?.ColumnMetadata ?? []);
-        while (true)
-        {
-            IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
-                .ConfigureAwait(false);
-            IPgBackendMessage? postProcessMessage = ApplyStandardMessageProcessing(
-                    backendMessage);
-            cancellationToken.ThrowIfCancellationRequested();
-            switch (postProcessMessage)
-            {
-                case RowDescriptionMessage rowDescription:
-                    statementMetadata = new PgStatementMetadata(rowDescription.ColumnMetadata);
-                    break;
-                case DataRowMessage dataRowMessage:
-                    var dataRow = new PgDataRow(dataRowMessage.RowData, statementMetadata);
-                    yield return Either.Left<IPgDataRow, QueryResult>(dataRow);
-                    break;
-                case CommandCompleteMessage commandCompleteMessage:
-                    var queryResult = new QueryResult(
-                        commandCompleteMessage.RowCount,
-                        commandCompleteMessage.Message);
-                    yield return Either.Right<IPgDataRow, QueryResult>(queryResult);
-                    if (breakOnCommandComplete)
-                    {
-                        yield break;
-                    }
-
-                    break;
-                case ReadyForQueryMessage readyForQueryMessage:
-                    HandleReadyForQuery(readyForQueryMessage);
-                    yield break;
-                case BindCompleteMessage:
-                case ParseCompleteMessage:
-                case ParameterDescriptionMessage:
-                case NoDataMessage:
-                case CloseCompleteMessage:
-                    break;
-                default:
-                    _logger.LogIgnoreUnexpectedMessage(
-                        SqlxConfig.DetailedLoggingLevel,
-                        backendMessage);
-                    break;
-            }
-        }
     }
 
     /// <summary>

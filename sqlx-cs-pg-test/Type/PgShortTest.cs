@@ -61,7 +61,7 @@ public class PgShortTest
         catch (ColumnDecodeException e)
         {
             await Assert.That(e.Message).Contains("Desired Output: System.Int16");
-            await Assert.That(e.Message).Contains("Value is outside of valid short");
+            await Assert.That(e.Message).Contains("Value is outside of valid Int16");
         }
         catch (Exception e)
         {
@@ -114,10 +114,10 @@ public class PgShortTest
 
     [Test]
     [Arguments("error", "Could not convert 'error' into System.Int16")]
-    [Arguments("-9223372036854775808", "Value is outside of valid short")]
-    [Arguments("-2147483648", "Value is outside of valid short")]
-    [Arguments("2147483647", "Value is outside of valid short")]
-    [Arguments("9223372036854775807", "Value is outside of valid short")]
+    [Arguments("-9223372036854775808", "Value is outside of valid Int16")]
+    [Arguments("-2147483648", "Value is outside of valid Int16")]
+    [Arguments("2147483647", "Value is outside of valid Int16")]
+    [Arguments("9223372036854775807", "Value is outside of valid Int16")]
     public async Task DecodeText_Should_Fail_When_InvalidShortString(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();

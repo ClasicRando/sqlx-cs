@@ -51,30 +51,23 @@ public sealed class PgConnection :
         return new PgQueryBatch(this);
     }
 
-    public override async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> ExecuteQueryAsync(
+    public override async Task<IAsyncResultSet<IPgDataRow>> ExecuteQueryAsync(
         IPgExecutableQuery query,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        await foreach (var item in _pgConnector!.ExecuteQuery(query, cancellationToken)
-                           .ConfigureAwait(false))
-        {
-            yield return item;
-        }
+        return await _pgConnector!.ExecuteQuery(query, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async IAsyncEnumerable<Either<IPgDataRow, QueryResult>> ExecuteQueryBatchAsync(
+    public override async Task<IAsyncResultSet<IPgDataRow>> ExecuteQueryBatchAsync(
         IPgQueryBatch query,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        await foreach (var item in _pgConnector!.ExecuteQueryBatch(query, cancellationToken)
-                           .ConfigureAwait(false))
-        {
-            yield return item;
-        }
+        return await _pgConnector!.ExecuteQueryBatch(query, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     public override Task CloseAsync(CancellationToken cancellationToken = default)

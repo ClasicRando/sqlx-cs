@@ -29,7 +29,7 @@ public interface IPgConnection :
     ///     </item>
     ///     <item>
     ///     Parse results as rows ->
-    ///     <see cref="PgConnectionExtensions.CopyOutRowsAsync{TCopyStatement,TRow}"/>
+    ///     <see cref="PgConnectionExtensions.CopyOutRowsAsync{TRow}"/>
     ///     </item>
     /// </list>
     /// <a href="https://www.postgresql.org/docs/current/sql-copy.html"> postgres docs</a>

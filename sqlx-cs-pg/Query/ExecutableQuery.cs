@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
-using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
 
@@ -19,15 +18,21 @@ public static class ExecutableQuery
         /// <typeparam name="TValue">Final type to decode a scalar value for</typeparam>
         /// <returns>The first row's first column decoded as the desired value type</returns>
         /// <exception cref="Exception">If the query or column decoding fails</exception>
-        public ValueTask<TValue> ExecuteScalar<TValue, TType>(
+        public async Task<TValue> ExecuteScalar<TValue, TType>(
             CancellationToken cancellationToken = default)
             where TType : IPgDbType<TValue>
             where TValue : notnull
         {
-            return executableQuery.ExecuteAsync(cancellationToken)
-                .Where(item => item.IsLeft)
-                .Select(item => item.Left.GetPgNotNull<TValue, TType>(0))
-                .FirstAsync(cancellationToken);
+            using var resultSet = await executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            if (!await resultSet.MoveNextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                throw new InvalidOperationException("Scalar queries must return at least 1 row");
+            }
+            
+            var current = resultSet.Current;
+            return current.IsLeft
+                ? current.Left.GetPgNotNull<TValue, TType>(0)
+                : throw new InvalidOperationException("Scalar query cannot be non-query");
         }
 
         /// <summary>
@@ -37,7 +42,7 @@ public static class ExecutableQuery
         /// <typeparam name="TType">Type that can decode itself from a row column</typeparam>
         /// <returns>The first row's first column decoded as the desired type</returns>
         /// <exception cref="Exception">If the query or column decoding fails</exception>
-        public ValueTask<TType> ExecuteScalar<TType>(CancellationToken cancellationToken = default)
+        public Task<TType> ExecuteScalar<TType>(CancellationToken cancellationToken = default)
             where TType : IPgDbType<TType>
         {
             return executableQuery.ExecuteScalar<TType, TType>(cancellationToken);
@@ -58,12 +63,16 @@ public static class ExecutableQuery
             CancellationToken cancellationToken = default)
             where TValue : notnull
         {
-            TValue? result = await executableQuery.ExecuteAsync(cancellationToken)
-                .Where(item => item.IsLeft)
-                .Select(item => item.Left.GetJsonNotNull(0, jsonTypeInfo))
-                .FirstOrDefaultAsync(cancellationToken)
-                .ConfigureAwait(false);
-            return result ?? throw new PgException("Query returned no rows");
+            using var resultSet = await executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            if (!await resultSet.MoveNextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                throw new InvalidOperationException("Scalar queries must return at least 1 row");
+            }
+            
+            var current = resultSet.Current;
+            return current.IsLeft
+                ? current.Left.GetJsonNotNull(0, jsonTypeInfo)
+                : throw new InvalidOperationException("Scalar query cannot be non-query");
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchAsync{TDataRow,TRow}"/>>

@@ -34,9 +34,7 @@ public interface IQueryExecutor<TQuery, out TBindable, TQueryBatch, TDataRow>
     /// <param name="query">query to execute</param>
     /// <param name="cancellationToken">token to cancel the async operation</param>
     /// <returns>an async stream of query result items</returns>
-    IAsyncEnumerable<Either<TDataRow, QueryResult>> ExecuteQueryAsync(
-        TQuery query,
-        CancellationToken cancellationToken);
+    Task<IAsyncResultSet<TDataRow>> ExecuteQueryAsync(TQuery query, CancellationToken cancellationToken);
     
     /// <summary>
     /// Execute the query batch and return an async stream of query result items
@@ -44,7 +42,7 @@ public interface IQueryExecutor<TQuery, out TBindable, TQueryBatch, TDataRow>
     /// <param name="query">query batch to execute</param>
     /// <param name="cancellationToken">token to cancel the async operation</param>
     /// <returns>an async stream of query result items</returns>
-    IAsyncEnumerable<Either<TDataRow, QueryResult>> ExecuteQueryBatchAsync(
+    Task<IAsyncResultSet<TDataRow>> ExecuteQueryBatchAsync(
         TQueryBatch query,
         CancellationToken cancellationToken);
 }

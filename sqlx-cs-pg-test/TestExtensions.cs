@@ -1,4 +1,3 @@
-using Sqlx.Core;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Result;
 
@@ -6,14 +5,16 @@ namespace Sqlx.Postgres;
 
 public static class TestExtensions
 {
-    extension(IAsyncEnumerable<Either<IPgDataRow, QueryResult>> flow)
+    extension(Task<IAsyncResultSet<IPgDataRow>> flow)
     {
         public async Task<List<(List<IPgDataRow>, QueryResult)>> CollectResults()
         {
             List<(List<IPgDataRow>, QueryResult)> result = [];
             List<IPgDataRow> rowBuffer = [];
-            await foreach (var item in flow)
+            using var resultSet = await flow;
+            while (await resultSet.MoveNextAsync())
             {
+                var item = resultSet.Current;
                 switch (item)
                 {
                     case { IsRight: true }:

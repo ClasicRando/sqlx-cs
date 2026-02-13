@@ -1,4 +1,3 @@
-using Sqlx.Core;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Result;
 
@@ -27,7 +26,7 @@ public sealed class PgQueryBatch(IPgQueryExecutor queryExecutor) : IPgQueryBatch
         return query;
     }
 
-    public IAsyncEnumerable<Either<IPgDataRow, QueryResult>> ExecuteBatch(CancellationToken cancellationToken)
+    public Task<IAsyncResultSet<IPgDataRow>> ExecuteBatch(CancellationToken cancellationToken)
     {
         CheckDisposed();
         return _queryExecutor!.ExecuteQueryBatchAsync(this, cancellationToken);

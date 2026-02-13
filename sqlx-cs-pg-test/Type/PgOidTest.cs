@@ -61,7 +61,7 @@ public class PgOidTest
         catch (ColumnDecodeException e)
         {
             await Assert.That(e.Message).Contains("Desired Output: System.UInt32");
-            await Assert.That(e.Message).Contains("Value is outside of valid uint");
+            await Assert.That(e.Message).Contains("Value is outside of valid UInt32");
         }
         catch (Exception e)
         {
@@ -115,8 +115,8 @@ public class PgOidTest
 
     [Test]
     [Arguments("error", "Could not convert 'error' into System.UInt32")]
-    [Arguments("-9223372036854775808", "Value is outside of valid uint")]
-    [Arguments("9223372036854775807", "Value is outside of valid uint")]
+    [Arguments("-9223372036854775808", "Value is outside of valid UInt32")]
+    [Arguments("9223372036854775807", "Value is outside of valid UInt32")]
     public async Task DecodeText_Should_Fail_When_InvalidIntString(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();

@@ -17,7 +17,7 @@ public class QueryBatchTest
     {
         var query = Substitute.For<MockQueryBatch>();
         query.ExecuteBatch(Arg.Any<CancellationToken>())
-            .Returns(lst.ToAsyncEnumerable());
+            .Returns(lst.ToAsyncResultSet());
 
         var rowCount = await query.ExecuteNonQueryAsync(ct);
         
@@ -68,9 +68,9 @@ public class QueryBatchTest
         ];
         var query = Substitute.For<MockQueryBatch>();
         query.ExecuteBatch(Arg.Any<CancellationToken>())
-            .Returns(lst.ToAsyncEnumerable());
+            .Returns(lst.ToAsyncResultSet());
 
-        var batchResult = query.ToResult(ct);
+        var batchResult = await query.ToResult(ct);
 
         var rows1 = await batchResult.ExtractNextResultAsync<Row1>();
         await Assert.That(rows1).IsSingleElement();

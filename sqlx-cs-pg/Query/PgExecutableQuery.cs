@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization.Metadata;
-using Sqlx.Core;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Connection;
@@ -138,7 +137,7 @@ internal class PgExecutableQuery : IPgExecutableQuery
         _parameterBuffer.Bind<TValue, TType>(value);
     }
 
-    public IAsyncEnumerable<Either<IPgDataRow, QueryResult>> ExecuteAsync(
+    public Task<IAsyncResultSet<IPgDataRow>> ExecuteAsync(
         CancellationToken cancellationToken)
     {
         PgException.ThrowIfNull(_queryExecutor);

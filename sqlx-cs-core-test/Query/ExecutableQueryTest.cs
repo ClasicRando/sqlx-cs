@@ -36,7 +36,7 @@ public class ExecutableQueryTest
         ];
         var query = Substitute.For<MockQuery>();
         query.ExecuteAsync(Arg.Any<CancellationToken>())
-            .Returns(lst.ToAsyncEnumerable());
+            .Returns(lst.ToAsyncResultSet());
 
         var rowCount = await query.ExecuteNonQueryAsync(ct);
 
@@ -52,7 +52,7 @@ public class ExecutableQueryTest
     {
         var query = Substitute.For<MockQuery>();
         query.ExecuteAsync(Arg.Any<CancellationToken>())
-            .Returns(results.ToAsyncEnumerable());
+            .Returns(results.ToAsyncResultSet());
 
         var actualRows =
             await query.FetchAllAsync<IDataRow, TestRow>(ct);
@@ -106,7 +106,7 @@ public class ExecutableQueryTest
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
-                .Returns(lst.ToAsyncEnumerable());
+                .Returns(lst.ToAsyncResultSet());
 
             var error = await Assert.ThrowsAsync<SqlxException>(async () =>
                 await query.FetchFirstAsync<IDataRow, TestRow>(ct));
@@ -124,7 +124,7 @@ public class ExecutableQueryTest
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
-                .Returns(lst.ToAsyncEnumerable());
+                .Returns(lst.ToAsyncResultSet());
 
             TestRow row = await query.FetchFirstAsync<IDataRow, TestRow>(ct);
 
@@ -144,7 +144,7 @@ public class ExecutableQueryTest
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
-                .Returns(lst.ToAsyncEnumerable());
+                .Returns(lst.ToAsyncResultSet());
 
             var row = await query.FetchFirstAsync<IDataRow, TestRowStruct>(ct);
 
@@ -164,7 +164,7 @@ public class ExecutableQueryTest
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
-                .Returns(lst.ToAsyncEnumerable());
+                .Returns(lst.ToAsyncResultSet());
 
             var row = await query.FetchFirstOrDefaultAsync<IDataRow, TestRow>(ct);
 
@@ -181,7 +181,7 @@ public class ExecutableQueryTest
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
-                .Returns(lst.ToAsyncEnumerable());
+                .Returns(lst.ToAsyncResultSet());
 
             var row = await query.FetchFirstOrDefaultAsync<IDataRow, TestRowStruct>(ct);
 
@@ -198,7 +198,7 @@ public class ExecutableQueryTest
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
-                .Returns(lst.ToAsyncEnumerable());
+                .Returns(lst.ToAsyncResultSet());
 
             var row = await query.FetchFirstOrDefaultAsync<IDataRow, TestRow>(ct);
 
@@ -218,7 +218,7 @@ public class ExecutableQueryTest
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
-                .Returns(lst.ToAsyncEnumerable());
+                .Returns(lst.ToAsyncResultSet());
 
             var row = await query.FetchFirstOrDefaultAsync<IDataRow, TestRowStruct>(ct);
 
@@ -238,7 +238,7 @@ public class ExecutableQueryTest
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
-                .Returns(lst.ToAsyncEnumerable());
+                .Returns(lst.ToAsyncResultSet());
 
             var error = await Assert.ThrowsAsync<SqlxException>(async () =>
                 await query.FetchSingleAsync<IDataRow, TestRow>(ct));
@@ -256,7 +256,7 @@ public class ExecutableQueryTest
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
-                .Returns(lst.ToAsyncEnumerable());
+                .Returns(lst.ToAsyncResultSet());
 
             var row = await query.FetchSingleAsync<IDataRow, TestRow>(ct);
 
@@ -274,7 +274,7 @@ public class ExecutableQueryTest
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
-                .Returns(lst.ToAsyncEnumerable());
+                .Returns(lst.ToAsyncResultSet());
 
             var error = await Assert.ThrowsAsync<SqlxException>(async () =>
                 await query.FetchSingleAsync<IDataRow, TestRow>(ct));
@@ -295,7 +295,7 @@ public class ExecutableQueryTest
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
-                .Returns(lst.ToAsyncEnumerable());
+                .Returns(lst.ToAsyncResultSet());
 
             var row = await query.FetchSingleOrDefaultAsync<IDataRow, TestRow>(ct);
 
@@ -312,7 +312,7 @@ public class ExecutableQueryTest
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
-                .Returns(lst.ToAsyncEnumerable());
+                .Returns(lst.ToAsyncResultSet());
 
             var row = await query.FetchSingleOrDefaultAsync<IDataRow, TestRowStruct>(ct);
 
@@ -329,7 +329,7 @@ public class ExecutableQueryTest
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
-                .Returns(lst.ToAsyncEnumerable());
+                .Returns(lst.ToAsyncResultSet());
 
             var row = await query.FetchSingleOrDefaultAsync<IDataRow, TestRow>(ct);
 
@@ -347,7 +347,7 @@ public class ExecutableQueryTest
             ];
             var query = Substitute.For<MockQuery>();
             query.ExecuteAsync(Arg.Any<CancellationToken>())
-                .Returns(lst.ToAsyncEnumerable());
+                .Returns(lst.ToAsyncResultSet());
 
             var error = await Assert.ThrowsAsync<SqlxException>(async () =>
                 await query.FetchSingleOrDefaultAsync<IDataRow, TestRow>(ct));

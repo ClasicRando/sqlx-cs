@@ -65,7 +65,7 @@ public class PgIntTest
         catch (ColumnDecodeException e)
         {
             await Assert.That(e.Message).Contains("Desired Output: System.Int32");
-            await Assert.That(e.Message).Contains("Value is outside of valid int");
+            await Assert.That(e.Message).Contains("Value is outside of valid Int32");
         }
         catch (Exception e)
         {
@@ -120,8 +120,8 @@ public class PgIntTest
 
     [Test]
     [Arguments("error", "Could not convert 'error' into System.Int32")]
-    [Arguments("-9223372036854775808", "Value is outside of valid int")]
-    [Arguments("9223372036854775807", "Value is outside of valid int")]
+    [Arguments("-9223372036854775808", "Value is outside of valid Int32")]
+    [Arguments("9223372036854775807", "Value is outside of valid Int32")]
     public async Task DecodeText_Should_Fail_When_InvalidIntString(string textData, string contains)
     {
         var columnMetadata = new PgColumnMetadata();

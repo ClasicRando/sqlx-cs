@@ -12,7 +12,7 @@ public static class Integers
     {
         throw ColumnDecodeException.Create<T>(
             columnMetadata,
-            $"Value is outside of valid {nameof(T)}");
+            $"Value is outside of valid {typeof(T).Name}");
     }
 
     public static bool IsValidUInt(long value)

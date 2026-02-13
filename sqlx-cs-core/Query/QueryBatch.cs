@@ -20,11 +20,18 @@ public static class QueryBatch
         /// <returns>total number of rows impacted by the query batch</returns>
         public async Task<long> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
         {
-            return await queryBatch.ExecuteBatch(cancellationToken)
-                .Where(item => item.IsRight)
-                .Select(result => result.Right.RowsAffected)
-                .SumAsync(cancellationToken)
-                .ConfigureAwait(false);
+            var result = 0L;
+            using var resultSet = await queryBatch.ExecuteBatch(cancellationToken).ConfigureAwait(false);
+            while (await resultSet.MoveNextAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var current = resultSet.Current;
+                if (current.IsRight)
+                {
+                    result += current.Right.RowsAffected;
+                }
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -42,7 +49,7 @@ public static class QueryBatch
         /// you must do so with this token.
         /// </param>
         /// <returns>Result set extraction wrapper class for a query batch</returns>
-        public QueryBatchResult<TBindable, TDataRow> ToResult(
+        public Task<QueryBatchResult<TBindable, TDataRow>> ToResult(
             CancellationToken cancellationToken = default)
         {
             return QueryBatchResult<TBindable, TDataRow>.Create(queryBatch, cancellationToken);

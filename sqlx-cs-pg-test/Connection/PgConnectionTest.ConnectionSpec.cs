@@ -1,9 +1,6 @@
-using Sqlx.Core;
 using Sqlx.Core.Pool;
 using Sqlx.Core.Query;
-using Sqlx.Core.Result;
 using Sqlx.Postgres.Query;
-using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Connection;
 
@@ -86,9 +83,15 @@ public partial class PgConnectionTest
     private static async Task<long> GetConnectionTransactionId(IPgConnection connection, CancellationToken ct)
     {
         using IPgExecutableQuery query = connection.CreateQuery("SELECT txid_current();");
-        return await query.ExecuteAsync(ct)
-            .Where(item => item.IsLeft)
-            .Select(row => row.Left.GetLongNotNull(0))
-            .FirstAsync(ct);
+        using var queryResult = await query.ExecuteAsync(ct);
+        if (!await queryResult.MoveNextAsync(ct))
+        {
+            throw new InvalidOperationException("Found not transaction ID");
+        }
+
+        var current = queryResult.Current;
+        return !current.IsLeft
+            ? throw new InvalidOperationException("No rows found")
+            : current.Left.GetLongNotNull(0);
     }
 }

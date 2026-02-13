@@ -49,7 +49,7 @@ public sealed partial class PgConnector : IPooledConnection
             connectOptions.StatementCacheCapacity);
     }
 
-    private PgConnectOptions ConnectOptions { get; }
+    internal PgConnectOptions ConnectOptions { get; }
 
     private PipeWriter Writer => _asyncConnector.Writer;
 
@@ -194,18 +194,19 @@ public sealed partial class PgConnector : IPooledConnection
     /// If the supplied query is not a <see cref="PgExecutableQuery"/> or the connection is closed
     /// or broken.
     /// </exception>
-    public IAsyncEnumerable<Either<IPgDataRow, QueryResult>> ExecuteQuery(
+    public Task<IAsyncResultSet<IPgDataRow>> ExecuteQuery(
         IPgExecutableQuery query,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);
-        var results = IsSimpleQuery(query)
+        return IsSimpleQuery(query)
+#pragma warning disable CA2000
             ? SendSimpleQuery(query.Query, cancellationToken)
             : SendExtendedQuery(query, cancellationToken);
-        return results;
+#pragma warning restore CA2000
     }
 
-    public IAsyncEnumerable<Either<IPgDataRow, QueryResult>> ExecuteQueryBatch(
+    public Task<IAsyncResultSet<IPgDataRow>> ExecuteQueryBatch(
         IPgQueryBatch queryBatch,
         CancellationToken cancellationToken)
     {
@@ -322,7 +323,7 @@ public sealed partial class PgConnector : IPooledConnection
     /// Decrement <see cref="_pendingReadyForQuery"/> and inspect the supplied message
     /// </summary>
     /// <param name="readyForQuery">message from server</param>
-    private void HandleReadyForQuery(ReadyForQueryMessage readyForQuery)
+    internal void HandleReadyForQuery(ReadyForQueryMessage readyForQuery)
     {
         if (--_pendingReadyForQuery < 0)
         {
@@ -434,7 +435,7 @@ public sealed partial class PgConnector : IPooledConnection
     /// <exception cref="PgException">
     /// If <paramref name="throwOnError"/> is true and the message was an error response
     /// </exception>
-    private IPgBackendMessage? ApplyStandardMessageProcessing(
+    internal IPgBackendMessage? ApplyStandardMessageProcessing(
         IPgBackendMessage message,
         bool throwOnError = true,
         bool handleNotification = true)
@@ -520,7 +521,7 @@ public sealed partial class PgConnector : IPooledConnection
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
     /// <returns>The next message sent by the backend</returns>
-    private async Task<IPgBackendMessage> ReceiveNextMessage(CancellationToken cancellationToken)
+    internal async Task<IPgBackendMessage> ReceiveNextMessage(CancellationToken cancellationToken)
     {
         var format = await _asyncConnector.ReadByteAsync(cancellationToken).ConfigureAwait(false);
         var size = await _asyncConnector.ReadIntAsync(cancellationToken).ConfigureAwait(false) - 4;
@@ -614,7 +615,7 @@ public sealed partial class PgConnector : IPooledConnection
         };
     }
 
-    struct UserAction : IDisposable
+    internal readonly struct UserAction : IDisposable
     {
         private readonly PgConnector _connector;
         public UserAction(PgConnector connector) => _connector = connector;

@@ -173,12 +173,14 @@ internal sealed class PgListener : IPgListener
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        var stream = _pgConnector!.SendSimpleQuery(ListenersQuery, cancellationToken);
-        await foreach (var item in stream.ConfigureAwait(false))
+        using var stream = await _pgConnector!.SendSimpleQuery(ListenersQuery, cancellationToken)
+            .ConfigureAwait(false);
+        while (await stream.MoveNextAsync(cancellationToken).ConfigureAwait(false))
         {
-            if (item.IsLeft)
+            var current = stream.Current;
+            if (current.IsLeft)
             {
-                yield return item.Left.GetStringNotNull(0);
+                yield return current.Left.GetStringNotNull(0);
             }
         }
     }
