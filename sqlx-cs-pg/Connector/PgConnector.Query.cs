@@ -83,7 +83,8 @@ public partial class PgConnector
         _pendingReadyForQuery++;
 
         Status = ConnectionStatus.Fetching;
-        return new PgAsyncResultSet(this, userAction, null);
+        _currentResultSet = new PgAsyncResultSet(this, userAction, null);
+        return _currentResultSet;
     }
 
     /// <summary>
@@ -126,7 +127,8 @@ public partial class PgConnector
                 cancellationToken)
             .ConfigureAwait(false);
         Status = ConnectionStatus.Fetching;
-        return new PgAsyncResultSet(this, userAction, statement);
+        _currentResultSet = new PgAsyncResultSet(this, userAction, statement);
+        return _currentResultSet;
     }
 
     /// <summary>
@@ -175,7 +177,8 @@ public partial class PgConnector
         }
 
         Status = ConnectionStatus.Fetching;
-        return new PgBatchAsyncResultSet(this, userAction, statements, syncAll);
+        _currentResultSet = new PgBatchAsyncResultSet(this, userAction, statements, syncAll);
+        return _currentResultSet;
     }
 
     /// <summary>
@@ -306,31 +309,37 @@ public partial class PgConnector
 
         while (true)
         {
-            IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
+            PgBackendMessageType backendMessageType = await ReceiveNextMessageType(cancellationToken)
                 .ConfigureAwait(false);
-            IPgBackendMessage? postProcessMessage = ApplyStandardMessageProcessing(
-                    backendMessage);
+            var size = await ReceiveNextMessageSize(cancellationToken)
+                .ConfigureAwait(false);
+            
+            if (ApplyStandardMessageProcessing(backendMessageType, size)) continue;
+            
             cancellationToken.ThrowIfCancellationRequested();
-            switch (postProcessMessage)
+            switch (backendMessageType)
             {
-                case ParseCompleteMessage:
-                case ParameterDescriptionMessage:
+                case PgBackendMessageType.ParseComplete:
+                case PgBackendMessageType.ParameterDescription:
+                    AdvanceReadBuffer(size);
                     break;
-                case RowDescriptionMessage rowDescriptionMessage:
-                    statement.ColumnMetadata = rowDescriptionMessage.ColumnMetadata
+                case PgBackendMessageType.RowDescription:
+                    statement.ColumnMetadata = ReceiveRowDescriptionMessage(size)
                         .Select(c => c.WithBinaryFormat())
                         .ToArray();
                     break;
-                case NoDataMessage:
+                case PgBackendMessageType.NoData:
+                    AdvanceReadBuffer(size);
                     statement.ColumnMetadata = [];
                     break;
-                case ReadyForQueryMessage readyForQueryMessage:
-                    HandleReadyForQuery(readyForQueryMessage);
+                case PgBackendMessageType.ReadyForQuery:
+                    HandleReadyForQueryMessage(size);
                     return statement;
                 default:
+                    AdvanceReadBuffer(size);
                     _logger.LogIgnoreUnexpectedMessage(
                         SqlxConfig.DetailedLoggingLevel,
-                        backendMessage);
+                        backendMessageType);
                     break;
             }
         }

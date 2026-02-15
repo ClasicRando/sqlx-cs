@@ -13,6 +13,8 @@ namespace Sqlx.Postgres.Message.Backend;
 internal record ErrorResponseMessage(InformationResponse InformationResponse)
     : IPgBackendMessage, IPgBackendMessageDecoder<ErrorResponseMessage>
 {
+    public static PgBackendMessageType MessageType => PgBackendMessageType.ErrorResponse;
+
     public static ErrorResponseMessage Decode(ReadOnlySpan<byte> buffer)
     {
         return new ErrorResponseMessage(InformationResponse.Decode(buffer));

@@ -1,6 +1,5 @@
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
-using Sqlx.Core;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Pool;
@@ -70,26 +69,6 @@ public sealed class PgConnection :
             .ConfigureAwait(false);
     }
 
-    public override Task CloseAsync(CancellationToken cancellationToken = default)
-    {
-        CheckDisposed();
-        try
-        {
-            if (Status is ConnectionStatus.Closed or ConnectionStatus.Broken)
-            {
-                return Task.CompletedTask;
-            }
-
-            _pool.Return(_pgConnector!);
-        }
-        finally
-        {
-            _pgConnector = null;
-        }
-
-        return Task.CompletedTask;
-    }
-
     public async IAsyncEnumerable<byte[]> CopyOutAsync(
         ICopyTo copyOutStatement,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -155,6 +134,26 @@ public sealed class PgConnection :
         await OpenAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    private void Close()
+    {
+        CheckDisposed();
+        try
+        {
+            if (Status is ConnectionStatus.Closed or ConnectionStatus.Broken)
+            {
+                return;
+            }
+
+            _pgConnector?.EndInProgressRequests();
+
+            _pool.Return(_pgConnector!);
+        }
+        finally
+        {
+            _pgConnector = null;
+        }
+    }
+
     private void CheckClosed()
     {
         CheckDisposed();
@@ -167,10 +166,17 @@ public sealed class PgConnection :
 
     private void CheckDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
+    protected override ValueTask DisposeAsyncCore()
+    {
+        if (_disposed) return ValueTask.CompletedTask;
+        Close();
+        return ValueTask.CompletedTask;
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (_disposed) return;
-        if (disposing) CloseAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+        if (disposing) Close();
         _disposed = true;
     }
 }

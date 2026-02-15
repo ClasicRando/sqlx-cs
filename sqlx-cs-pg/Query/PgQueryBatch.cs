@@ -46,4 +46,10 @@ public sealed class PgQueryBatch(IPgQueryExecutor queryExecutor) : IPgQueryBatch
         }
         _queries.Clear();
     }
+
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return ValueTask.CompletedTask;
+    }
 }

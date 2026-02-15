@@ -107,7 +107,7 @@ public static class PgConnectionExtensions
                     continue;
                 }
                 
-                var dataRow = new PgDataRow(rowData, statementMetadata);
+                using var dataRow = new PgDataRow(rowData, statementMetadata);
                 yield return TRow.FromRow(dataRow);
             }
         }

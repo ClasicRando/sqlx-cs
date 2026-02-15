@@ -10,6 +10,8 @@ namespace Sqlx.Postgres.Message.Backend;
 internal record ParameterStatusMessage(string Name, string Value)
     : IPgBackendMessage, IPgBackendMessageDecoder<ParameterStatusMessage>
 {
+    public static PgBackendMessageType MessageType => PgBackendMessageType.ParameterStatus;
+
     public static ParameterStatusMessage Decode(ReadOnlySpan<byte> buffer)
     {
         return new ParameterStatusMessage(buffer.ReadCString(), buffer.ReadCString());

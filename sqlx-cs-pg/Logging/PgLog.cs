@@ -98,12 +98,38 @@ internal static partial class PgLog
     /// </summary>
     /// <param name="logger">The logger</param>
     /// <param name="logLevel">Log level of the message</param>
-    /// <param name="message">Backend message received from the database server</param>
-    [LoggerMessage(Message = "Ignoring {message} since it's not an error or the desired type")]
+    /// <param name="messageType">Backend message type received from the database server</param>
+    [LoggerMessage(Message = "Ignoring {messageType} since it's not an error or the desired type")]
+    internal static partial void LogIgnoreUnexpectedMessage(
+        this ILogger<PgConnector> logger,
+        LogLevel logLevel,
+        PgBackendMessageType messageType);
+
+    /// <summary>
+    /// Log that an unexpected message was received from the database server. Include the message
+    /// itself.
+    /// </summary>
+    /// <param name="logger">The logger</param>
+    /// <param name="logLevel">Log level of the message</param>
+    /// <param name="messageType">Backend message type received from the database server</param>
+    [LoggerMessage(Message = "Ignoring {messageType} since it's not an error or the desired type")]
     internal static partial void LogIgnoreUnexpectedMessage(
         this ILogger<PgAsyncResultSet> logger,
         LogLevel logLevel,
-        IPgBackendMessage message);
+        PgBackendMessageType messageType);
+
+    /// <summary>
+    /// Log that an unexpected message was received from the database server. Include the message
+    /// itself.
+    /// </summary>
+    /// <param name="logger">The logger</param>
+    /// <param name="logLevel">Log level of the message</param>
+    /// <param name="messageType">Backend message type received from the database server</param>
+    [LoggerMessage(Message = "Ignoring {messageType} since it's not an error or the desired type")]
+    internal static partial void LogIgnoreUnexpectedMessage(
+        this ILogger<PgBatchAsyncResultSet> logger,
+        LogLevel logLevel,
+        PgBackendMessageType messageType);
 
     /// <summary>
     /// Log that a connector received more <see cref="ReadyForQueryMessage"/>s than expected

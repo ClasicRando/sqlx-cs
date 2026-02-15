@@ -5,13 +5,12 @@ namespace Sqlx.Postgres;
 
 public static class TestExtensions
 {
-    extension(Task<IAsyncResultSet<IPgDataRow>> flow)
+    extension(IAsyncResultSet<IPgDataRow> resultSet)
     {
-        public async Task<List<(List<IPgDataRow>, QueryResult)>> CollectResults()
+        public async Task<List<(List<T>, QueryResult)>> CollectResults<T>(Func<IPgDataRow, T> rowExtractor)
         {
-            List<(List<IPgDataRow>, QueryResult)> result = [];
-            List<IPgDataRow> rowBuffer = [];
-            using var resultSet = await flow;
+            List<(List<T>, QueryResult)> result = [];
+            List<T> rowBuffer = [];
             while (await resultSet.MoveNextAsync())
             {
                 var item = resultSet.Current;
@@ -22,7 +21,7 @@ public static class TestExtensions
                         rowBuffer = [];
                         break;
                     case { IsLeft: true }:
-                        rowBuffer.Add(item.Left);
+                        rowBuffer.Add(rowExtractor(item.Left));
                         break;
                 }
             }

@@ -17,42 +17,61 @@ internal sealed class PgDataRow : IPgDataRow
 {
     private const int MaxStackSize = 256 / (sizeof(char) / sizeof(byte));
     private static readonly ArrayPool<char> CharArrayPool = ArrayPool<char>.Shared;
-    
-    private readonly byte[] _rowData;
+
+    private bool _isDisposed;
+    private byte[] _rowData;
+    private readonly bool _isRented;
     private readonly PgStatementMetadata _statementMetadata;
     private readonly Range?[] _columnValueSlices;
 
     public PgDataRow(byte[] rowData, PgStatementMetadata statementMetadata)
     {
         _rowData = rowData;
+        _isRented = false;
         _statementMetadata = statementMetadata;
-        ReadOnlySpan<byte> span = rowData.AsSpan();
+        _columnValueSlices = ExtractRanges(rowData);
+    }
+
+    public PgDataRow(ReadOnlySpan<byte> rowData, PgStatementMetadata statementMetadata)
+    {
+        _rowData = ArrayPool<byte>.Shared.Rent(rowData.Length);
+        rowData.CopyTo(_rowData);
+        _isRented = true;
+        _statementMetadata = statementMetadata;
+        _columnValueSlices = ExtractRanges(rowData);
+    }
+
+    private static Range?[] ExtractRanges(ReadOnlySpan<byte> span)
+    {
         int columnCount = span.ReadShort();
         var rowDataIndex = 2;
-        _columnValueSlices = new Range?[columnCount];
+        var columnValueSlices = new Range?[columnCount];
         for (var i = 0; i < columnCount; i++)
         {
             var length = span.ReadInt();
             rowDataIndex += 4;
             if (length < 0)
             {
-                _columnValueSlices[i] = null;
+                columnValueSlices[i] = null;
                 continue;
             }
 
             span.Skip(length);
-            _columnValueSlices[i] = new Range(rowDataIndex, rowDataIndex + length);
+            columnValueSlices[i] = new Range(rowDataIndex, rowDataIndex + length);
             rowDataIndex += length;
         }
+        return columnValueSlices;
     }
     
     public int IndexOf(string name)
     {
+        CheckDisposed();
         return _statementMetadata.IndexOfFieldName(name);
     }
 
     public bool IsNull(int index)
     {
+        CheckDisposed();
         return _columnValueSlices[index] is null;
     }
 
@@ -133,6 +152,7 @@ internal sealed class PgDataRow : IPgDataRow
 
     public T GetJsonNotNull<T>(int index, JsonTypeInfo<T>? jsonTypeInfo = null) where T : notnull
     {
+        CheckDisposed();
         ColumnData columnData = GetColumnData(index);
         if (columnData.IsNull)
         {
@@ -202,6 +222,7 @@ internal sealed class PgDataRow : IPgDataRow
         where TType : IPgDbType<TResult>
         where TResult : notnull
     {
+        CheckDisposed();
         ColumnData columnData = GetColumnData(index);
         if (columnData.IsNull)
         {
@@ -246,5 +267,20 @@ internal sealed class PgDataRow : IPgDataRow
                     columnData.ColumnMetadata,
                     $"Unexpected format code: {columnData.ColumnMetadata.FormatCode}");
         }
+    }
+
+    private void CheckDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, typeof(PgDataRow));
+
+    public void Dispose()
+    {
+        if (_isDisposed) return;
+
+        _isDisposed = true;
+        
+        if (_isRented)
+        {
+            ArrayPool<byte>.Shared.Return(_rowData);
+        }
+        _rowData = [];
     }
 }

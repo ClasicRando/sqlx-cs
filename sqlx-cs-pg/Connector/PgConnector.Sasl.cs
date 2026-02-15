@@ -37,7 +37,7 @@ public partial class PgConnector
     {
         var clientNonce = await SendScramInit(saslAuthMessage, cancellationToken)
             .ConfigureAwait(false);
-        SaslContinueAuthMessage continueAuthMessage = await ReceiveNextMessageAs<SaslContinueAuthMessage>(cancellationToken)
+        SaslContinueAuthMessage continueAuthMessage = await ReceiveAuthMessageAs<SaslContinueAuthMessage>(cancellationToken)
             .ConfigureAwait(false);
         var serverSignature = await SendClientFinalMessage(
                 continueAuthMessage,
@@ -45,7 +45,7 @@ public partial class PgConnector
                 password,
                 cancellationToken)
             .ConfigureAwait(false);
-        SaslFinalAuthMessage finalAuthMessage = await ReceiveNextMessageAs<SaslFinalAuthMessage>(cancellationToken)
+        SaslFinalAuthMessage finalAuthMessage = await ReceiveAuthMessageAs<SaslFinalAuthMessage>(cancellationToken)
             .ConfigureAwait(false);
         var finalServerSignature = ValidateServerFinalMessage(finalAuthMessage);
 
@@ -54,7 +54,7 @@ public partial class PgConnector
             throw new PgException("Unable to verify server signature");
         }
 
-        await ReceiveNextMessageAs<OkAuthMessage>(cancellationToken).ConfigureAwait(false);
+        await ReceiveAuthMessageAs<OkAuthMessage>(cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<string> SendScramInit(

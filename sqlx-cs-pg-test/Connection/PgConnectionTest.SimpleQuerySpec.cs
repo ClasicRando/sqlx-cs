@@ -19,15 +19,16 @@ public partial class PgConnectionTest
             """;
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(simpleQuery);
-        var results = await connection.ExecuteQueryAsync(query, ct).CollectResults();
+        using var resultSet = await connection.ExecuteQueryAsync(query, ct);
+        var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
         await Assert.That(result.RowsAffected).IsEqualTo(10);
         await Assert.That(rows.Count).IsEqualTo(10);
         for (var i = 0; i < rows.Count; i++)
         {
-            await Assert.That(rows[i].GetIntNotNull(0)).IsEqualTo(i + 1);
-            await Assert.That(rows[i].GetStringNotNull(1)).IsEqualTo("Regular Query");
+            await Assert.That(rows[i].Item1).IsEqualTo(i + 1);
+            await Assert.That(rows[i].Item2).IsEqualTo("Regular Query");
         }
     }
 
@@ -38,13 +39,14 @@ public partial class PgConnectionTest
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery procedureCall = connection.CreateQuery(OutProcedureCallSimpleQuery);
-        var results = await connection.ExecuteQueryAsync(procedureCall, ct).CollectResults();
+        using var resultSet = await connection.ExecuteQueryAsync(procedureCall, ct);
+        var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
         await Assert.That(result.RowsAffected).IsEqualTo(0);
         await Assert.That(rows).IsSingleElement();
-        await Assert.That(rows[0].GetIntNotNull(0)).IsEqualTo(4);
-        await Assert.That(rows[0].GetStringNotNull(1)).IsEqualTo("This is a test");
+        await Assert.That(rows[0].Item1).IsEqualTo(4);
+        await Assert.That(rows[0].Item2).IsEqualTo("This is a test");
     }
 
     [Test]
@@ -53,22 +55,24 @@ public partial class PgConnectionTest
         const string multiStatementQuery =
             $"""
              {OutProcedureCallSimpleQuery}
-             SELECT 1 test_i;
+             SELECT 1 test_i, 'test' test_t;
              """;
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery multiStatement = connection.CreateQuery(multiStatementQuery);
-        var results = await connection.ExecuteQueryAsync(multiStatement, ct).CollectResults();
+        using var resultSet = await connection.ExecuteQueryAsync(multiStatement, ct);
+        var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
         await Assert.That(results.Count).IsEqualTo(2);
         (var firstRows, QueryResult firstResult) = results[0];
         await Assert.That(firstResult.RowsAffected).IsEqualTo(0);
         await Assert.That(firstRows).IsSingleElement();
-        await Assert.That(firstRows[0].GetIntNotNull(0)).IsEqualTo(4);
-        await Assert.That(firstRows[0].GetStringNotNull(1)).IsEqualTo("This is a test");
+        await Assert.That(firstRows[0].Item1).IsEqualTo(4);
+        await Assert.That(firstRows[0].Item2).IsEqualTo("This is a test");
         (var secondRows, QueryResult secondResult) = results[1];
         await Assert.That(secondResult.RowsAffected).IsEqualTo(1);
         await Assert.That(secondRows).IsSingleElement();
-        await Assert.That(secondRows[0].GetIntNotNull(0)).IsEqualTo(1);
+        await Assert.That(secondRows[0].Item1).IsEqualTo(1);
+        await Assert.That(secondRows[0].Item2).IsEqualTo("test");
     }
 
     [Test]
@@ -80,7 +84,8 @@ public partial class PgConnectionTest
         using IPgExecutableQuery multiStatement = connection.CreateQuery(sleepQuery);
         var ex = await Assert.ThrowsAsync<PgException>(async () =>
         {
-            await connection.ExecuteQueryAsync(multiStatement, ct).CollectResults();
+            using var resultSet = await connection.ExecuteQueryAsync(multiStatement, ct);
+            await resultSet.CollectResults(row => row.GetIntNotNull(0));
         });
         await Assert.That(ex!.Message).Contains("canceling statement due to statement timeout");
     }

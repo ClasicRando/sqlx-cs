@@ -8,7 +8,8 @@ namespace Sqlx.Postgres.Connection;
 public partial class PgConnectionTest
 {
     [Test]
-    public async Task ExecuteQuery_Should_ReturnOneResultSet_When_ExtendedQuery(CancellationToken ct)
+    public async Task ExecuteQuery_Should_ReturnOneResultSet_When_ExtendedQuery(
+        CancellationToken ct)
     {
         const string extendedQuery =
             """
@@ -19,21 +20,23 @@ public partial class PgConnectionTest
         using IPgExecutableQuery query = connection.CreateQuery(extendedQuery);
         query.Bind(1);
         query.Bind(10);
-        var results = await connection.ExecuteQueryAsync(query, ct).CollectResults();
+        using var resultSet = await connection.ExecuteQueryAsync(query, ct);
+        var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
         await Assert.That(result.RowsAffected).IsEqualTo(10);
         await Assert.That(rows.Count).IsEqualTo(10);
         for (var i = 0; i < rows.Count; i++)
         {
-            await Assert.That(rows[i].GetIntNotNull(0)).IsEqualTo(i + 1);
-            await Assert.That(rows[i].GetStringNotNull(1)).IsEqualTo("Regular Query");
+            await Assert.That(rows[i].Item1).IsEqualTo(i + 1);
+            await Assert.That(rows[i].Item2).IsEqualTo("Regular Query");
         }
     }
 
     [Test]
     public async Task
-        ExecuteQuery_Should_ReturnOneResultSet_When_ExtendedQueryStoredProcedureWithOutParameter(CancellationToken ct)
+        ExecuteQuery_Should_ReturnOneResultSet_When_ExtendedQueryStoredProcedureWithOutParameter(
+            CancellationToken ct)
     {
         const string procedureCallQuery = $"CALL public.{OutProcedureName}($1, $2);";
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
@@ -41,32 +44,35 @@ public partial class PgConnectionTest
         using IPgExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall.Bind((int?)null);
         procedureCall.Bind((int?)null);
-        var results = await connection.ExecuteQueryAsync(procedureCall, ct).CollectResults();
+        using var resultSet = await connection.ExecuteQueryAsync(procedureCall, ct);
+        var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
         await Assert.That(result.RowsAffected).IsEqualTo(0);
         await Assert.That(rows).IsSingleElement();
-        await Assert.That(rows[0].GetIntNotNull(0)).IsEqualTo(4);
-        await Assert.That(rows[0].GetStringNotNull(1)).IsEqualTo("This is a test");
+        await Assert.That(rows[0].Item1).IsEqualTo(4);
+        await Assert.That(rows[0].Item2).IsEqualTo("This is a test");
     }
 
     [Test]
     public async Task
-        ExecuteQuery_Should_ReturnOneResultSet_When_ExtendedQueryStoredProcedureWithInOutParameter(CancellationToken ct)
+        ExecuteQuery_Should_ReturnOneResultSet_When_ExtendedQueryStoredProcedureWithInOutParameter(
+            CancellationToken ct)
     {
         const string procedureCallQuery = $"CALL public.{InOutProcedureName}($1, $2);";
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall.Bind(2);
         procedureCall.Bind("start");
-        var results = await connection.ExecuteQueryAsync(procedureCall, ct).CollectResults();
+        using var resultSet = await connection.ExecuteQueryAsync(procedureCall, ct);
+        var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
         await Assert.That(result.RowsAffected).IsEqualTo(0);
         await Assert.That(rows).IsSingleElement();
-        await Assert.That(rows[0].GetIntNotNull(0)).IsEqualTo(3);
-        await Assert.That(rows[0].GetStringNotNull(1)).IsEqualTo("start,3");
+        await Assert.That(rows[0].Item1).IsEqualTo(3);
+        await Assert.That(rows[0].Item2).IsEqualTo("start,3");
     }
 
     [Test]
@@ -79,7 +85,8 @@ public partial class PgConnectionTest
         sleepStatement.Bind(5);
         var ex = await Assert.ThrowsAsync<PgException>(async () =>
         {
-            await connection.ExecuteQueryAsync(sleepStatement, ct).CollectResults();
+            var resultSet = await connection.ExecuteQueryAsync(sleepStatement, ct);
+            await resultSet.CollectResults(row => row.GetIntNotNull(0));
         });
         await Assert.That(ex!.Message).Contains("canceling statement due to statement timeout");
     }

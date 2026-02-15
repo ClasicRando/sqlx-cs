@@ -1,7 +1,6 @@
 using Sqlx.Core;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Message.Auth;
-using Sqlx.Postgres.Message.Frontend;
 
 namespace Sqlx.Postgres.Connector;
 
@@ -25,7 +24,7 @@ public partial class PgConnector
         await SendSimplePasswordMessage(passwordBytes, cancellationToken)
             .ConfigureAwait(false);
 
-        var authentication = await ReceiveNextMessageAs<IAuthMessage>(cancellationToken)
+        var authentication = await ReceiveAuthMessageAs<IAuthMessage>(cancellationToken)
             .ConfigureAwait(false);
         PgException.CheckIfIs<IAuthMessage, OkAuthMessage>(authentication);
     }

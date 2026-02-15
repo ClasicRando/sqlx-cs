@@ -1,6 +1,8 @@
 namespace Sqlx.Postgres.Message.Backend;
 
-internal enum PgBackendMessageType : byte
+#pragma warning disable CA1008
+public enum PgBackendMessageType
+#pragma warning restore CA1008
 {
     Authentication = (byte)'R',
     BackendDataKey = (byte)'K',

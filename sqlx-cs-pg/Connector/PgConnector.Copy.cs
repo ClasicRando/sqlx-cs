@@ -41,26 +41,29 @@ public sealed partial class PgConnector
         Status = ConnectionStatus.Fetching;
         while (true)
         {
-            IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
-                .ConfigureAwait(false);
-            IPgBackendMessage? postProcessMessage =
-                ApplyStandardMessageProcessing(backendMessage);
+            PgBackendMessageType backendMessageType =
+                await ReceiveNextMessageType(cancellationToken)
+                    .ConfigureAwait(false);
+            var size = await ReceiveNextMessageSize(cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
-            switch (postProcessMessage)
+            switch (backendMessageType)
             {
-                case CopyDataMessage copyDataMessage:
-                    yield return copyDataMessage.Data;
+                case PgBackendMessageType.CopyData:
+                    var data = ReceiveCopyDataMessage(size);
+                    yield return data;
                     break;
-                case CopyDoneMessage:
-                case CommandCompleteMessage:
+                case PgBackendMessageType.CopyDone:
+                case PgBackendMessageType.CommandComplete:
+                    AdvanceReadBuffer(size);
                     break;
-                case ReadyForQueryMessage readyForQueryMessage:
-                    HandleReadyForQuery(readyForQueryMessage);
+                case PgBackendMessageType.ReadyForQuery:
+                    HandleReadyForQueryMessage(size);
                     yield break;
                 default:
+                    AdvanceReadBuffer(size);
                     _logger.LogIgnoreUnexpectedMessage(
                         SqlxConfig.DetailedLoggingLevel,
-                        backendMessage);
+                        backendMessageType);
                     break;
             }
         }
@@ -191,26 +194,25 @@ public sealed partial class PgConnector
         CancellationToken cancellationToken)
     {
         // Initialized to avoid returning a nullable type
-        var result = new CommandCompleteMessage(0, "Default copy in complete message");
+        var result = new CommandCompleteMessage(0L, "Default copy in complete message");
         while (true)
         {
-            IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
+            PgBackendMessageType backendMessageType = await ReceiveNextMessageType(cancellationToken)
                 .ConfigureAwait(false);
-            IPgBackendMessage? postProcessMessage = ApplyStandardMessageProcessing(
-                    backendMessage);
+            var size = await ReceiveNextMessageSize(cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
-            switch (postProcessMessage)
+            switch (backendMessageType)
             {
-                case CommandCompleteMessage commandCompleteMessage:
-                    result = commandCompleteMessage;
+                case PgBackendMessageType.CommandComplete:
+                    result = ReceiveMessage<CommandCompleteMessage>(size);
                     break;
-                case ReadyForQueryMessage readyForQueryMessage:
-                    HandleReadyForQuery(readyForQueryMessage);
+                case PgBackendMessageType.ReadyForQuery:
+                    HandleReadyForQueryMessage(size);
                     return result;
                 default:
                     _logger.LogIgnoreUnexpectedMessage(
                         SqlxConfig.DetailedLoggingLevel,
-                        backendMessage);
+                        backendMessageType);
                     break;
             }
         }

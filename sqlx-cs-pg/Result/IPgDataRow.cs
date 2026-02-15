@@ -6,7 +6,7 @@ namespace Sqlx.Postgres.Result;
 /// <summary>
 /// Extension interface of <see cref="IDataRow"/> for Postgres specific column decoding
 /// </summary>
-public interface IPgDataRow : IDataRow
+public interface IPgDataRow : IDataRow, IDisposable
 {
     /// <summary>
     /// Extract a value of type <typeparamref name="TValue"/> from this row using the type

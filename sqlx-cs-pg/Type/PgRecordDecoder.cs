@@ -92,17 +92,8 @@ public static class PgRecordDecoder
             bufferWriter.Write(binaryValue.Buffer.ReadBytesAsSpan(attributeLength));
         }
 
-        var buffer = ArrayPool<byte>.Shared.Rent(bufferWriter.ReadableSpan.Length);
-        try
-        {
-            bufferWriter.ReadableSpan.CopyTo(buffer);
-            var row = new PgDataRow(buffer, new PgStatementMetadata(columns));
-            return T.FromRow(row);
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(buffer);
-        }
+        using var row = new PgDataRow(bufferWriter.ReadableSpan, new PgStatementMetadata(columns));
+        return T.FromRow(row);
     }
 
     public static T DecodeText<T>(in PgTextValue textValue)
@@ -153,17 +144,8 @@ public static class PgRecordDecoder
             bufferWriter.Advance(literalByteCount);
         }
 
-        var buffer = ArrayPool<byte>.Shared.Rent(bufferWriter.ReadableSpan.Length);
-        try
-        {
-            bufferWriter.ReadableSpan.CopyTo(buffer);
-            var row = new PgDataRow(buffer, new PgStatementMetadata(columns));
-            return T.FromRow(row);
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(buffer);
-        }
+        using var row = new PgDataRow(bufferWriter.ReadableSpan, new PgStatementMetadata(columns));
+        return T.FromRow(row);
     }
 
     private static List<string?> ParseCompositeLiteralToValueRanges<T>(in PgTextValue value)

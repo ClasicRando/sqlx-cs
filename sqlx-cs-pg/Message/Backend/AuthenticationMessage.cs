@@ -16,6 +16,8 @@ namespace Sqlx.Postgres.Message.Backend;
 /// </summary>
 internal abstract class AuthenticationMessage : IPgBackendMessage, IPgBackendMessageDecoder<IAuthMessage>
 {
+    public static PgBackendMessageType MessageType => PgBackendMessageType.Authentication;
+
     public static IAuthMessage Decode(ReadOnlySpan<byte> buffer)
     {
         var authMethod = buffer.ReadInt();

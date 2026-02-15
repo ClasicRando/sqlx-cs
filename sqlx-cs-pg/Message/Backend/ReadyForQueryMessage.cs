@@ -11,6 +11,8 @@ namespace Sqlx.Postgres.Message.Backend;
 internal record ReadyForQueryMessage(TransactionStatus TransactionStatus)
     : IPgBackendMessage, IPgBackendMessageDecoder<ReadyForQueryMessage>
 {
+    public static PgBackendMessageType MessageType => PgBackendMessageType.ReadyForQuery;
+
     public static ReadyForQueryMessage Decode(ReadOnlySpan<byte> buffer)
     {
         return new ReadyForQueryMessage((TransactionStatus)buffer.ReadByte());

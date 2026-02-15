@@ -13,6 +13,8 @@ namespace Sqlx.Postgres.Message.Backend;
 internal sealed class BackendDataKeyMessage(int processId, int secretKey)
     : IPgBackendMessage, IPgBackendMessageDecoder<BackendDataKeyMessage>
 {
+    public static PgBackendMessageType MessageType => PgBackendMessageType.BackendDataKey;
+
     internal int ProcessId { get; } = processId;
     internal int SecretKey { get; } = secretKey;
 

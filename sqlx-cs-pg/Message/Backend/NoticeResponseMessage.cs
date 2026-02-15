@@ -12,6 +12,8 @@ namespace Sqlx.Postgres.Message.Backend;
 /// </summary>
 internal record NoticeResponseMessage(InformationResponse InformationResponse) : IPgBackendMessage, IPgBackendMessageDecoder<NoticeResponseMessage>
 {
+    public static PgBackendMessageType MessageType => PgBackendMessageType.NoticeResponse;
+
     public static NoticeResponseMessage Decode(ReadOnlySpan<byte> buffer)
     {
         return new NoticeResponseMessage(InformationResponse.Decode(buffer));

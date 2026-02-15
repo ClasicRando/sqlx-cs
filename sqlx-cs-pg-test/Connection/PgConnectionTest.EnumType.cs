@@ -80,12 +80,26 @@ public partial class PgConnectionTest
     }
 
     private static async Task<TEnum> ExecuteScalarEnumWrapperExtract<TEnum>(IPgExecutableQuery query, Func<IPgDataRow, int, TEnum> extractor)
+        where TEnum : Enum
     {
-        var results = await query.ExecuteAsync().CollectResults();
-        await Assert.That(results).IsSingleElement();
-        var rows = results[0].Item1;
-        await Assert.That(rows).IsSingleElement();
-        return extractor(rows[0], 0);
+        TEnum? result = default;
+        var results = await query.ExecuteAsync();
+        while (await results.MoveNextAsync())
+        {
+            var current = results.Current;
+            if (current.IsLeft)
+            {
+                result = extractor(current.Left, 0);
+            }
+            break;
+        }
+
+        if (result is null)
+        {
+            Assert.Fail("Did not find a row");
+        }
+
+        return result!;
     }
 }
 

@@ -36,6 +36,7 @@ public sealed partial class PgConnector : IPooledConnection
     private bool _disposed;
     private readonly IAsyncConnector _asyncConnector;
     private readonly ILogger<PgConnector> _logger;
+    private IAsyncResultSet<IPgDataRow>? _currentResultSet;
 
     private BackendDataKeyMessage? _backendDataKey;
     private int _pendingReadyForQuery;
@@ -126,7 +127,7 @@ public sealed partial class PgConnector : IPooledConnection
     /// </exception>
     private async Task HandleAuthFlow(CancellationToken cancellationToken)
     {
-        var authentication = await ReceiveNextMessageAs<IAuthMessage>(cancellationToken)
+        IAuthMessage authentication = await ReceiveAuthMessage(cancellationToken)
             .ConfigureAwait(false);
         switch (authentication)
         {
@@ -323,7 +324,16 @@ public sealed partial class PgConnector : IPooledConnection
     /// Decrement <see cref="_pendingReadyForQuery"/> and inspect the supplied message
     /// </summary>
     /// <param name="readyForQuery">message from server</param>
-    internal void HandleReadyForQuery(ReadyForQueryMessage readyForQuery)
+    private void HandleReadyForQuery(ReadyForQueryMessage readyForQuery)
+    {
+        HandleReadyForQuery(readyForQuery.TransactionStatus);
+    }
+
+    /// <summary>
+    /// Decrement <see cref="_pendingReadyForQuery"/> and inspect the supplied message
+    /// </summary>
+    /// <param name="transactionStatus">status update from server</param>
+    private void HandleReadyForQuery(TransactionStatus transactionStatus)
     {
         if (--_pendingReadyForQuery < 0)
         {
@@ -331,7 +341,7 @@ public sealed partial class PgConnector : IPooledConnection
             _pendingReadyForQuery = 0;
         }
 
-        if (readyForQuery.TransactionStatus is TransactionStatus.FailedTransaction)
+        if (transactionStatus is TransactionStatus.FailedTransaction)
         {
             _logger.LogServerReportedFailedTransaction();
         }
@@ -343,26 +353,36 @@ public sealed partial class PgConnector : IPooledConnection
         Status = ConnectionStatus.Fetching;
         while (true)
         {
-            IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
+            PgBackendMessageType backendMessageType = await ReceiveNextMessageType(cancellationToken)
                 .ConfigureAwait(false);
-            IPgBackendMessage? postProcessMessage = ApplyStandardMessageProcessing(
-                    backendMessage,
+            var size = await ReceiveNextMessageSize(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (ApplyStandardMessageProcessing(
+                    backendMessageType,
+                    size,
                     handleNotification: false,
-                    throwOnError: false);
-            switch (postProcessMessage)
+                    throwOnError: false))
             {
-                case null:
-                    break;
-                case PgNotification result:
+                continue;
+            }
+            
+            cancellationToken.ThrowIfCancellationRequested();
+            switch (backendMessageType)
+            {
+                case PgBackendMessageType.NotificationResponse:
+                    var notification = ReceiveMessage<PgNotification>(size);
                     Status = ConnectionStatus.Idle;
-                    return Either.Left<PgNotification, ErrorResponseMessage>(result);
-                case ErrorResponseMessage error:
+                    return Either.Left<PgNotification, ErrorResponseMessage>(notification);
+                case PgBackendMessageType.ErrorResponse:
+                    var error = ReceiveMessage<ErrorResponseMessage>(size);
                     Status = ConnectionStatus.Idle;
                     return Either.Right<PgNotification, ErrorResponseMessage>(error);
                 default:
+                    AdvanceReadBuffer(size);
                     _logger.LogIgnoreUnexpectedMessage(
                         SqlxConfig.DetailedLoggingLevel,
-                        backendMessage);
+                        backendMessageType);
                     break;
             }
         }
@@ -377,7 +397,7 @@ public sealed partial class PgConnector : IPooledConnection
     /// <returns>The message if received before an error</returns>
     /// <exception cref="PgException">If an error message is sent by the backend</exception>
     internal async Task<T> WaitForOrThrowError<T>(CancellationToken cancellationToken)
-        where T : IPgBackendMessage
+        where T : IPgBackendMessage, IPgBackendMessageDecoder<T>
     {
         var result = await WaitForOrError<T>(cancellationToken)
             .ConfigureAwait(false);
@@ -395,29 +415,36 @@ public sealed partial class PgConnector : IPooledConnection
     /// <returns>One of the message if received before an error or that error</returns>
     private async Task<Either<T, ErrorResponseMessage>> WaitForOrError<T>(
         CancellationToken cancellationToken)
-        where T : IPgBackendMessage
+        where T : IPgBackendMessage, IPgBackendMessageDecoder<T>
     {
         while (true)
         {
-            IPgBackendMessage backendMessage = await ReceiveNextMessage(cancellationToken)
-                .ConfigureAwait(false);
-            IPgBackendMessage? postProcessMessage = ApplyStandardMessageProcessing(
-                    backendMessage,
-                    throwOnError: false);
-            switch (postProcessMessage)
+            PgBackendMessageType backendMessageType =
+                await ReceiveNextMessageType(cancellationToken)
+                    .ConfigureAwait(false);
+            var size = await ReceiveNextMessageSize(cancellationToken).ConfigureAwait(false);
+
+            if (ApplyStandardMessageProcessing(backendMessageType, size, throwOnError: false))
             {
-                case null:
-                    continue;
-                case ErrorResponseMessage errorResponse:
-                    return Either.Right<T, ErrorResponseMessage>(errorResponse);
-                case T result:
-                    return Either.Left<T, ErrorResponseMessage>(result);
-                default:
-                    _logger.LogIgnoreUnexpectedMessage(
-                        SqlxConfig.DetailedLoggingLevel,
-                        backendMessage);
-                    break;
+                continue;
             }
+
+            if (backendMessageType is PgBackendMessageType.ErrorResponse)
+            {
+                var errorResponse = ReceiveMessage<ErrorResponseMessage>(size);
+                return Either.Right<T, ErrorResponseMessage>(errorResponse);
+            }
+
+            if (backendMessageType == T.MessageType)
+            {
+                var result = ReceiveMessage<T>(size);
+                return Either.Left<T, ErrorResponseMessage>(result);
+            }
+            
+            AdvanceReadBuffer(size);
+            _logger.LogIgnoreUnexpectedMessage(
+                SqlxConfig.DetailedLoggingLevel,
+                backendMessageType);
         }
     }
 
@@ -426,46 +453,57 @@ public sealed partial class PgConnector : IPooledConnection
     /// applies to asynchronous messages that should be handled when sent out of order from the
     /// database backend.
     /// </summary>
-    /// <param name="message">Message to optionally process</param>
+    /// <param name="message">Message type to optionally process</param>
+    /// <param name="size">
+    /// Size of the message, used to consume contents of the message if needed
+    /// </param>
     /// <param name="throwOnError">True if <see cref="ErrorResponseMessage"/> should throw</param>
     /// <param name="handleNotification">
     /// True if <see cref="PgNotification"/>s should be sent to <see cref="OnNotification"/>
     /// </param>
-    /// <returns>The message if not processed, otherwise null</returns>
+    /// <returns>True if the message was processed as a standard async message</returns>
     /// <exception cref="PgException">
     /// If <paramref name="throwOnError"/> is true and the message was an error response
     /// </exception>
-    internal IPgBackendMessage? ApplyStandardMessageProcessing(
-        IPgBackendMessage message,
+    internal bool ApplyStandardMessageProcessing(
+        PgBackendMessageType message,
+        int size,
         bool throwOnError = true,
         bool handleNotification = true)
     {
         switch (message)
         {
-            case NoticeResponseMessage noticeResponse:
+            case PgBackendMessageType.NoticeResponse:
+                var noticeResponse = ReceiveMessage<NoticeResponseMessage>(size);
                 OnNotice(noticeResponse);
-                return null;
-            case PgNotification notification:
-                if (!handleNotification) return notification;
+                return true;
+            case PgBackendMessageType.NotificationResponse:
+                if (!handleNotification) return false;
+                var notification = ReceiveMessage<PgNotification>(size);
                 OnNotification(notification);
-                return null;
-            case BackendDataKeyMessage backendDataKey:
+                return true;
+            case PgBackendMessageType.BackendDataKey:
+                var backendDataKey = ReceiveMessage<BackendDataKeyMessage>(size);
                 OnBackendDataKey(backendDataKey);
-                return null;
-            case ParameterStatusMessage parameterStatus:
+                return true;
+            case PgBackendMessageType.ParameterStatus:
+                var parameterStatus = ReceiveMessage<ParameterStatusMessage>(size);
                 OnParameterStatus(parameterStatus);
-                return null;
-            case NegotiateProtocolVersionMessage negotiateProtocolVersion:
+                return true;
+            case PgBackendMessageType.NegotiateProtocolVersion:
+                var negotiateProtocolVersion =
+                    ReceiveMessage<NegotiateProtocolVersionMessage>(size);
                 OnNegotiateProtocolVersion(negotiateProtocolVersion);
-                return null;
-            case ErrorResponseMessage errorResponse:
+                return true;
+            case PgBackendMessageType.ErrorResponse:
+                var errorResponse = ReceiveMessage<ErrorResponseMessage>(size);
                 if (errorResponse.InformationResponse.Code.IsCriticalConnectionError)
                 {
                     BreakConnection();
                 }
-                return throwOnError ? throw new PgException(errorResponse) : message;
+                return throwOnError ? throw new PgException(errorResponse) : false;
             default:
-                return message;
+                return false;
         }
     }
 
@@ -516,47 +554,6 @@ public sealed partial class PgConnector : IPooledConnection
     }
 
     /// <summary>
-    /// Receive the next backend message as a <see cref="IPgBackendMessage"/>. We must use the
-    /// interface because the backend might send asynchronous messages that we need to handle.
-    /// </summary>
-    /// <param name="cancellationToken">Token to cancel the async operation</param>
-    /// <returns>The next message sent by the backend</returns>
-    internal async Task<IPgBackendMessage> ReceiveNextMessage(CancellationToken cancellationToken)
-    {
-        var format = await _asyncConnector.ReadByteAsync(cancellationToken).ConfigureAwait(false);
-        var size = await _asyncConnector.ReadIntAsync(cancellationToken).ConfigureAwait(false) - 4;
-        await _asyncConnector.EnsureBufferFilled(size, cancellationToken).ConfigureAwait(false);
-        IPgBackendMessage message = ParseMessage(
-            (PgBackendMessageType)format,
-            _asyncConnector.ReadBuffer[..size]);
-        _asyncConnector.AdvanceBufferPosition(size);
-        return message;
-    }
-
-    /// <summary>
-    /// Call <see cref="ReceiveNextMessage"/> and check that the message is of the desired type.
-    /// This is most applicable to auth processing since a defined flow is expected without
-    /// asynchronous messages.
-    /// </summary>
-    /// <param name="cancellationToken">Token to cancel the async operation</param>
-    /// <typeparam name="T">Desired message type</typeparam>
-    /// <returns>The next message sent by the backend as <typeparamref name="T"/></returns>
-    /// <exception cref="PgException">If the message is an error or not the desired type</exception>
-    private async Task<T> ReceiveNextMessageAs<T>(CancellationToken cancellationToken)
-        where T : IPgBackendMessage
-    {
-        IPgBackendMessage message =
-            await ReceiveNextMessage(cancellationToken).ConfigureAwait(false);
-        return message switch
-        {
-            T result => result,
-            ErrorResponseMessage errorResponse => throw new PgException(errorResponse),
-            _ => throw new PgException(
-                $"Expected {typeof(T)} message but found {message.GetType()}"),
-        };
-    }
-
-    /// <summary>
     /// Write all content in <see cref="Writer"/> to the <see cref="_asyncConnector"/> and reset
     /// the <see cref="Writer"/> for future writes.
     /// </summary>
@@ -568,51 +565,6 @@ public sealed partial class PgConnector : IPooledConnection
         {
             throw new OperationCanceledException();
         }
-    }
-
-    /// <summary>
-    /// Parse the current message contents based upon the <see cref="PgBackendMessageType"/>
-    /// </summary>
-    /// <param name="messageType">Message type</param>
-    /// <param name="contents">Message contents to parse (could be empty)</param>
-    /// <returns>Backend message parsed</returns>
-    /// <exception cref="PgException">If the message type is not supported or expected</exception>
-    private static IPgBackendMessage ParseMessage(
-        PgBackendMessageType messageType,
-        ReadOnlySpan<byte> contents)
-    {
-        // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
-        return messageType switch
-        {
-            PgBackendMessageType.Authentication => AuthenticationMessage.Decode(contents),
-            PgBackendMessageType.BackendDataKey => BackendDataKeyMessage.Decode(contents),
-            PgBackendMessageType.BindComplete => BindCompleteMessage.Instance,
-            PgBackendMessageType.CloseComplete => CloseCompleteMessage.Instance,
-            PgBackendMessageType.CommandComplete => CommandCompleteMessage.Decode(contents),
-            PgBackendMessageType.CopyData => CopyDataMessage.Decode(contents),
-            PgBackendMessageType.CopyDone => CopyDoneMessage.Instance,
-            PgBackendMessageType.CopyInResponse => CopyInResponseMessage.Decode(contents),
-            PgBackendMessageType.CopyOutResponse => CopyOutResponseMessage.Decode(contents),
-            PgBackendMessageType.CopyBothResponse => throw new PgException(
-                "CopyBoth is not supported by this driver"),
-            PgBackendMessageType.DataRow => DataRowMessage.Decode(contents),
-            PgBackendMessageType.EmptyQueryResponse => throw new PgException(
-                "Empty query response packet should never be received"),
-            PgBackendMessageType.ErrorResponse => ErrorResponseMessage.Decode(contents),
-            PgBackendMessageType.NegotiateProtocolVersion =>
-                NegotiateProtocolVersionMessage.Decode(contents),
-            PgBackendMessageType.NoData => NoDataMessage.Instance,
-            PgBackendMessageType.NoticeResponse => NoticeResponseMessage.Decode(contents),
-            PgBackendMessageType.NotificationResponse => PgNotification.Decode(contents),
-            PgBackendMessageType.ParameterDescription => ParameterDescriptionMessage.Decode(contents),
-            PgBackendMessageType.ParameterStatus => ParameterStatusMessage.Decode(contents),
-            PgBackendMessageType.ParseComplete => ParseCompleteMessage.Instance,
-            PgBackendMessageType.PortalSuspend => PortalSuspendedMessage.Instance,
-            PgBackendMessageType.ReadyForQuery => ReadyForQueryMessage.Decode(contents),
-            PgBackendMessageType.RowDescription => RowDescriptionMessage.Decode(contents),
-            _ => throw new PgException(
-                $"Expected backend message type that does not own data but found '{messageType}'"),
-        };
     }
 
     internal readonly struct UserAction : IDisposable
@@ -636,7 +588,7 @@ public sealed partial class PgConnector : IPooledConnection
             case ConnectionStatus.Connecting:
             case ConnectionStatus.Executing:
             case ConnectionStatus.Fetching:
-                throw new InvalidOperationException("Action against this connection is already in progress");
+                throw new InvalidOperationException($"Action against this connection is already in progress. Status = {currentStatus}");
             default:
 #pragma warning disable CA2208
                 throw new ArgumentOutOfRangeException(nameof(Status), "Invalid status flag");
@@ -647,7 +599,7 @@ public sealed partial class PgConnector : IPooledConnection
         return new UserAction(this);
     }
 
-    private void EndUserAction()
+    internal void EndUserAction()
     {
         if (IsIdle || !IsConnected)
         {
@@ -655,6 +607,11 @@ public sealed partial class PgConnector : IPooledConnection
         }
         
         Status = ConnectionStatus.Idle;
+    }
+
+    internal void EndInProgressRequests()
+    {
+        _currentResultSet?.Dispose();
     }
 
     private void BreakConnection()
@@ -685,6 +642,7 @@ public sealed partial class PgConnector : IPooledConnection
             }
         }
 
+        _currentResultSet?.Dispose();
         _asyncConnector.Dispose();
     }
 }

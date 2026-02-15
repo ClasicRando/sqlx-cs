@@ -12,6 +12,8 @@ internal record NegotiateProtocolVersionMessage(
     string[] ProtocolOptionsNotRecognized)
     : IPgBackendMessage, IPgBackendMessageDecoder<NegotiateProtocolVersionMessage>
 {
+    public static PgBackendMessageType MessageType => PgBackendMessageType.NegotiateProtocolVersion;
+
     public static NegotiateProtocolVersionMessage Decode(ReadOnlySpan<byte> buffer)
     {
         var newestMinorProtocol = buffer.ReadInt();

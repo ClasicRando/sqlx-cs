@@ -13,6 +13,8 @@ namespace Sqlx.Postgres.Message.Backend;
 internal record CopyOutResponseMessage(CopyResponse Response)
     : IPgBackendMessage, IPgBackendMessageDecoder<CopyOutResponseMessage>
 {
+    public static PgBackendMessageType MessageType => PgBackendMessageType.CopyOutResponse;
+
     public static CopyOutResponseMessage Decode(ReadOnlySpan<byte> buffer)
     {
         return new CopyOutResponseMessage(CopyResponse.Decode(buffer));

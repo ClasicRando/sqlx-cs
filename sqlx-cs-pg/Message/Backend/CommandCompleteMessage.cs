@@ -13,6 +13,8 @@ namespace Sqlx.Postgres.Message.Backend;
 internal sealed class CommandCompleteMessage(long rowCount, string message)
     : IPgBackendMessage, IPgBackendMessageDecoder<CommandCompleteMessage>
 {
+    public static PgBackendMessageType MessageType => PgBackendMessageType.CommandComplete;
+
     internal long RowCount { get; } = rowCount;
     internal string Message { get; } = message;
 

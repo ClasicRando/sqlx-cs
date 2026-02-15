@@ -20,6 +20,15 @@ public abstract class AbstractConnection<TQuery, TBindable, TQueryBatch, TDataRo
         GC.SuppressFinalize(this);
     }
 
+    protected abstract ValueTask DisposeAsyncCore();
+
+    public async ValueTask DisposeAsync()
+    {
+        await DisposeAsyncCore().ConfigureAwait(false);
+        Dispose(false);
+        GC.SuppressFinalize(this);
+    }
+
     public abstract ConnectionStatus Status { get; }
     public abstract bool InTransaction { get; }
 
@@ -68,6 +77,4 @@ public abstract class AbstractConnection<TQuery, TBindable, TQueryBatch, TDataRo
     public abstract Task<IAsyncResultSet<TDataRow>> ExecuteQueryBatchAsync(
         TQueryBatch query,
         CancellationToken cancellationToken);
-
-    public abstract Task CloseAsync(CancellationToken cancellationToken = default);
 }

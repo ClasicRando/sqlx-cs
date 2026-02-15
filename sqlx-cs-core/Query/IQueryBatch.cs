@@ -116,7 +116,7 @@ namespace Sqlx.Core.Query;
 /// transaction and the existing transaction will not be closed when completing the batch.
 /// </para>
 /// </summary>
-public interface IQueryBatch<out TBindable, TDataRow> : IDisposable
+public interface IQueryBatch<out TBindable, TDataRow> : IDisposable, IAsyncDisposable
     where TBindable : IBindable
     where TDataRow : IDataRow
 {

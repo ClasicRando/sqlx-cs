@@ -1,19 +1,16 @@
 using System.Runtime.CompilerServices;
-using Sqlx.Core.Connection;
+using Sqlx.Core.Pool;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
+using Sqlx.Postgres.Connection;
+using Sqlx.Postgres.Query;
+using Sqlx.Postgres.Result;
 
-namespace Sqlx.Core.Pool;
+namespace Sqlx.Postgres.Pool;
 
-internal static class ConnectionPoolExtensions
+public static class PgConnectionPoolExtensions
 {
-    extension<TConnection, TBindable, TQuery, TQueryBatch, TDataRow>(
-        IConnectionPool<TConnection, TBindable, TQuery, TQueryBatch, TDataRow> connectionPool)
-        where TConnection : class, IConnection<TQuery, TBindable, TQueryBatch, TDataRow>
-        where TBindable : IBindable
-        where TQuery : IExecutableQuery<TDataRow>, TBindable
-        where TQueryBatch : IQueryBatch<TBindable, TDataRow>
-        where TDataRow : IDataRow
+    extension(IPgConnectionPool connectionPool)
     {
         /// <summary>
         /// Acquire a connection from the pool and immediately start a new transaction against the
@@ -22,28 +19,14 @@ internal static class ConnectionPoolExtensions
         /// </summary>
         /// <param name="cancellationToken">optional cancellation token</param>
         /// <returns>a rented connection from the pool that is already within a transaction</returns>
-        public async Task<TConnection> BeginAsync(CancellationToken cancellationToken = default)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Task<IPgConnection> BeginAsync(CancellationToken cancellationToken = default)
         {
-            TConnection? connection = null;
-            try
-            {
-                connection = connectionPool.CreateConnection();
-                if (connection.Status is ConnectionStatus.Closed)
-                {
-                    await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-                }
-
-                await connection.BeginAsync(cancellationToken).ConfigureAwait(false);
-                return connection;
-            }
-            catch
-            {
-                if (connection == null) throw;
-                await connection.DisposeAsync().ConfigureAwait(false);
-                throw;
-            }
+            return connectionPool
+                .BeginAsync<IPgConnection, IPgBindable, IPgExecutableQuery, IPgQueryBatch,
+                    IPgDataRow>(cancellationToken);
         }
-        
+
         /// <summary>
         /// Execute the supplied non-query, ignoring any rows returned and just counting the total
         /// number of rows affected by the query. The intended use of this method is for queries
@@ -52,14 +35,14 @@ internal static class ConnectionPoolExtensions
         /// <param name="nonQuery">Command the returns no data and just modifies data</param>
         /// <param name="cancellationToken">Token to cancel async operation</param>
         /// <returns>total number of rows impacted by the query</returns>
-        public async Task<long> ExecuteNonQueryAsync(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Task<long> ExecuteNonQueryAsync(
             string nonQuery,
             CancellationToken cancellationToken = default)
         {
-            TConnection connection = connectionPool.CreateConnection();
-            await using var _ = connection.ConfigureAwait(false);
-            return await connection.ExecuteNonQueryAsync(nonQuery, cancellationToken)
-                .ConfigureAwait(false);
+            return connectionPool
+                .ExecuteNonQueryAsync<IPgConnection, IPgBindable, IPgExecutableQuery, IPgQueryBatch,
+                    IPgDataRow>(nonQuery, cancellationToken);
         }
 
         /// <summary>
@@ -71,19 +54,15 @@ internal static class ConnectionPoolExtensions
         /// <param name="cancellationToken">optional cancellation token</param>
         /// <typeparam name="TRow">row type to map each row into</typeparam>
         /// <returns>a stream of result set rows mapped to the desired row type</returns>
-        public async IAsyncEnumerable<TRow> FetchAsync<TRow>(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public IAsyncEnumerable<TRow> FetchAsync<TRow>(
             string sql,
-            [EnumeratorCancellation] CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TDataRow, TRow>
+            CancellationToken cancellationToken = default)
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
-            TConnection connection = connectionPool.CreateConnection();
-            await using var _ = connection.ConfigureAwait(false);
-            using TQuery query = connection.CreateQuery(sql);
-            var rows = query.FetchAsync<TDataRow, TRow>(cancellationToken);
-            await foreach (TRow row in rows.ConfigureAwait(false))
-            {
-                yield return row;
-            }
+            return connectionPool
+                .FetchAsync<IPgConnection, IPgBindable, IPgExecutableQuery, IPgQueryBatch,
+                    IPgDataRow, TRow>(sql, cancellationToken);
         }
 
         /// <summary>
@@ -95,16 +74,15 @@ internal static class ConnectionPoolExtensions
         /// <param name="cancellationToken">optional cancellation token</param>
         /// <typeparam name="TRow">row type to map the row into</typeparam>
         /// <returns>a list of result set rows mapped to the desired row type</returns>
-        public async ValueTask<List<TRow>> FetchAllAsync<TRow>(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ValueTask<List<TRow>> FetchAllAsync<TRow>(
             string sql,
             CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TDataRow, TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
-            TConnection connection = connectionPool.CreateConnection();
-            await using var _ = connection.ConfigureAwait(false);
-            using TQuery query = connection.CreateQuery(sql);
-            return await query.FetchAllAsync<TDataRow, TRow>(cancellationToken)
-                .ConfigureAwait(false);
+            return connectionPool
+                .FetchAllAsync<IPgConnection, IPgBindable, IPgExecutableQuery, IPgQueryBatch,
+                    IPgDataRow, TRow>(sql, cancellationToken);
         }
 
         /// <summary>
@@ -117,16 +95,15 @@ internal static class ConnectionPoolExtensions
         /// <exception cref="Sqlx.Core.Exceptions.SqlxException">
         /// if zero rows are returned from the query
         /// </exception>
-        public async Task<TRow> FetchFirstAsync<TRow>(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Task<TRow> FetchFirstAsync<TRow>(
             string sql,
             CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TDataRow, TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
-            TConnection connection = connectionPool.CreateConnection();
-            await using var _ = connection.ConfigureAwait(false);
-            using TQuery query = connection.CreateQuery(sql);
-            return await query.FetchFirstAsync<TDataRow, TRow>(cancellationToken)
-                .ConfigureAwait(false);
+            return connectionPool
+                .FetchFirstAsync<IPgConnection, IPgBindable, IPgExecutableQuery, IPgQueryBatch,
+                    IPgDataRow, TRow>(sql, cancellationToken);
         }
 
         /// <summary>
@@ -141,16 +118,15 @@ internal static class ConnectionPoolExtensions
         /// the first row found when executing this query or the default value when no rows are
         /// found
         /// </returns>
-        public async Task<TRow?> FetchFirstOrDefaultAsync<TRow>(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Task<TRow?> FetchFirstOrDefaultAsync<TRow>(
             string sql,
             CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TDataRow, TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
-            TConnection connection = connectionPool.CreateConnection();
-            await using var _ = connection.ConfigureAwait(false);
-            using TQuery query = connection.CreateQuery(sql);
-            return await query.FetchFirstOrDefaultAsync<TDataRow, TRow>(cancellationToken)
-                .ConfigureAwait(false);
+            return connectionPool
+                .FetchFirstOrDefaultAsync<IPgConnection, IPgBindable, IPgExecutableQuery,
+                    IPgQueryBatch, IPgDataRow, TRow>(sql, cancellationToken);
         }
 
         /// <summary>
@@ -164,16 +140,15 @@ internal static class ConnectionPoolExtensions
         /// <exception cref="Sqlx.Core.Exceptions.SqlxException">
         /// if zero or more than 1 row is returned
         /// </exception>
-        public async Task<TRow> FetchSingleAsync<TRow>(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Task<TRow> FetchSingleAsync<TRow>(
             string sql,
             CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TDataRow, TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
-            TConnection connection = connectionPool.CreateConnection();
-            await using var _ = connection.ConfigureAwait(false);
-            using TQuery query = connection.CreateQuery(sql);
-            return await query.FetchSingleAsync<TDataRow, TRow>(cancellationToken)
-                .ConfigureAwait(false);
+            return connectionPool
+                .FetchSingleAsync<IPgConnection, IPgBindable, IPgExecutableQuery, IPgQueryBatch,
+                    IPgDataRow, TRow>(sql, cancellationToken);
         }
 
         /// <summary>
@@ -190,27 +165,20 @@ internal static class ConnectionPoolExtensions
         /// <exception cref="Sqlx.Core.Exceptions.SqlxException">
         /// if more than 1 row is returned
         /// </exception>
-        public async Task<TRow?> FetchSingleOrDefaultAsync<TRow>(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Task<TRow?> FetchSingleOrDefaultAsync<TRow>(
             string sql,
             CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TDataRow, TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
-            TConnection connection = connectionPool.CreateConnection();
-            await using var _ = connection.ConfigureAwait(false);
-            using TQuery query = connection.CreateQuery(sql);
-            return await query.FetchSingleOrDefaultAsync<TDataRow, TRow>(cancellationToken)
-                .ConfigureAwait(false);
+            return connectionPool
+                .FetchSingleOrDefaultAsync<IPgConnection, IPgBindable, IPgExecutableQuery,
+                    IPgQueryBatch, IPgDataRow, TRow>(sql, cancellationToken);
         }
     }
 
-    extension<TConnection, TBindable, TQuery, TQueryBatch, TBindMany, TDataRow>(
-        IConnectionPool<TConnection, TBindable, TQuery, TQueryBatch, TDataRow> connectionPool)
-        where TConnection : class, IConnection<TQuery, TBindable, TQueryBatch, TDataRow>
-        where TBindable : IBindable
-        where TQuery : IExecutableQuery<TDataRow>, TBindable
-        where TQueryBatch : IQueryBatch<TBindable, TDataRow>
-        where TBindMany : IBindMany<TBindable>
-        where TDataRow : IDataRow
+    extension<TBindMany>(IPgConnectionPool connectionPool)
+        where TBindMany : IBindMany<IPgBindable>
     {
         /// <summary>
         /// Execute the supplied non-query, ignoring any rows returned and just counting the total
@@ -221,16 +189,15 @@ internal static class ConnectionPoolExtensions
         /// <param name="parameters">Parameters bound to the query before execution</param>
         /// <param name="cancellationToken">Token to cancel async operation</param>
         /// <returns>total number of rows impacted by the query</returns>
-        public async Task<long> ExecuteNonQueryAsync(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Task<long> ExecuteNonQueryAsync(
             string nonQuery,
             TBindMany parameters,
             CancellationToken cancellationToken = default)
         {
-            TConnection connection = connectionPool.CreateConnection();
-            await using var _ = connection.ConfigureAwait(false);
-            using TQuery query = connection.CreateQuery(nonQuery);
-            parameters.BindMany(query);
-            return await query.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            return connectionPool
+                .ExecuteNonQueryAsync<IPgConnection, IPgBindable, IPgExecutableQuery, IPgQueryBatch,
+                    TBindMany, IPgDataRow>(nonQuery, parameters, cancellationToken);
         }
 
         /// <summary>
@@ -243,21 +210,16 @@ internal static class ConnectionPoolExtensions
         /// <param name="cancellationToken">optional cancellation token</param>
         /// <typeparam name="TRow">row type to map each row into</typeparam>
         /// <returns>a stream of result set rows mapped to the desired row type</returns>
-        public async IAsyncEnumerable<TRow> FetchAsync<TRow>(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public IAsyncEnumerable<TRow> FetchAsync<TRow>(
             string sql,
             TBindMany parameters,
-            [EnumeratorCancellation] CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TDataRow, TRow>
+            CancellationToken cancellationToken = default)
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
-            TConnection connection = connectionPool.CreateConnection();
-            await using var _ = connection.ConfigureAwait(false);
-            using TQuery query = connection.CreateQuery(sql);
-            parameters.BindMany(query);
-            var rows = query.FetchAsync<TDataRow, TRow>(cancellationToken);
-            await foreach (TRow row in rows.ConfigureAwait(false))
-            {
-                yield return row;
-            }
+            return connectionPool
+                .FetchAsync<IPgConnection, IPgBindable, IPgExecutableQuery, IPgQueryBatch, TBindMany
+                    , IPgDataRow, TRow>(sql, parameters, cancellationToken);
         }
 
         /// <summary>
@@ -270,18 +232,16 @@ internal static class ConnectionPoolExtensions
         /// <param name="cancellationToken">optional cancellation token</param>
         /// <typeparam name="TRow">row type to map the row into</typeparam>
         /// <returns>a list of result set rows mapped to the desired row type</returns>
-        public async ValueTask<List<TRow>> FetchAllAsync<TRow>(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ValueTask<List<TRow>> FetchAllAsync<TRow>(
             string sql,
             TBindMany parameters,
             CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TDataRow, TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
-            TConnection connection = connectionPool.CreateConnection();
-            await using var _ = connection.ConfigureAwait(false);
-            using TQuery query = connection.CreateQuery(sql);
-            parameters.BindMany(query);
-            return await query.FetchAllAsync<TDataRow, TRow>(cancellationToken)
-                .ConfigureAwait(false);
+            return connectionPool
+                .FetchAllAsync<IPgConnection, IPgBindable, IPgExecutableQuery, IPgQueryBatch,
+                    TBindMany, IPgDataRow, TRow>(sql, parameters, cancellationToken);
         }
 
         /// <summary>
@@ -295,18 +255,16 @@ internal static class ConnectionPoolExtensions
         /// <exception cref="Sqlx.Core.Exceptions.SqlxException">
         /// if zero rows are returned from the query
         /// </exception>
-        public async Task<TRow> FetchFirstAsync<TRow>(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Task<TRow> FetchFirstAsync<TRow>(
             string sql,
             TBindMany parameters,
             CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TDataRow, TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
-            TConnection connection = connectionPool.CreateConnection();
-            await using var _ = connection.ConfigureAwait(false);
-            using TQuery query = connection.CreateQuery(sql);
-            parameters.BindMany(query);
-            return await query.FetchFirstAsync<TDataRow, TRow>(cancellationToken)
-                .ConfigureAwait(false);
+            return connectionPool
+                .FetchFirstAsync<IPgConnection, IPgBindable, IPgExecutableQuery, IPgQueryBatch,
+                    TBindMany, IPgDataRow, TRow>(sql, parameters, cancellationToken);
         }
 
         /// <summary>
@@ -322,18 +280,16 @@ internal static class ConnectionPoolExtensions
         /// the first row found when executing this query or the default value when no rows are
         /// found
         /// </returns>
-        public async Task<TRow?> FetchFirstOrDefaultAsync<TRow>(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Task<TRow?> FetchFirstOrDefaultAsync<TRow>(
             string sql,
             TBindMany parameters,
             CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TDataRow, TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
-            TConnection connection = connectionPool.CreateConnection();
-            await using var _ = connection.ConfigureAwait(false);
-            using TQuery query = connection.CreateQuery(sql);
-            parameters.BindMany(query);
-            return await query.FetchFirstOrDefaultAsync<TDataRow, TRow>(cancellationToken)
-                .ConfigureAwait(false);
+            return connectionPool
+                .FetchFirstOrDefaultAsync<IPgConnection, IPgBindable, IPgExecutableQuery,
+                    IPgQueryBatch, TBindMany, IPgDataRow, TRow>(sql, parameters, cancellationToken);
         }
 
         /// <summary>
@@ -348,18 +304,16 @@ internal static class ConnectionPoolExtensions
         /// <exception cref="Sqlx.Core.Exceptions.SqlxException">
         /// if zero or more than 1 row is returned
         /// </exception>
-        public async Task<TRow> FetchSingleAsync<TRow>(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Task<TRow> FetchSingleAsync<TRow>(
             string sql,
             TBindMany parameters,
             CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TDataRow, TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
-            TConnection connection = connectionPool.CreateConnection();
-            await using var _ = connection.ConfigureAwait(false);
-            using TQuery query = connection.CreateQuery(sql);
-            parameters.BindMany(query);
-            return await query.FetchSingleAsync<TDataRow, TRow>(cancellationToken)
-                .ConfigureAwait(false);
+            return connectionPool
+                .FetchSingleAsync<IPgConnection, IPgBindable, IPgExecutableQuery, IPgQueryBatch,
+                    TBindMany, IPgDataRow, TRow>(sql, parameters, cancellationToken);
         }
 
         /// <summary>
@@ -377,18 +331,16 @@ internal static class ConnectionPoolExtensions
         /// <exception cref="Sqlx.Core.Exceptions.SqlxException">
         /// if more than 1 row is returned
         /// </exception>
-        public async Task<TRow?> FetchSingleOrDefaultAsync<TRow>(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Task<TRow?> FetchSingleOrDefaultAsync<TRow>(
             string sql,
             TBindMany parameters,
             CancellationToken cancellationToken = default)
-            where TRow : IFromRow<TDataRow, TRow>
+            where TRow : IFromRow<IPgDataRow, TRow>
         {
-            TConnection connection = connectionPool.CreateConnection();
-            await using var _ = connection.ConfigureAwait(false);
-            using TQuery query = connection.CreateQuery(sql);
-            parameters.BindMany(query);
-            return await query.FetchSingleOrDefaultAsync<TDataRow, TRow>(cancellationToken)
-                .ConfigureAwait(false);
+            return connectionPool
+                .FetchSingleOrDefaultAsync<IPgConnection, IPgBindable, IPgExecutableQuery,
+                    IPgQueryBatch, TBindMany, IPgDataRow, TRow>(sql, parameters, cancellationToken);
         }
     }
 }
