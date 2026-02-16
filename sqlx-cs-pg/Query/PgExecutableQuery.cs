@@ -15,6 +15,7 @@ namespace Sqlx.Postgres.Query;
 /// </summary>
 internal class PgExecutableQuery : IPgExecutableQuery
 {
+    private bool _disposed;
     private IPgQueryExecutor? _queryExecutor;
     private readonly PooledArrayBufferWriter _buffer;
     private readonly PgParameterWriter _parameterBuffer;
@@ -140,14 +141,17 @@ internal class PgExecutableQuery : IPgExecutableQuery
     public Task<IAsyncResultSet<IPgDataRow>> ExecuteAsync(
         CancellationToken cancellationToken)
     {
-        PgException.ThrowIfNull(_queryExecutor);
-        return _queryExecutor.ExecuteQueryAsync(this, cancellationToken);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return _queryExecutor!.ExecuteQueryAsync(this, cancellationToken);
     }
 
     public void Dispose()
     {
+        if (_disposed) return;
+        
         _buffer.Dispose();
         _parameterBuffer.Dispose();
         _queryExecutor = null;
+        _disposed = true;
     }
 }

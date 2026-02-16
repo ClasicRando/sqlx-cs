@@ -142,7 +142,8 @@ public partial class PgConnector
         CancellationToken cancellationToken)
     {
         ThrowIfNotOpen();
-        PgQueryBatch pgQueryBatch = PgException.CheckIfIs<IPgQueryBatch, PgQueryBatch>(queryBatch);
+        PgQueryBatch pgQueryBatch = queryBatch as PgQueryBatch
+                                    ?? throw new PgException("Invalid query batch. Must be a PgQueryBatch");
         var syncAll = queryBatch.WrapBatchInTransaction;
 
         UserAction userAction = StartUserAction();

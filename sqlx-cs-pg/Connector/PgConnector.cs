@@ -267,7 +267,7 @@ public sealed partial class PgConnector : IPooledConnection
                 TransactionCommand.Begin => BeginQuery,
                 TransactionCommand.Commit => CommitQuery,
                 TransactionCommand.Rollback => RollbackQuery,
-                _ => throw PgException.EnumOutOfRange(transactionCommand),
+                _ => throw new ArgumentOutOfRangeException(nameof(transactionCommand)),
             };
             await SendQueryMessage(sql, cancellationToken).ConfigureAwait(false);
             await WaitForOrThrowError<ReadyForQueryMessage>(cancellationToken)

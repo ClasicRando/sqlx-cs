@@ -26,6 +26,11 @@ public partial class PgConnector
 
         var authentication = await ReceiveAuthMessageAs<IAuthMessage>(cancellationToken)
             .ConfigureAwait(false);
-        PgException.CheckIfIs<IAuthMessage, OkAuthMessage>(authentication);
+        if (authentication is OkAuthMessage)
+        {
+            return;
+        }
+
+        throw new PgException($"Expected final authentication message to be OK but found {authentication}");
     }
 }

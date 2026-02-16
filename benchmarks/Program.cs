@@ -53,6 +53,8 @@ public class Benchmarks
         SELECT id, text_field, creation_date, last_change_date, counter
         FROM public.posts
         """;
+    
+    private const int MultiConnectionCount = 10;
 
     private static NpgsqlDataSource _npgsqlDataSource = null!;
     private static IPgConnectionPool _sqlxPgConnectionPool = null!;
@@ -143,6 +145,17 @@ public class Benchmarks
     }
 
     [Benchmark]
+    public async Task<List<RowData>[]> SimpleQueryMultiConnectionsAllRowNpgsql()
+    {
+        List<Task<List<RowData>>> tasks = [];
+        for (var i = 0; i < MultiConnectionCount; i++)
+        {
+            tasks.Add(Task.Run(SimpleQueryAllRowNpgsql));
+        }
+        return await Task.WhenAll(tasks);
+    }
+
+    [Benchmark]
     public async Task<List<RowData>> SimpleQuerySingleRowSqlx()
     {
         var param = new IdParam { Id = _id };
@@ -160,6 +173,17 @@ public class Benchmarks
     public async Task<List<RowData>> SimpleQueryAllRowSqlx()
     {
         return await _sqlxPgConnectionPool.FetchAllAsync<RowData>(RowQuery);
+    }
+
+    [Benchmark]
+    public async Task<List<RowData>[]> SimpleQueryMultiConnectionsAllRowSqlx()
+    {
+        List<Task<List<RowData>>> tasks = [];
+        for (var i = 0; i < MultiConnectionCount; i++)
+        {
+            tasks.Add(Task.Run(SimpleQueryAllRowSqlx));
+        }
+        return await Task.WhenAll(tasks);
     }
 
     private static async Task<List<RowData>> CollectDataReaderRows(NpgsqlDataReader reader)

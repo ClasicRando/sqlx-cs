@@ -49,13 +49,10 @@ public sealed class AsyncConnector : IAsyncConnector
         {
             IPEndPoint ipEndPoint = endPoints[i];
 
-#pragma warning disable CA2000
-            var socket = new Socket(ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-#pragma warning restore CA2000
+            _socket = new Socket(ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             try
             {
-                await socket.ConnectAsync(ipEndPoint, cancellationToken).ConfigureAwait(false);
-                _socket = socket;
+                await _socket.ConnectAsync(ipEndPoint, cancellationToken).ConfigureAwait(false);
                 _stream = new NetworkStream(_socket);
                 _pipeWriter = PipeWriter.Create(_stream);
             }
@@ -63,12 +60,14 @@ public sealed class AsyncConnector : IAsyncConnector
             {
                 try
                 {
-                    socket.Dispose();
+                    _socket.Dispose();
                 }
                 catch
                 {
                     // ignored
                 }
+
+                _socket = null;
 
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -105,7 +104,6 @@ public sealed class AsyncConnector : IAsyncConnector
     /// <exception cref="SqlxException">if the stream is closed</exception>
     private async ValueTask FillBufferAsync(int length, CancellationToken cancellationToken)
     {
-        SqlxException.ThrowIfNull(_stream);
         var bytesRemaining = _bufferLength - _bufferPosition;
         if (bytesRemaining >= length)
         {
@@ -141,7 +139,7 @@ public sealed class AsyncConnector : IAsyncConnector
         var count = length - bytesRemaining;
         while (count > 0)
         {
-            var bytesRead = await _stream.ReadAsync(
+            var bytesRead = await _stream!.ReadAsync(
                     _innerBuffer.AsMemory(_bufferLength),
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -169,14 +167,14 @@ public sealed class AsyncConnector : IAsyncConnector
 
     public async ValueTask<byte> ReadByteAsync(CancellationToken cancellationToken)
     {
-        SqlxException.ThrowIfNull(_stream);
+        CheckIfConnected();
         await FillBufferAsync(1, cancellationToken).ConfigureAwait(false);
         return _innerBuffer[_bufferPosition++];
     }
 
     public async ValueTask<int> ReadIntAsync(CancellationToken cancellationToken)
     {
-        SqlxException.ThrowIfNull(_stream);
+        CheckIfConnected();
         await FillBufferAsync(4, cancellationToken).ConfigureAwait(false);
         ReadOnlySpan<byte> span = _innerBuffer.AsSpan(_bufferPosition);
         var result = span.ReadInt();
@@ -186,6 +184,7 @@ public sealed class AsyncConnector : IAsyncConnector
 
     public ValueTask EnsureBufferFilled(int size, CancellationToken cancellationToken)
     {
+        CheckIfConnected();
         return FillBufferAsync(size, cancellationToken);
     }
 
@@ -193,6 +192,10 @@ public sealed class AsyncConnector : IAsyncConnector
     {
         _bufferPosition += bytesConsumed;
     }
+
+    private void CheckIfConnected() => ThrowHelper.ThrowInvalidOperationExceptionIfNull(
+        _stream,
+        "Connection must be open to perform operation");
 
     public void Dispose()
     {
