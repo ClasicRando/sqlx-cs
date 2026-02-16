@@ -36,7 +36,7 @@ public sealed partial class PgConnector : IPooledConnection
     private bool _disposed;
     private readonly IAsyncConnector _asyncConnector;
     private readonly ILogger<PgConnector> _logger;
-    private IAsyncResultSet<IPgDataRow>? _currentResultSet;
+    private PgAsyncResultSet? _currentResultSet;
 
     private BackendDataKeyMessage? _backendDataKey;
     private int _pendingReadyForQuery;

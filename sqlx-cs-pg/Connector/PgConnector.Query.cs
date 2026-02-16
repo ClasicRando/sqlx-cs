@@ -83,7 +83,7 @@ public partial class PgConnector
         _pendingReadyForQuery++;
 
         Status = ConnectionStatus.Fetching;
-        _currentResultSet = new PgAsyncResultSet(this, userAction, null);
+        _currentResultSet = new PgAsyncResultSet(this, userAction, [], true);
         return _currentResultSet;
     }
 
@@ -127,7 +127,7 @@ public partial class PgConnector
                 cancellationToken)
             .ConfigureAwait(false);
         Status = ConnectionStatus.Fetching;
-        _currentResultSet = new PgAsyncResultSet(this, userAction, statement);
+        _currentResultSet = new PgAsyncResultSet(this, userAction, [statement], true);
         return _currentResultSet;
     }
 
@@ -177,7 +177,7 @@ public partial class PgConnector
         }
 
         Status = ConnectionStatus.Fetching;
-        _currentResultSet = new PgBatchAsyncResultSet(this, userAction, statements, syncAll);
+        _currentResultSet = new PgAsyncResultSet(this, userAction, statements, syncAll);
         return _currentResultSet;
     }
 

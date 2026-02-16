@@ -9,26 +9,30 @@ using Sqlx.Postgres.Query;
 
 namespace Sqlx.Postgres.Result;
 
-internal sealed class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
+internal class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
 {
     private bool _disposed;
-    private bool _isComplete;
     private bool _isBeforeStart = true;
+    private int _statementIndex;
 
     private PgConnector _connector;
     private readonly ILogger<PgAsyncResultSet> _logger;
     private readonly PgConnector.UserAction _userAction;
-    private PgStatementMetadata _pgStatementMetadata;
+    private readonly PgPreparedStatement[] _statements;
+    private readonly bool _isSyncAll;
+    private PgStatementMetadata? _pgStatementMetadata;
 
     public PgAsyncResultSet(
         PgConnector connector,
         PgConnector.UserAction userAction,
-        PgPreparedStatement? preparedStatement)
+        PgPreparedStatement[] statements,
+        bool isSyncAll)
     {
         _connector = connector;
         _logger = connector.ConnectOptions.LoggerFactory.CreateLogger<PgAsyncResultSet>();
         _userAction = userAction;
-        _pgStatementMetadata = new PgStatementMetadata(preparedStatement?.ColumnMetadata ?? []);
+        _statements = statements;
+        _isSyncAll = isSyncAll;
     }
 
     public Either<IPgDataRow, QueryResult> Current
@@ -48,6 +52,7 @@ internal sealed class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
             {
                 field.Left.Dispose();
             }
+
             field = value;
         }
     }
@@ -56,10 +61,19 @@ internal sealed class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         _isBeforeStart = false;
-        if (_isComplete)
+        var statementCount = _statements.Length;
+        var hasStatements = statementCount > 0;
+        if (_pgStatementMetadata is null && hasStatements && _statementIndex >= statementCount)
         {
             return false;
         }
+
+        if (hasStatements)
+        {
+            _pgStatementMetadata ??=
+                new PgStatementMetadata(_statements[_statementIndex++].ColumnMetadata);
+        }
+        var nextStatementOnCommandComplete = !_isSyncAll && hasStatements && _statementIndex != statementCount;
 
         while (true)
         {
@@ -70,7 +84,7 @@ internal sealed class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
                 .ConfigureAwait(false);
 
             if (_connector.ApplyStandardMessageProcessing(backendMessageType, size)) continue;
-            
+
             cancellationToken.ThrowIfCancellationRequested();
             switch (backendMessageType)
             {
@@ -80,26 +94,34 @@ internal sealed class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
                     break;
                 case PgBackendMessageType.DataRow:
 #pragma warning disable CA2000
-                    PgDataRow dataRow = _connector.ReceiveRowDataMessage(size, _pgStatementMetadata);
+                    PgDataRow dataRow =
+                        _connector.ReceiveRowDataMessage(size, _pgStatementMetadata!);
 #pragma warning restore CA2000
                     Current = Either.Left<IPgDataRow, QueryResult>(dataRow);
                     return true;
                 case PgBackendMessageType.CommandComplete:
-                    var commandCompleteMessage = _connector.ReceiveMessage<CommandCompleteMessage>(size);
+                    var commandCompleteMessage =
+                        _connector.ReceiveMessage<CommandCompleteMessage>(size);
                     var queryResult = new QueryResult(
                         commandCompleteMessage.RowCount,
                         commandCompleteMessage.Message);
                     Current = Either.Right<IPgDataRow, QueryResult>(queryResult);
+                    if (nextStatementOnCommandComplete)
+                    {
+                        _pgStatementMetadata = null;
+                    }
+
                     return true;
                 case PgBackendMessageType.ReadyForQuery:
                     _connector.HandleReadyForQueryMessage(size);
-                    _isComplete = true;
+                    _pgStatementMetadata = null;
                     return false;
                 case PgBackendMessageType.BindComplete:
                 case PgBackendMessageType.ParseComplete:
                 case PgBackendMessageType.ParameterDescription:
                 case PgBackendMessageType.NoData:
                 case PgBackendMessageType.CloseComplete:
+                case PgBackendMessageType.EmptyQueryResponse:
                     _connector.AdvanceReadBuffer(size);
                     break;
                 default:
