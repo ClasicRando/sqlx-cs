@@ -4,6 +4,7 @@ using System.IO.Pipelines;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 
@@ -102,6 +103,7 @@ public sealed class AsyncConnector : IAsyncConnector
     /// <param name="length">require length of data in the internal buffer</param>
     /// <param name="cancellationToken">token to cancel the async operation</param>
     /// <exception cref="SqlxException">if the stream is closed</exception>
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder))]
     private async ValueTask FillBufferAsync(int length, CancellationToken cancellationToken)
     {
         var bytesRemaining = _bufferLength - _bufferPosition;
@@ -165,6 +167,7 @@ public sealed class AsyncConnector : IAsyncConnector
         }
     }
 
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
     public async ValueTask<byte> ReadByteAsync(CancellationToken cancellationToken)
     {
         CheckIfConnected();
@@ -172,6 +175,7 @@ public sealed class AsyncConnector : IAsyncConnector
         return _innerBuffer[_bufferPosition++];
     }
 
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
     public async ValueTask<int> ReadIntAsync(CancellationToken cancellationToken)
     {
         CheckIfConnected();

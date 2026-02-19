@@ -16,12 +16,15 @@ namespace Sqlx.Postgres.Result;
 internal sealed class PgDataRow : IPgDataRow
 {
     private const int MaxStackSize = 256 / (sizeof(char) / sizeof(byte));
+    private static readonly ArrayPool<byte> ByteArrayPool = ArrayPool<byte>.Shared;
     private static readonly ArrayPool<char> CharArrayPool = ArrayPool<char>.Shared;
+    private static readonly ArrayPool<Range?> RangeArrayPool = ArrayPool<Range?>.Shared;
 
     private bool _isDisposed;
     private byte[] _rowData;
     private readonly bool _isRented;
     private readonly PgStatementMetadata _statementMetadata;
+    private readonly short _columnCount;
     private readonly Range?[] _columnValueSlices;
 
     public PgDataRow(byte[] rowData, PgStatementMetadata statementMetadata)
@@ -29,23 +32,24 @@ internal sealed class PgDataRow : IPgDataRow
         _rowData = rowData;
         _isRented = false;
         _statementMetadata = statementMetadata;
-        _columnValueSlices = ExtractRanges(rowData);
+        ReadOnlySpan<byte> span = rowData;
+        _columnValueSlices = ExtractRanges(ref span, out _columnCount);
     }
 
-    public PgDataRow(ReadOnlySpan<byte> rowData, PgStatementMetadata statementMetadata)
+    public PgDataRow(ref ReadOnlySpan<byte> rowData, PgStatementMetadata statementMetadata)
     {
-        _rowData = ArrayPool<byte>.Shared.Rent(rowData.Length);
+        _rowData = ByteArrayPool.Rent(rowData.Length);
         rowData.CopyTo(_rowData);
         _isRented = true;
         _statementMetadata = statementMetadata;
-        _columnValueSlices = ExtractRanges(rowData);
+        _columnValueSlices = ExtractRanges(ref rowData, out _columnCount);
     }
 
-    private static Range?[] ExtractRanges(ReadOnlySpan<byte> span)
+    private static Range?[] ExtractRanges(ref ReadOnlySpan<byte> span, out short columnCount)
     {
-        int columnCount = span.ReadShort();
+        columnCount = span.ReadShort();
         var rowDataIndex = 2;
-        var columnValueSlices = new Range?[columnCount];
+        var columnValueSlices = RangeArrayPool.Rent(columnCount);
         for (var i = 0; i < columnCount; i++)
         {
             var length = span.ReadInt();
@@ -62,7 +66,7 @@ internal sealed class PgDataRow : IPgDataRow
         }
         return columnValueSlices;
     }
-    
+
     public int IndexOf(string name)
     {
         CheckDisposed();
@@ -211,6 +215,7 @@ internal sealed class PgDataRow : IPgDataRow
 
     private ColumnData GetColumnData(int index)
     {
+        CheckValidIndex(index);
         ref PgColumnMetadata columnMetadata = ref _statementMetadata[index];
         var sliceItem = _columnValueSlices[index];
         return sliceItem is not {} slice
@@ -269,6 +274,14 @@ internal sealed class PgDataRow : IPgDataRow
         }
     }
 
+    private void CheckValidIndex(int index)
+    {
+        if (index >= 0 && index < _columnCount) return;
+        throw new ArgumentOutOfRangeException(
+            nameof(index),
+            $"Invalid index. Must be between 0..{_columnCount - 1}");
+    }
+
     private void CheckDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, typeof(PgDataRow));
 
     public void Dispose()
@@ -279,8 +292,9 @@ internal sealed class PgDataRow : IPgDataRow
         
         if (_isRented)
         {
-            ArrayPool<byte>.Shared.Return(_rowData);
+            ByteArrayPool.Return(_rowData);
         }
         _rowData = [];
+        RangeArrayPool.Return(_columnValueSlices);
     }
 }

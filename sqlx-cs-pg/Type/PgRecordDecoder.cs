@@ -92,7 +92,8 @@ public static class PgRecordDecoder
             bufferWriter.Write(binaryValue.Buffer.ReadBytesAsSpan(attributeLength));
         }
 
-        using var row = new PgDataRow(bufferWriter.ReadableSpan, new PgStatementMetadata(columns));
+        var span = bufferWriter.ReadableSpan;
+        using var row = new PgDataRow(ref span, new PgStatementMetadata(columns));
         return T.FromRow(row);
     }
 
@@ -144,7 +145,8 @@ public static class PgRecordDecoder
             bufferWriter.Advance(literalByteCount);
         }
 
-        using var row = new PgDataRow(bufferWriter.ReadableSpan, new PgStatementMetadata(columns));
+        var dataRowSpan = bufferWriter.ReadableSpan;
+        using var row = new PgDataRow(ref dataRowSpan, new PgStatementMetadata(columns));
         return T.FromRow(row);
     }
 

@@ -60,7 +60,7 @@ public partial class PgConnector
     internal PgDataRow ReceiveRowDataMessage(int size, PgStatementMetadata pgStatementMetadata)
     {
         var buffer = _asyncConnector.ReadBuffer[..size];
-        var dataRow = new PgDataRow(buffer, pgStatementMetadata);
+        var dataRow = new PgDataRow(ref buffer, pgStatementMetadata);
         AdvanceReadBuffer(size);
         return dataRow;
     }

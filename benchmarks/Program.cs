@@ -90,7 +90,7 @@ public class Benchmarks
             CREATE TABLE public.posts (
                 id int primary key generated always as identity, 
                 text_field text not null, 
-                creation_date timestamp not null, 
+                creation_date timestamp not null,
                 last_change_date timestamp not null,
                 counter int
             );

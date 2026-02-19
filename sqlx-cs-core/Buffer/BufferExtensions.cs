@@ -146,7 +146,12 @@ public static class BufferExtensions
         /// </summary>
         /// <returns>A new byte array with all bytes</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public byte[] ReadBytes() => span.ReadBytes(span.Length);
+        public byte[] ReadBytes()
+        {
+            var result = span.ToArray();
+            span = default;
+            return result;
+        }
 
         /// <summary>
         /// Consume the desired number of bytes as a new <see cref="byte"/> array. The span will now
@@ -168,7 +173,12 @@ public static class BufferExtensions
         /// </summary>
         /// <returns>UTF-8 character string</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public string ReadString() => span.ReadString(span.Length);
+        public string ReadString()
+        {
+            var result = Charsets.Default.GetString(span);
+            span = default;
+            return result;
+        }
 
         /// <summary>
         /// Read the desired number of bytes as a UTF-8 character string. If the number of bytes
