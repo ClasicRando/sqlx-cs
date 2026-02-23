@@ -103,7 +103,7 @@ namespace Sqlx.Core.Query;
 /// batch.CreateQuery(InsertStatement)
 ///     .Bind(2)
 ///     .Bind("Name 2");
-/// long affectedRows = await batch.ExecuteNonQuery();
+/// long affectedRows = await batch.ExecuteNonQueryAsync();
 /// Console.WriteLine($"Inserted {affectedRows} rows");
 /// </code>
 /// </para>

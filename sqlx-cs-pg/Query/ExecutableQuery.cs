@@ -84,7 +84,7 @@ public static class ExecutableQuery
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchAllAsync{TDataRow,TRow}"/>>
-        public ValueTask<List<TRow>> FetchAllAsync<TRow>(
+        public Task<List<TRow>> FetchAllAsync<TRow>(
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<IPgDataRow, TRow>
         {

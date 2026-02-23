@@ -54,6 +54,8 @@ public sealed partial class PgConnector : IPooledConnection
 
     private PipeWriter Writer => _asyncConnector.Writer;
 
+    internal int PendingReadyForQuery => _pendingReadyForQuery;
+
     private int _connectionStatus = (int)ConnectionStatus.Closed;
     public ConnectionStatus Status
     {

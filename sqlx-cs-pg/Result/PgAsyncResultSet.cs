@@ -115,7 +115,7 @@ internal class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
                 case PgBackendMessageType.ReadyForQuery:
                     _connector.HandleReadyForQueryMessage(size);
                     _pgStatementMetadata = null;
-                    return false;
+                    return _connector.PendingReadyForQuery > 0;
                 case PgBackendMessageType.BindComplete:
                 case PgBackendMessageType.ParseComplete:
                 case PgBackendMessageType.ParameterDescription:

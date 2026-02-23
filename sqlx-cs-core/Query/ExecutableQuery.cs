@@ -14,26 +14,17 @@ public static class ExecutableQuery
         where TDataRow : IDataRow
     {
         /// <summary>
-        /// Execute this query, ignoring any rows returned and just counting the total number of rows
-        /// affected by the query. The intended use of this method is for queries that insert or
-        /// manipulate data without returning any results.
+        /// Execute this query, ignoring any rows returned and just counting the total number of
+        /// rows affected by the query. The intended use of this method is for queries that insert
+        /// or manipulate data without returning any results.
         /// </summary>
-        /// <param name="cancellationToken">optional cancellation token</param>
-        /// <returns>total number of rows impacted by the query</returns>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <returns>Total number of rows impacted by the query</returns>
         public async Task<long> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
         {
-            var result = 0L;
-            using var resultSet = await executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            while (await resultSet.MoveNextAsync(cancellationToken).ConfigureAwait(false))
-            {
-                var current = resultSet.Current;
-                if (current.IsRight)
-                {
-                    result += current.Right.RowsAffected;
-                }
-            }
-
-            return result;
+            using var resultSet = await executableQuery.ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+            return await resultSet.CombineAllRowsAffected(cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -41,49 +32,49 @@ public static class ExecutableQuery
         /// Each row is mapped to <typeparamref name="TRow"/> using the static constructor method
         /// <see cref="TRow.FromRow"/>.
         /// </summary>
-        /// <param name="cancellationToken">optional cancellation token</param>
-        /// <typeparam name="TRow">row type to map each row into</typeparam>
-        /// <returns>a stream of result set rows mapped to the desired row type</returns>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <typeparam name="TRow">Row type to map each row into</typeparam>
+        /// <returns>A stream of result set rows mapped to the desired row type</returns>
         public async IAsyncEnumerable<TRow> FetchAsync<TRow>(
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using var resultSet = await executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            while (await resultSet.MoveNextAsync(cancellationToken).ConfigureAwait(false))
+            using var resultSet = await executableQuery.ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+            await foreach (TRow row in resultSet
+                               .FetchNextResultAsync<TDataRow, TRow>(cancellationToken)
+                               .ConfigureAwait(false))
             {
-                var current = resultSet.Current;
-                if (current.IsLeft)
-                {
-                    yield return TRow.FromRow(current.Left);
-                    continue;
-                }
-                yield break;
+                yield return row;
             }
         }
 
         /// <summary>
-        /// Fetch all rows returned from the query execution until the end of the first result set and
-        /// pack all those rows into a <see cref="List{T}"/>. Each row is mapped to
-        /// <typeparamref name="TRow"/> using the static constructor method <see cref="TRow.FromRow"/>.
+        /// Fetch all rows returned from the query execution until the end of the first result set
+        /// and pack all those rows into a <see cref="List{T}"/>. Each row is mapped to
+        /// <typeparamref name="TRow"/> using the static constructor method
+        /// <see cref="TRow.FromRow"/>.
         /// </summary>
-        /// <param name="cancellationToken">optional cancellation token</param>
-        /// <typeparam name="TRow">row type to map the row into</typeparam>
-        /// <returns>a list of result set rows mapped to the desired row type</returns>
-        public ValueTask<List<TRow>> FetchAllAsync<TRow>(
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <typeparam name="TRow">Row type to map the row into</typeparam>
+        /// <returns>A list of result set rows mapped to the desired row type</returns>
+        public async Task<List<TRow>> FetchAllAsync<TRow>(
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            return executableQuery.FetchAsync<TDataRow, TRow>(cancellationToken)
-                .ToListAsync(cancellationToken);
+            using var resultSet = await executableQuery.ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+            return await resultSet.ExtractNextResultAsync<TDataRow, TRow>(cancellationToken)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
         /// Fetch the first row from the query execution and map it to <typeparamref name="TRow"/>
         /// </summary>
-        /// <param name="cancellationToken">optional cancellation token</param>
-        /// <typeparam name="TRow">row type to map the row into</typeparam>
-        /// <returns>the first row found when executing this query</returns>
-        /// <exception cref="SqlxException">if zero rows are returned from the query</exception>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <typeparam name="TRow">Row type to map the row into</typeparam>
+        /// <returns>The first row found when executing this query</returns>
+        /// <exception cref="SqlxException">If zero rows are returned from the query</exception>
         public Task<TRow> FetchFirstAsync<TRow>(CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
@@ -91,13 +82,15 @@ public static class ExecutableQuery
         }
 
         /// <summary>
-        /// Fetch the first row from the query execution and map it to <typeparamref name="TRow"/>. If
-        /// no rows are returned by the query, <typeparamref name="TRow"/>'s default value is returned.
+        /// Fetch the first row from the query execution and map it to <typeparamref name="TRow"/>.
+        /// If no rows are returned by the query, <typeparamref name="TRow"/>'s default value is
+        /// returned.
         /// </summary>
-        /// <param name="cancellationToken">optional cancellation token</param>
-        /// <typeparam name="TRow">row type to map the row into</typeparam>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <typeparam name="TRow">Row type to map the row into</typeparam>
         /// <returns>
-        /// the first row found when executing this query or the default value when no rows are found
+        /// The first row found when executing this query or the default value when no rows are
+        /// found
         /// </returns>
         public Task<TRow?> FetchFirstOrDefaultAsync<TRow>(
             CancellationToken cancellationToken = default)
@@ -110,10 +103,10 @@ public static class ExecutableQuery
         /// Fetch the first row from the query execution and map it to <typeparamref name="TRow"/>
         /// thrown.
         /// </summary>
-        /// <param name="cancellationToken">optional cancellation token</param>
-        /// <typeparam name="TRow">row type to map the row into</typeparam>
-        /// <returns>the first row found when executing this query</returns>
-        /// <exception cref="SqlxException">if zero or more than 1 row is returned</exception>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <typeparam name="TRow">Row type to map the row into</typeparam>
+        /// <returns>The first row found when executing this query</returns>
+        /// <exception cref="SqlxException">If zero or more than 1 row is returned</exception>
         public Task<TRow> FetchSingleAsync<TRow>(
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
@@ -125,15 +118,17 @@ public static class ExecutableQuery
         }
 
         /// <summary>
-        /// Fetch the first row from the query execution and map it to <typeparamref name="TRow"/>. If
-        /// no rows are returned by the query, <typeparamref name="TRow"/>'s default value is returned.
+        /// Fetch the first row from the query execution and map it to <typeparamref name="TRow"/>.
+        /// If no rows are returned by the query, <typeparamref name="TRow"/>'s default value is
+        /// returned.
         /// </summary>
-        /// <param name="cancellationToken">optional cancellation token</param>
-        /// <typeparam name="TRow">row type to map the row into</typeparam>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <typeparam name="TRow">Row type to map the row into</typeparam>
         /// <returns>
-        /// the first row found when executing this query or the default value when no rows are found
+        /// The first row found when executing this query or the default value when no rows are
+        /// found
         /// </returns>
-        /// <exception cref="SqlxException">if more than 1 row is returned</exception>
+        /// <exception cref="SqlxException">If more than 1 row is returned</exception>
         public Task<TRow?> FetchSingleOrDefaultAsync<TRow>(
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
@@ -142,17 +137,17 @@ public static class ExecutableQuery
         }
 
         /// <summary>
-        /// Internal method to fetch the first row of a query execution, handling first vs single and
-        /// default vs required semantics.
+        /// Internal method to fetch the first row of a query execution, handling first vs single
+        /// and default vs required semantics.
         /// </summary>
-        /// <param name="assumeSingleRow">true if only single row result sets are allowed</param>
-        /// <param name="requireRow">true if at least 1 row is required</param>
-        /// <param name="cancellationToken">optional cancellation token</param>
-        /// <typeparam name="TRow">row type to map the row into</typeparam>
-        /// <returns>the first row fetched or default is at least one row is not required</returns>
+        /// <param name="assumeSingleRow">True if only single row result sets are allowed</param>
+        /// <param name="requireRow">True if at least 1 row is required</param>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <typeparam name="TRow">Row type to map the row into</typeparam>
+        /// <returns>The first row fetched or default is at least one row is not required</returns>
         /// <exception cref="SqlxException">
-        /// if no rows are found and at least 1 is required or multiple rows are found and single row is
-        /// expected
+        /// If no rows are found and at least 1 is required or multiple rows are found and single
+        /// row is expected
         /// </exception>
         private async Task<TRow?> FetchRowAsync<TRow>(
             bool assumeSingleRow,

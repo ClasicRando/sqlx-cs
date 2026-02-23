@@ -16,43 +16,13 @@ public static class QueryBatch
         /// of rows affected by the batch. The intended use of this method is for queries that
         /// insert or manipulate data without returning any results.
         /// </summary>
-        /// <param name="cancellationToken">optional cancellation token</param>
-        /// <returns>total number of rows impacted by the query batch</returns>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <returns>Total number of rows impacted by the query batch</returns>
         public async Task<long> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
         {
-            var result = 0L;
-            using var resultSet = await queryBatch.ExecuteBatch(cancellationToken).ConfigureAwait(false);
-            while (await resultSet.MoveNextAsync(cancellationToken).ConfigureAwait(false))
-            {
-                var current = resultSet.Current;
-                if (current.IsRight)
-                {
-                    result += current.Right.RowsAffected;
-                }
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Wrap the <see cref="IQueryBatch{TBindable,TDataRow}"/> as a
-        /// <see cref="QueryBatchResult{TBindable,TDataRow}"/> that allows for extracting each
-        /// result set as it's respective rows. This method starts executes all steps leading up to
-        /// the result stream being available so it may wait for that to complete depending upon the
-        /// database's implementation of query batching.
-        /// </summary>
-        /// <param name="cancellationToken">
-        /// Token used to cancel the enumeration of results from the query batch execution. The
-        /// <see cref="QueryBatchResult{TBindable,TDataRow}.ExtractNextResultAsync"/> method does
-        /// not accept a <see cref="CancellationToken"/> since you cannot provide a new token after
-        /// starting enumeration. If you want to control cancellation of the query batch extraction
-        /// you must do so with this token.
-        /// </param>
-        /// <returns>Result set extraction wrapper class for a query batch</returns>
-        public Task<QueryBatchResult<TBindable, TDataRow>> ToResult(
-            CancellationToken cancellationToken = default)
-        {
-            return QueryBatchResult<TBindable, TDataRow>.Create(queryBatch, cancellationToken);
+            using var resultSet = await queryBatch.ExecuteBatch(cancellationToken)
+                .ConfigureAwait(false);
+            return await resultSet.CombineAllRowsAffected(cancellationToken).ConfigureAwait(false);
         }
     }
 }

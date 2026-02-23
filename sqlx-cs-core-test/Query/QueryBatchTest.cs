@@ -55,45 +55,4 @@ public class QueryBatchTest
             10
         );
     }
-    
-    [Test]
-    public async Task ToResultAsync_Should_ExtractRows(CancellationToken ct)
-    {
-        List<Either<IDataRow, QueryResult>> lst =
-        [
-            Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
-            Either.Right<IDataRow, QueryResult>(new QueryResult(5, string.Empty)),
-            Either.Left<IDataRow, QueryResult>(Substitute.For<IDataRow>()),
-            Either.Right<IDataRow, QueryResult>(new QueryResult(5, string.Empty)),
-        ];
-        var query = Substitute.For<MockQueryBatch>();
-        query.ExecuteBatch(Arg.Any<CancellationToken>())
-            .Returns(lst.ToAsyncResultSet());
-
-        var batchResult = await query.ToResult(ct);
-
-        var rows1 = await batchResult.ExtractNextResultAsync<Row1>();
-        await Assert.That(rows1).IsSingleElement();
-        
-        var rows2 = await batchResult.ExtractNextResultAsync<Row2>();
-        await Assert.That(rows2).IsSingleElement();
-
-        await Assert.ThrowsAsync<QueryBatchExhausted>(() => batchResult.ExtractNextResultAsync<Row1>());
-    }
-
-    private struct Row1 : IFromRow<IDataRow, Row1>
-    {
-        public static Row1 FromRow(IDataRow dataRow)
-        {
-            return new Row1();
-        }
-    }
-
-    private struct Row2 : IFromRow<IDataRow, Row2>
-    {
-        public static Row2 FromRow(IDataRow dataRow)
-        {
-            return new Row2();
-        }
-    }
 }
