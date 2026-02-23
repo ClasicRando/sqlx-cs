@@ -164,10 +164,10 @@ internal sealed class PgDataRow : IPgDataRow
         }
 
         ref readonly PgColumnMetadata columnMetadata = ref columnData.ColumnMetadata;
-        if (PgJson<T>.DbType != columnMetadata.PgTypeInfo
-            && !PgJson<T>.IsCompatible(columnMetadata.PgTypeInfo))
+        if (PgJson<T>.DbType != columnMetadata.TypeInfo
+            && !PgJson<T>.IsCompatible(columnMetadata.TypeInfo))
         {
-            throw ColumnDecodeException.Create<T>(columnMetadata);
+            throw ColumnDecodeException.Create<T, PgColumnMetadata>(columnMetadata);
         }
 
         var bytes = _rowData.AsSpan()[columnData.Range.Start..columnData.Range.End];
@@ -197,7 +197,7 @@ internal sealed class PgDataRow : IPgDataRow
                 PgBinaryValue binaryValue = new(bytes, columnMetadata);
                 return PgJson<T>.DecodeBytes(ref binaryValue, jsonTypeInfo);
             default:
-                throw ColumnDecodeException.Create<T>(
+                throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                     columnData.ColumnMetadata,
                     $"Unexpected format code: {columnData.ColumnMetadata.FormatCode}");
         }
@@ -235,10 +235,10 @@ internal sealed class PgDataRow : IPgDataRow
         }
         
         ref readonly PgColumnMetadata columnMetadata = ref columnData.ColumnMetadata;
-        if (TType.DbType != columnMetadata.PgTypeInfo
-            && !TType.IsCompatible(columnMetadata.PgTypeInfo))
+        if (TType.DbType != columnMetadata.TypeInfo
+            && !TType.IsCompatible(columnMetadata.TypeInfo))
         {
-            throw ColumnDecodeException.Create<TResult>(columnMetadata);
+            throw ColumnDecodeException.Create<TResult, PgColumnMetadata>(columnMetadata);
         }
 
         var bytes = _rowData.AsSpan()[columnData.Range.Start..columnData.Range.End];
@@ -268,7 +268,7 @@ internal sealed class PgDataRow : IPgDataRow
                 var value = new PgBinaryValue(bytes, columnMetadata);
                 return TType.DecodeBytes(ref value);
             default:
-                throw ColumnDecodeException.Create<TResult>(
+                throw ColumnDecodeException.Create<TResult, PgColumnMetadata>(
                     columnData.ColumnMetadata,
                     $"Unexpected format code: {columnData.ColumnMetadata.FormatCode}");
         }

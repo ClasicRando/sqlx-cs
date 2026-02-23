@@ -4,6 +4,7 @@ using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Types;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -86,12 +87,12 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     [SuppressMessage("ReSharper", "InvertIf")]
     public static T DecodeBytes(ref PgBinaryValue value, JsonTypeInfo<T>? typeInfo)
     {
-        if (value.ColumnMetadata.PgTypeInfo == PgTypeInfo.Jsonb)
+        if (value.ColumnMetadata.TypeInfo == PgTypeInfo.Jsonb)
         {
             var versionCode = value.Buffer.ReadByte();
             if (versionCode != JsonBVersion)
             {
-                throw ColumnDecodeException.Create<T>(
+                throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                     value.ColumnMetadata,
                     $"Unsupported JSONB format version: {versionCode}. Only version 1 is supported");
             }

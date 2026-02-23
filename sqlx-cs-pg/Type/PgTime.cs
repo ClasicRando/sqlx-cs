@@ -1,6 +1,7 @@
 using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -52,7 +53,7 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
     {
         if (!TimeOnly.TryParse(value.Chars, out TimeOnly time))
         {
-            throw ColumnDecodeException.Create<TimeOnly>(
+            throw ColumnDecodeException.Create<TimeOnly, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Could not parse '{value.Chars}' into a time value");
         }

@@ -3,6 +3,7 @@ using Sqlx.Core.Config;
 using Sqlx.Core.Pool;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Logging;
@@ -326,7 +327,7 @@ public partial class PgConnector
                     break;
                 case PgBackendMessageType.RowDescription:
                     statement.ColumnMetadata = ReceiveRowDescriptionMessage(size)
-                        .Select(c => c.WithBinaryFormat())
+                        .Select(c => c with { FormatCode = PgFormatCode.Binary})
                         .ToArray();
                     break;
                 case PgBackendMessageType.NoData:

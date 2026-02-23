@@ -107,9 +107,8 @@ public sealed partial class PgConnector
                 throw;
             }
 
-            CommandCompleteMessage completedMessage = await CollectCopyInResult(cancellationToken)
+            return await CollectCopyInResult(cancellationToken)
                 .ConfigureAwait(false);
-            return new QueryResult(completedMessage.RowCount, completedMessage.Message);
         }
         finally
         {
@@ -190,11 +189,11 @@ public sealed partial class PgConnector
     /// </summary>
     /// <param name="cancellationToken">Token to cancel async operation</param>
     /// <returns>Command complete message sent. This should never be null but the </returns>
-    private async Task<CommandCompleteMessage> CollectCopyInResult(
+    private async Task<QueryResult> CollectCopyInResult(
         CancellationToken cancellationToken)
     {
         // Initialized to avoid returning a nullable type
-        var result = new CommandCompleteMessage(0L, "Default copy in complete message");
+        var result = new QueryResult(0L, "Default copy in complete message");
         while (true)
         {
             PgBackendMessageType backendMessageType = await ReceiveNextMessageType(cancellationToken)
@@ -204,7 +203,7 @@ public sealed partial class PgConnector
             switch (backendMessageType)
             {
                 case PgBackendMessageType.CommandComplete:
-                    result = ReceiveMessage<CommandCompleteMessage>(size);
+                    result = ReceiveQueryResult(size);
                     break;
                 case PgBackendMessageType.ReadyForQuery:
                     HandleReadyForQueryMessage(size);

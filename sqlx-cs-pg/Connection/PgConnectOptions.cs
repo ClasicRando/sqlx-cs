@@ -48,20 +48,39 @@ public record PgConnectOptions
     /// disabled. Default to 15 seconds.
     /// <see cref="Timeout.InfiniteTimeSpan"/>
     /// </summary>
-    public TimeSpan ConnectTimeout { get; init; } = TimeSpan.FromSeconds(15);
+    public TimeSpan ConnectTimeout
+    {
+        get;
+        init => field = value <= TimeSpan.Zero
+            ? throw new ArgumentException("Connect timeout cannot be zero or negative")
+            : value;
+    } = TimeSpan.FromSeconds(15);
 
     /// <summary>
     /// Optional global query timeout. Values less than or equal to zero are treated as a disabled
     /// timeout. Default is disabled.
     /// </summary>
-    public TimeSpan QueryTimeout { get; init; } = Timeout.InfiniteTimeSpan;
+    public TimeSpan QueryTimeout
+    {
+        get;
+        init => field = value <= TimeSpan.Zero
+            ? throw new ArgumentException("Query timeout cannot be zero or negative")
+            : value;
+    } = Timeout.InfiniteTimeSpan;
 
     /// <summary>
     /// Size of the prepared statement cache. Setting a larger size will allow for more
     /// statements to be executed without parsing again, but it will accumulate more statements
     /// on the server side which could impact performance of the server.
     /// </summary>
-    public int StatementCacheCapacity { get; init; } = 100;
+    public uint StatementCacheCapacity
+    {
+        get;
+        init => field = value is 0 or > int.MaxValue
+            ? throw new ArgumentException(
+                "Statement cache size must be greater than 0 and a valid int")
+            : value;
+    } = 100;
 
     /// <summary>
     /// True if the extended query protocol should be used for simple queries that:
@@ -72,7 +91,7 @@ public record PgConnectOptions
     /// The extended query protocol allows for binary encoding of result rows which generally
     /// perform better than text based encoding.
     /// </summary>
-    public bool UseExtendedProtocolForSimpleQueries { get; init; } = true;
+    public bool UseExtendedProtocolForSimpleQueries { get; init; }
 
     /// <summary>
     /// This parameter adjusts the number of digits used for textual output of floating-point
@@ -91,7 +110,8 @@ public record PgConnectOptions
     public string? CurrentSchema { get; init; }
 
     /// <summary>
-    /// 
+    /// SASL-PLUS option to channel bind if available and an SSL connection. Currently, does
+    /// nothing.
     /// </summary>
     public ChannelBinding ChannelBinding { get; init; } = ChannelBinding.Prefer;
 

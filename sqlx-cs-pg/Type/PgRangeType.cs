@@ -171,7 +171,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
         var separatorIndex = FindRangeSeparatorIndex(validChars.Chars);
         if (separatorIndex == -1)
         {
-            throw ColumnDecodeException.Create<PgRange<TValue>>(
+            throw ColumnDecodeException.Create<PgRange<TValue>, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Could not find separator character in '{value.Chars}'");
         }
@@ -250,7 +250,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
         {
             '(' or ')' => Bound.Excluded(value),
             '[' or ']' => Bound.Included(value),
-            _ => throw ColumnDecodeException.Create<PgRange<TValue>>(
+            _ => throw ColumnDecodeException.Create<PgRange<TValue>, PgColumnMetadata>(
                 columnMetadata,
                 $"Illegal bound character '{chr}'"),
         };

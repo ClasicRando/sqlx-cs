@@ -54,7 +54,7 @@ internal static class PgArrayTypeUtils
             return 0;
         }
 
-        ColumnDecodeException.CheckOrThrow<TElement[]>(
+        ColumnDecodeException.CheckOrThrow<TElement[], PgColumnMetadata>(
             dimensions == 1,
             value.ColumnMetadata,
             $"Attempted to decode an array of {dimensions} dimensions. Only 1-dimensional arrays are supported");
@@ -63,7 +63,7 @@ internal static class PgArrayTypeUtils
         value.Buffer.ReadInt();
 
         var elementTypeOid = value.Buffer.ReadInt();
-        ColumnDecodeException.CheckOrThrow<TElement[]>(
+        ColumnDecodeException.CheckOrThrow<TElement[], PgColumnMetadata>(
             elementTypeOid == TType.DbType.TypeOid.Inner,
             value.ColumnMetadata,
             $"Attempted to read an array with another element type. Expected {TType.DbType.TypeOid} but found {elementTypeOid}");
@@ -71,7 +71,7 @@ internal static class PgArrayTypeUtils
         var length = value.Buffer.ReadInt();
         var lowerBound = value.Buffer.ReadInt();
 
-        ColumnDecodeException.CheckOrThrow<TElement[]>(
+        ColumnDecodeException.CheckOrThrow<TElement[], PgColumnMetadata>(
             lowerBound == 1,
             value.ColumnMetadata,
             $"Attempted to read an array with a lower bound other than 1. Got {lowerBound}");
@@ -89,7 +89,7 @@ internal static class PgArrayTypeUtils
     {
         if (!value.Chars.StartsWith("{") || !value.Chars.EndsWith("}"))
         {
-            throw ColumnDecodeException.Create<TElement[]>(
+            throw ColumnDecodeException.Create<TElement[], PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Array literal must be enclosed in curly braces. Found '{value.Chars}'");
         }

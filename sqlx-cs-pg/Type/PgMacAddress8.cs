@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Net.NetworkInformation;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -99,7 +100,7 @@ public readonly record struct PgMacAddress8(
         var byteCount = value.Buffer.Length;
         if (byteCount != 8)
         {
-            throw ColumnDecodeException.Create<PgMacAddress8>(
+            throw ColumnDecodeException.Create<PgMacAddress8, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Expected 8 bytes. Found {byteCount}");
         }
@@ -125,7 +126,7 @@ public readonly record struct PgMacAddress8(
         var splitCount = value.Chars.Split(splits, ':');
         if (splitCount != 8)
         {
-            throw ColumnDecodeException.Create<PgMacAddress8>(
+            throw ColumnDecodeException.Create<PgMacAddress8, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Expected 8 address hex characters. Found {splitCount}");
         }
@@ -136,7 +137,7 @@ public readonly record struct PgMacAddress8(
             Range rng = splits[i];
             if (rng.End.Value - rng.Start.Value != 2)
             {
-                throw ColumnDecodeException.Create<PgMacAddress8>(
+                throw ColumnDecodeException.Create<PgMacAddress8, PgColumnMetadata>(
                     value.ColumnMetadata,
                     $"Could not parse network location bytes from '{value.Chars}'");
             }

@@ -100,11 +100,7 @@ internal class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
                     Current = Either.Left<IPgDataRow, QueryResult>(dataRow);
                     return true;
                 case PgBackendMessageType.CommandComplete:
-                    var commandCompleteMessage =
-                        _connector.ReceiveMessage<CommandCompleteMessage>(size);
-                    var queryResult = new QueryResult(
-                        commandCompleteMessage.RowCount,
-                        commandCompleteMessage.Message);
+                    QueryResult queryResult = _connector.ReceiveQueryResult(size);
                     Current = Either.Right<IPgDataRow, QueryResult>(queryResult);
                     if (nextStatementOnCommandComplete)
                     {

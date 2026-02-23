@@ -35,7 +35,13 @@ public sealed class PgConnection :
 
     public override async Task OpenAsync(CancellationToken cancellationToken = default)
     {
-        CheckClosed();
+        CheckDisposed();
+
+        if (Status is not (ConnectionStatus.Closed or ConnectionStatus.Broken))
+        {
+            throw new InvalidOperationException("Connection is already open");
+        }
+
         PgConnector connector = await _pool.AcquireStreamAsync(cancellationToken).ConfigureAwait(false);
         _pgConnector = connector;
     }
@@ -151,16 +157,6 @@ public sealed class PgConnection :
         finally
         {
             _pgConnector = null;
-        }
-    }
-
-    private void CheckClosed()
-    {
-        CheckDisposed();
-
-        if (Status is not (ConnectionStatus.Closed or ConnectionStatus.Broken))
-        {
-            throw new InvalidOperationException("Connection is already open");
         }
     }
 

@@ -1,6 +1,7 @@
 using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -61,7 +62,7 @@ internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
             4 => (sbyte)(((value.Chars[1] - '0') << 6) | ((value.Chars[2] - '0') << 3) | (value.Chars[3] - '0')),
             1 => (sbyte)value.Chars[0],
             0 => 0,
-            _ => throw ColumnDecodeException.Create<sbyte>(
+            _ => throw ColumnDecodeException.Create<sbyte, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Received invalid \"char\" text, {value.Chars}"),
         };

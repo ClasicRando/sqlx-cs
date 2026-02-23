@@ -188,7 +188,7 @@ internal static class PgEnumImplementationGenerator
         builder.Append("                _ => throw ColumnDecodeException.Create<")
             .AppendFullName(pgEnumToGenerate)
             .AppendLine(
-                ">(columnMetadata, $\"Attempted to decode an unknown enum variant with name, '{chars}'\"),");
+                ", PgColumnMetadata>(columnMetadata, $\"Attempted to decode an unknown enum variant with name, '{chars}'\"),");
         builder.AppendLine("            };");
         builder.AppendLine("        }");
 

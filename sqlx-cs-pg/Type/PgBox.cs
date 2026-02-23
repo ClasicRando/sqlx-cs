@@ -1,5 +1,6 @@
 using System.Buffers;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -76,7 +77,7 @@ public readonly struct PgBox : IPgDbType<PgBox>, IGeometryType, IHasArrayType, I
         var indexPairs = GeometryUtils.ExtractPointRanges(value.Chars);
         if (indexPairs.Length != 2)
         {
-            throw ColumnDecodeException.Create<PgBox>(
+            throw ColumnDecodeException.Create<PgBox, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Box geoms must have exactly 2 points. Found {indexPairs.Length} in '{value.Chars}'");
         }

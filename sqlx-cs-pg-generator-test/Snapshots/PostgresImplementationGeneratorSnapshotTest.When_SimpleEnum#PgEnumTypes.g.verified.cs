@@ -42,7 +42,7 @@ public static class PgEnumTypes
                 "Single" => TestEnum.Single,
                 "MultipleWords" => TestEnum.MultipleWords,
                 "Value_With4Words" => TestEnum.Value_With4Words,
-                _ => throw ColumnDecodeException.Create<TestEnum>(columnMetadata, $"Attempted to decode an unknown enum variant with name, '{chars}'"),
+                _ => throw ColumnDecodeException.Create<TestEnum, PgColumnMetadata>(columnMetadata, $"Attempted to decode an unknown enum variant with name, '{chars}'"),
             };
         }
     }

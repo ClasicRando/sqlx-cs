@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Runtime.CompilerServices;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -103,7 +104,7 @@ public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<P
             }
         }
             
-        throw ColumnDecodeException.Create<PgMoney>(
+        throw ColumnDecodeException.Create<PgMoney, PgColumnMetadata>(
             value.ColumnMetadata,
             $"Could not parse '{value.Chars}' into a money value");
     }

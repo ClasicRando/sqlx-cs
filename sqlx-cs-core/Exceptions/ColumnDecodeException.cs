@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -33,50 +34,25 @@ public class ColumnDecodeException(
     /// <param name="metadata">column metadata instance to extract column type data</param>
     /// <param name="reason">optional reason for the decoding failure</param>
     /// <param name="cause">optional cause for the decoding failure</param>
-    /// <typeparam name="T">CLR decoding type</typeparam>
+    /// <typeparam name="TType">CLR decoding type</typeparam>
+    /// <typeparam name="TMetadata">Metadata type</typeparam>
     /// <returns>exception instance that can be thrown</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ColumnDecodeException Create<T>(
-        IColumnMetadata metadata,
+    public static ColumnDecodeException Create<TType, TMetadata>(
+        TMetadata metadata,
         string reason = "",
-        Exception? cause = null) where T : notnull
+        Exception? cause = null)
+        where TType : notnull
+        where TMetadata : IColumnMetadata
     {
         ArgumentNullException.ThrowIfNull(metadata);
         return new ColumnDecodeException(
             metadata.DataType,
             metadata.DataType.ToString(CultureInfo.InvariantCulture),
             metadata.FieldName,
-            typeof(T),
+            typeof(TType),
             reason,
             cause);
-    }
-
-    /// <summary>
-    /// Check a boolean condition and if that is false, create and throw a
-    /// <see cref="ColumnDecodeException"/> using the supplied information. This is a shorthand for:
-    /// <code>
-    /// if (!check)
-    /// {
-    ///     throw Create&lt;T&gt;(metadata, reason());
-    /// }
-    /// </code>
-    /// Prefer this method when your reason is a computed string, and you only want to compute it if
-    /// the check fails.
-    /// </summary>
-    /// <param name="check">boolean expression to check</param>
-    /// <param name="metadata">column metadata instance to extract column type data</param>
-    /// <param name="reason">optional reason for the decoding failure</param>
-    /// <typeparam name="T">CLR decoding type</typeparam>
-    /// <exception cref="ColumnDecodeException">if the check fails</exception>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void CheckOrThrow<T>(
-        [DoesNotReturnIf(false)] bool check,
-        IColumnMetadata metadata,
-        Func<string> reason) where T : notnull
-    {
-        if (check) return;
-        ArgumentNullException.ThrowIfNull(reason);
-        throw Create<T>(metadata, reason());
     }
 
     /// <summary>
@@ -94,17 +70,20 @@ public class ColumnDecodeException(
     /// <param name="check">boolean expression to check</param>
     /// <param name="metadata">column metadata instance to extract column type data</param>
     /// <param name="reason">optional reason for the decoding failure</param>
-    /// <typeparam name="T">CLR decoding type</typeparam>
+    /// <typeparam name="TType">CLR decoding type</typeparam>
+    /// <typeparam name="TMetadata">Metadata type</typeparam>
     /// <exception cref="ColumnDecodeException">if the check fails</exception>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void CheckOrThrow<T>(
+    [StackTraceHidden]
+    public static void CheckOrThrow<TType, TMetadata>(
         [DoesNotReturnIf(false)] bool check,
-        IColumnMetadata metadata,
-        string reason) where T : notnull
+        TMetadata metadata,
+        string reason)
+        where TType : notnull
+        where TMetadata : IColumnMetadata
     {
         if (!check)
         {
-            throw Create<T>(metadata, reason);
+            throw Create<TType, TMetadata>(metadata, reason);
         }
     }
 }

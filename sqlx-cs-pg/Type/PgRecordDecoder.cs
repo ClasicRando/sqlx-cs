@@ -155,7 +155,7 @@ public static class PgRecordDecoder
     {
         if (!value.Chars.StartsWith("(") || !value.Chars.EndsWith(")"))
         {
-            throw ColumnDecodeException.Create<T>(
+            throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Composite literal must be enclosed in parenthesis. Found '{value.Chars}'");
         }

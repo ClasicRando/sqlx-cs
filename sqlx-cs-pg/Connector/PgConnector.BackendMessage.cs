@@ -1,4 +1,5 @@
 using Sqlx.Core.Buffer;
+using Sqlx.Core.Result;
 using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Message.Auth;
@@ -39,7 +40,7 @@ public partial class PgConnector
                 FieldName: buffer.ReadCString(),
                 TableOid: buffer.ReadInt(),
                 ColumnAttribute: buffer.ReadShort(),
-                PgTypeInfo: PgTypeInfo.FromOid(new PgOid(buffer.ReadUInt())),
+                TypeInfo: PgTypeInfo.FromOid(new PgOid(buffer.ReadUInt())),
                 DataTypeSize: buffer.ReadShort(),
                 TypeModifier: buffer.ReadInt(),
                 FormatCode: (PgFormatCode)buffer.ReadShort());
@@ -65,6 +66,36 @@ public partial class PgConnector
         return dataRow;
     }
 
+    internal QueryResult ReceiveQueryResult(int size)
+    {
+        var buffer = _asyncConnector.ReadBuffer[..size];
+        var message = buffer.ReadCString();
+        var rowCount = ExtractRowCount(message);
+        AdvanceReadBuffer(size);
+        return new QueryResult(rowCount, message);
+    }
+
+    /// <summary>
+    /// Messages are in a format of a command keyword, followed by the rows count (except for INSERT
+    /// which always has 0 before the row count) to extract the row count iterate backwards until
+    /// we find a non-digit character and parse that span.
+    /// </summary>
+    /// <param name="message">Message to parse</param>
+    /// <returns>Row count or -1 if parsing fails</returns>
+    private static long ExtractRowCount(ReadOnlySpan<char> message)
+    {
+        var i = message.Length - 1;
+        for (; i >= 0; i--)
+        {
+            if (char.IsDigit(message[i])) continue;
+            
+            i++;
+            break;
+        }
+
+        return long.TryParse(message[i..], out var rowCount) ? rowCount : 0;
+    }
+
     internal void HandleReadyForQueryMessage(int size)
     {
         var buffer = _asyncConnector.ReadBuffer[..size];
@@ -73,7 +104,7 @@ public partial class PgConnector
         HandleReadyForQuery(status);
     }
 
-    internal T ReceiveMessage<T>(int size) where T : IPgBackendMessage, IPgBackendMessageDecoder<T>
+    private T ReceiveMessage<T>(int size) where T : IPgBackendMessage, IPgBackendMessageDecoder<T>
     {
         var buffer = _asyncConnector.ReadBuffer[..size];
         T message = T.Decode(buffer);

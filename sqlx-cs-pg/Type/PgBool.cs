@@ -1,6 +1,7 @@
 using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -53,7 +54,7 @@ internal abstract class PgBool : IPgDbType<bool>, IHasArrayType
         {
             't' => true,
             'f' => false,
-            _ => throw ColumnDecodeException.Create<bool>(
+            _ => throw ColumnDecodeException.Create<bool, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"First character must be 't' or 'f'. Found '{value.Chars}'"),
         };

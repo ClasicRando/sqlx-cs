@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Text;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -60,21 +61,21 @@ public static class GeometryUtils
         var commaIndex = value.Chars.IndexOf(',');
         if (commaIndex == -1)
         {
-            throw ColumnDecodeException.Create<T>(
+            throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 value.ColumnMetadata,
                 "Could not find point separator character");
         }
 
         if (!double.TryParse(value.Chars[1..commaIndex], out var x))
         {
-            throw ColumnDecodeException.Create<T>(
+            throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 value.ColumnMetadata,
                 "Could not parse X coordinate");
         }
 
         return !double.TryParse(
             value.Chars.Slice(commaIndex + 1, value.Chars.Length - commaIndex - 2), out var y)
-            ? throw ColumnDecodeException.Create<T>(
+            ? throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 value.ColumnMetadata,
                 "Could not parse Y coordinate")
             : new PgPoint(x, y);

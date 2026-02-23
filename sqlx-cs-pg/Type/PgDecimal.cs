@@ -95,7 +95,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
 
         if ((ushort)sign == SignNan)
         {
-            throw ColumnDecodeException.Create<decimal>(
+            throw ColumnDecodeException.Create<decimal, PgColumnMetadata>(
                 value.ColumnMetadata,
                 "Cannot decode NAN as decimal");
         }
@@ -126,7 +126,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
             return result;
         }
 
-        throw ColumnDecodeException.Create<decimal>(
+        throw ColumnDecodeException.Create<decimal, PgColumnMetadata>(
             value.ColumnMetadata,
             $"Cannot convert '{value.Chars}' to a decimal value");
     }
@@ -186,7 +186,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
         var digitCount = digits.Length;
         if (digitCount > MaxDecimalNumericDigits || short.Abs(scale) > MaxDecimalScale)
         {
-            throw ColumnDecodeException.Create<decimal>(
+            throw ColumnDecodeException.Create<decimal, PgColumnMetadata>(
                 columnMetadata,
                 "Numeric value does not fit into a decimal");
         }
@@ -197,16 +197,16 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
             return (ushort)sign switch
             {
                 SignPositive or SignNegative => decimal.Zero * scaleFactor,
-                SignNan => throw ColumnDecodeException.Create<decimal>(
+                SignNan => throw ColumnDecodeException.Create<decimal, PgColumnMetadata>(
                     columnMetadata,
                     "Numeric value of NaN is not supported by decimal"),
-                SignPinf => throw ColumnDecodeException.Create<decimal>(
+                SignPinf => throw ColumnDecodeException.Create<decimal, PgColumnMetadata>(
                     columnMetadata,
                     "Numeric value of Infinity is not supported by decimal"),
-                SignNinf => throw ColumnDecodeException.Create<decimal>(
+                SignNinf => throw ColumnDecodeException.Create<decimal, PgColumnMetadata>(
                     columnMetadata,
                     "Numeric value of -Infinity is not supported by decimal"),
-                _ => throw ColumnDecodeException.Create<decimal>(
+                _ => throw ColumnDecodeException.Create<decimal, PgColumnMetadata>(
                     columnMetadata,
                     $"Sign code of {(ushort)sign} is not supported"),
             };

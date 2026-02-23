@@ -9,7 +9,6 @@ public interface IColumnMetadata
     /// Name of the column
     /// </summary>
     string FieldName { get; }
-    // string TypeName { get; }
     /// <summary>
     /// Database vendor specific code of the column's data type
     /// </summary>

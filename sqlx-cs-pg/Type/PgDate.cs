@@ -1,6 +1,7 @@
 using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -54,7 +55,7 @@ internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayTy
             return date;
         }
         
-        throw ColumnDecodeException.Create<DateOnly>(
+        throw ColumnDecodeException.Create<DateOnly, PgColumnMetadata>(
             value.ColumnMetadata,
             $"Cannot parse '{value.Chars}' as a DateOnly");
     }

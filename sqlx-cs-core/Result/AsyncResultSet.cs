@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Sqlx.Core.Exceptions;
 
 namespace Sqlx.Core.Result;
 

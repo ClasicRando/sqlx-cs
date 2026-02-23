@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Collections;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -76,7 +77,7 @@ public abstract class PgBitString : IPgDbType<BitArray>, IHasArrayType
 
         if (bytesLength != value.Buffer.Length)
         {
-            throw ColumnDecodeException.Create<BitArray>(
+            throw ColumnDecodeException.Create<BitArray, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Expected buffer to contain {bytesLength} bytes but found {value.Buffer.Length}");
         }
@@ -119,7 +120,7 @@ public abstract class PgBitString : IPgDbType<BitArray>, IHasArrayType
             {
                 '0' => false,
                 '1' => true,
-                _ => throw ColumnDecodeException.Create<BitArray>(
+                _ => throw ColumnDecodeException.Create<BitArray, PgColumnMetadata>(
                     value.ColumnMetadata,
                     $"Could not decode char #{i} in {value.Chars}"),
             };

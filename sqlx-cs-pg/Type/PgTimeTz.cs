@@ -1,6 +1,7 @@
 using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -101,7 +102,7 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
         {
             if (!int.TryParse(offsetChars[splits[i]], out var result))
             {
-                throw ColumnDecodeException.Create<PgTimeTz>(
+                throw ColumnDecodeException.Create<PgTimeTz, PgColumnMetadata>(
                     value.ColumnMetadata,
                     $"Could not parse offset from '{value.Chars}'");
             }

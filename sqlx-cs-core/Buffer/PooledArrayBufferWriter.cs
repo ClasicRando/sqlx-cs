@@ -35,15 +35,20 @@ public sealed class PooledArrayBufferWriter : IBufferWriter<byte>, IDisposable
     {
         get
         {
-            return WrittenCount switch
+            ObjectDisposedException.ThrowIf(WrittenCount == -1, this);
+            var writtenCount = WrittenCount;
+            if (writtenCount == 0)
             {
-                < 0 => throw new InvalidOperationException(
-                    $"Negative written count: {WrittenCount}. Probably disposed of buffer within a scope before completing usage of the buffer"),
-                0 => default,
-                _ when WrittenCount > _buffer.Length => throw new InvalidOperationException(
-                    $"Written count is beyond buffer size. Buffer Size: {_buffer.Length}, Written Count: {WrittenCount}: Bytes: [{string.Join(",", _buffer)}]"),
-                _ => _buffer.AsSpan(0, WrittenCount),
-            };
+                return default;
+            }
+
+            if (writtenCount > _buffer.Length)
+            {
+                throw new InvalidOperationException(
+                    $"Written count is beyond buffer size. Buffer Size: {_buffer.Length}, Written Count: {WrittenCount}: Bytes: [{string.Join(",", _buffer)}]");
+            }
+
+            return _buffer.AsSpan(0, writtenCount);
         }
     }
 

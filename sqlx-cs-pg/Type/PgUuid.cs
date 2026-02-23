@@ -1,5 +1,6 @@
 using System.Buffers;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -48,7 +49,7 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
     {
         if (!Guid.TryParse(value.Chars, out Guid guid))
         {
-            throw ColumnDecodeException.Create<Guid>(
+            throw ColumnDecodeException.Create<Guid, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Could not parse '{value.Chars}' into a Guid");
         }

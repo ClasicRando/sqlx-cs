@@ -17,7 +17,7 @@ internal static class PgFloatingPoint
         {
             4 => value.Buffer.ReadFloat(),
             8 => value.Buffer.ReadDouble(),
-            _ => throw ColumnDecodeException.Create<T>(
+            _ => throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Could not extract float from buffer. Number of bytes = {value.Buffer.Length}"),
         };
@@ -27,7 +27,7 @@ internal static class PgFloatingPoint
     {
         if (!double.TryParse(value.Chars, null, out var parseResult))
         {
-            throw ColumnDecodeException.Create<T>(
+            throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Could not convert '{value.Chars}' into {typeof(T)}");
         }
@@ -132,7 +132,7 @@ internal abstract class PgFloat : IPgDbType<float>, IHasArrayType
     {
         if (floatingPoint is < float.MinValue or > float.MaxValue)
         {
-            throw ColumnDecodeException.Create<float>(
+            throw ColumnDecodeException.Create<float, PgColumnMetadata>(
                 columnMetadata,
                 "Floating point value is outside the bounds of float");
         }

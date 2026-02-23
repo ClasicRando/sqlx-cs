@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -89,7 +90,7 @@ internal static class NetworkUtils
         var remainingBytes = value.Buffer.Length;
         if (remainingBytes < 8)
         {
-            throw ColumnDecodeException.Create<T>(
+            throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Network values must have at least 8 bytes available. Found {remainingBytes}");
         }
@@ -103,7 +104,7 @@ internal static class NetworkUtils
         {
             PgsqlAfInet when span.Length == 4 => (address, prefix),
             PgsqlAfInet6 when span.Length == 16 => (address, prefix),
-            _ => throw ColumnDecodeException.Create<T>(value.ColumnMetadata),
+            _ => throw ColumnDecodeException.Create<T, PgColumnMetadata>(value.ColumnMetadata),
         };
     }
 
@@ -129,7 +130,7 @@ internal static class NetworkUtils
 
         if (!IPAddress.TryParse(value.Chars[..mid], out IPAddress? ipAddress))
         {
-            throw ColumnDecodeException.Create<T>(
+            throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Could not parse '{value.Chars}' into a network value");
         }
@@ -141,7 +142,7 @@ internal static class NetworkUtils
 
         if (!byte.TryParse(value.Chars[(mid + 1)..], out var parsedPrefix))
         {
-            throw ColumnDecodeException.Create<T>(
+            throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Could not parse '{value.Chars}' into a network value");
         }

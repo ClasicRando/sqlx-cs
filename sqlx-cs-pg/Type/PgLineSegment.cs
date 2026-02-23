@@ -1,6 +1,7 @@
 using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -66,7 +67,7 @@ public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
         var indexPairs = GeometryUtils.ExtractPointRanges(pointChars.Chars);
         if (indexPairs.Length != 2)
         {
-            throw ColumnDecodeException.Create<PgLineSegment>(
+            throw ColumnDecodeException.Create<PgLineSegment, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Line segments must have exactly 2 points. Found '{value.Chars}'");
         }

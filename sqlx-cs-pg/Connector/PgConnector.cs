@@ -47,7 +47,7 @@ public sealed partial class PgConnector : IPooledConnection
         _asyncConnector = asyncConnector;
         _logger = connectOptions.LoggerFactory.CreateLogger<PgConnector>();
         _statementCache = new LruCache<string, PgPreparedStatement>(
-            connectOptions.StatementCacheCapacity);
+            (int)connectOptions.StatementCacheCapacity);
     }
 
     internal PgConnectOptions ConnectOptions { get; }

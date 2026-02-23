@@ -18,7 +18,7 @@ internal static class HexUtils
     {
         return int.TryParse([chr], NumberStyles.HexNumber, null, out var result)
             ? result
-            : throw ColumnDecodeException.Create<T>(
+            : throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 metadata,
                 $"Character is not valid hex. '{chr}'");
     }
@@ -37,7 +37,7 @@ internal static class HexUtils
     {
         return int.TryParse(chars, NumberStyles.HexNumber, null, out var result)
             ? result
-            : throw ColumnDecodeException.Create<T>(
+            : throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 metadata,
                 $"Could not decode '{chars}' as a hex number");
     }

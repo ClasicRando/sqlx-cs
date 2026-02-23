@@ -7,12 +7,13 @@ namespace Sqlx.Core.Types;
 public static class Integers
 {
     [DoesNotReturn]
-    public static void ThrowColumnDecodeException<T>(IColumnMetadata columnMetadata)
-        where T: unmanaged
+    public static void ThrowColumnDecodeException<TType, TMetadata>(TMetadata columnMetadata)
+        where TType: unmanaged
+        where TMetadata : IColumnMetadata
     {
-        throw ColumnDecodeException.Create<T>(
+        throw ColumnDecodeException.Create<TType, TMetadata>(
             columnMetadata,
-            $"Value is outside of valid {typeof(T).Name}");
+            $"Value is outside of valid {typeof(TType).Name}");
     }
 
     public static bool IsValidUInt(long value)

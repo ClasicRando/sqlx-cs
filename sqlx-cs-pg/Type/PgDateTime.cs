@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Globalization;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -59,7 +60,7 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
             return dateTime;
         }
         
-        throw ColumnDecodeException.Create<DateTime>(
+        throw ColumnDecodeException.Create<DateTime, PgColumnMetadata>(
             value.ColumnMetadata,
             $"Cannot parse '{value.Chars}' as a DateTime");
     }

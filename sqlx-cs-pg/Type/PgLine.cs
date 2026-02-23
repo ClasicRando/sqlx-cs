@@ -1,6 +1,7 @@
 using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -70,7 +71,7 @@ public readonly struct PgLine(double a, double b, double c)
         var firstPointSpan = value.Chars[1..commaIndex];
         if (!double.TryParse(firstPointSpan, out var a))
         {
-            throw ColumnDecodeException.Create<PgLine>(
+            throw ColumnDecodeException.Create<PgLine, PgColumnMetadata>(
                 value.ColumnMetadata,
                 "Could not parse A value");
         }
@@ -79,7 +80,7 @@ public readonly struct PgLine(double a, double b, double c)
         var secondPointSpan = value.Chars.Slice(commaIndex + 1, secondCommaIndex - commaIndex - 1);
         if (!double.TryParse(secondPointSpan, out var b))
         {
-            throw ColumnDecodeException.Create<PgLine>(
+            throw ColumnDecodeException.Create<PgLine, PgColumnMetadata>(
                 value.ColumnMetadata,
                 "Could not parse B value");
         }
@@ -89,7 +90,7 @@ public readonly struct PgLine(double a, double b, double c)
             value.Chars.Length - secondCommaIndex - 2);
         if (!double.TryParse(thirdPointSpan, out var c))
         {
-            throw ColumnDecodeException.Create<PgLine>(
+            throw ColumnDecodeException.Create<PgLine, PgColumnMetadata>(
                 value.ColumnMetadata,
                 "Could not parse C value");
         }

@@ -30,7 +30,7 @@ internal static class PgInteger
             4 when typeof(T) == typeof(uint) => value.Buffer.ReadUInt(),
             4 => value.Buffer.ReadInt(),
             8 => value.Buffer.ReadLong(),
-            _ => throw ColumnDecodeException.Create<T>(
+            _ => throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Could not extract integer from buffer. Number of bytes = {value.Buffer.Length}"),
         };
@@ -49,7 +49,7 @@ internal static class PgInteger
     {
         if (!long.TryParse(value.Chars, null, out var parseResult))
         {
-            throw ColumnDecodeException.Create<T>(
+            throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Could not convert '{value.Chars}' into {typeof(T)}");
         }
@@ -76,7 +76,7 @@ internal static class PgInteger
     {
         if (!Integers.IsValidUInt(value))
         {
-            Integers.ThrowColumnDecodeException<uint>(columnMetadata);
+            Integers.ThrowColumnDecodeException<uint, PgColumnMetadata>(columnMetadata);
         }
         return (uint)value;
     }
@@ -92,7 +92,7 @@ internal static class PgInteger
     {
         if (!Integers.IsValidInt(value))
         {
-            Integers.ThrowColumnDecodeException<int>(columnMetadata);
+            Integers.ThrowColumnDecodeException<int, PgColumnMetadata>(columnMetadata);
         }
         return (int)value;
     }
@@ -108,7 +108,7 @@ internal static class PgInteger
     {
         if (!Integers.IsValidShort(value))
         {
-            Integers.ThrowColumnDecodeException<short>(columnMetadata);
+            Integers.ThrowColumnDecodeException<short, PgColumnMetadata>(columnMetadata);
         }
         return (short)value;
     }

@@ -1,6 +1,7 @@
 using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
@@ -65,7 +66,7 @@ public readonly struct PgCircle(PgPoint center, double radius)
         PgPoint center = GeometryUtils.DecodePoint<PgCircle>(in pointSlice);
         if (!double.TryParse(value.Chars[(midIndex + 1)..^1], out var radius))
         {
-            throw ColumnDecodeException.Create<PgCircle>(
+            throw ColumnDecodeException.Create<PgCircle, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Could not parse radius from '{value.Chars}'");
         }

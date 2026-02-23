@@ -38,7 +38,7 @@ public static class PgEnumTypes
             {
                 "None" => PostgresEnumType.None,
                 "Some" => PostgresEnumType.Some,
-                _ => throw ColumnDecodeException.Create<PostgresEnumType>(columnMetadata, $"Attempted to decode an unknown enum variant with name, '{chars}'"),
+                _ => throw ColumnDecodeException.Create<PostgresEnumType, PgColumnMetadata>(columnMetadata, $"Attempted to decode an unknown enum variant with name, '{chars}'"),
             };
         }
     }
