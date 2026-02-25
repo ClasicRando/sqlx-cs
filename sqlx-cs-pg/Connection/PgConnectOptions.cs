@@ -20,7 +20,7 @@ public record PgConnectOptions
     /// <summary>
     /// Port to connect to the host. Postgresql's default port is 5432.
     /// </summary>
-    public required ushort Port { get; init; }
+    public ushort Port { get; init; } = 5432;
 
     /// <summary>
     /// Username to connect to the database
@@ -34,9 +34,9 @@ public record PgConnectOptions
     public string ApplicationName { get; init; } = DefaultApplicationName;
 
     /// <summary>
-    /// Optional password if the username requires it 
+    /// Password for connection as the user specified
     /// </summary>
-    public string? Password { get; init; }
+    public required string Password { get; init; }
 
     /// <summary>
     /// Optional database to connect to upon login. Defaults to user's default database.
@@ -51,7 +51,7 @@ public record PgConnectOptions
     public TimeSpan ConnectTimeout
     {
         get;
-        init => field = value <= TimeSpan.Zero
+        init => field = value != Timeout.InfiniteTimeSpan && value <= TimeSpan.Zero
             ? throw new ArgumentException("Connect timeout cannot be zero or negative")
             : value;
     } = TimeSpan.FromSeconds(15);
@@ -63,7 +63,7 @@ public record PgConnectOptions
     public TimeSpan QueryTimeout
     {
         get;
-        init => field = value <= TimeSpan.Zero
+        init => field = value != Timeout.InfiniteTimeSpan && value <= TimeSpan.Zero
             ? throw new ArgumentException("Query timeout cannot be zero or negative")
             : value;
     } = Timeout.InfiniteTimeSpan;
@@ -96,7 +96,7 @@ public record PgConnectOptions
     /// <summary>
     /// This parameter adjusts the number of digits used for textual output of floating-point
     /// values, including float4, float8, and geometric data types. Default is 1.
-    /// <a href="https://www.postgresql.org/docs/16/runtime-config-client.html#GUC-EXTRA-FLOAT-DIGITS">docs</a>
+    /// <a href="https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-EXTRA-FLOAT-DIGITS">docs</a>
     /// </summary>
     public int ExtraFloatPoints { get; init; } = 1;
 

@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization.Metadata;
+using Sqlx.Core.Column;
 
 namespace Sqlx.Core.Result;
 
@@ -13,11 +14,23 @@ namespace Sqlx.Core.Result;
 /// </summary>
 public interface IDataRow
 {
+    /// <summary>
+    /// Total number of columns for this row
+    /// </summary>
+    int ColumnCount { get; }
+    
     /// <param name="name">Column name to check</param>
     /// <returns>
     /// The 0-based index of the column name specified or -1 if the name does not exist
     /// </returns>
     int IndexOf(string name);
+
+    /// <summary>
+    /// Obtain the metadata for the specified column index
+    /// </summary>
+    /// <param name="index">0-based index of the column to check</param>
+    /// <returns>Metadata for the specified column</returns>
+    IColumnMetadata GetColumnMetadata(int index);
 
     /// <param name="index">0-based index of the column to check</param>
     /// <returns>True if the value found at the index is a DB null</returns>
@@ -171,6 +184,16 @@ public static class DataRowExtensions
 {
     extension(IDataRow dataRow)
     {
+        /// <summary>
+        /// Obtain the metadata for the specified column by name
+        /// </summary>
+        /// <param name="name">name of the column to check</param>
+        /// <returns>Metadata for the specified column</returns>
+        public IColumnMetadata GetColumnMetadata(string name)
+        {
+            return dataRow.GetColumnMetadata(dataRow.IndexOf(name));
+        }
+        
         /// <summary>
         /// Extract a possibly null <see cref="bool"/> value. The <c>BOOLEAN</c> type is not consistent
         /// across all databases so the driver specific implementation might vary.

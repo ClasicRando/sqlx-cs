@@ -20,7 +20,7 @@ public static class QueryBatch
         /// <returns>Total number of rows impacted by the query batch</returns>
         public async Task<long> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
         {
-            using var resultSet = await queryBatch.ExecuteBatch(cancellationToken)
+            using var resultSet = await queryBatch.ExecuteBatchAsync(cancellationToken)
                 .ConfigureAwait(false);
             return await resultSet.CombineAllRowsAffected(cancellationToken).ConfigureAwait(false);
         }

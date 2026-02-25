@@ -9,8 +9,7 @@ namespace Sqlx.Core.Connection;
 /// queries to execute against this connection.
 /// </summary>
 public interface
-    IConnection<TQuery, out TBindable, TQueryBatch, TDataRow> :
-    IQueryExecutor<TQuery, TBindable, TQueryBatch, TDataRow>,
+    IConnection<out TQuery, out TBindable, out TQueryBatch, TDataRow> :
     IDisposable, IAsyncDisposable
     where TQuery : IExecutableQuery<TDataRow>
     where TBindable : IBindable
@@ -63,4 +62,19 @@ public interface
     /// </summary>
     /// <param name="cancellationToken">token to signal a cancellation</param>
     Task RollbackAsync(CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Create a new executable query the uses this connection to run the query. Make sure to keep
+    /// this connection open until you complete the query execution and extract all results.
+    /// </summary>
+    /// <param name="query">Query to execute against the database</param>
+    /// <returns>the executable query</returns>
+    TQuery CreateQuery(string query);
+
+    /// <summary>
+    /// Create a new query batch the uses this connection to run the queries. Make sure to keep this
+    /// connection open until you complete the query batch execution and extract all results.
+    /// </summary>
+    /// <returns>the query batch</returns>
+    TQueryBatch CreateQueryBatch();
 }

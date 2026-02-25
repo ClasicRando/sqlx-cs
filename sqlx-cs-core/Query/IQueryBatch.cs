@@ -90,7 +90,7 @@ namespace Sqlx.Core.Query;
 /// </para>
 /// <para>
 /// To Use this API, create the batch using
-/// <see cref="Sqlx.Core.Query.IQueryExecutor{TQuery,TBindable,TQueryBatch,TDataRow}.CreateQueryBatch"/>
+/// <see cref="Sqlx.Core.Connection.IConnection{TQuery,TBindable,TQueryBatch,TDataRow}.CreateQueryBatch"/>
 /// and create each query in the batch using <see cref="CreateQuery"/>. Each query will be saved
 /// within this batch before executing the entire batch.
 /// <code>
@@ -123,7 +123,7 @@ public interface IQueryBatch<out TBindable, TDataRow> : IDisposable, IAsyncDispo
     /// <summary>
     /// True if the entire batch should be executed within a single transaction block and false if
     /// every query should be executed within its own transaction. This property has no impact once
-    /// <see cref="ExecuteBatch"/> is initiated.
+    /// <see cref="ExecuteBatchAsync"/> is initiated.
     /// </summary>
     bool WrapBatchInTransaction { get; set; }
 
@@ -140,5 +140,6 @@ public interface IQueryBatch<out TBindable, TDataRow> : IDisposable, IAsyncDispo
     /// <see cref="QueryResult"/>s.
     /// </summary>
     /// <returns>Stream of <typeparamref cref="TDataRow"/>s and <see cref="QueryResult"/>s</returns>
-    Task<IAsyncResultSet<TDataRow>> ExecuteBatch(CancellationToken cancellationToken = default);
+    Task<IAsyncResultSet<TDataRow>> ExecuteBatchAsync(
+        CancellationToken cancellationToken = default);
 }

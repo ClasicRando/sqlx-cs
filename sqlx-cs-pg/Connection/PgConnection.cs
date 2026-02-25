@@ -48,24 +48,25 @@ public sealed class PgConnection :
 
     public override IPgExecutableQuery CreateQuery(string query)
     {
+        CheckDisposed();
         return new PgExecutableQuery(query, this);
     }
 
     public override IPgQueryBatch CreateQueryBatch()
     {
+        CheckDisposed();
         return new PgQueryBatch(this);
     }
 
-    public override async Task<IAsyncResultSet<IPgDataRow>> ExecuteQueryAsync(
+    internal async Task<IAsyncResultSet<IPgDataRow>> ExecuteQueryAsync(
         IPgExecutableQuery query,
         CancellationToken cancellationToken)
     {
-        CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
         return await _pgConnector!.ExecuteQuery(query, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<IAsyncResultSet<IPgDataRow>> ExecuteQueryBatchAsync(
+    internal async Task<IAsyncResultSet<IPgDataRow>> ExecuteQueryBatchAsync(
         IPgQueryBatch query,
         CancellationToken cancellationToken)
     {

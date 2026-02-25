@@ -100,7 +100,7 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
         var millisecond = 0;
         var microsecond = 0;
 
-        ReadOnlySpan<char>.Enumerator charEnumerator = value.Chars.GetEnumerator();
+        using ReadOnlySpan<char>.Enumerator charEnumerator = value.Chars.GetEnumerator();
         while (!isFractionalSecond && charEnumerator.MoveNext())
         {
             currentChar = charEnumerator.Current;

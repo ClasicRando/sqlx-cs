@@ -2,7 +2,6 @@ using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Connection;
-using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
 
@@ -16,11 +15,11 @@ namespace Sqlx.Postgres.Query;
 internal class PgExecutableQuery : IPgExecutableQuery
 {
     private bool _disposed;
-    private IPgQueryExecutor? _queryExecutor;
+    private PgConnection? _queryExecutor;
     private readonly PooledArrayBufferWriter _buffer;
     private readonly PgParameterWriter _parameterBuffer;
 
-    public PgExecutableQuery(string sql, IPgQueryExecutor queryExecutor)
+    public PgExecutableQuery(string sql, PgConnection queryExecutor)
     {
         _queryExecutor = queryExecutor;
         Query = sql;

@@ -72,7 +72,7 @@ public sealed partial class PgConnector
     /// <summary>
     /// Executes a <c>COPY FROM</c> statement against this connection. Initiates the copy operation
     /// followed by forwarding all data received from the <see cref="PipeReader"/> to the database
-    /// as <see cref="CopyDataMessage"/>s. 
+    /// as COPY data messages. 
     /// </summary>
     /// <param name="copyInStatement">Copy from statement</param>
     /// <param name="data">Data pipe containing all user supplied data</param>

@@ -233,7 +233,7 @@ public static class PgConnectionPoolExtensions
         /// <typeparam name="TRow">row type to map the row into</typeparam>
         /// <returns>a list of result set rows mapped to the desired row type</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ValueTask<List<TRow>> FetchAllAsync<TRow>(
+        public Task<List<TRow>> FetchAllAsync<TRow>(
             string sql,
             TBindMany parameters,
             CancellationToken cancellationToken = default)

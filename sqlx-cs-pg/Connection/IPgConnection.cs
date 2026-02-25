@@ -12,7 +12,7 @@ namespace Sqlx.Postgres.Connection;
 /// also includes other Postgres specific connection capabilities.
 /// </summary>
 public interface IPgConnection :
-    IConnection<IPgExecutableQuery, IPgBindable, IPgQueryBatch, IPgDataRow>, IPgQueryExecutor
+    IConnection<IPgExecutableQuery, IPgBindable, IPgQueryBatch, IPgDataRow>
 {
     /// <summary>
     /// Executes the <c>COPY TO</c> command and returns a stream of row data as text, CSV or binary.

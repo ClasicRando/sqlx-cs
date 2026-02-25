@@ -16,7 +16,7 @@ public class QueryBatchTest
         CancellationToken ct)
     {
         var query = Substitute.For<MockQueryBatch>();
-        query.ExecuteBatch(Arg.Any<CancellationToken>())
+        query.ExecuteBatchAsync(Arg.Any<CancellationToken>())
             .Returns(lst.ToAsyncResultSet());
 
         var rowCount = await query.ExecuteNonQueryAsync(ct);

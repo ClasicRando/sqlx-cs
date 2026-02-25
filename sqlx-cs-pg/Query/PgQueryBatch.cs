@@ -1,4 +1,6 @@
 using Sqlx.Core.Result;
+using Sqlx.Postgres.Connection;
+using Sqlx.Postgres.Connector;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Query;
@@ -6,12 +8,14 @@ namespace Sqlx.Postgres.Query;
 /// <summary>
 /// <see cref="IPgQueryBatch"/> implementation for Postgres. <see cref="IPgBindable"/> instances
 /// returned are always <see cref="PgExecutableQuery"/> and the queries are executed using the
-/// <see cref="IPgQueryExecutor"/> supplied to the constructor.
+/// <see cref="PgConnector"/> supplied to the constructor.
 /// </summary>
-public sealed class PgQueryBatch(IPgQueryExecutor queryExecutor) : IPgQueryBatch
+public sealed class PgQueryBatch(PgConnection queryExecutor) : IPgQueryBatch
 {
     private bool _disposed;
-    private IPgQueryExecutor? _queryExecutor = queryExecutor;
+#pragma warning disable CA2213
+    private PgConnection? _queryExecutor = queryExecutor;
+#pragma warning restore CA2213
     private readonly List<PgExecutableQuery> _queries = [];
     
     public bool WrapBatchInTransaction { get; set; }
@@ -26,7 +30,7 @@ public sealed class PgQueryBatch(IPgQueryExecutor queryExecutor) : IPgQueryBatch
         return query;
     }
 
-    public Task<IAsyncResultSet<IPgDataRow>> ExecuteBatch(CancellationToken cancellationToken)
+    public Task<IAsyncResultSet<IPgDataRow>> ExecuteBatchAsync(CancellationToken cancellationToken)
     {
         CheckDisposed();
         return _queryExecutor!.ExecuteQueryBatchAsync(this, cancellationToken);

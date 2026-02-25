@@ -17,9 +17,9 @@ public partial class PgConnectionTest
             SELECT s.s, 'Regular Query' t
             FROM generate_series(1, 10) s
             """;
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(simpleQuery);
-        using var resultSet = await connection.ExecuteQueryAsync(query, ct);
+        using var resultSet = await query.ExecuteAsync(ct);
         var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
@@ -36,10 +36,10 @@ public partial class PgConnectionTest
     public async Task
         ExecuteQuery_Should_ReturnOneResultSet_When_SimpleQueryStoredProcedureWithOutParameter(CancellationToken ct)
     {
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery procedureCall = connection.CreateQuery(OutProcedureCallSimpleQuery);
-        using var resultSet = await connection.ExecuteQueryAsync(procedureCall, ct);
+        using var resultSet = await procedureCall.ExecuteAsync(ct);
         var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
@@ -57,10 +57,10 @@ public partial class PgConnectionTest
              {OutProcedureCallSimpleQuery}
              SELECT 1 test_i, 'test' test_t;
              """;
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery multiStatement = connection.CreateQuery(multiStatementQuery);
-        using var resultSet = await connection.ExecuteQueryAsync(multiStatement, ct);
+        using var resultSet = await multiStatement.ExecuteAsync(ct);
         var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
         await Assert.That(results.Count).IsEqualTo(2);
         (var firstRows, QueryResult firstResult) = results[0];
@@ -79,12 +79,12 @@ public partial class PgConnectionTest
     public async Task ExecuteQuery_Should_Throw_When_SimpleQueryTimesOut(CancellationToken ct)
     {
         const string sleepQuery = "SELECT pg_sleep(5);";
-        using IPgConnection connection = DatabaseFixture.QueryTimeoutPool.CreateConnection();
+        await using IPgConnection connection = DatabaseFixture.QueryTimeoutPool.CreateConnection();
 
         using IPgExecutableQuery multiStatement = connection.CreateQuery(sleepQuery);
         var ex = await Assert.ThrowsAsync<PgException>(async () =>
         {
-            using var resultSet = await connection.ExecuteQueryAsync(multiStatement, ct);
+            using var resultSet = await multiStatement.ExecuteAsync(ct);
             await resultSet.CollectResults(row => row.GetIntNotNull(0));
         });
         await Assert.That(ex!.Message).Contains("canceling statement due to statement timeout");

@@ -69,12 +69,4 @@ public abstract class AbstractConnection<TQuery, TBindable, TQueryBatch, TDataRo
 
     public abstract TQuery CreateQuery(string query);
     public abstract TQueryBatch CreateQueryBatch();
-
-    public abstract Task<IAsyncResultSet<TDataRow>> ExecuteQueryAsync(
-        TQuery query,
-        CancellationToken cancellationToken);
-
-    public abstract Task<IAsyncResultSet<TDataRow>> ExecuteQueryBatchAsync(
-        TQueryBatch query,
-        CancellationToken cancellationToken);
 }

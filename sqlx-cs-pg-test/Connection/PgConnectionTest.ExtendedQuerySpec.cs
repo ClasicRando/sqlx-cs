@@ -16,11 +16,11 @@ public partial class PgConnectionTest
             SELECT s.s, 'Regular Query' t
             FROM generate_series($1, $2) s
             """;
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(extendedQuery);
         query.Bind(1);
         query.Bind(10);
-        using var resultSet = await connection.ExecuteQueryAsync(query, ct);
+        using var resultSet = await query.ExecuteAsync(ct);
         var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
@@ -39,12 +39,12 @@ public partial class PgConnectionTest
             CancellationToken ct)
     {
         const string procedureCallQuery = $"CALL public.{OutProcedureName}($1, $2);";
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
 
         using IPgExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall.Bind((int?)null);
         procedureCall.Bind((int?)null);
-        using var resultSet = await connection.ExecuteQueryAsync(procedureCall, ct);
+        using var resultSet = await procedureCall.ExecuteAsync(ct);
         var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
@@ -65,7 +65,7 @@ public partial class PgConnectionTest
         using IPgExecutableQuery procedureCall = connection.CreateQuery(procedureCallQuery);
         procedureCall.Bind(2);
         procedureCall.Bind("start");
-        using var resultSet = await connection.ExecuteQueryAsync(procedureCall, ct);
+        using var resultSet = await procedureCall.ExecuteAsync(ct);
         var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
@@ -79,13 +79,13 @@ public partial class PgConnectionTest
     public async Task ExecuteQuery_Should_Throw_When_ExtendedQueryTimesOut(CancellationToken ct)
     {
         const string sleepQuery = "SELECT pg_sleep($1);";
-        using IPgConnection connection = DatabaseFixture.QueryTimeoutPool.CreateConnection();
+        await using IPgConnection connection = DatabaseFixture.QueryTimeoutPool.CreateConnection();
 
         using IPgExecutableQuery sleepStatement = connection.CreateQuery(sleepQuery);
         sleepStatement.Bind(5);
         var ex = await Assert.ThrowsAsync<PgException>(async () =>
         {
-            var resultSet = await connection.ExecuteQueryAsync(sleepStatement, ct);
+            var resultSet = await sleepStatement.ExecuteAsync(ct);
             await resultSet.CollectResults(row => row.GetIntNotNull(0));
         });
         await Assert.That(ex!.Message).Contains("canceling statement due to statement timeout");

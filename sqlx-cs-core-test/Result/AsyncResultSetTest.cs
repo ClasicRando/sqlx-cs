@@ -20,10 +20,10 @@ public class AsyncResultSetTest
             Either.Right<IDataRow, QueryResult>(new QueryResult(5, string.Empty)),
         ];
         var query = Substitute.For<MockQueryBatch>();
-        query.ExecuteBatch(Arg.Any<CancellationToken>())
+        query.ExecuteBatchAsync(Arg.Any<CancellationToken>())
             .Returns(lst.ToAsyncResultSet());
 
-        var batchResult = await query.ExecuteBatch(ct);
+        var batchResult = await query.ExecuteBatchAsync(ct);
 
         var rowsAffected = await batchResult.ExtractAllRowsAffected(ct);
         await Assert.That(rowsAffected).IsEquivalentTo(expected);
@@ -41,10 +41,10 @@ public class AsyncResultSetTest
             Either.Right<IDataRow, QueryResult>(new QueryResult(5, string.Empty)),
         ];
         var query = Substitute.For<MockQueryBatch>();
-        query.ExecuteBatch(Arg.Any<CancellationToken>())
+        query.ExecuteBatchAsync(Arg.Any<CancellationToken>())
             .Returns(lst.ToAsyncResultSet());
 
-        var batchResult = await query.ExecuteBatch(ct);
+        var batchResult = await query.ExecuteBatchAsync(ct);
 
         var rowsAffected = await batchResult.CombineAllRowsAffected(ct);
         await Assert.That(rowsAffected).IsEqualTo(expected);
@@ -61,10 +61,10 @@ public class AsyncResultSetTest
             Either.Right<IDataRow, QueryResult>(new QueryResult(5, string.Empty)),
         ];
         var query = Substitute.For<MockQueryBatch>();
-        query.ExecuteBatch(Arg.Any<CancellationToken>())
+        query.ExecuteBatchAsync(Arg.Any<CancellationToken>())
             .Returns(lst.ToAsyncResultSet());
 
-        var batchResult = await query.ExecuteBatch(ct);
+        var batchResult = await query.ExecuteBatchAsync(ct);
 
         var rows1 = await batchResult.FetchNextResultAsync<IDataRow, Row1>(ct).ToListAsync(ct);
         await Assert.That(rows1).IsSingleElement();
@@ -86,10 +86,10 @@ public class AsyncResultSetTest
             Either.Right<IDataRow, QueryResult>(new QueryResult(5, string.Empty)),
         ];
         var query = Substitute.For<MockQueryBatch>();
-        query.ExecuteBatch(Arg.Any<CancellationToken>())
+        query.ExecuteBatchAsync(Arg.Any<CancellationToken>())
             .Returns(lst.ToAsyncResultSet());
 
-        var batchResult = await query.ExecuteBatch(ct);
+        var batchResult = await query.ExecuteBatchAsync(ct);
 
         var rows1 = await batchResult.ExtractNextResultAsync<IDataRow, Row1>(ct);
         await Assert.That(rows1).IsSingleElement();

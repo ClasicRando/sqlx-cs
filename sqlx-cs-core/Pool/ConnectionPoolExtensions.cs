@@ -270,7 +270,7 @@ internal static class ConnectionPoolExtensions
         /// <param name="cancellationToken">optional cancellation token</param>
         /// <typeparam name="TRow">row type to map the row into</typeparam>
         /// <returns>a list of result set rows mapped to the desired row type</returns>
-        public async ValueTask<List<TRow>> FetchAllAsync<TRow>(
+        public async Task<List<TRow>> FetchAllAsync<TRow>(
             string sql,
             TBindMany parameters,
             CancellationToken cancellationToken = default)

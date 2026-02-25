@@ -1,12 +1,13 @@
 using System.Runtime.CompilerServices;
+using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 
-namespace Sqlx.Core.Query;
+namespace Sqlx.Core.Connection;
 
-public static class QueryExecutor
+public static class ConnectionExtensions
 {
     extension<TQuery, TBindable, TQueryBatch, TDataRow>(
-        IQueryExecutor<TQuery, TBindable, TQueryBatch, TDataRow> queryExecutor)
+        IConnection<TQuery, TBindable, TQueryBatch, TDataRow> connection)
         where TQuery : IExecutableQuery<TDataRow>
         where TBindable : IBindable
         where TQueryBatch : IQueryBatch<TBindable, TDataRow>
@@ -24,7 +25,7 @@ public static class QueryExecutor
             string nonQuery,
             CancellationToken cancellationToken = default)
         {
-            using TQuery query = queryExecutor.CreateQuery(nonQuery);
+            using TQuery query = connection.CreateQuery(nonQuery);
             return await query.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -42,7 +43,7 @@ public static class QueryExecutor
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = queryExecutor.CreateQuery(sql);
+            using TQuery query = connection.CreateQuery(sql);
             var rows = query.FetchAsync<TDataRow, TRow>(cancellationToken);
             await foreach (TRow row in rows.ConfigureAwait(false))
             {
@@ -59,12 +60,12 @@ public static class QueryExecutor
         /// <param name="cancellationToken">optional cancellation token</param>
         /// <typeparam name="TRow">row type to map the row into</typeparam>
         /// <returns>a list of result set rows mapped to the desired row type</returns>
-        public async ValueTask<List<TRow>> FetchAllAsync<TRow>(
+        public async Task<List<TRow>> FetchAllAsync<TRow>(
             string sql,
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = queryExecutor.CreateQuery(sql);
+            using TQuery query = connection.CreateQuery(sql);
             return await query.FetchAllAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -84,7 +85,7 @@ public static class QueryExecutor
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = queryExecutor.CreateQuery(sql);
+            using TQuery query = connection.CreateQuery(sql);
             return await query.FetchFirstAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -106,7 +107,7 @@ public static class QueryExecutor
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = queryExecutor.CreateQuery(sql);
+            using TQuery query = connection.CreateQuery(sql);
             return await query.FetchFirstOrDefaultAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -127,7 +128,7 @@ public static class QueryExecutor
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = queryExecutor.CreateQuery(sql);
+            using TQuery query = connection.CreateQuery(sql);
             return await query.FetchSingleAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -151,14 +152,14 @@ public static class QueryExecutor
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = queryExecutor.CreateQuery(sql);
+            using TQuery query = connection.CreateQuery(sql);
             return await query.FetchSingleOrDefaultAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
         }
     }
     
     extension<TQuery, TBindable, TQueryBatch, TBindMany, TDataRow>(
-        IQueryExecutor<TQuery, TBindable, TQueryBatch, TDataRow> queryExecutor)
+        IConnection<TQuery, TBindable, TQueryBatch, TDataRow> connection)
         where TQuery : IExecutableQuery<TDataRow>, TBindable
         where TBindable : IBindable
         where TQueryBatch : IQueryBatch<TBindable, TDataRow>
@@ -166,21 +167,52 @@ public static class QueryExecutor
         where TDataRow : IDataRow
     {
         /// <summary>
+        /// Execute the supplied non-query for every parameter batch using <see cref="TBindMany"/>,
+        /// ignoring any rows returned and just counting the total number of rows affected by the
+        /// query. The intended use of this method is for queries that insert or manipulate data
+        /// without returning any results.
+        /// </summary>
+        /// <param name="nonQuery">Command that returns no data</param>
+        /// <param name="parameters">Parameter batches to bind to the query before execution</param>
+        /// <param name="wrapBatchInTransaction">
+        /// Value passed to <see cref="IQueryBatch{TBindable,TDataRow}.WrapBatchInTransaction"/>
+        /// </param>
+        /// <param name="cancellationToken">Token to cancel async operation</param>
+        /// <returns>Total number of rows impacted by the query</returns>
+        public async Task<long> ExecuteNonQueryBatchAsync(
+            string nonQuery,
+            IEnumerable<TBindMany> parameters,
+            bool wrapBatchInTransaction = false,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(parameters);
+            TQueryBatch queryBatch = connection.CreateQueryBatch();
+            queryBatch.WrapBatchInTransaction = wrapBatchInTransaction;
+            await using var _ = queryBatch.ConfigureAwait(false);
+            foreach (TBindMany bindMany in parameters)
+            {
+                TBindable query = queryBatch.CreateQuery(nonQuery);
+                bindMany.BindMany(query);
+            }
+            return await queryBatch.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Execute the supplied non-query using the parameters bound using <see cref="TBindMany"/>,
         /// ignoring any rows returned and just counting the total number of rows affected by the
         /// query. The intended use of this method is for queries that insert or manipulate data
         /// without returning any results.
         /// </summary>
-        /// <param name="nonQuery">Command the returns no data and just modifies data</param>
+        /// <param name="nonQuery">Command that returns no data</param>
         /// <param name="parameters">Parameters bound to the query before execution</param>
         /// <param name="cancellationToken">Token to cancel async operation</param>
-        /// <returns>total number of rows impacted by the query</returns>
+        /// <returns>Total number of rows impacted by the query</returns>
         public async Task<long> ExecuteNonQueryAsync(
             string nonQuery,
             TBindMany parameters,
             CancellationToken cancellationToken = default)
         {
-            using TQuery query = queryExecutor.CreateQuery(nonQuery);
+            using TQuery query = connection.CreateQuery(nonQuery);
             parameters.BindMany(query);
             return await query.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -201,7 +233,7 @@ public static class QueryExecutor
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = queryExecutor.CreateQuery(sql);
+            using TQuery query = connection.CreateQuery(sql);
             parameters.BindMany(query);
             var rows = query.FetchAsync<TDataRow, TRow>(cancellationToken);
             await foreach (TRow row in rows.ConfigureAwait(false))
@@ -220,13 +252,13 @@ public static class QueryExecutor
         /// <param name="cancellationToken">optional cancellation token</param>
         /// <typeparam name="TRow">row type to map the row into</typeparam>
         /// <returns>a list of result set rows mapped to the desired row type</returns>
-        public async ValueTask<List<TRow>> FetchAllAsync<TRow>(
+        public async Task<List<TRow>> FetchAllAsync<TRow>(
             string sql,
             TBindMany parameters,
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = queryExecutor.CreateQuery(sql);
+            using TQuery query = connection.CreateQuery(sql);
             parameters.BindMany(query);
             return await query.FetchAllAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
@@ -249,7 +281,7 @@ public static class QueryExecutor
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = queryExecutor.CreateQuery(sql);
+            using TQuery query = connection.CreateQuery(sql);
             parameters.BindMany(query);
             return await query.FetchFirstAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
@@ -274,7 +306,7 @@ public static class QueryExecutor
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = queryExecutor.CreateQuery(sql);
+            using TQuery query = connection.CreateQuery(sql);
             parameters.BindMany(query);
             return await query.FetchFirstOrDefaultAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
@@ -298,7 +330,7 @@ public static class QueryExecutor
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = queryExecutor.CreateQuery(sql);
+            using TQuery query = connection.CreateQuery(sql);
             parameters.BindMany(query);
             return await query.FetchSingleAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
@@ -326,7 +358,7 @@ public static class QueryExecutor
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = queryExecutor.CreateQuery(sql);
+            using TQuery query = connection.CreateQuery(sql);
             parameters.BindMany(query);
             return await query.FetchSingleOrDefaultAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);

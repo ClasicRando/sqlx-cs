@@ -137,7 +137,6 @@ public sealed partial class PgConnector : IPooledConnection
                 // logged in!
                 break;
             case ClearTextPasswordAuthMessage:
-                ArgumentNullException.ThrowIfNull(ConnectOptions.Password);
                 await SimplePasswordAuthFlow(ConnectOptions.Password, cancellationToken)
                     .ConfigureAwait(false);
                 break;
@@ -145,7 +144,6 @@ public sealed partial class PgConnector : IPooledConnection
                 throw new PgException(
                     "MD5 passwords are not supported by sqlx-cs-pg. They have been deprecated for removal by Postgres in version 18 so we will not support their usage");
             case SaslAuthMessage saslAuthMessage:
-                ArgumentNullException.ThrowIfNull(ConnectOptions.Password);
                 await SaslAuthFlow(ConnectOptions.Password, saslAuthMessage, cancellationToken)
                     .ConfigureAwait(false);
                 break;

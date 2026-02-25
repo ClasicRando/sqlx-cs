@@ -78,7 +78,6 @@ public class Benchmarks
             connectOptions: new PgConnectOptions
             {
                 Host = "localhost",
-                Port = 5432,
                 Username = Username,
                 Database = Database,
                 Password = Password,

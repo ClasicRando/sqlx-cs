@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core;
 using Sqlx.Core.Buffer;
+using Sqlx.Core.Column;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Column;
@@ -67,10 +68,18 @@ internal sealed class PgDataRow : IPgDataRow
         return columnValueSlices;
     }
 
+    public int ColumnCount => _columnCount;
+
     public int IndexOf(string name)
     {
         CheckDisposed();
         return _statementMetadata.IndexOfFieldName(name);
+    }
+
+    public IColumnMetadata GetColumnMetadata(int index)
+    {
+        CheckValidIndex(index);
+        return _statementMetadata[index];
     }
 
     public bool IsNull(int index)
