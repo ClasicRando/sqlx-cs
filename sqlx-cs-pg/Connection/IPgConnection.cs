@@ -43,23 +43,7 @@ public interface IPgConnection :
 
     /// <summary>
     /// Executes the <c>COPY FROM</c> command with the supplied <paramref name="data"/> and returns
-    /// a <see cref="QueryResult"/> indicating the outcome. Generally this is not the method you
-    /// want to use since it requires using raw bytes of the expected data type. Prefer using other
-    /// copy in methods:
-    /// <list type="bullet">
-    ///     <item>
-    ///     Send data from stream ->
-    ///     <see cref="PgConnectionExtensions.CopyInAsync(IPgConnection,ICopyFrom,Stream,StreamPipeReaderOptions,CancellationToken)"/>
-    ///     </item>
-    ///     <item>
-    ///     Send data from file path ->
-    ///     <see cref="PgConnectionExtensions.CopyInAsync(IPgConnection,ICopyFrom,string,CancellationToken)"/>
-    ///     </item>
-    ///     <item>
-    ///     Send data as rows ->
-    ///     <see cref="PgConnectionExtensions.CopyInRowsAsync{TCopyStatement,TRow}"/>
-    ///     </item>
-    /// </list>
+    /// a <see cref="QueryResult"/> indicating the outcome.
     /// <a href="https://www.postgresql.org/docs/current/sql-copy.html"> postgres docs</a>
     /// </summary>
     /// <param name="copyInStatement">COPY statement to execute for data ingestion</param>
@@ -70,6 +54,24 @@ public interface IPgConnection :
     /// <returns>Query result object with details on what happened during the execution</returns>
     Task<QueryResult> CopyInAsync(
         ICopyFrom copyInStatement,
-        PipeReader data,
+        Stream data,
         CancellationToken cancellationToken = default);
+
+
+    /// <summary>
+    /// Execute a <c>COPY FROM</c> query against the database and copies all supplied
+    /// <paramref name="rows"/> as the copy data.  
+    /// </summary>
+    /// <param name="copyInStatement">COPY statement to execute for data extraction</param>
+    /// <param name="rows">
+    /// Async stream of copy rows to encode and send to the server as the copy statement row
+    /// data
+    /// </param>
+    /// <param name="cancellationToken">Token to cancel the async operation</param>
+    Task<QueryResult> CopyInRowsAsync<TCopyStatement, TCopyRow>(
+        TCopyStatement copyInStatement,
+        IAsyncEnumerable<TCopyRow> rows,
+        CancellationToken cancellationToken = default)
+        where TCopyStatement : ICopyFrom, ICopyBinary
+        where TCopyRow : IPgBinaryCopyRow;
 }

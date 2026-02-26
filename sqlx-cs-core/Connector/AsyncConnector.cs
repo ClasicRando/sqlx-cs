@@ -206,7 +206,14 @@ public sealed class AsyncConnector : IAsyncConnector
         if (_disposed) return;
 
         _disposed = true;
-        _pipeWriter?.Complete();
+        try
+        {
+            _pipeWriter?.Complete();
+        }
+        catch
+        {
+            // ignored
+        }
 
         if (_stream is SslStream sslStream)
         {
@@ -253,5 +260,9 @@ public sealed class AsyncConnector : IAsyncConnector
         _stream = null;
         _socket = null;
         _pipeWriter = null;
+        ArrayPool.Return(_innerBuffer);
+        _innerBuffer = [];
+        _bufferLength = 0;
+        _bufferPosition = -1;
     }
 }

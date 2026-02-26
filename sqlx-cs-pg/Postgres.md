@@ -62,6 +62,7 @@ These options are provided to a connection pool to use for every new connection 
 | PgPolygon*                     | POLYGON                                      |
 | PgTimeTz*                      | TIME WITH TIME ZONE                          |
 | T                              | JSONB, JSON                                  |
+
 \* Type custom to the sqlx-cs library
 
 ### JSON

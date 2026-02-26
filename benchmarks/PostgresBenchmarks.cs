@@ -49,7 +49,6 @@ public class PostgresBenchmarks
     private static NpgsqlDataSource _npgsqlDataSource = null!;
     private static IPgConnectionPool _sqlxPgConnectionPool = null!;
 
-
     [GlobalSetup]
     public void SetUp()
     {
@@ -77,8 +76,8 @@ public class PostgresBenchmarks
             """
             DROP TABLE IF EXISTS public.posts;
             CREATE TABLE public.posts (
-                id int primary key generated always as identity, 
-                text_field text not null, 
+                id int primary key generated always as identity,
+                text_field text not null,
                 creation_date timestamp not null,
                 last_change_date timestamp not null,
                 counter int
@@ -86,7 +85,7 @@ public class PostgresBenchmarks
 
             INSERT INTO public.posts(text_field, creation_date, last_change_date)
             SELECT REPEAT('x', 2000), current_timestamp, current_timestamp
-            FROM generate_series(1, 5000) s
+            FROM generate_series(1, 5000) s;
             """).GetAwaiter().GetResult();
     }
 

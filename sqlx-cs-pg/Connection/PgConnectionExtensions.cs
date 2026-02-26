@@ -1,8 +1,6 @@
-using System.Buffers;
-using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
-using Sqlx.Core.Connection;
 using Sqlx.Core.Buffer;
+using Sqlx.Core.Connection;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Column;
@@ -340,30 +338,6 @@ public static class PgConnectionExtensions
         }
 
         /// <summary>
-        /// Execute a <c>COPY FROM</c> query against the database and forward the data fetched from
-        /// the <see cref="Stream"/> as the copied data.
-        /// </summary>
-        /// <param name="copyInStatement">COPY statement to execute for data extraction</param>
-        /// <param name="stream">
-        /// Stream to collect data for the <c>COPY FROM</c> command
-        /// </param>
-        /// <param name="pipeReaderOptions">
-        /// Options supplied to <see cref="PipeReader.Create(Stream, StreamPipeReaderOptions)"/>
-        /// </param>
-        /// <param name="cancellationToken">Token to cancel the async operation</param>
-        public Task<QueryResult> CopyInAsync(
-            ICopyFrom copyInStatement,
-            Stream stream,
-            StreamPipeReaderOptions? pipeReaderOptions = null,
-            CancellationToken cancellationToken = default)
-        {
-            return pgConnection.CopyInAsync(
-                copyInStatement,
-                PipeReader.Create(stream, pipeReaderOptions),
-                cancellationToken);
-        }
-
-        /// <summary>
         /// Execute a <c>COPY FROM</c> query against the database and copy all the data found at the
         /// specified path as the copied data
         /// </summary>
@@ -378,77 +352,9 @@ public static class PgConnectionExtensions
             // This is a workaround for calling ConfigureAwait on an IAsyncDisposable
             var fileStream = new FileStream(path, FileMode.Open);
             await using var _ = fileStream.ConfigureAwait(false);
-            return await pgConnection.CopyInAsync(copyInStatement, fileStream, null, cancellationToken)
+            return await pgConnection.CopyInAsync(copyInStatement, fileStream, cancellationToken)
                 .ConfigureAwait(false);
         }
-
-        /// <summary>
-        /// Execute a <c>COPY FROM</c> query against the database and copies all supplied
-        /// <paramref name="rows"/> as the copy data.  
-        /// </summary>
-        /// <param name="copyInStatement">COPY statement to execute for data extraction</param>
-        /// <param name="rows">
-        /// Async stream of copy rows to encode and send to the server as the copy statement row
-        /// data
-        /// </param>
-        /// <param name="cancellationToken">Token to cancel the async operation</param>
-        public async Task<QueryResult> CopyInRowsAsync<TCopyStatement, TCopyRow>(
-            TCopyStatement copyInStatement,
-            IAsyncEnumerable<TCopyRow> rows,
-            CancellationToken cancellationToken = default)
-            where TCopyStatement : ICopyFrom, ICopyBinary
-            where TCopyRow : IPgBinaryCopyRow
-        {
-            var pipe = new Pipe();
-            Task dataStreamTask = Task.Run(
-                () => WriteBinaryRowsToPipe(rows, pipe.Writer, cancellationToken),
-                cancellationToken);
-            var copyTask = pgConnection.CopyInAsync(copyInStatement, pipe.Reader, cancellationToken);
-            await dataStreamTask.ConfigureAwait(false);
-            return await copyTask.ConfigureAwait(false);
-        }
-    }
-
-    private const int MaxCopyBufferSize = 8192;
-
-    private static readonly byte[] BinaryCopyHeader =
-    [
-        (byte)'P', (byte)'G', (byte)'C', (byte)'O', (byte)'P', (byte)'Y', 0x0A, 0xFF, 0x0D, 0x0A,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    ];
-
-    private static async Task WriteBinaryRowsToPipe<TCopyRow>(
-        IAsyncEnumerable<TCopyRow> rows,
-        PipeWriter writer,
-        CancellationToken cancellationToken)
-        where TCopyRow : IPgBinaryCopyRow
-    {
-        using PooledArrayBufferWriter buffer = new();
-        writer.Write(BinaryCopyHeader);
-        await foreach (TCopyRow row in rows.ConfigureAwait(false)
-                           .WithCancellation(cancellationToken))
-        {
-            using PgParameterWriter parameterWriter = new(buffer);
-            buffer.WriteShort(TCopyRow.ColumnCount);
-            row.BindMany(parameterWriter);
-
-            if (buffer.WrittenCount < MaxCopyBufferSize)
-            {
-                continue;
-            }
-
-            writer.Write(buffer.ReadableSpan);
-            await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
-            buffer.Reset();
-        }
-
-        if (buffer.WrittenCount > 0)
-        {
-            writer.Write(buffer.ReadableSpan);
-            await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        await writer.CompleteAsync().ConfigureAwait(false);
     }
 
     private readonly record struct CopyTableMetadata(

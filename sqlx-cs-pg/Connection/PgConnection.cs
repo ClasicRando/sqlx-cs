@@ -1,4 +1,3 @@
-using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Exceptions;
@@ -93,7 +92,7 @@ public sealed class PgConnection :
 
     public async Task<QueryResult> CopyInAsync(
         ICopyFrom copyInStatement,
-        PipeReader data,
+        Stream data,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(copyInStatement);
@@ -101,6 +100,21 @@ public sealed class PgConnection :
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
         return await _pgConnector!.CopyIn(copyInStatement, data, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<QueryResult> CopyInRowsAsync<TCopyStatement, TCopyRow>(
+        TCopyStatement copyInStatement,
+        IAsyncEnumerable<TCopyRow> rows,
+        CancellationToken cancellationToken = default)
+        where TCopyStatement : ICopyFrom, ICopyBinary
+        where TCopyRow : IPgBinaryCopyRow
+    {
+        ArgumentNullException.ThrowIfNull(copyInStatement);
+        ArgumentNullException.ThrowIfNull(rows);
+        CheckDisposed();
+        await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
+        return await _pgConnector!.CopyIn(copyInStatement, rows, cancellationToken)
             .ConfigureAwait(false);
     }
 

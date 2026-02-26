@@ -1,13 +1,15 @@
+using System.Buffers;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
+using Sqlx.Core.Buffer;
 using Sqlx.Core.Config;
 using Sqlx.Core.Pool;
 using Sqlx.Core.Result;
-using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Copy;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Logging;
 using Sqlx.Postgres.Message.Backend;
+using Sqlx.Postgres.Query;
 
 namespace Sqlx.Postgres.Connector;
 
@@ -80,40 +82,33 @@ public sealed partial class PgConnector
     /// <returns>Query result data</returns>
     internal async Task<QueryResult> CopyIn(
         ICopyFrom copyInStatement,
-        PipeReader data,
+        Stream data,
         CancellationToken cancellationToken)
     {
         ThrowIfNotOpen();
 
         using UserAction _ = StartUserAction();
+        await WaitUntilReady(cancellationToken).ConfigureAwait(false);
+        await SendQueryMessage(copyInStatement.ToCopyQuery(), cancellationToken)
+            .ConfigureAwait(false);
+        CopyInResponseMessage message = await WaitForOrThrowError<CopyInResponseMessage>(cancellationToken)
+            .ConfigureAwait(false);
+        _pendingReadyForQuery++;
+        _logger.LogCopyInResponse(message);
+
         try
         {
-            await WaitUntilReady(cancellationToken).ConfigureAwait(false);
-            await SendQueryMessage(copyInStatement.ToCopyQuery(), cancellationToken)
-                .ConfigureAwait(false);
-            CopyInResponseMessage message = await WaitForOrThrowError<CopyInResponseMessage>(cancellationToken)
-                .ConfigureAwait(false);
-            _pendingReadyForQuery++;
-            _logger.LogCopyInResponse(message);
-
-            try
-            {
-                await SendCopyDataAsync(data, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                await SendCopyFailAsync(cancellationToken: cancellationToken, failCause: e)
-                    .ConfigureAwait(false);
-                throw;
-            }
-
-            return await CollectCopyInResult(cancellationToken)
-                .ConfigureAwait(false);
+            await SendCopyDataAsync(data, cancellationToken).ConfigureAwait(false);
         }
-        finally
+        catch (Exception e)
         {
-            await data.CompleteAsync().ConfigureAwait(false);
+            await SendCopyFailAsync(cancellationToken: cancellationToken, failCause: e)
+                .ConfigureAwait(false);
+            throw;
         }
+
+        return await CollectCopyInResult(cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -126,41 +121,129 @@ public sealed partial class PgConnector
     /// <exception cref="PgException">
     /// If the pipe reader is cancelled before it's completed
     /// </exception>
-    private async Task SendCopyDataAsync(PipeReader data, CancellationToken cancellationToken)
+    private async Task SendCopyDataAsync(Stream data, CancellationToken cancellationToken)
     {
-        var bytesWritten = 0;
-        while (true)
+        var buffer = ArrayPool<byte>.Shared.Rent(1024 * 4);
+        try
         {
-            ReadResult readResult = await data.ReadAsync(cancellationToken)
-                .ConfigureAwait(false);
-            if (readResult.IsCanceled)
-            {
-                throw new PgException(
-                    $"Data stream supplied to {nameof(PgConnection.CopyInAsync)} was cancelled before completion");
-            }
-
-            foreach (var chunk in readResult.Buffer)
+            var bytesWritten = 0;
+            int length;
+            while ((length = await data.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false)) > 0)
             {
                 if (bytesWritten > MaxCopyDataSendSize)
                 {
                     await FlushStream(cancellationToken).ConfigureAwait(false);
                 }
 
-                WriteCopyDataMessage(chunk.Span);
-                bytesWritten += chunk.Length;
+                WriteCopyDataMessage(buffer.AsSpan(0, length));
+                bytesWritten += length;
             }
+            await FlushStream(cancellationToken).ConfigureAwait(false);
+            await SendCopyDoneMessage(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
 
-            data.AdvanceTo(readResult.Buffer.End, readResult.Buffer.End);
+    /// <summary>
+    /// Executes a <c>COPY FROM</c> statement against this connection. Initiates the copy operation
+    /// followed by forwarding all data rows encoded in binary format to the database.
+    /// </summary>
+    /// <param name="copyInStatement">Copy from statement</param>
+    /// <param name="rows">Stream of rows all user supplied data</param>
+    /// <param name="cancellationToken">Token to cancel async operation</param>
+    /// <returns>Query result data</returns>
+    internal async Task<QueryResult> CopyIn<TCopyStatement, TCopyRow>(
+        TCopyStatement copyInStatement,
+        IAsyncEnumerable<TCopyRow> rows,
+        CancellationToken cancellationToken)
+        where TCopyStatement : ICopyFrom, ICopyBinary
+        where TCopyRow : IPgBinaryCopyRow
+    {
+        ThrowIfNotOpen();
 
-            if (!readResult.IsCompleted)
+        using UserAction _ = StartUserAction();
+        await WaitUntilReady(cancellationToken).ConfigureAwait(false);
+        await SendQueryMessage(copyInStatement.ToCopyQuery(), cancellationToken)
+            .ConfigureAwait(false);
+        CopyInResponseMessage message = await WaitForOrThrowError<CopyInResponseMessage>(cancellationToken)
+            .ConfigureAwait(false);
+        _pendingReadyForQuery++;
+        _logger.LogCopyInResponse(message);
+
+        try
+        {
+            await SendCopyRowsAsync(rows, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            await SendCopyFailAsync(cancellationToken: cancellationToken, failCause: e)
+                .ConfigureAwait(false);
+            throw;
+        }
+
+        return await CollectCopyInResult(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private const int MaxCopyBufferSize = 8192;
+
+    private static readonly byte[] BinaryCopyHeader =
+    [
+        (byte)'P',(byte)'G',(byte)'C',(byte)'O',(byte)'P',(byte)'Y',
+        (byte)'\n', 0xFF, (byte)'\r', (byte)'\n', 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+    ];
+
+    private static readonly byte[] BinaryCopyFooter = [0xFF, 0xFF];
+
+    /// <summary>
+    /// Forward all data from the pipe to the internal buffer (as <c>COPY DATA</c> messages),
+    /// flushing when the internal buffer is full and finalizing the operation with a
+    /// <c>COPY DONE</c> message.
+    /// </summary> 
+    /// <param name="rows">Data source as a stream of rows</param>
+    /// <param name="cancellationToken">Token to cancel async operation</param>
+    /// <exception cref="PgException">
+    /// If the pipe reader is cancelled before it's completed
+    /// </exception>
+    private async Task SendCopyRowsAsync<TCopyRow>(
+        IAsyncEnumerable<TCopyRow> rows,
+        CancellationToken cancellationToken)
+        where TCopyRow : IPgBinaryCopyRow
+    {
+        using PooledArrayBufferWriter buffer = new();
+        using PgParameterWriter parameterWriter = new(buffer);
+        WriteCopyDataMessage(BinaryCopyHeader);
+        await FlushStream(cancellationToken).ConfigureAwait(false);
+        await foreach (TCopyRow row in rows.ConfigureAwait(false)
+                           .WithCancellation(cancellationToken))
+        {
+            buffer.WriteShort(TCopyRow.ColumnCount);
+            row.BindMany(parameterWriter);
+
+            if (buffer.WrittenCount < MaxCopyBufferSize)
             {
                 continue;
             }
 
+            WriteCopyDataMessage(buffer.ReadableSpan);
             await FlushStream(cancellationToken).ConfigureAwait(false);
-            await SendCopyDoneMessage(cancellationToken).ConfigureAwait(false);
-            break;
+            buffer.Reset();
         }
+
+        if (buffer.WrittenCount > 0)
+        {
+            WriteCopyDataMessage(buffer.ReadableSpan);
+            await FlushStream(cancellationToken).ConfigureAwait(false);
+        }
+        
+        WriteCopyDataMessage(BinaryCopyFooter);
+        await FlushStream(cancellationToken).ConfigureAwait(false);
+        await SendCopyDoneMessage(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
