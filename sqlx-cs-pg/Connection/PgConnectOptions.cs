@@ -91,7 +91,7 @@ public record PgConnectOptions
     /// The extended query protocol allows for binary encoding of result rows which generally
     /// perform better than text based encoding.
     /// </summary>
-    public bool UseExtendedProtocolForSimpleQueries { get; init; }
+    public bool UseExtendedProtocolForSimpleQueries { get; init; } = true;
 
     /// <summary>
     /// This parameter adjusts the number of digits used for textual output of floating-point
