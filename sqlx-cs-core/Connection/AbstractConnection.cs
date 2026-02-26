@@ -32,8 +32,6 @@ public abstract class AbstractConnection<TQuery, TBindable, TQueryBatch, TDataRo
     public abstract ConnectionStatus Status { get; }
     public abstract bool InTransaction { get; }
 
-    public abstract Task OpenAsync(CancellationToken cancellationToken = default);
-
     public Task BeginAsync(CancellationToken cancellationToken = default)
     {
         return ExecuteTransactionCommandAsync(TransactionCommand.Begin, cancellationToken);

@@ -28,11 +28,6 @@ internal static class ConnectionPoolExtensions
             try
             {
                 connection = connectionPool.CreateConnection();
-                if (connection.Status is ConnectionStatus.Closed)
-                {
-                    await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-                }
-
                 await connection.BeginAsync(cancellationToken).ConfigureAwait(false);
                 return connection;
             }

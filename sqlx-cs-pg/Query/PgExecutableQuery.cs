@@ -12,7 +12,7 @@ namespace Sqlx.Postgres.Query;
 /// into a buffer using a <see cref="PgParameterWriter"/> and the query is executed using the
 /// <see cref="PgConnection"/> supplied to the constructor.
 /// </summary>
-internal class PgExecutableQuery : IPgExecutableQuery
+internal sealed class PgExecutableQuery : IPgExecutableQuery
 {
     private bool _disposed;
     private PgConnection? _queryExecutor;
@@ -152,5 +152,11 @@ internal class PgExecutableQuery : IPgExecutableQuery
         _parameterBuffer.Dispose();
         _queryExecutor = null;
         _disposed = true;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return ValueTask.CompletedTask;
     }
 }

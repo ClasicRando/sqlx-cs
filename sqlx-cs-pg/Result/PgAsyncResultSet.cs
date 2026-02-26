@@ -9,7 +9,7 @@ using Sqlx.Postgres.Query;
 
 namespace Sqlx.Postgres.Result;
 
-internal class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
+internal sealed class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
 {
     private bool _disposed;
     private bool _isBeforeStart = true;

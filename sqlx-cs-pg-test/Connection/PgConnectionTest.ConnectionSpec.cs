@@ -1,4 +1,3 @@
-using Sqlx.Core.Pool;
 using Sqlx.Core.Query;
 using Sqlx.Postgres.Query;
 
@@ -7,12 +6,10 @@ namespace Sqlx.Postgres.Connection;
 public partial class PgConnectionTest
 {
     [Test]
-    public async Task OpenAsync_Should_SucceedWithSaslAuth_When_DefaultAuth(CancellationToken ct)
+    public async Task ExecuteNonQueryAsync_Should_SucceedWithSaslAuth_When_DefaultAuth(CancellationToken ct)
     {
         await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-        await connection.OpenAsync(ct);
-        await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Idle);
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT 1;");
+        await using IPgExecutableQuery query = connection.CreateQuery("SELECT 1;");
         var rowsAffected = await query.ExecuteNonQueryAsync(ct);
         await Assert.That(rowsAffected).IsEqualTo(1);
     }
@@ -21,8 +18,6 @@ public partial class PgConnectionTest
     public async Task CommitAsync_Should_SucceedAndIncrementTransactionId(CancellationToken ct)
     {
         await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-        await connection.OpenAsync(ct);
-        await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Idle);
         var transactionIdStart = await GetConnectionTransactionId(connection, ct);
         await connection.BeginAsync(ct);
         var transactionIdBegin = await GetConnectionTransactionId(connection, ct);
@@ -38,8 +33,6 @@ public partial class PgConnectionTest
     public async Task RollbackAsync_Should_SucceedAndIncrementTransactionId(CancellationToken ct)
     {
         await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-        await connection.OpenAsync(ct);
-        await Assert.That(connection.Status).IsEqualTo(ConnectionStatus.Idle);
         var transactionIdStart = await GetConnectionTransactionId(connection, ct);
         await connection.BeginAsync(ct);
         var transactionIdBegin = await GetConnectionTransactionId(connection, ct);
@@ -53,7 +46,7 @@ public partial class PgConnectionTest
 
     private static async Task<long> GetConnectionTransactionId(IPgConnection connection, CancellationToken ct)
     {
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT txid_current();");
+        await using IPgExecutableQuery query = connection.CreateQuery("SELECT txid_current();");
         using var queryResult = await query.ExecuteAsync(ct);
         if (!await queryResult.MoveNextAsync(ct))
         {

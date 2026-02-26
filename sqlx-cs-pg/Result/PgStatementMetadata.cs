@@ -2,7 +2,7 @@ using Sqlx.Postgres.Column;
 
 namespace Sqlx.Postgres.Result;
 
-internal class PgStatementMetadata
+internal sealed class PgStatementMetadata
 {
     private readonly Dictionary<string, int> _columnNames = new();
     private readonly PgColumnMetadata[] _columns;

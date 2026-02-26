@@ -28,15 +28,6 @@ public interface
     bool InTransaction { get; }
 
     /// <summary>
-    /// Open the connection to execute future queries. If this method is called by a connection that
-    /// is already <see cref="ConnectionStatus.Idle"/>, then this method will not change the
-    /// connection state. Otherwise, the physical connection will be closed and a new physical
-    /// connection will be created.
-    /// </summary>
-    /// <param name="cancellationToken">token to signal a cancellation</param>
-    Task OpenAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Start a new transaction against this connection. Calls to this method again before calling
     /// <see cref="CommitAsync"/> or <see cref="RollbackAsync"/> will result in an
     /// <see cref="Sqlx.Core.Exceptions.UnexpectedTransactionState"/> exception. Calls to

@@ -5,7 +5,7 @@ namespace Sqlx.Core.Query;
 /// <summary>
 /// Super interface of <see cref="IBindable"/> that allows for executing the query.
 /// </summary>
-public interface IExecutableQuery<TDataRow> : IBindable
+public interface IExecutableQuery<TDataRow> : IBindable, IAsyncDisposable
     where TDataRow : IDataRow
 {
     /// <summary>

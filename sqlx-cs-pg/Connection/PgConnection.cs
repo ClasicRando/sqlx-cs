@@ -33,7 +33,7 @@ public sealed class PgConnection :
 
     public override bool InTransaction => _pgConnector?.InTransaction ?? false;
 
-    public override async Task OpenAsync(CancellationToken cancellationToken = default)
+    private async ValueTask OpenAsync(CancellationToken cancellationToken = default)
     {
         CheckDisposed();
 
@@ -42,7 +42,8 @@ public sealed class PgConnection :
             throw new InvalidOperationException("Connection is already open");
         }
 
-        PgConnector connector = await _pool.AcquireStreamAsync(cancellationToken).ConfigureAwait(false);
+        PgConnector connector = await _pool.AcquireStreamAsync(cancellationToken)
+            .ConfigureAwait(false);
         _pgConnector = connector;
     }
 
