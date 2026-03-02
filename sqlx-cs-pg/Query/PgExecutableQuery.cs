@@ -17,21 +17,21 @@ internal sealed class PgExecutableQuery : IPgExecutableQuery
     private bool _disposed;
     private PgConnection? _queryExecutor;
     private readonly PooledArrayBufferWriter _buffer;
-    private readonly PgParameterWriter _parameterBuffer;
+    private readonly PgParameterWriter _parameterWriter;
 
     public PgExecutableQuery(string sql, PgConnection queryExecutor)
     {
         _queryExecutor = queryExecutor;
         Query = sql;
         _buffer = new PooledArrayBufferWriter();
-        _parameterBuffer = new PgParameterWriter(_buffer);
+        _parameterWriter = new PgParameterWriter(_buffer);
     }
 
     public string Query { get; }
 
-    public short ParameterCount => _parameterBuffer.ParameterCount;
+    public short ParameterCount => _parameterWriter.ParameterCount;
 
-    public IReadOnlyList<PgTypeInfo> ParameterPgTypes => _parameterBuffer.PgTypes;
+    public IReadOnlyList<PgTypeInfo> ParameterPgTypes => _parameterWriter.PgTypes;
 
     public ReadOnlySpan<byte> EncodedParameters => _buffer.ReadableSpan;
 
@@ -102,7 +102,7 @@ internal sealed class PgExecutableQuery : IPgExecutableQuery
 
     public void Bind(ReadOnlySpan<byte> value)
     {
-        _parameterBuffer.Bind(value);
+        _parameterWriter.Bind(value);
     }
 
     public void Bind(string? value)
@@ -112,7 +112,7 @@ internal sealed class PgExecutableQuery : IPgExecutableQuery
 
     public void Bind(ReadOnlySpan<char> value)
     {
-        _parameterBuffer.Bind(value);
+        _parameterWriter.Bind(value);
     }
 
     public void Bind(Guid value)
@@ -122,19 +122,19 @@ internal sealed class PgExecutableQuery : IPgExecutableQuery
 
     public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
     {
-        _parameterBuffer.BindJson(value, typeInfo);
+        _parameterWriter.BindJson(value, typeInfo);
     }
 
     public void BindNull<T>() where T : notnull
     {
-        _parameterBuffer.BindNull<T>();
+        _parameterWriter.BindNull<T>();
     }
 
     public void Bind<TValue, TType>(TValue value)
         where TValue : notnull
         where TType : IPgDbType<TValue>
     {
-        _parameterBuffer.Bind<TValue, TType>(value);
+        _parameterWriter.Bind<TValue, TType>(value);
     }
 
     public Task<IAsyncResultSet<IPgDataRow>> ExecuteAsync(
@@ -149,7 +149,7 @@ internal sealed class PgExecutableQuery : IPgExecutableQuery
         if (_disposed) return;
         
         _buffer.Dispose();
-        _parameterBuffer.Dispose();
+        _parameterWriter.Dispose();
         _queryExecutor = null;
         _disposed = true;
     }

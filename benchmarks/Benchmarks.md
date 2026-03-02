@@ -51,9 +51,31 @@ is minimal difference between the 2 drivers.
 | Npgsql     | Simple Query, Single Row                       |    277.0 us |     9.22 us |    26.16 us |    272.6 us |  1.01 |    0.13 |          - |          - |         - |      7.38 KB |        1.00 |
 | sqlx-cs-pg | Simple Query, Single Row                       |    158.3 us |     4.62 us |    13.40 us |    154.3 us |  0.58 |    0.07 |          - |          - |         - |      6.98 KB |        0.95 |
 
-## COPY
+## PostgreSQL COPY
 ### Overview
-TODO
+Benchmarks are run using BenchmarkDotNet and run the same SQL query and copy data. Init SQL:
+```postgresql
+DROP TABLE IF EXISTS public.copy_target;
+CREATE TABLE public.copy_target(
+    id int primary key,
+    text_field text not null,
+    creation_date timestamp not null,
+    last_change_date timestamp not null,
+    counter int
+);
+```
+Queries executed during benchmarks:
+```postgresql
+COPY public.copy_target FROM STDIN WITH (FORMAT CSV);
+
+COPY public.copy_target FROM STDIN WITH (FORMAT binary);
+```
 
 ### Results
-TODO
+| Method     | Categories     | Mean     | Error    | StdDev   | Median   | Ratio | RatioSD | Allocated  | Alloc Ratio |
+|------------|----------------|----------|----------|----------|----------|-------|---------|------------|-------------|
+| Npgsql     | CopyIn, Binary | 76.46 ms | 2.191 ms | 6.285 ms | 73.98 ms | 1.01  | 0.12    | 1566.91 KB | 1.00        |
+| sqlx-cs-pg | CopyIn, Binary | 73.00 ms | 2.597 ms | 6.933 ms | 71.13 ms | 0.96  | 0.12    | 1572.06 KB | 1.00        |
+|            |                |          |          |          |          |       |         |            |             |
+| Npgsql     | CopyIn, CSV    | 89.19 ms | 2.462 ms | 6.657 ms | 88.72 ms | 1.01  | 0.10    | 4.76 KB    | 1.00        |
+| sqlx-cs-pg | CopyIn, CSV    | 87.85 ms | 1.750 ms | 4.761 ms | 85.80 ms | 0.99  | 0.09    | 3.69 KB    | 0.78        |

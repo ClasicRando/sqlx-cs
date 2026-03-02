@@ -1,4 +1,3 @@
-using System.IO.Pipelines;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Copy;

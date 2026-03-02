@@ -14,14 +14,12 @@ namespace Sqlx.Postgres.Query;
 /// </summary>
 internal sealed class PgParameterWriter : IPgBindable
 {
-    private readonly IBufferWriter<byte> _buffer;
-    private readonly bool _disposeInner;
+    private readonly PooledArrayBufferWriter _buffer;
     private readonly List<PgTypeInfo> _pgTypes = [];
 
-    public PgParameterWriter(IBufferWriter<byte> buffer, bool disposeInner = false)
+    public PgParameterWriter(PooledArrayBufferWriter buffer)
     {
         _buffer = buffer;
-        _disposeInner = disposeInner;
     }
 
     /// <summary>
@@ -128,7 +126,9 @@ internal sealed class PgParameterWriter : IPgBindable
 
     public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
     {
-        _buffer.WriteLengthPrefixed(buff => PgJson<T>.Encode(value, buff), includeLength: false);
+        var startLocation = _buffer.StartWritingLengthPrefixed();
+        PgJson<T>.Encode(value, _buffer);
+        _buffer.FinishWritingLengthPrefixed(startLocation, includeLength: false);
         _pgTypes.Add(PgJson<T>.DbType);
     }
 
@@ -141,12 +141,19 @@ internal sealed class PgParameterWriter : IPgBindable
     public void Bind<TValue, TType>(TValue value)
         where TValue : notnull where TType : IPgDbType<TValue>
     {
-        _buffer.WriteLengthPrefixed(buff => TType.Encode(value, buff), includeLength: false);
+        var startLocation = _buffer.StartWritingLengthPrefixed();
+        TType.Encode(value, _buffer);
+        _buffer.FinishWritingLengthPrefixed(startLocation, includeLength: false);
         _pgTypes.Add(TType.DbType);
+    }
+
+    public void Reset()
+    {
+        _pgTypes.Clear();
+        _buffer.Reset();
     }
 
     public void Dispose()
     {
-        if (_disposeInner && _buffer is IDisposable disposable) disposable.Dispose();
     }
 }

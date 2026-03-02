@@ -232,15 +232,14 @@ public sealed partial class PgConnector
 
             WriteCopyDataMessage(buffer.ReadableSpan);
             await FlushStream(cancellationToken).ConfigureAwait(false);
-            buffer.Reset();
+            parameterWriter.Reset();
         }
 
         if (buffer.WrittenCount > 0)
         {
             WriteCopyDataMessage(buffer.ReadableSpan);
-            await FlushStream(cancellationToken).ConfigureAwait(false);
         }
-        
+
         WriteCopyDataMessage(BinaryCopyFooter);
         await FlushStream(cancellationToken).ConfigureAwait(false);
         await SendCopyDoneMessage(cancellationToken).ConfigureAwait(false);
