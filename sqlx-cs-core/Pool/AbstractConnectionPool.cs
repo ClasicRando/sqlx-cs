@@ -201,18 +201,19 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
             return false;
         }
 
-        if (PoolOptions.MaxLifetime != TimeSpan.Zero
-            && DateTime.UtcNow > stream.LastOpenTimestamp + PoolOptions.MaxLifetime)
+        if (PoolOptions.MaxLifetime == Timeout.InfiniteTimeSpan
+            || DateTime.UtcNow <= stream.LastOpenTimestamp + PoolOptions.MaxLifetime)
         {
-            _logger.LogConnectionExceededMaxLifeTime(
-                SqlxConfig.DetailedLoggingLevel,
-                PoolOptions.MaxLifetime,
-                stream.Id);
-            CloseStream(stream);
-            return false;
+            return true;
         }
 
-        return true;
+        _logger.LogConnectionExceededMaxLifeTime(
+            SqlxConfig.DetailedLoggingLevel,
+            PoolOptions.MaxLifetime,
+            stream.Id);
+        CloseStream(stream);
+        return false;
+
     }
 
     [SuppressMessage(
@@ -265,8 +266,8 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
         }
         else if (streamCount <= PoolOptions.MinIdleConnections && _idleTimerEnabled)
         {
-            _idleCleanupTimer.Period = Timeout.InfiniteTimeSpan;
             _idleTimerEnabled = false;
+            _idleCleanupTimer.Period = Timeout.InfiniteTimeSpan;
         }
     }
 
@@ -317,11 +318,17 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
 
     public async ValueTask DisposeAsync()
     {
+        await DisposeAsyncCore().ConfigureAwait(false);
+        Dispose(false);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual async ValueTask DisposeAsyncCore()
+    {
         await _idleCleanupCts.CancelAsync().ConfigureAwait(false);
         await _idleCleanupTask.ConfigureAwait(false);
         _idleCleanupCts.Dispose();
         _idleCleanupTimer.Dispose();
-        GC.SuppressFinalize(this);
     }
 
     public void Dispose()

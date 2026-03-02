@@ -17,6 +17,8 @@ public interface IAsyncConnector : IDisposable
     
     ReadOnlySpan<byte> ReadBuffer { get; }
     
+    ReadOnlyMemory<byte> ReadBufferMemory { get; }
+    
     /// <summary>
     /// Open the stream's connection to a remote host at the specified port
     /// </summary>

@@ -1,4 +1,3 @@
-using System.Buffers;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Copy;
@@ -15,31 +14,35 @@ public interface IPgConnection :
     IConnection<IPgExecutableQuery, IPgBindable, IPgQueryBatch, IPgDataRow>
 {
     /// <summary>
-    /// Executes the <c>COPY TO</c> command and returns a stream of row data as text, CSV or binary.
-    /// Generally this is not the method you want to use since it requires knowing each row type and
-    /// using raw bytes. Prefer using other copy out methods:
-    /// <list type="bullet">
-    ///     <item>
-    ///     Copy results to stream ->
-    ///     <see cref="PgConnectionExtensions.CopyOutAsync(IPgConnection,ICopyTo,Stream,CancellationToken)"/>
-    ///     </item>
-    ///     <item>
-    ///     Copy results to file path ->
-    ///     <see cref="PgConnectionExtensions.CopyOutAsync(IPgConnection,ICopyTo,string,FileMode,CancellationToken)"/>
-    ///     </item>
-    ///     <item>
-    ///     Parse results as rows ->
-    ///     <see cref="PgConnectionExtensions.CopyOutRowsAsync{TRow}"/>
-    ///     </item>
-    /// </list>
-    /// <a href="https://www.postgresql.org/docs/current/sql-copy.html"> postgres docs</a>
+    /// Execute a <c>COPY TO</c> query against the database and forward the fetched rows to the
+    /// supplied <see cref="Stream"/>.
     /// </summary>
     /// <param name="copyOutStatement">COPY statement to execute for data extraction</param>
+    /// <param name="stream">
+    /// Stream to forward data returned from the <c>COPY TO</c> command
+    /// </param>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
-    /// <returns>A stream of rows returned as a result of the copy statement</returns>
-    IAsyncEnumerable<IMemoryOwner<byte>> CopyOutAsync(
+    Task CopyOutAsync(
         ICopyTo copyOutStatement,
+        Stream stream,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Execute a <c>COPY {Table} TO BINARY</c> statement and collect the results into the
+    /// desired row type. This is possible because the copy binary format is the same as rows
+    /// sent during regular query execution and is easily mapped to a row type. 
+    /// </summary>
+    /// <param name="copyOutStatement">Binary copy out statement to execute</param>
+    /// <param name="cancellationToken">Token to cancel async operation</param>
+    /// <typeparam name="TRow">Row type to decode to</typeparam>
+    /// <returns>Stream of rows from the copy statement</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// If the copy statement is not <see cref="ICopyQuery"/> or <see cref="ICopyTable"/>
+    /// </exception>
+    IAsyncEnumerable<TRow> CopyOutRowsAsync<TRow>(
+        TableToBinary copyOutStatement,
+        CancellationToken cancellationToken = default)
+        where TRow : IFromRow<IPgDataRow, TRow>;
 
     /// <summary>
     /// Executes the <c>COPY FROM</c> command with the supplied <paramref name="data"/> and returns

@@ -1,13 +1,14 @@
-using System.Buffers;
 using System.Runtime.CompilerServices;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Exceptions;
 using Sqlx.Core.Pool;
 using Sqlx.Core.Result;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Copy;
 using Sqlx.Postgres.Pool;
 using Sqlx.Postgres.Query;
 using Sqlx.Postgres.Result;
+using Sqlx.Postgres.Type;
 using PgConnector = Sqlx.Postgres.Connector.PgConnector;
 
 namespace Sqlx.Postgres.Connection;
@@ -77,15 +78,35 @@ public sealed class PgConnection :
             .ConfigureAwait(false);
     }
 
-    public async IAsyncEnumerable<IMemoryOwner<byte>> CopyOutAsync(
+    public async Task CopyOutAsync(
         ICopyTo copyOutStatement,
+        Stream stream,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(copyOutStatement);
+        ArgumentNullException.ThrowIfNull(stream);
+        CheckDisposed();
+        await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
+        await _pgConnector!.CopyOut(copyOutStatement, stream, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async IAsyncEnumerable<TRow> CopyOutRowsAsync<TRow>(
+        TableToBinary copyOutStatement,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        where TRow : IFromRow<IPgDataRow, TRow>
     {
         ArgumentNullException.ThrowIfNull(copyOutStatement);
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        var rows = _pgConnector!.CopyOut(copyOutStatement, cancellationToken);
-        await foreach (var row in rows.ConfigureAwait(false))
+        
+        var columns = await QueryTableMetadataAsync(copyOutStatement, cancellationToken)
+            .ConfigureAwait(false);
+        var statementMetadata = new PgStatementMetadata(columns);
+        var rows = _pgConnector!
+            .CopyOut<TRow>(copyOutStatement, statementMetadata, cancellationToken)
+            .ConfigureAwait(false);
+        await foreach (TRow row in rows)
         {
             yield return row;
         }
@@ -155,6 +176,67 @@ public sealed class PgConnection :
         }
 
         await OpenAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private async ValueTask<PgColumnMetadata[]> QueryTableMetadataAsync(
+        TableToBinary copyTable,
+        CancellationToken cancellationToken)
+    {
+        IPgExecutableQuery query = CreateQuery(CopyTableMetadata.Query);
+        // This is a workaround for calling ConfigureAwait on an IAsyncDisposable
+        await using var _ = query.ConfigureAwait(false);
+        query.Bind(copyTable.TableName);
+        query.Bind(copyTable.SchemaName);
+        return await query.FetchAsync<CopyTableMetadata>(cancellationToken)
+            .Select(m => m.GetColumnMetadata())
+            .ToArrayAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private readonly record struct CopyTableMetadata(
+        int TableOid,
+        string ColumnName,
+        short ColumnOrder,
+        PgTypeInfo PgTypeInfo,
+        short ColumnLength) : IFromRow<IPgDataRow, CopyTableMetadata>
+    {
+        public const string Query =
+            """
+            SELECT
+                c.oid table_oid, attname AS column_name, attnum column_order, atttypid AS type_oid,
+                attlen AS column_length
+            FROM pg_attribute a
+            JOIN pg_class c ON a.attrelid = c.oid
+            JOIN pg_namespace n ON c.relnamespace = n.oid
+            WHERE
+                c.relname = $1
+                AND n.nspname = $2
+                AND a.attnum > 0
+            """;
+
+        public PgColumnMetadata GetColumnMetadata()
+        {
+            return new PgColumnMetadata(
+                ColumnName,
+                TableOid,
+                ColumnOrder,
+                PgTypeInfo,
+                ColumnLength,
+                0,
+                PgFormatCode.Binary);
+        }
+
+        public static CopyTableMetadata FromRow(IPgDataRow dataRow)
+        {
+            return new CopyTableMetadata
+            {
+                TableOid = dataRow.GetIntNotNull("table_oid"),
+                ColumnName = dataRow.GetStringNotNull("column_name"),
+                ColumnOrder = dataRow.GetShortNotNull("column_order"),
+                PgTypeInfo = PgTypeInfo.FromOid(dataRow.GetPgNotNull<PgOid>("type_oid")),
+                ColumnLength = dataRow.GetShortNotNull("column_length"),
+            };
+        }
     }
 
     private void Close()

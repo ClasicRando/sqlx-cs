@@ -17,33 +17,21 @@ namespace Sqlx.Postgres.Result;
 internal sealed class PgDataRow : IPgDataRow
 {
     private const int MaxStackSize = 256 / (sizeof(char) / sizeof(byte));
-    private static readonly ArrayPool<byte> ByteArrayPool = ArrayPool<byte>.Shared;
     private static readonly ArrayPool<char> CharArrayPool = ArrayPool<char>.Shared;
     private static readonly ArrayPool<Range?> RangeArrayPool = ArrayPool<Range?>.Shared;
 
     private bool _isDisposed;
-    private byte[] _rowData;
-    private readonly bool _isRented;
+    private ReadOnlyMemory<byte> _rowData;
     private readonly PgStatementMetadata _statementMetadata;
     private readonly short _columnCount;
     private readonly Range?[] _columnValueSlices;
 
-    public PgDataRow(byte[] rowData, PgStatementMetadata statementMetadata)
+    public PgDataRow(ReadOnlyMemory<byte> rowData, PgStatementMetadata statementMetadata)
     {
         _rowData = rowData;
-        _isRented = false;
         _statementMetadata = statementMetadata;
-        ReadOnlySpan<byte> span = rowData;
-        _columnValueSlices = ExtractRanges(ref span, out _columnCount);
-    }
-
-    public PgDataRow(ref ReadOnlySpan<byte> rowData, PgStatementMetadata statementMetadata)
-    {
-        _rowData = ByteArrayPool.Rent(rowData.Length);
-        rowData.CopyTo(_rowData);
-        _isRented = true;
-        _statementMetadata = statementMetadata;
-        _columnValueSlices = ExtractRanges(ref rowData, out _columnCount);
+        var temp = rowData.Span;
+        _columnValueSlices = ExtractRanges(ref temp, out _columnCount);
     }
 
     private static Range?[] ExtractRanges(ref ReadOnlySpan<byte> span, out short columnCount)
@@ -179,7 +167,7 @@ internal sealed class PgDataRow : IPgDataRow
             throw ColumnDecodeException.Create<T, PgColumnMetadata>(columnMetadata);
         }
 
-        var bytes = _rowData.AsSpan()[columnData.Range.Start..columnData.Range.End];
+        var bytes = _rowData.Span[columnData.Range.Start..columnData.Range.End];
         switch (columnMetadata.FormatCode)
         {
             case PgFormatCode.Text:
@@ -250,7 +238,7 @@ internal sealed class PgDataRow : IPgDataRow
             throw ColumnDecodeException.Create<TResult, PgColumnMetadata>(columnMetadata);
         }
 
-        var bytes = _rowData.AsSpan()[columnData.Range.Start..columnData.Range.End];
+        var bytes = _rowData.Span[columnData.Range.Start..columnData.Range.End];
         switch (columnMetadata.FormatCode)
         {
             case PgFormatCode.Text:
@@ -299,11 +287,7 @@ internal sealed class PgDataRow : IPgDataRow
 
         _isDisposed = true;
         
-        if (_isRented)
-        {
-            ByteArrayPool.Return(_rowData);
-        }
-        _rowData = [];
+        _rowData = default;
         RangeArrayPool.Return(_columnValueSlices);
     }
 }

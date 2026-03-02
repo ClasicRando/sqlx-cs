@@ -121,7 +121,7 @@ public class PostgresCopyBenchmarks
         _sqlxPgConnectionPool.ExecuteNonQueryAsync("TRUNCATE TABLE public.copy_target");
     }
 
-    // [Benchmark(Description = "Npgsql", Baseline = true), BenchmarkCategory("CopyIn, CSV")]
+    [Benchmark(Description = "Npgsql", Baseline = true), BenchmarkCategory("CopyIn, CSV")]
     public async Task CopyInCsvNpgsql()
     {
         await using NpgsqlConnection connection = _npgsqlDataSource.CreateConnection();
@@ -131,7 +131,7 @@ public class PostgresCopyBenchmarks
         await stream.CopyToAsync(writer.BaseStream);
     }
 
-    // [Benchmark(Description = "Npgsql", Baseline = true), BenchmarkCategory("CopyIn, Binary")]
+    [Benchmark(Description = "Npgsql", Baseline = true), BenchmarkCategory("CopyIn, Binary")]
     public async Task CopyInBinaryNpgsql()
     {
         await using NpgsqlConnection connection = _npgsqlDataSource.CreateConnection();
@@ -182,7 +182,7 @@ public class PostgresCopyBenchmarks
         return rows;
     }
 
-    // [Benchmark(Description = "sqlx-cs-pg"), BenchmarkCategory("CopyIn, CSV")]
+    [Benchmark(Description = "sqlx-cs-pg"), BenchmarkCategory("CopyIn, CSV")]
     public async Task<QueryResult> CopyInCsvSqlx()
     {
         await using IPgConnection connection = _sqlxPgConnectionPool.CreateConnection();
@@ -194,7 +194,7 @@ public class PostgresCopyBenchmarks
         return await connection.CopyInAsync(copyStatement, _tempCsvFileInput);
     }
 
-    // [Benchmark(Description = "sqlx-cs-pg"), BenchmarkCategory("CopyIn, Binary")]
+    [Benchmark(Description = "sqlx-cs-pg"), BenchmarkCategory("CopyIn, Binary")]
     public async Task<QueryResult> CopyInBinarySqlx()
     {
         await using IPgConnection connection = _sqlxPgConnectionPool.CreateConnection();

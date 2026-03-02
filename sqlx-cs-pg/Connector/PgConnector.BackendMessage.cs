@@ -1,4 +1,3 @@
-using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Column;
@@ -52,19 +51,10 @@ public partial class PgConnector
         return metadata;
     }
 
-    private IMemoryOwner<byte> ReceiveCopyDataMessage(int size)
-    {
-        var bytes = MemoryPool<byte>.Shared.Rent(size);
-        var span = _asyncConnector.ReadBuffer[..size];
-        span.CopyTo(bytes.Memory.Span);
-        AdvanceReadBuffer(size);
-        return bytes;
-    }
-
     internal PgDataRow ReceiveRowDataMessage(int size, PgStatementMetadata pgStatementMetadata)
     {
-        var buffer = _asyncConnector.ReadBuffer[..size];
-        var dataRow = new PgDataRow(ref buffer, pgStatementMetadata);
+        var buffer = _asyncConnector.ReadBufferMemory[..size];
+        var dataRow = new PgDataRow(buffer, pgStatementMetadata);
         AdvanceReadBuffer(size);
         return dataRow;
     }

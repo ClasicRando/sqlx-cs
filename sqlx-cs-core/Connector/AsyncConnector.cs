@@ -42,6 +42,8 @@ public sealed class AsyncConnector : IAsyncConnector
 
     public ReadOnlySpan<byte> ReadBuffer => _innerBuffer.AsSpan(_bufferPosition.._bufferLength);
 
+    public ReadOnlyMemory<byte> ReadBufferMemory => _innerBuffer.AsMemory(_bufferPosition.._bufferLength);
+
     public async Task OpenAsync(string host, ushort port, CancellationToken cancellationToken)
     {
         var endPoints = await GetIpEndpointsAsync(host, port, cancellationToken)

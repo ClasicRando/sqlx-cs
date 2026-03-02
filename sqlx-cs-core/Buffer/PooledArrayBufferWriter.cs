@@ -52,6 +52,28 @@ public sealed class PooledArrayBufferWriter : IBufferWriter<byte>, IDisposable
         }
     }
 
+    /// <summary><see cref="ReadOnlyMemory{T}"/> of the bytes written to this buffer</summary>
+    public ReadOnlyMemory<byte> ReadableMemory
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(WrittenCount == -1, this);
+            var writtenCount = WrittenCount;
+            if (writtenCount == 0)
+            {
+                return default;
+            }
+
+            if (writtenCount > _buffer.Length)
+            {
+                throw new InvalidOperationException(
+                    $"Written count is beyond buffer size. Buffer Size: {_buffer.Length}, Written Count: {WrittenCount}: Bytes: [{string.Join(",", _buffer)}]");
+            }
+
+            return _buffer.AsMemory(0, writtenCount);
+        }
+    }
+
     internal int StartWritingLengthPrefixed()
     {
         var lenghtPrefixStart = WrittenCount;
