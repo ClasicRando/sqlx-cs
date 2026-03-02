@@ -18,42 +18,18 @@ internal sealed class PgDataRow : IPgDataRow
 {
     private const int MaxStackSize = 256 / (sizeof(char) / sizeof(byte));
     private static readonly ArrayPool<char> CharArrayPool = ArrayPool<char>.Shared;
-    private static readonly ArrayPool<Range?> RangeArrayPool = ArrayPool<Range?>.Shared;
 
     private bool _isDisposed;
     private ReadOnlyMemory<byte> _rowData;
     private readonly PgStatementMetadata _statementMetadata;
     private readonly short _columnCount;
-    private readonly Range?[] _columnValueSlices;
 
     public PgDataRow(ReadOnlyMemory<byte> rowData, PgStatementMetadata statementMetadata)
     {
         _rowData = rowData;
         _statementMetadata = statementMetadata;
         var temp = rowData.Span;
-        _columnValueSlices = ExtractRanges(ref temp, out _columnCount);
-    }
-
-    private static Range?[] ExtractRanges(ref ReadOnlySpan<byte> span, out short columnCount)
-    {
-        columnCount = span.ReadShort();
-        var rowDataIndex = 2;
-        var columnValueSlices = RangeArrayPool.Rent(columnCount);
-        for (var i = 0; i < columnCount; i++)
-        {
-            var length = span.ReadInt();
-            rowDataIndex += 4;
-            if (length < 0)
-            {
-                columnValueSlices[i] = null;
-                continue;
-            }
-
-            span.Skip(length);
-            columnValueSlices[i] = new Range(rowDataIndex, rowDataIndex + length);
-            rowDataIndex += length;
-        }
-        return columnValueSlices;
+        _columnCount = temp.ReadShort();
     }
 
     public int ColumnCount => _columnCount;
@@ -66,6 +42,7 @@ internal sealed class PgDataRow : IPgDataRow
 
     public IColumnMetadata GetColumnMetadata(int index)
     {
+        CheckDisposed();
         CheckValidIndex(index);
         return _statementMetadata[index];
     }
@@ -73,7 +50,7 @@ internal sealed class PgDataRow : IPgDataRow
     public bool IsNull(int index)
     {
         CheckDisposed();
-        return _columnValueSlices[index] is null;
+        return GetColumnData(index).IsNull;
     }
 
     public bool GetBooleanNotNull(int index)
@@ -167,7 +144,7 @@ internal sealed class PgDataRow : IPgDataRow
             throw ColumnDecodeException.Create<T, PgColumnMetadata>(columnMetadata);
         }
 
-        var bytes = _rowData.Span[columnData.Range.Start..columnData.Range.End];
+        var bytes = columnData.Data;
         switch (columnMetadata.FormatCode)
         {
             case PgFormatCode.Text:
@@ -202,11 +179,11 @@ internal sealed class PgDataRow : IPgDataRow
 
     private readonly ref struct ColumnData(
         bool isNull,
-        Range range,
+        ReadOnlySpan<byte> data,
         in PgColumnMetadata columnMetadata)
     {
         public readonly bool IsNull = isNull;
-        public readonly Range Range = range;
+        public readonly ReadOnlySpan<byte> Data = data;
         public readonly ref readonly PgColumnMetadata ColumnMetadata = ref columnMetadata;
     }
 
@@ -214,10 +191,34 @@ internal sealed class PgDataRow : IPgDataRow
     {
         CheckValidIndex(index);
         ref PgColumnMetadata columnMetadata = ref _statementMetadata[index];
-        var sliceItem = _columnValueSlices[index];
-        return sliceItem is not {} slice
-            ? new ColumnData(true, new Range(), in columnMetadata)
-            : new ColumnData(false, slice, in columnMetadata);
+        var span = GetColumnSpan(index, out var isNull);
+        return new ColumnData(isNull, span, in columnMetadata);
+    }
+
+    private ReadOnlySpan<byte> GetColumnSpan(int index, out bool isNull)
+    {
+        var span = _rowData.Span[2..];
+        for (var i = 0; i < _columnCount; i++)
+        {
+            var length = span.ReadInt();
+
+            if (i == index)
+            {
+                isNull = length < 0;
+                return isNull
+                    ? default
+                    : span[..length];
+            }
+            
+            if (length < 0)
+            {
+                continue;
+            }
+
+            span.Skip(length);
+        }
+
+        throw new InvalidOperationException("Attempted to capture ");
     }
 
     public TResult GetPgNotNull<TResult, TType>(int index)
@@ -238,7 +239,7 @@ internal sealed class PgDataRow : IPgDataRow
             throw ColumnDecodeException.Create<TResult, PgColumnMetadata>(columnMetadata);
         }
 
-        var bytes = _rowData.Span[columnData.Range.Start..columnData.Range.End];
+        var bytes = columnData.Data;
         switch (columnMetadata.FormatCode)
         {
             case PgFormatCode.Text:
@@ -288,6 +289,5 @@ internal sealed class PgDataRow : IPgDataRow
         _isDisposed = true;
         
         _rowData = default;
-        RangeArrayPool.Return(_columnValueSlices);
     }
 }
