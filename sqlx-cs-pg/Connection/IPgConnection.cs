@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Copy;
@@ -36,7 +37,7 @@ public interface IPgConnection :
     /// <param name="copyOutStatement">COPY statement to execute for data extraction</param>
     /// <param name="cancellationToken">Token to cancel the async operation</param>
     /// <returns>A stream of rows returned as a result of the copy statement</returns>
-    IAsyncEnumerable<byte[]> CopyOutAsync(
+    IAsyncEnumerable<IMemoryOwner<byte>> CopyOutAsync(
         ICopyTo copyOutStatement,
         CancellationToken cancellationToken = default);
 

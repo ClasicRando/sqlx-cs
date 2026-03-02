@@ -245,7 +245,8 @@ public static class PgConnectionExtensions
             var rows = pgConnection.CopyOutAsync(copyOutStatement, cancellationToken);
             await foreach (var row in rows.ConfigureAwait(false))
             {
-                await stream.WriteAsync(row, cancellationToken).ConfigureAwait(false);
+                using var _ = row;
+                await stream.WriteAsync(row.Memory, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -263,7 +264,7 @@ public static class PgConnectionExtensions
         public async Task CopyOutAsync(
             ICopyTo copyOutStatement,
             string path,
-            FileMode fileMode = FileMode.Open,
+            FileMode fileMode = FileMode.OpenOrCreate,
             CancellationToken cancellationToken = default)
         {
             // This is a workaround for calling ConfigureAwait on an IAsyncDisposable
@@ -301,7 +302,8 @@ public static class PgConnectionExtensions
             var isFirstRow = true;
             await foreach (var row in rows.ConfigureAwait(false))
             {
-                var rowData = row;
+                using var _ = row;
+                var rowData = row.Memory.Span;
                 // The first row will always be prefixed by 19 bytes of header data. We can just
                 // skip that
                 if (isFirstRow)
@@ -313,13 +315,14 @@ public static class PgConnectionExtensions
                 // The final row will just be a -1 short value to indicate no more rows are present
                 // so we skip that row. To ensure we complete the async enumeration we continue here
                 // but the enumerable should not yield any more rows
-                ReadOnlySpan<byte> span = rowData.AsSpan();
+                ReadOnlySpan<byte> span = rowData;
                 if (span.ReadShort() == -1)
                 {
                     continue;
                 }
-                
-                using var dataRow = new PgDataRow(rowData, statementMetadata);
+
+                ReadOnlySpan<byte> temp = rowData;
+                using var dataRow = new PgDataRow(ref temp, statementMetadata);
                 yield return TRow.FromRow(dataRow);
             }
         }

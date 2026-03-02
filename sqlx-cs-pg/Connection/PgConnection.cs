@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Runtime.CompilerServices;
 using Sqlx.Core.Connection;
 using Sqlx.Core.Exceptions;
@@ -76,7 +77,7 @@ public sealed class PgConnection :
             .ConfigureAwait(false);
     }
 
-    public async IAsyncEnumerable<byte[]> CopyOutAsync(
+    public async IAsyncEnumerable<IMemoryOwner<byte>> CopyOutAsync(
         ICopyTo copyOutStatement,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {

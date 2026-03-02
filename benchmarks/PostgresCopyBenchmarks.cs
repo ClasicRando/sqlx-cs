@@ -31,6 +31,7 @@ public class PostgresCopyBenchmarks
     private static NpgsqlDataSource _npgsqlDataSource = null!;
     private static IPgConnectionPool _sqlxPgConnectionPool = null!;
     private static string _tempCsvFileInput = string.Empty;
+    private static string _tempCsvFileOutput = string.Empty;
 
     [GlobalSetup]
     public void SetUp()
@@ -65,13 +66,26 @@ public class PostgresCopyBenchmarks
                 last_change_date timestamp not null,
                 counter int
             );
+
+            DROP TABLE IF EXISTS public.copy_source;
+            CREATE TABLE public.copy_source(
+                id int primary key,
+                text_field text not null,
+                creation_date timestamp not null,
+                last_change_date timestamp not null,
+                counter int
+            );
+
+            INSERT INTO public.copy_source(id, text_field, creation_date, last_change_date)
+            SELECT s.a, REPEAT('x', 2000), current_timestamp, current_timestamp
+            FROM generate_series(1, 5000) AS s(a);
             """).GetAwaiter().GetResult();
         CreateCsvFile();
     }
 
     private static void CreateCsvFile()
     {
-        _tempCsvFileInput = Path.Combine(Path.GetTempPath(), "copy-benchmark.csv");
+        _tempCsvFileInput = Path.Combine(Path.GetTempPath(), "copy-in-benchmark.csv");
         File.Delete(_tempCsvFileInput);
         using var stream = new FileStream(_tempCsvFileInput, FileMode.OpenOrCreate);
         using var writer = new StreamWriter(stream);
@@ -89,6 +103,7 @@ public class PostgresCopyBenchmarks
             });
             csvWriter.NextRecord();
         }
+        _tempCsvFileOutput = Path.Combine(Path.GetTempPath(), "copy-out-benchmark.csv");
     }
 
     [GlobalCleanup]
@@ -97,6 +112,7 @@ public class PostgresCopyBenchmarks
         _npgsqlDataSource.Dispose();
         _sqlxPgConnectionPool.DisposeAsync().AsTask().GetAwaiter().GetResult();
         File.Delete(_tempCsvFileInput);
+        File.Delete(_tempCsvFileOutput);
     }
 
     [IterationSetup]
@@ -105,7 +121,7 @@ public class PostgresCopyBenchmarks
         _sqlxPgConnectionPool.ExecuteNonQueryAsync("TRUNCATE TABLE public.copy_target");
     }
 
-    [Benchmark(Description = "Npgsql", Baseline = true), BenchmarkCategory("CopyIn, CSV")]
+    // [Benchmark(Description = "Npgsql", Baseline = true), BenchmarkCategory("CopyIn, CSV")]
     public async Task CopyInCsvNpgsql()
     {
         await using NpgsqlConnection connection = _npgsqlDataSource.CreateConnection();
@@ -115,7 +131,7 @@ public class PostgresCopyBenchmarks
         await stream.CopyToAsync(writer.BaseStream);
     }
 
-    [Benchmark(Description = "Npgsql", Baseline = true), BenchmarkCategory("CopyIn, Binary")]
+    // [Benchmark(Description = "Npgsql", Baseline = true), BenchmarkCategory("CopyIn, Binary")]
     public async Task CopyInBinaryNpgsql()
     {
         await using NpgsqlConnection connection = _npgsqlDataSource.CreateConnection();
@@ -134,7 +150,39 @@ public class PostgresCopyBenchmarks
         await writer.CompleteAsync();
     }
 
-    [Benchmark(Description = "sqlx-cs-pg"), BenchmarkCategory("CopyIn, CSV")]
+    [Benchmark(Description = "Npgsql", Baseline = true), BenchmarkCategory("CopyOut, CSV")]
+    public async Task CopyOutCsvNpgsql()
+    {
+        await using NpgsqlConnection connection = _npgsqlDataSource.CreateConnection();
+        await connection.OpenAsync();
+        await using NpgsqlCopyTextReader reader = await connection.BeginTextExportAsync("COPY public.copy_source TO STDOUT WITH (FORMAT CSV);");
+        await using var stream = new FileStream(_tempCsvFileOutput, FileMode.OpenOrCreate);
+        await reader.BaseStream.CopyToAsync(stream);
+    }
+
+    [Benchmark(Description = "Npgsql", Baseline = true), BenchmarkCategory("CopyOut, Binary")]
+    public async Task<List<RowData>> CopyOutBinaryNpgsql()
+    {
+        List<RowData> rows = [];
+        await using NpgsqlConnection connection = _npgsqlDataSource.CreateConnection();
+        await connection.OpenAsync();
+        await using NpgsqlBinaryExporter reader = await connection.BeginBinaryExportAsync("COPY public.copy_source TO STDOUT WITH (FORMAT binary);");
+        while (await reader.StartRowAsync() > -1)
+        {
+            rows.Add(new RowData
+            {
+                Id = await reader.ReadAsync<int>(),
+                Text = await reader.ReadAsync<string>(),
+                CreationDate = await reader.ReadAsync<DateTime>(),
+                LastChangeDate = await reader.ReadAsync<DateTime>(),
+                Counter = reader.IsNull ? null : await reader.ReadAsync<int>(),
+            });
+        }
+
+        return rows;
+    }
+
+    // [Benchmark(Description = "sqlx-cs-pg"), BenchmarkCategory("CopyIn, CSV")]
     public async Task<QueryResult> CopyInCsvSqlx()
     {
         await using IPgConnection connection = _sqlxPgConnectionPool.CreateConnection();
@@ -146,7 +194,7 @@ public class PostgresCopyBenchmarks
         return await connection.CopyInAsync(copyStatement, _tempCsvFileInput);
     }
 
-    [Benchmark(Description = "sqlx-cs-pg"), BenchmarkCategory("CopyIn, Binary")]
+    // [Benchmark(Description = "sqlx-cs-pg"), BenchmarkCategory("CopyIn, Binary")]
     public async Task<QueryResult> CopyInBinarySqlx()
     {
         await using IPgConnection connection = _sqlxPgConnectionPool.CreateConnection();
@@ -156,6 +204,30 @@ public class PostgresCopyBenchmarks
             TableName = "copy_target",
         };
         return await connection.CopyInRowsAsync(copyStatement, GetRows().ToAsyncEnumerable());
+    }
+
+    [Benchmark(Description = "sqlx-cs-pg"), BenchmarkCategory("CopyOut, CSV")]
+    public async Task CopyOutCsvSqlx()
+    {
+        await using IPgConnection connection = _sqlxPgConnectionPool.CreateConnection();
+        TableToCsv copyStatement = new()
+        {
+            SchemaName = "public",
+            TableName = "copy_source",
+        };
+        await connection.CopyOutAsync(copyStatement, _tempCsvFileOutput);
+    }
+
+    [Benchmark(Description = "sqlx-cs-pg"), BenchmarkCategory("CopyOut, Binary")]
+    public async Task<List<RowData>> CopyOutBinarySqlx()
+    {
+        await using IPgConnection connection = _sqlxPgConnectionPool.CreateConnection();
+        TableToBinary copyStatement = new()
+        {
+            SchemaName = "public",
+            TableName = "copy_source",
+        };
+        return await connection.CopyOutRowsAsync<RowData>(copyStatement).ToListAsync();
     }
     
     private static IEnumerable<RowData> GetRows()

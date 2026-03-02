@@ -24,7 +24,7 @@ public sealed partial class PgConnector
     /// <param name="copyOutStatement">Copy to statement</param>
     /// <param name="cancellationToken">Token to cancel async operation</param>
     /// <returns>Stream of data rows as raw bytes</returns>
-    internal async IAsyncEnumerable<byte[]> CopyOut(
+    internal async IAsyncEnumerable<IMemoryOwner<byte>> CopyOut(
         ICopyTo copyOutStatement,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
