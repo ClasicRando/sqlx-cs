@@ -28,22 +28,31 @@ public partial class PgConnector
     {
         _asyncConnector.AdvanceBufferPosition(size);
     }
-    
-    internal PgColumnMetadata[] ReceiveRowDescriptionMessage(int size)
+
+    internal PgColumnMetadata[] ReceiveRowDescriptionMessage(
+        int size,
+        PgFormatCode? formatCodeOverride = null)
     {
         var buffer = _asyncConnector.ReadBuffer[..size];
         var columnCount = buffer.ReadShort();
         var metadata = new PgColumnMetadata[columnCount];
         for (var i = 0; i < columnCount; i++)
         {
+            var fieldName = buffer.ReadCString();
+            var tableOid = buffer.ReadInt();
+            var columnAttribute = buffer.ReadShort();
+            PgTypeInfo typeInfo = PgTypeInfo.FromOid(new PgOid(buffer.ReadUInt()));
+            var dataTypeSize = buffer.ReadShort();
+            var typeModifier = buffer.ReadInt();
+            var formatCode = (PgFormatCode)buffer.ReadShort();
             metadata[i] = new PgColumnMetadata(
-                FieldName: buffer.ReadCString(),
-                TableOid: buffer.ReadInt(),
-                ColumnAttribute: buffer.ReadShort(),
-                TypeInfo: PgTypeInfo.FromOid(new PgOid(buffer.ReadUInt())),
-                DataTypeSize: buffer.ReadShort(),
-                TypeModifier: buffer.ReadInt(),
-                FormatCode: (PgFormatCode)buffer.ReadShort());
+                fieldName,
+                tableOid,
+                columnAttribute,
+                typeInfo,
+                dataTypeSize,
+                typeModifier,
+                formatCodeOverride ?? formatCode);
         }
 
         AdvanceReadBuffer(size);

@@ -37,20 +37,19 @@ FROM public.posts;
 Results seen below are from a single run so the stats can vary due to IO. However, the general trend
 is minimal difference between the 2 drivers.
 
-| Method     | Categories                                     |        Mean |       Error |      StdDev |      Median | Ratio | RatioSD |       Gen0 |       Gen1 |      Gen2 |    Allocated | Alloc Ratio |
+| Method     | Categories                                     | Mean        | Error       | StdDev      | Median      | Ratio | RatioSD | Gen0       | Gen1       | Gen2      | Allocated    | Alloc Ratio |
 |------------|------------------------------------------------|-------------|-------------|-------------|-------------|-------|---------|------------|------------|-----------|--------------|-------------|
-| Npgsql     | Simple Query, All Rows                         | 13,599.6 us |   969.47 us | 2,797.15 us | 13,273.8 us |  1.04 |    0.30 |  1000.0000 |          - |         - |  20294.88 KB |        1.00 |
-| sqlx-cs-pg | Simple Query, All Rows                         | 12,030.5 us |   906.46 us | 2,496.64 us | 11,211.3 us |  0.92 |    0.27 |  1000.0000 |          - |         - |   20526.8 KB |        1.01 |
+| Npgsql     | Simple Query, All Rows                         | 13,981.6 us | 1,021.00 us | 2,978.30 us | 13,350.6 us | 1.04  | 0.31    | 1000.0000  | -          | -         | 20293.85 KB  | 1.00        |
+| sqlx-cs-pg | Simple Query, All Rows                         | 11,720.8 us | 784.24 us   | 2,120.25 us | 11,182.2 us | 0.87  | 0.24    | 1000.0000  | -          | -         | 20537.02 KB  | 1.01        |
 |            |                                                |             |             |             |             |       |         |            |            |           |              |             |
-| Npgsql     | Simple Query, Concurrent Connections, All Rows | 70,496.7 us | 1,406.13 us | 3,825.49 us | 70,294.1 us |  1.00 |    0.08 | 14000.0000 | 13000.0000 | 2000.0000 | 202918.61 KB |        1.00 |
-| sqlx-cs-pg | Simple Query, Concurrent Connections, All Rows | 71,108.5 us | 1,555.74 us | 4,310.95 us | 70,949.5 us |  1.01 |    0.08 | 14000.0000 | 13000.0000 | 2000.0000 | 205266.19 KB |        1.01 |
+| Npgsql     | Simple Query, Concurrent Connections, All Rows | 69,629.5 us | 1,550.88 us | 4,374.29 us | 68,750.7 us | 1.00  | 0.09    | 14000.0000 | 13000.0000 | 2000.0000 | 202919.74 KB | 1.00        |
+| sqlx-cs-pg | Simple Query, Concurrent Connections, All Rows | 68,606.8 us | 1,412.10 us | 3,959.68 us | 68,167.8 us | 0.99  | 0.08    | 14000.0000 | 13000.0000 | 2000.0000 | 205255.66 KB | 1.01        |
 |            |                                                |             |             |             |             |       |         |            |            |           |              |             |
-| Npgsql     | Simple Query, Multi Row                        |    313.8 us |    13.87 us |    39.81 us |    308.8 us |  1.02 |    0.18 |          - |          - |         - |     48.48 KB |        1.00 |
-| sqlx-cs-pg | Simple Query, Multi Row                        |    244.9 us |     8.86 us |    25.55 us |    244.8 us |  0.79 |    0.13 |          - |          - |         - |     47.82 KB |        0.99 |
+| Npgsql     | Simple Query, Multi Row                        | 302.9 us    | 9.14 us     | 26.36 us    | 301.9 us    | 1.01  | 0.12    | -          | -          | -         | 48.17 KB     | 1.00        |
+| sqlx-cs-pg | Simple Query, Multi Row                        | 279.6 us    | 12.82 us    | 36.78 us    | 267.0 us    | 0.93  | 0.15    | -          | -          | -         | 47.18 KB     | 0.98        |
 |            |                                                |             |             |             |             |       |         |            |            |           |              |             |
-| Npgsql     | Simple Query, Single Row                       |    277.0 us |     9.22 us |    26.16 us |    272.6 us |  1.01 |    0.13 |          - |          - |         - |      7.38 KB |        1.00 |
-| sqlx-cs-pg | Simple Query, Single Row                       |    158.3 us |     4.62 us |    13.40 us |    154.3 us |  0.58 |    0.07 |          - |          - |         - |      6.98 KB |        0.95 |
-
+| Npgsql     | Simple Query, Single Row                       | 261.6 us    | 9.19 us     | 26.53 us    | 257.1 us    | 1.01  | 0.14    | -          | -          | -         | 7.07 KB      | 1.00        |
+| sqlx-cs-pg | Simple Query, Single Row                       | 175.4 us    | 5.60 us     | 15.89 us    | 171.8 us    | 0.68  | 0.09    | -          | -          | -         | 6.43 KB      | 0.91        |
 ## PostgreSQL COPY
 ### Overview
 Benchmarks are run using BenchmarkDotNet and run the same SQL query and copy data. Init SQL:
@@ -72,10 +71,16 @@ COPY public.copy_target FROM STDIN WITH (FORMAT binary);
 ```
 
 ### Results
-| Method     | Categories     | Mean     | Error    | StdDev   | Median   | Ratio | RatioSD | Allocated  | Alloc Ratio |
-|------------|----------------|----------|----------|----------|----------|-------|---------|------------|-------------|
-| Npgsql     | CopyIn, Binary | 76.46 ms | 2.191 ms | 6.285 ms | 73.98 ms | 1.01  | 0.12    | 1566.91 KB | 1.00        |
-| sqlx-cs-pg | CopyIn, Binary | 73.00 ms | 2.597 ms | 6.933 ms | 71.13 ms | 0.96  | 0.12    | 1572.06 KB | 1.00        |
-|            |                |          |          |          |          |       |         |            |             |
-| Npgsql     | CopyIn, CSV    | 89.19 ms | 2.462 ms | 6.657 ms | 88.72 ms | 1.01  | 0.10    | 4.76 KB    | 1.00        |
-| sqlx-cs-pg | CopyIn, CSV    | 87.85 ms | 1.750 ms | 4.761 ms | 85.80 ms | 0.99  | 0.09    | 3.69 KB    | 0.78        |
+| Method     | Categories      | Mean     | Error    | StdDev   | Median   | Ratio | RatioSD | Gen0      | Allocated   | Alloc Ratio |
+|------------|-----------------|----------|----------|----------|----------|-------|---------|-----------|-------------|-------------|
+| Npgsql     | CopyIn, Binary  | 66.76 ms | 1.500 ms | 4.350 ms | 65.93 ms | 1.00  | 0.09    | -         | 1566.61 KB  | 1.00        |
+| sqlx-cs-pg | CopyIn, Binary  | 69.67 ms | 1.381 ms | 3.564 ms | 68.08 ms | 1.05  | 0.08    | -         | 1572.19 KB  | 1.00        |
+|            |                 |          |          |          |          |       |         |           |             |             |
+| Npgsql     | CopyIn, CSV     | 86.91 ms | 1.734 ms | 4.350 ms | 87.04 ms | 1.00  | 0.07    | -         | 4.76 KB     | 1.00        |
+| sqlx-cs-pg | CopyIn, CSV     | 87.62 ms | 1.748 ms | 4.544 ms | 87.39 ms | 1.01  | 0.07    | -         | 3.81 KB     | 0.80        |
+|            |                 |          |          |          |          |       |         |           |             |             |
+| Npgsql     | CopyOut, Binary | 15.44 ms | 2.086 ms | 6.118 ms | 12.44 ms | 1.14  | 0.60    | 1000.0000 | 20300.69 KB | 1.00        |
+| sqlx-cs-pg | CopyOut, Binary | 14.61 ms | 1.432 ms | 4.154 ms | 13.24 ms | 1.08  | 0.47    | 1000.0000 | 20530.5 KB  | 1.01        |
+|            |                 |          |          |          |          |       |         |           |             |             |
+| Npgsql     | CopyOut, CSV    | 17.81 ms | 0.679 ms | 1.948 ms | 17.22 ms | 1.01  | 0.15    | -         | 526.79 KB   | 1.00        |
+| sqlx-cs-pg | CopyOut, CSV    | 18.65 ms | 0.827 ms | 2.425 ms | 17.77 ms | 1.06  | 0.17    | -         | 117.51 KB   | 0.22        |

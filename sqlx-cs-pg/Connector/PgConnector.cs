@@ -201,10 +201,8 @@ public sealed partial class PgConnector : IPooledConnection
     {
         ArgumentNullException.ThrowIfNull(query);
         return IsSimpleQuery(query)
-#pragma warning disable CA2000
             ? SendSimpleQuery(query.Query, cancellationToken)
             : SendExtendedQuery(query, cancellationToken);
-#pragma warning restore CA2000
     }
 
     public Task<IAsyncResultSet<IPgDataRow>> ExecuteQueryBatch(

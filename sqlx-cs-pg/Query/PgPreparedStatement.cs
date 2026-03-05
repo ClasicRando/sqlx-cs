@@ -8,6 +8,6 @@ namespace Sqlx.Postgres.Query;
 /// </summary>
 internal record PgPreparedStatement(string Sql, int StatementId)
 {
-    public string StatementName { get; } = StatementId.ToString(CultureInfo.InvariantCulture);
+    public string StatementName => StatementId.ToString(CultureInfo.InvariantCulture);
     public PgColumnMetadata[] ColumnMetadata { get; set; } = [];
 }

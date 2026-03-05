@@ -305,8 +305,9 @@ public partial class PgConnector
         CancellationToken cancellationToken)
     {
         var statement = new PgPreparedStatement(sql, _nextStatementId++);
-        WriteParseMessage(statement.StatementName, sql, parameterTypes);
-        WriteDescribeMessage(MessageTarget.PreparedStatement, statement.StatementName);
+        var statementName = statement.StatementName;
+        WriteParseMessage(statementName, sql, parameterTypes);
+        WriteDescribeMessage(MessageTarget.PreparedStatement, statementName);
         await WriteSync(cancellationToken).ConfigureAwait(false);
 
         while (true)
@@ -326,9 +327,9 @@ public partial class PgConnector
                     AdvanceReadBuffer(size);
                     break;
                 case PgBackendMessageType.RowDescription:
-                    statement.ColumnMetadata = ReceiveRowDescriptionMessage(size)
-                        .Select(c => c with { FormatCode = PgFormatCode.Binary})
-                        .ToArray();
+                    statement.ColumnMetadata = ReceiveRowDescriptionMessage(
+                        size,
+                        formatCodeOverride: PgFormatCode.Binary);
                     break;
                 case PgBackendMessageType.NoData:
                     AdvanceReadBuffer(size);
