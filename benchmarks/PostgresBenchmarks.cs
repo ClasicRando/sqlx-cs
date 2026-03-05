@@ -3,9 +3,12 @@ using BenchmarkDotNet.Configs;
 using Npgsql;
 using NpgsqlTypes;
 using Sqlx.Core.Pool;
+using Sqlx.Core.Result;
 using Sqlx.Postgres;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Pool;
+using Sqlx.Postgres.Query;
+using Sqlx.Postgres.Result;
 
 namespace benchmarks;
 
@@ -143,6 +146,23 @@ public class PostgresBenchmarks
         return await Task.WhenAll(tasks);
     }
 
+    [Benchmark(Description = "Npgsql", Baseline = true), BenchmarkCategory("Batched Queries")]
+    public async Task BatchedQueriesNpgsql()
+    {
+        await using NpgsqlBatch batch = _npgsqlDataSource.CreateBatch();
+        var command1 = new NpgsqlBatchCommand(MultiRowQuery);
+        command1.Parameters.AddWithValue(NpgsqlDbType.Integer, _id);
+        command1.Parameters.AddWithValue(NpgsqlDbType.Integer, _id + 10);
+        batch.BatchCommands.Add(command1);
+        var command2 = new NpgsqlBatchCommand(SingleRowQuery);
+        command2.Parameters.AddWithValue(NpgsqlDbType.Integer, _id);
+        batch.BatchCommands.Add(command2);
+        await using NpgsqlDataReader reader = await batch.ExecuteReaderAsync();
+        await CollectDataReaderRows(reader);
+        await reader.NextResultAsync();
+        await CollectDataReaderRows(reader);
+    }
+
     [Benchmark(Description = "sqlx-cs-pg"), BenchmarkCategory("Simple Query, Single Row")]
     public async Task<List<RowData>> SimpleQuerySingleRowSqlx()
     {
@@ -172,6 +192,21 @@ public class PostgresBenchmarks
             tasks.Add(Task.Run(SimpleQueryAllRowSqlx));
         }
         return await Task.WhenAll(tasks);
+    }
+
+    [Benchmark(Description = "sqlx-cs-pg"), BenchmarkCategory("Batched Queries")]
+    public async Task BatchedQueriesSqlx()
+    {
+        await using IPgConnection connection = _sqlxPgConnectionPool.CreateConnection();
+        await using IPgQueryBatch batch = connection.CreateQueryBatch();
+        IPgBindable query1 = batch.CreateQuery(MultiRowQuery);
+        query1.Bind(_id);
+        query1.Bind(_id + 10);
+        IPgBindable query2 = batch.CreateQuery(SingleRowQuery);
+        query2.Bind(_id);
+        var resultSet = await batch.ExecuteBatchAsync();
+        await resultSet.ExtractNextResultAsync<IPgDataRow, RowData>();
+        await resultSet.ExtractNextResultAsync<IPgDataRow, RowData>();
     }
 
     private static async Task<List<RowData>> CollectDataReaderRows(NpgsqlDataReader reader)
