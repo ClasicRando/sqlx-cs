@@ -11,34 +11,33 @@ public enum CopyFormat
 
 public static class CopyFormatExtensions
 {
-    public static ReadOnlySpan<char> GetName(this CopyFormat copyFormat)
+    extension(CopyFormat copyFormat)
     {
-        return copyFormat switch
-        {
-            CopyFormat.Text => "text",
-            CopyFormat.Csv => "csv",
-            CopyFormat.Binary => "binary",
-            _ => throw new ArgumentOutOfRangeException(nameof(copyFormat), copyFormat, null),
-        };
-    }
+        public ReadOnlySpan<char> GetName =>
+            copyFormat switch
+            {
+                CopyFormat.Text => "text",
+                CopyFormat.Csv => "csv",
+                CopyFormat.Binary => "binary",
+                _ => throw new NotSupportedException($"Invalid copy format '{copyFormat}'"),
+            };
 
-    public static int GetCode(this CopyFormat copyFormat)
-    {
-        return copyFormat switch
-        {
-            CopyFormat.Text or CopyFormat.Csv => (int)PgFormatCode.Text,
-            CopyFormat.Binary => (int)PgFormatCode.Binary,
-            _ => throw new ArgumentOutOfRangeException(nameof(copyFormat), copyFormat, null),
-        };
-    }
+        public PgFormatCode GetFormatCode =>
+            copyFormat switch
+            {
+                CopyFormat.Text or CopyFormat.Csv => PgFormatCode.Text,
+                CopyFormat.Binary => PgFormatCode.Binary,
+                _ => throw new NotSupportedException($"Invalid copy format '{copyFormat}'"),
+            };
 
-    public static CopyFormat FromByte(byte value)
-    {
-        return value switch
+        public static CopyFormat FromByte(byte value)
         {
-            0 => CopyFormat.Text,
-            1 => CopyFormat.Binary,
-            _ => throw new ArgumentOutOfRangeException(nameof(value), value, null),
-        };
+            return value switch
+            {
+                0 => CopyFormat.Text,
+                1 => CopyFormat.Binary,
+                _ => throw new ArgumentOutOfRangeException(nameof(value), value, null),
+            };
+        }
     }
 }

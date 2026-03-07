@@ -1,47 +1,68 @@
-using Sqlx.Core.Buffer;
+using System.Buffers;
 using Sqlx.Core.Exceptions;
-using Sqlx.Postgres.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public abstract class PgUuid : IPgDbType<Guid>
+/// <summary>
+/// <see cref="IPgDbType{T}"/> for <see cref="Guid"/> values. Maps to the <c>UUID</c> type.
+/// </summary>
+public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
 {
-    public static void Encode(Guid value, WriteBuffer buffer)
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// Writes the bytes of the <see cref="Guid"/> using
+    /// <see cref="Guid.TryWriteBytes(Span{byte}, bool, out int)"/>.
+    /// </summary>
+    public static void Encode(Guid value, IBufferWriter<byte> buffer)
     {
-        var span = buffer.WriteToSpan(16);
-        if (!value.TryWriteBytes(span))
+        ArgumentNullException.ThrowIfNull(buffer);
+        var span = buffer.GetSpan(16);
+        if (!value.TryWriteBytes(span, bigEndian: false, out _))
         {
-            throw new PgException("Failed to write Guid bytes to buffer");
+            throw ColumnEncodeException.Create<Guid>(
+                DbType.TypeOid.Inner,
+                "Failed to write Guid bytes to buffer");
         }
+        buffer.Advance(16);
     }
 
-    public static Guid DecodeBytes(PgBinaryValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// Read the all available bytes as a new <see cref="Guid"/>
+    /// </summary>
+    public static Guid DecodeBytes(ref PgBinaryValue value)
     {
-        return new Guid(value.Buffer.ReadBytesAsSpan());
+        return new Guid(value.Buffer);
     }
 
-    public static Guid DecodeText(PgTextValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// Parse the characters using
+    /// <see cref="Guid.TryParse(ReadOnlySpan{char}, IFormatProvider, out Guid)"/>
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the characters cannot be parsed into a <see cref="Guid"/>
+    /// </exception>
+    public static Guid DecodeText(in PgTextValue value)
     {
-        if (!Guid.TryParse(value, null, out Guid guid))
+        if (!Guid.TryParse(value.Chars, out Guid guid))
         {
-            throw ColumnDecodeError.Create<Guid>(
+            throw ColumnDecodeException.Create<Guid, PgColumnMetadata>(
                 value.ColumnMetadata,
-                $"Could not parse '{value}' into a Guid");
+                $"Could not parse '{value.Chars}' into a Guid");
         }
 
         return guid;
     }
 
-    public static PgType DbType => PgType.Uuid;
+    public static PgTypeInfo DbType => PgTypeInfo.Uuid;
 
-    public static bool IsCompatible(PgType dbType)
-    {
-        return dbType.TypeOid == DbType.TypeOid;
-    }
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.UuidArray;
 
-    public static PgType GetActualType(Guid value)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return DbType;
+        return typeInfo == DbType;
     }
 }

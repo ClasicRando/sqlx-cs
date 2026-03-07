@@ -1,0 +1,76 @@
+using System.Text;
+using System.Text.Json.Serialization;
+using JetBrains.Annotations;
+using Sqlx.Core.Buffer;
+
+namespace Sqlx.Core.Types;
+
+[TestSubject(typeof(JsonHelper))]
+public partial class JsonHelperTest
+{
+    [JsonSerializable(typeof(JsonType))]
+    public partial class SourceGenerationContext : JsonSerializerContext;
+
+    public record JsonType(int Id, string Name);
+
+    private readonly JsonType _jsonType = new(1, "Test");
+    private const string JsonTypeStr = "{\"Id\":1,\"Name\":\"Test\"}";
+
+    [Test]
+    public async Task WriteToBuffer_Should_WriteJsonValueToBuffer_When_SourceGeneratedType()
+    {
+        using var buffer = new PooledArrayBufferWriter();
+        
+        JsonHelper.WriteToBuffer(buffer, _jsonType, SourceGenerationContext.Default.JsonType);
+        
+        await Assert.That(Encoding.UTF8.GetString(buffer.ReadableSpan)).IsEqualTo(JsonTypeStr);
+    }
+    
+    [Test]
+    public async Task WriteToBuffer_Should_WriteJsonValueToBuffer_When_ReflectionBasedSerialization()
+    {
+        using var buffer = new PooledArrayBufferWriter();
+        
+        JsonHelper.WriteToBuffer(buffer, _jsonType, null);
+        
+        await Assert.That(Encoding.UTF8.GetString(buffer.ReadableSpan)).IsEqualTo(JsonTypeStr);
+    }
+
+    [Test]
+    public async Task FromBytes_Should_ReadJsonValueFromBytes_When_SourceGeneratedType()
+    {
+        var bytes = Encoding.UTF8.GetBytes(JsonTypeStr);
+
+        var result = JsonHelper.FromBytes<JsonType>(bytes, SourceGenerationContext.Default.JsonType);
+        
+        await Assert.That(result).IsEqualTo(_jsonType);
+    }
+
+    [Test]
+    public async Task FromBytes_Should_ReadJsonValueFromBytes_When_ReflectionBasedSerialization()
+    {
+        var bytes = Encoding.UTF8.GetBytes(JsonTypeStr);
+
+        var result = JsonHelper.FromBytes<JsonType>(bytes);
+        
+        await Assert.That(result).IsEqualTo(_jsonType);
+    }
+
+    [Test]
+    public async Task FromChars_Should_ReadJsonValueFromBytes_When_SourceGeneratedType()
+    {
+        var result = JsonHelper.FromChars<JsonType>(
+            JsonTypeStr,
+            SourceGenerationContext.Default.JsonType);
+        
+        await Assert.That(result).IsEqualTo(_jsonType);
+    }
+
+    [Test]
+    public async Task FromChars_Should_ReadJsonValueFromBytes_When_ReflectionBasedSerialization()
+    {
+        var result = JsonHelper.FromChars<JsonType>(JsonTypeStr);
+        
+        await Assert.That(result).IsEqualTo(_jsonType);
+    }
+}

@@ -1,60 +1,37 @@
-using System.Runtime.CompilerServices;
-using Sqlx.Core;
-using Sqlx.Core.Connection;
+using Microsoft.Extensions.Logging;
+using Sqlx.Core.Connector;
 using Sqlx.Core.Pool;
-using Sqlx.Core.Query;
-using Sqlx.Core.Result;
-using Sqlx.Core.Stream;
 using Sqlx.Postgres.Connection;
-using Sqlx.Postgres.Exceptions;
-using Sqlx.Postgres.Query;
-using Sqlx.Postgres.Stream;
+using Sqlx.Postgres.Notify;
+using PgConnector = Sqlx.Postgres.Connector.PgConnector;
 
 namespace Sqlx.Postgres.Pool;
 
-public class PgConnectionPool(PgConnectOptions options) : IConnectionPool
+internal sealed partial class PgConnectionPool
+    : AbstractConnectionPool<PgConnector, PgConnectionPool>, IPgConnectionPool
 {
-    public PgConnectOptions ConnectOptions { get; } = options;
-    
-    public Task<IConnection> Acquire(CancellationToken cancellationToken = default)
+    public PgConnectOptions ConnectOptions { get; }
+
+    internal PgConnectionPool(PgConnectOptions options, PoolOptions poolOptions) : base(
+        poolOptions,
+        options.ConnectTimeout,
+        options.LoggerFactory.CreateLogger<PgConnectionPool>())
     {
-        var stream = new PgStream(new AsyncStream(), ConnectOptions);
-        return Task.FromResult<IConnection>(new PgConnection(stream, this));
+        ConnectOptions = options;
     }
 
-    public IExecutableQuery CreateQuery(string sql)
+    protected override PgConnector CreateNewConnection()
     {
-        return new PgExecutableQuery(sql, this);
+        return new PgConnector(new AsyncConnector(), ConnectOptions);
     }
 
-    public IQueryBatch CreateQueryBatch()
+    public IPgConnection CreateConnection()
     {
-        throw new NotImplementedException();
+        return new PgConnection(this);
     }
 
-    public async IAsyncEnumerable<Either<IDataRow, QueryResult>> ExecuteQuery(
-        IQuery query,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+    public IPgListener CreateListener()
     {
-        await using IConnection connection = await Acquire(cancellationToken);
-        PgConnection pgConnection = PgException.CheckIfIs<IConnection, PgConnection>(connection);
-        PgExecutableQuery executableQuery = PgException.CheckIfIs<IQuery, PgExecutableQuery>(query);
-        await foreach (var result in pgConnection.ExecuteQuery(executableQuery, cancellationToken))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            yield return result;
-        }
-    }
-
-    internal async Task<bool> GiveBack(PgConnection connection, CancellationToken cancellationToken)
-    {
-        connection.Pool = null;
-        await connection.CloseAsync(cancellationToken).ConfigureAwait(false);
-        return true;
-    }
-    
-    public ValueTask DisposeAsync()
-    {
-        return ValueTask.CompletedTask;
+        return new PgListener(this);
     }
 }

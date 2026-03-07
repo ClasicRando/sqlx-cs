@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Runtime.InteropServices;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
@@ -6,10 +7,13 @@ using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-internal abstract class PgDecimal : IPgDbType<decimal>
+/// <summary>
+/// <see cref="IPgDbType{T}"/> for <see cref="decimal"/> values. Maps to the <c>NUMERIC</c> type.
+/// </summary>
+internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArrayType
 {
     private const int DecimalBits = 4;
-    
+
     private const ushort SignNan = 0xc000;
     private const ushort SignPositive = 0x0000;
     private const ushort SignNegative = 0x4000;
@@ -39,13 +43,50 @@ internal abstract class PgDecimal : IPgDbType<decimal>
 
     private const int MaxUInt32Scale = 9;
     private const int MaxUInt16Scale = 4;
-    
-    public static void Encode(decimal value, WriteBuffer buffer)
+
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// <para>
+    /// Converts to the <see cref="decimal"/> value into the postgres format and then writes those
+    /// components to the buffer. The components are:
+    /// <list type="number">
+    ///     <item><see cref="short"/> - the number of digits to follow later</item>
+    ///     <item><see cref="short"/> - the weight of the number</item>
+    ///     <item><see cref="short"/> - the sign of the number</item>
+    ///     <item><see cref="short"/> - scale of the number</item>
+    ///     <item>
+    ///         <c>DYNAMIC</c> - all digits encoded as <see cref="short"/> values in base 10_000,
+    ///         count must match the first encoded value 
+    ///     </item>
+    /// </list>
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/a6c21887a9f0251fa2331ea3ad0dd20b31c4d11d/src/backend/utils/adt/numeric.c#L1068">pg source code</a>
+    /// </summary>
+    public static void Encode(decimal value, IBufferWriter<byte> buffer)
     {
         EncodeDecimal(value, buffer);
     }
 
-    public static decimal DecodeBytes(PgBinaryValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// <para>
+    /// Read the buffer to extract the postgres numeric components as:
+    /// <list type="number">
+    ///     <item><see cref="short"/> - the number of digits to follow later</item>
+    ///     <item><see cref="short"/> - the weight of the number</item>
+    ///     <item><see cref="short"/> - the sign of the number</item>
+    ///     <item><see cref="short"/> - scale of the number</item>
+    ///     <item>
+    ///         <c>DYNAMIC</c> - all digits encoded as <see cref="short"/> values in base 10_000,
+    ///         count must match the first encoded value
+    ///     </item>
+    /// </list>
+    /// Those components are then used to build a <see cref="decimal"/> using
+    /// <see cref="CreateDecimal"/>.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/a6c21887a9f0251fa2331ea3ad0dd20b31c4d11d/src/backend/utils/adt/numeric.c#L1153">pg source code</a>
+    /// </summary>
+    public static decimal DecodeBytes(ref PgBinaryValue value)
     {
         var digitCount = value.Buffer.ReadShort();
         var weight = value.Buffer.ReadShort();
@@ -54,46 +95,58 @@ internal abstract class PgDecimal : IPgDbType<decimal>
 
         if ((ushort)sign == SignNan)
         {
-            throw ColumnDecodeError.Create<decimal>(
+            throw ColumnDecodeException.Create<decimal, PgColumnMetadata>(
                 value.ColumnMetadata,
                 "Cannot decode NAN as decimal");
         }
 
-        Span<short> digits = stackalloc short[digitCount];
+        const int maxStackSize = (256 / (sizeof(short) / sizeof(byte)));
+        var digits = digitCount > maxStackSize
+            ? new short[digitCount]
+            : stackalloc short[digitCount];
         for (var i = 0; i < digits.Length; i++)
         {
             digits[i] = value.Buffer.ReadShort();
         }
+
         return CreateDecimal(digits, weight, sign, scale, value.ColumnMetadata);
     }
 
-    public static decimal DecodeText(PgTextValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// Read the characters as though they are a stringified <see cref="decimal"/>.
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the value cannot be parsed into a <see cref="decimal"/>
+    /// </exception>
+    public static decimal DecodeText(in PgTextValue value)
     {
-        if (!decimal.TryParse(value, null, out var result))
+        if (decimal.TryParse(value.Chars, null, out var result))
         {
-            throw ColumnDecodeError.Create<decimal>(
-                value.ColumnMetadata,
-                $"Cannot convert '{value}' to a decimal value");
+            return result;
         }
 
-        return result;
-    }
-    
-    public static PgType DbType => PgType.Numeric;
-
-    public static bool IsCompatible(PgType dbType)
-    {
-        return dbType.TypeOid == DbType.TypeOid;
+        throw ColumnDecodeException.Create<decimal, PgColumnMetadata>(
+            value.ColumnMetadata,
+            $"Cannot convert '{value.Chars}' to a decimal value");
     }
 
-    public static PgType GetActualType(decimal value)
+    public static PgTypeInfo DbType => PgTypeInfo.Numeric;
+
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.NumericArray;
+
+    public static PgTypeInfo RangeType => PgTypeInfo.Numrange;
+
+    public static PgTypeInfo RangeArrayType => PgTypeInfo.NumrangeArray;
+
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return DbType;
+        return typeInfo == DbType;
     }
-    
+
     /// <summary>
     /// Conversion method from Postgres numeric value to a <see cref="decimal"/>. Code is taken
-    /// mostly as is from the npgsql repo with some small changes since there is no wrapper type,
+    /// mostly as is from the Npgsql repo with some small changes since there is no wrapper type,
     /// and we throw our own custom exceptions.
     /// <p>
     /// Copyright (c) 2002-2025, Npgsql
@@ -114,15 +167,15 @@ internal abstract class PgDecimal : IPgDbType<decimal>
     /// HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS,
     /// OR MODIFICATIONS.
     /// </p>
-    /// </summary>
     /// <a href="https://github.com/npgsql/npgsql/blob/19f466e3e12106b9e7a81e67d07c4df56467a861/src/Npgsql/Internal/Converters/Primitive/PgNumeric.cs#L295"></a>
+    /// </summary>
     /// <param name="digits"></param>
     /// <param name="weight"></param>
     /// <param name="sign"></param>
     /// <param name="scale"></param>
     /// <param name="columnMetadata"></param>
     /// <returns></returns>
-    /// <exception cref="ColumnDecodeError"></exception>
+    /// <exception cref="ColumnDecodeException"></exception>
     private static decimal CreateDecimal(
         ReadOnlySpan<short> digits,
         short weight,
@@ -131,36 +184,29 @@ internal abstract class PgDecimal : IPgDbType<decimal>
         PgColumnMetadata columnMetadata)
     {
         var digitCount = digits.Length;
-        if (digitCount > MaxDecimalNumericDigits)
+        if (digitCount > MaxDecimalNumericDigits || short.Abs(scale) > MaxDecimalScale)
         {
-            throw ColumnDecodeError.Create<decimal>(
+            throw ColumnDecodeException.Create<decimal, PgColumnMetadata>(
                 columnMetadata,
                 "Numeric value does not fit into a decimal");
         }
 
-        if (short.Abs(scale) > MaxDecimalScale)
-        {
-            throw ColumnDecodeError.Create<decimal>(
-                columnMetadata,
-                "Numeric value does not fit into a decimal");
-        }
-        
         var scaleFactor = new decimal(1, 0, 0, false, (byte)(scale > 0 ? scale : 0));
         if (digitCount == 0)
         {
             return (ushort)sign switch
             {
                 SignPositive or SignNegative => decimal.Zero * scaleFactor,
-                SignNan => throw ColumnDecodeError.Create<decimal>(
-                    columnMetadata, 
+                SignNan => throw ColumnDecodeException.Create<decimal, PgColumnMetadata>(
+                    columnMetadata,
                     "Numeric value of NaN is not supported by decimal"),
-                SignPinf => throw ColumnDecodeError.Create<decimal>(
-                    columnMetadata, 
+                SignPinf => throw ColumnDecodeException.Create<decimal, PgColumnMetadata>(
+                    columnMetadata,
                     "Numeric value of Infinity is not supported by decimal"),
-                SignNinf => throw ColumnDecodeError.Create<decimal>(
-                    columnMetadata, 
+                SignNinf => throw ColumnDecodeException.Create<decimal, PgColumnMetadata>(
+                    columnMetadata,
                     "Numeric value of -Infinity is not supported by decimal"),
-                _ => throw ColumnDecodeError.Create<decimal>(
+                _ => throw ColumnDecodeException.Create<decimal, PgColumnMetadata>(
                     columnMetadata,
                     $"Sign code of {(ushort)sign} is not supported"),
             };
@@ -212,7 +258,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>
         result *= scaleFactor;
         return (ushort)sign == SignNegative ? -result : result;
     }
-    
+
     /// <summary>
     /// Encoding method to write a <see cref="decimal"/> value in Postgres numeric format. Code is
     /// taken mostly as is from the npgsql repo with some small changes since there is no wrapper
@@ -238,22 +284,30 @@ internal abstract class PgDecimal : IPgDbType<decimal>
     /// </p>
     /// </summary>
     /// <a href="https://github.com/npgsql/npgsql/blob/19f466e3e12106b9e7a81e67d07c4df56467a861/src/Npgsql/Internal/Converters/Primitive/PgNumeric.cs#L295"></a>
-    /// <param name="value"></param>
-    /// <param name="buffer"></param>
-    private static void EncodeDecimal(decimal value, WriteBuffer buffer)
+    /// <param name="value">value to encode as a postgres base 10000 set of digits</param>
+    /// <param name="buffer">buffer to encode the decimal value into</param>
+    private static void EncodeDecimal(decimal value, IBufferWriter<byte> buffer)
     {
+        if (value == decimal.Zero)
+        {
+            buffer.WriteLong(0);
+            return;
+        }
+        
         Span<uint> bits = stackalloc uint[DecimalBits];
         decimal.GetBits(value, MemoryMarshal.Cast<uint, int>(bits));
         bits = bits[..(DecimalBits - 1)];
-        var bitsUpperBound = (bits.Length * (MaxUInt32Scale + 1) + MaxUInt16Scale - 1) / MaxUInt16Scale + 1;
-        
+        const int bitsUpperBound = ((DecimalBits - 1) * (MaxUInt32Scale + 1) + MaxUInt16Scale - 1) /
+            MaxUInt16Scale + 1;
+
         Span<short> digits = stackalloc short[bitsUpperBound];
         short scale = value.Scale;
 
         var digitCount = 0;
         var digitWeight = -scale / NumericBaseLog10 - 1;
         var scaleRemainder = scale % NumericBaseLog10;
-        if (scaleRemainder > 0 && DivideInPlace(bits, UIntPowers10[scaleRemainder], out var remainder))
+        if (scaleRemainder > 0
+            && DivideInPlace(bits, UIntPowers10[scaleRemainder], out var remainder))
         {
             remainder *= UIntPowers10[NumericBaseLog10 - scaleRemainder];
             digitWeight--;
@@ -276,7 +330,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>
         var weight = (short)(digitWeight + digitCount);
         var sign = value < 0 ? SignNegative : SignPositive;
         digits = digits[^digitCount..];
-        
+
         buffer.WriteShort((short)digits.Length);
         buffer.WriteShort(weight);
         buffer.WriteShort((short)sign);

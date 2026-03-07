@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet" Version="0.15.2"/>
+        <PackageReference Include="CsvHelper" Version="33.1.0" />
+        <PackageReference Include="Npgsql" Version="10.0.1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\sqlx-cs-core\sqlx-cs-core.csproj"/>
+        <ProjectReference Include="..\sqlx-cs-pg\sqlx-cs-pg.csproj"/>
+        <ProjectReference Include="..\sqlx-cs-pg-generator\sqlx-cs-pg-generator.csproj"
+                          OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    </ItemGroup>
+
+</Project>

@@ -1,29 +1,70 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
-using Sqlx.Postgres.Exceptions;
+using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
+/// <summary>
+/// <para>
+/// Postgres <c>INTERVAL</c> type represented as a number of months, days and microseconds. This
+/// differs from <see cref="TimeSpan"/> since it has resolution of months.
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/datatype-geometric.html#DATATYPE-GEOMETRIC-POINTS">docs</a>
+/// </summary>
 public readonly record struct PgInterval(int Months, int Days, long Microseconds)
-    : IPgDbType<PgInterval>
+    : IPgDbType<PgInterval>, IHasArrayType
 {
+    /// <summary>
+    /// Convert this interval to a <see cref="TimeSpan"/>
+    /// </summary>
+    /// <returns>
+    /// A <see cref="TimeSpan"/> that represents the same duration as this interval
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// If this interval has a non-zero number of <see cref="Months"/>
+    /// </exception>
     public TimeSpan ToTimeSpan()
     {
-        if (Months > 0)
-        {
-            throw new ArgumentException("TimeSpan does not support a month value", nameof(Months));
-        }
-        return new TimeSpan(Microseconds * TimeSpan.TicksPerMicrosecond + Days * TimeSpan.TicksPerDay);
+        return Months > 0
+            ? throw new ArgumentException("TimeSpan does not support a month value", nameof(Months))
+            : new TimeSpan(Microseconds * TimeSpan.TicksPerMicrosecond + Days * TimeSpan.TicksPerDay);
     }
     
-    public static void Encode(PgInterval value, WriteBuffer buffer)
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// <para>
+    /// Writes 3 values of the <see cref="PgInterval"/> to represent the interval:
+    /// <list type="number">
+    ///     <item><see cref="long"/> - whole micro seconds of the time portion</item>
+    ///     <item><see cref="int"/> - number of days</item>
+    ///     <item><see cref="int"/> - number of total months</item>
+    /// </list>
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/timestamp.c#L1007">pg source code</a>
+    /// </summary>
+    public static void Encode(PgInterval value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteLong(value.Microseconds);
         buffer.WriteInt(value.Days);
         buffer.WriteInt(value.Months);
     }
 
-    public static PgInterval DecodeBytes(PgBinaryValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// <para>
+    /// Reads 3 values to create a <see cref="PgInterval"/>:
+    /// <list type="number">
+    ///     <item><see cref="long"/> - whole micro seconds of the time portion</item>
+    ///     <item><see cref="int"/> - number of days</item>
+    ///     <item><see cref="int"/> - number of total months</item>
+    /// </list>
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/timestamp.c#L1032">pg source code</a>
+    /// </summary>
+    public static PgInterval DecodeBytes(ref PgBinaryValue value)
     {
         var microSeconds = value.Buffer.ReadLong();
         var days = value.Buffer.ReadInt();
@@ -31,7 +72,18 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
         return new PgInterval(months, days, microSeconds);
     }
 
-    public static PgInterval DecodeText(PgTextValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// <para>
+    /// Attempt to parse the characters into a <see cref="PgInterval"/>. The expected format is
+    /// ISO-8601 (this is the interval format specified when connecting to the database).
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/timestamp.c#L983">pg source code</a>
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If either characters are not a valid ISO-8601 interval
+    /// </exception>
+    public static PgInterval DecodeText(in PgTextValue value)
     {
         char currentChar;
         var currentNumber = 0;
@@ -48,7 +100,7 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
         var millisecond = 0;
         var microsecond = 0;
 
-        ReadOnlySpan<char>.Enumerator charEnumerator = value.Chars.GetEnumerator();
+        using ReadOnlySpan<char>.Enumerator charEnumerator = value.Chars.GetEnumerator();
         while (!isFractionalSecond && charEnumerator.MoveNext())
         {
             currentChar = charEnumerator.Current;
@@ -119,7 +171,9 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
                     isFractionalSecond = true;
                     break;
                 default:
-                    throw new PgException($"Unexpected character in interval. Interval: '{value}', char: '{currentChar}'");
+                    throw ColumnDecodeException.Create<PgInterval, PgColumnMetadata>(
+                        value.ColumnMetadata,
+                        $"Unexpected character in interval. Interval: '{value.Chars}', char: '{currentChar}'");
             }
         }
 
@@ -178,16 +232,13 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
                 microsecond);
     }
 
-    public static PgType DbType => PgType.Interval;
+    public static PgTypeInfo DbType => PgTypeInfo.Interval;
 
-    public static bool IsCompatible(PgType dbType)
-    {
-        return dbType.TypeOid == DbType.TypeOid;
-    }
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.IntervalArray;
 
-    public static PgType GetActualType(PgInterval value)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return DbType;
+        return typeInfo == DbType;
     }
 
     private const long MinutesPerHour = 60L;
@@ -198,44 +249,20 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
     private const long MicrosecondsPerHour = MinutesPerHour * MicrosecondsPerMinute;
 }
 
-internal abstract class TimeSpanType : IPgDbType<TimeSpan>
-{
-    public static void Encode(TimeSpan value, WriteBuffer buffer)
-    {
-        var interval = value.ToPgInterval();
-        PgInterval.Encode(interval, buffer);
-    }
-
-    public static TimeSpan DecodeBytes(PgBinaryValue value)
-    {
-        return PgInterval.DecodeBytes(value).ToTimeSpan();
-    }
-
-    public static TimeSpan DecodeText(PgTextValue value)
-    {
-        return PgInterval.DecodeText(value).ToTimeSpan();
-    }
-
-    public static PgType DbType => PgType.Interval;
-
-    public static bool IsCompatible(PgType dbType)
-    {
-        return dbType.TypeOid == DbType.TypeOid;
-    }
-
-    public static PgType GetActualType(TimeSpan value)
-    {
-        return DbType;
-    }
-}
-
 public static class TimeSpanExtensions
 {
+    /// <summary>
+    /// Convert this <see cref="TimeSpan"/> to a <see cref="PgInterval"/>. Captures the number of
+    /// whole days and microseconds outside of those days.
+    /// </summary>
+    /// <param name="timeSpan">This time span</param>
+    /// <returns>
+    /// A <see cref="PgInterval"/> that represents the same duration as this <see cref="TimeSpan"/>
+    /// </returns>
     public static PgInterval ToPgInterval(this TimeSpan timeSpan)
     {
-        return new PgInterval(
-            0,
-            timeSpan.Days,
-            timeSpan.Seconds * 1_000_000 + timeSpan.Milliseconds * 1_000 + timeSpan.Microseconds);
+        var days = timeSpan.Days;
+        var ticksWithoutDays = timeSpan.Ticks - (TimeSpan.TicksPerDay * days);
+        return new PgInterval(0, days, ticksWithoutDays / TimeSpan.TicksPerMicrosecond);
     }
 }

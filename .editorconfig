@@ -11,6 +11,9 @@ indent_size = 4
 csharp_new_line_before_members_in_object_initializers = false
 csharp_preferred_modifier_order = public, private, protected, internal, file, new, static, abstract, virtual, sealed, readonly, override, extern, unsafe, volatile, async, required:suggestion
 csharp_style_var_for_built_in_types = true:suggestion
+csharp_wrap_parameters_style = chop_if_long
+csharp_wrap_arguments_style = chop_if_long
+csharp_keep_user_linebreaks = true
 dotnet_style_parentheses_in_arithmetic_binary_operators = never_if_unnecessary:none
 dotnet_style_parentheses_in_other_binary_operators = always_for_clarity:none
 dotnet_style_parentheses_in_relational_binary_operators = never_if_unnecessary:none
@@ -21,11 +24,15 @@ dotnet_style_qualification_for_field = false:suggestion
 dotnet_style_qualification_for_method = false:suggestion
 dotnet_style_qualification_for_property = false:suggestion
 dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggestion
+csharp_arguments_named = named
+dotnet_code_quality.ca1051.exclude_structs = true
 
 # ReSharper properties
 resharper_csharp_insert_final_newline = true
 resharper_for_simple_types = use_var_when_evident
 resharper_trailing_comma_in_multiline_lists = true
+resharper_csharp_wrap_arguments_style = chop_if_long
+resharper_csharp_keep_existing_linebreaks = true
 
 [{*.yaml,*.yml}]
 indent_size = 2

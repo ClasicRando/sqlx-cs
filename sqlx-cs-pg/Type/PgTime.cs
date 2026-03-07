@@ -1,47 +1,72 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-internal abstract class PgTime : IPgDbType<TimeOnly>
+/// <summary>
+/// <see cref="IPgDbType{T}"/> for <see cref="TimeOnly"/> values. Maps to the <c>TIME</c> type.
+/// </summary>
+internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
 {
-    public static void Encode(TimeOnly value, WriteBuffer buffer)
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// <para>
+    /// Writes the number of microseconds since the start of the day.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L1521">pg source code</a>
+    /// </summary>
+    public static void Encode(TimeOnly value, IBufferWriter<byte> buffer)
     {
-        buffer.WriteLong((long)value.ToTimeSpan().TotalMicroseconds);
+        
+        buffer.WriteLong(value.Ticks / TimeSpan.TicksPerMicrosecond);
     }
 
-    public static TimeOnly DecodeBytes(PgBinaryValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// <para>
+    /// Read a <see cref="long"/> value as the microseconds from the start of the date and use that
+    /// to construct a <see cref="TimeOnly"/> by converting that value to ticks and passing it to
+    /// <see cref="TimeOnly(long)"/>
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L1547">pg source code</a>
+    /// </summary>
+    public static TimeOnly DecodeBytes(ref PgBinaryValue value)
     {
         var microSeconds = value.Buffer.ReadLong();
         return new TimeOnly(microSeconds * TimeSpan.TicksPerMicrosecond);
     }
 
-    public static TimeOnly DecodeText(PgTextValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// <para>
+    /// Parse the characters as a <see cref="TimeOnly"/>
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L1501">pg source code</a>
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the characters cannot be parsed as a <see cref="TimeOnly"/>
+    /// </exception>
+    public static TimeOnly DecodeText(in PgTextValue value)
     {
-        if (!TimeOnly.TryParse(value, null, out TimeOnly time))
+        if (!TimeOnly.TryParse(value.Chars, out TimeOnly time))
         {
-            throw ColumnDecodeError.Create<TimeOnly>(
+            throw ColumnDecodeException.Create<TimeOnly, PgColumnMetadata>(
                 value.ColumnMetadata,
-                $"Could not parse '{value}' into a time value");
+                $"Could not parse '{value.Chars}' into a time value");
         }
         
         return time;
     }
     
-    public static PgType DbType => PgType.Text;
+    public static PgTypeInfo DbType => PgTypeInfo.Time;
 
-    public static bool IsCompatible(PgType dbType)
-    {
-        return dbType.TypeOid == DbType.TypeOid
-               || dbType.TypeOid == PgType.Varchar.TypeOid
-               || dbType.TypeOid == PgType.Xml.TypeOid
-               || dbType.TypeOid == PgType.Name.TypeOid
-               || dbType.TypeOid == PgType.Bpchar.TypeOid;
-    }
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.TimeArray;
 
-    public static PgType GetActualType(TimeOnly value)
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return DbType;
+        return typeInfo == DbType;
     }
 }

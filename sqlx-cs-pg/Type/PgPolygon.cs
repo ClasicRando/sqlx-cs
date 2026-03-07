@@ -1,80 +1,80 @@
-using System.Text;
-using Sqlx.Core.Buffer;
+using System.Buffers;
+using System.Collections.Immutable;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public readonly record struct PgPolygon(PgPoint[] Points) : IPgDbType<PgPolygon>, IPostGisType
+/// <summary>
+/// <para>
+/// Postgres <c>POLYGON</c> type represented by a list of points as vertices of the polygon 
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/datatype-geometric.html#DATATYPE-POLYGON">docs</a>
+/// </summary>
+public readonly struct PgPolygon(ImmutableArray<PgPoint> points)
+    : IPgDbType<PgPolygon>, IGeometryType, IHasArrayType, IEquatable<PgPolygon>
 {
-    private readonly Lazy<PgBox> _boundingBox = new(() => MakeBoundingBox(Points));
+    public ImmutableArray<PgPoint> Points { get; } = points;
 
-    public PgBox BoundingBox => _boundingBox.Value;
-    
-    private readonly Lazy<string> _postGisLiteral = new(() =>
+    /// <summary>
+    /// The bounding box of the polygon. This is the smallest box object that fully covers the
+    /// polygon area. 
+    /// </summary>
+    public PgBox BoundingBox => MakeBoundingBox(Points);
+
+    public string GeometryLiteral => GeometryUtils.GeneratePointCollectionLiteral(Points, true);
+
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// <para>
+    /// Writes all points to the buffer using <see cref="GeometryUtils.EncodePoints"/>
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L3475">pg source code</a>
+    /// </summary>
+    public static void Encode(PgPolygon value, IBufferWriter<byte> buffer)
     {
-        var builder = new StringBuilder();
-        builder.Append('(');
-        for (var i = 0; i < Points.Length; i++)
-        {
-            PgPoint point = Points[i];
-            if (i > 0)
-            {
-                builder.Append(',');
-            }
-            builder.Append(point.PostGisLiteral);
-        }
-        builder.Append(')');
-        return builder.ToString();
-    });
-
-    public string PostGisLiteral => _postGisLiteral.Value;
-
-    public static void Encode(PgPolygon value, WriteBuffer buffer)
-    {
-        buffer.WriteInt(value.Points.Length);
-        foreach (PgPoint point in value.Points)
-        {
-            PgPoint.Encode(point, buffer);
-        }
+        ArgumentNullException.ThrowIfNull(buffer);
+        GeometryUtils.EncodePoints(value.Points, buffer);
     }
 
-    public static PgPolygon DecodeBytes(PgBinaryValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// <para>
+    /// Reads all points using <see cref="GeometryUtils.DecodePoints(ref PgBinaryValue)"/>.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L3510">pg source code</a>
+    /// </summary>
+    public static PgPolygon DecodeBytes(ref PgBinaryValue value)
     {
-        var size = value.Buffer.ReadInt();
-        var points = new PgPoint[size];
-        for (var i = 0; i < size; i++)
-        {
-            points[i] = PgPoint.DecodeBytes(value);
-        }
-        return new PgPolygon(points);
+        return new PgPolygon(GeometryUtils.DecodePoints(ref value));
     }
 
-    public static PgPolygon DecodeText(PgTextValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// <para>
+    /// extracts all points from the characters using
+    /// <see cref="GeometryUtils.DecodePoints{T}(in PgTextValue)"/>. The format is assumed to be
+    /// <c>((x1,y1),...(xn,yn))</c>.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L3459">pg source code</a>
+    /// </summary>
+    /// <exception cref="Sqlx.Core.Exceptions.ColumnDecodeException">
+    /// If characters do not represent a collection of points
+    /// </exception>
+    public static PgPolygon DecodeText(in PgTextValue value)
     {
-        PgTextValue pointChars = value.Slice(1..^1);
-        var indexPairs = GeometryUtils.ExtractPointIndexes(pointChars);
-        var points = new PgPoint[indexPairs.Count];
-        for (var i = 0; i < points.Length; i++)
-        {
-            var (pointStart, pointEnd) = indexPairs[i];
-            points[i] = PgPoint.DecodeText(pointChars.Slice(pointStart..pointEnd));
-        }
-        return new PgPolygon(points);
+        return new PgPolygon(GeometryUtils.DecodePoints<PgPolygon>(value));
     }
     
-    public static PgType DbType => PgType.Polygon;
+    public static PgTypeInfo DbType => PgTypeInfo.Polygon;
 
-    public static bool IsCompatible(PgType dbType)
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.PolygonArray;
+
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return typeInfo == DbType;
     }
 
-    public static PgType GetActualType(PgPolygon value)
-    {
-        return DbType;
-    }
-
-    private static PgBox MakeBoundingBox(PgPoint[] points)
+    private static PgBox MakeBoundingBox(ImmutableArray<PgPoint> points)
     {
         if (points.Length == 0)
         {
@@ -105,6 +105,40 @@ public readonly record struct PgPolygon(PgPoint[] Points) : IPgDbType<PgPolygon>
             }
         }
 
-        return new PgBox(new PgPoint(x2, y2), new PgPoint(x1, y1));
+        return new PgBox
+        {
+            High = new PgPoint(x2, y2),
+            Low = new PgPoint(x1, y1),
+        };
+    }
+
+    public bool Equals(PgPolygon other)
+    {
+        return Points.SequenceEqual(other.Points);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is PgPolygon other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Points);
+    }
+    
+    public static bool operator ==(PgPolygon left, PgPolygon right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(PgPolygon left, PgPolygon right)
+    {
+        return !(left == right);
+    }
+
+    public override string ToString()
+    {
+        return $"{nameof(PgPolygon)} {{ {nameof(Points)} = [{string.Join(",", Points)}] }}";
     }
 }

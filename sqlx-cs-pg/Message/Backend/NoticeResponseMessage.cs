@@ -1,13 +1,20 @@
-using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Message.Backend.Information;
 
 namespace Sqlx.Postgres.Message.Backend;
 
-internal sealed class NoticeResponseMessage(InformationResponse informationResponse) : IPgBackendMessage, IPgBackendMessageDecoder<NoticeResponseMessage>
+/// <summary>
+/// <para>
+/// Message sent when the backend encounters an error either in its internal process or as a result
+/// of a message passed from the frontend. The contents of the message is a
+/// <see cref="Sqlx.Postgres.Message.Backend.Information.InformationResponse"/> packet.
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-ERRORRESPONSE">docs</a>
+/// </summary>
+internal record NoticeResponseMessage(InformationResponse InformationResponse) : IPgBackendMessage, IPgBackendMessageDecoder<NoticeResponseMessage>
 {
-    internal InformationResponse InformationResponse { get; } = informationResponse;
+    public static PgBackendMessageType MessageType => PgBackendMessageType.NoticeResponse;
 
-    public static NoticeResponseMessage Decode(ReadBuffer buffer)
+    public static NoticeResponseMessage Decode(ReadOnlySpan<byte> buffer)
     {
         return new NoticeResponseMessage(InformationResponse.Decode(buffer));
     }

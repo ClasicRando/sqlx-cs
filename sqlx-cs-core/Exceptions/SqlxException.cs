@@ -1,38 +1,23 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
-
 namespace Sqlx.Core.Exceptions;
 
+/// <summary>
+/// Base exception used in the SQLx library. 
+/// </summary>
 public class SqlxException : Exception
 {
-    public SqlxException(string message, Exception? exception = null) : base(message, exception)
+    public SqlxException(string message) : base(message)
     {
-    }
-
-    public SqlxException(Exception exception) : base(null, exception)
-    {
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void ThrowIfNull<T>(
-        [NotNull] T? value,
-        string message = "",
-        [CallerArgumentExpression(nameof(value))]
-        string name = "") where T : notnull
-    {
-        if (value is null)
-        {
-            throw new SqlxException(
-                string.IsNullOrWhiteSpace(message)
-                    ? $"Expected value {name} to be non-null"
-                    : message);
-        }
     }
     
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static SqlxException EnumOutOfRange<TEnum>(TEnum enumValue) where TEnum : Enum
+    public SqlxException(string message, Exception? exception) : base(message, exception)
     {
-        return new SqlxException(
-            $"Expected enum value of {typeof(TEnum)} to be within range but found {enumValue}");
+    }
+
+    /// <summary>
+    /// Wrap inner <see cref="Exception"/> as a new <see cref="SqlxException"/>
+    /// </summary>
+    /// <param name="exception">cause of the exception</param>
+    public SqlxException(Exception exception) : base(null, exception)
+    {
     }
 }

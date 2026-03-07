@@ -1,43 +1,79 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-internal abstract class PgChar : IPgDbType<byte>
+/// <summary>
+/// <para>
+/// <see cref="IPgDbType{T}"/> for <see cref="sbyte"/> values. Maps to the <c>"CHAR"</c> type.
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER-SPECIAL-TABLE">docs</a>
+/// </summary>
+internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
 {
-    public static void Encode(byte value, WriteBuffer buffer)
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// Simply writes the <see cref="sbyte"/> value to the buffer as a <see cref="byte"/>
+    /// </summary>
+    public static void Encode(sbyte value, IBufferWriter<byte> buffer)
     {
-        buffer.WriteByte(value);
+        buffer.WriteByte((byte)value);
     }
 
-    public static byte DecodeBytes(PgBinaryValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// <para>
+    /// Reads the first byte from the value buffer provided. If not bytes are remaining, returns 0
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/char.c#L105">pg source code</a>
+    /// </summary>
+    public static sbyte DecodeBytes(ref PgBinaryValue value)
     {
-        return value.Buffer.ReadByte();
+        return value.Buffer.Length == 0 ? (sbyte)0 : (sbyte)value.Buffer.ReadByte();
     }
 
-    public static byte DecodeText(PgTextValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// <para>
+    /// Converts the text into a <see cref="sbyte"/> depending on the number of characters:
+    /// <list type="bullet">
+    ///     <item>
+    ///     when 4, the <see cref="sbyte"/> has been packed into 3 characters with a forward slash
+    ///     prefix to accommodate non-ascii char values, see pg code for more details explanation
+    ///     </item>
+    ///     <item>
+    ///     when 1, the <see cref="sbyte"/> is just the ascii representation of the character
+    ///     </item>
+    ///     <item>when 0, return 0</item>
+    /// </list>
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/char.c#L64">pg source code</a>
+    /// </summary>
+    /// <exception cref="ColumnDecodeException">
+    /// If the text representation is not the expected length
+    /// </exception>
+    public static sbyte DecodeText(in PgTextValue value)
     {
         return value.Chars.Length switch
         {
-            4 => (byte)(((byte)value.Chars[1] << 6) | ((byte)value.Chars[2] << 3) | (byte)value.Chars[3]),
-            1 => (byte)value.Chars[0],
+            4 => (sbyte)(((value.Chars[1] - '0') << 6) | ((value.Chars[2] - '0') << 3) | (value.Chars[3] - '0')),
+            1 => (sbyte)value.Chars[0],
             0 => 0,
-            _ => throw ColumnDecodeError.Create<byte>(
+            _ => throw ColumnDecodeException.Create<sbyte, PgColumnMetadata>(
                 value.ColumnMetadata,
-                $"Received invalid \"char\" text, {value}"),
+                $"Received invalid \"char\" text, {value.Chars}"),
         };
     }
-    
-    public static PgType DbType => PgType.Char;
 
-    public static bool IsCompatible(PgType dbType)
-    {
-        return dbType.TypeOid == DbType.TypeOid;
-    }
+    public static PgTypeInfo DbType => PgTypeInfo.Char;
 
-    public static PgType GetActualType(byte value)
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.CharArray;
+
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return DbType;
+        return typeInfo == DbType;
     }
 }

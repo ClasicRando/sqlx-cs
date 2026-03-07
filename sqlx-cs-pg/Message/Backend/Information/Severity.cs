@@ -1,5 +1,8 @@
 namespace Sqlx.Postgres.Message.Backend.Information;
 
+/// <summary>
+/// Severity of the information message as a non-localized version
+/// </summary>
 public enum Severity
 {
     Error,

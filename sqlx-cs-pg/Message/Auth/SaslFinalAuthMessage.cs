@@ -1,8 +1,12 @@
 namespace Sqlx.Postgres.Message.Auth;
 
-internal sealed class SaslFinalAuthMessage(byte[] saslData) : IAuthMessage
+/// <summary>
+/// Message indicating the final message during SASL authentication flow
+/// </summary>
+internal sealed class SaslFinalAuthMessage(string saslData) : IAuthMessage
 {
-    // ReSharper disable once ReplaceWithPrimaryConstructorParameter
-    private readonly byte[] _bytes = saslData;
-    internal ReadOnlySpan<byte> SaslData => _bytes.AsSpan();
+    /// <summary>
+    /// Data sent from the server containing comma separated key value pairs
+    /// </summary>
+    internal string SaslData { get; } = saslData;
 }

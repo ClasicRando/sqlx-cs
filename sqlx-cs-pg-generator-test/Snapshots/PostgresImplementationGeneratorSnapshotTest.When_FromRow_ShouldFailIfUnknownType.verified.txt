@@ -1,0 +1,16 @@
+﻿{
+  Diagnostics: [
+    {
+      Message: Type definition property must reference a type that can be encoded to or decoded from the database. Fields: [Inner],
+      Severity: Error,
+      Descriptor: {
+        Id: SQLxPG005,
+        Title: Unknown DB type reference,
+        MessageFormat: Type definition {0} must reference a type that can be encoded to or decoded from the database. Fields: [{1}],
+        Category: sqlx-cs-pg Generation,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}

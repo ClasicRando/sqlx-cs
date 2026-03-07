@@ -1,3 +1,4 @@
+using System.Buffers;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Message.Frontend;
 
@@ -5,8 +6,15 @@ namespace Sqlx.Postgres.Buffer;
 
 internal static class WriteBufferExtensions
 {
-    internal static void WriteCode(this WriteBuffer writeBuffer, PgFrontendMessageType code)
+    extension(IBufferWriter<byte> writeBuffer)
     {
-        writeBuffer.WriteByte((byte)code);
+        /// <summary>
+        /// Write the <see cref="PgFrontendMessageType"/> code to the buffer as a <see cref="byte"/>
+        /// </summary>
+        /// <param name="code">Frontend message code</param>
+        internal void WriteCode(PgFrontendMessageType code)
+        {
+            writeBuffer.WriteByte((byte)code);
+        }
     }
 }

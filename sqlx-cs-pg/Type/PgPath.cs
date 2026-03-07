@@ -1,75 +1,112 @@
-using System.Text;
+using System.Buffers;
+using System.Collections.Immutable;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public readonly record struct PgPath(bool IsClosed, PgPoint[] Points) : IPgDbType<PgPath>, IPostGisType
+/// <summary>
+/// <para>
+/// Postgres <c>PATH</c> type represented as a collection of points that may or may not be closed
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/datatype-geometric.html#DATATYPE-GEOMETRIC-PATHS">docs</a>
+/// </summary>
+public readonly struct PgPath(bool isClosed, ImmutableArray<PgPoint> points)
+    : IPgDbType<PgPath>, IGeometryType, IHasArrayType, IEquatable<PgPath>
 {
-    private readonly Lazy<string> _postGisLiteral = new(() =>
-    {
-        var builder = new StringBuilder();
-        builder.Append(IsClosed ? '(' : '[');
-        for (var i = 0; i < Points.Length; i++)
-        {
-            PgPoint point = Points[i];
-            if (i > 0)
-            {
-                builder.Append(',');
-            }
-            builder.Append(point.PostGisLiteral);
-        }
-        builder.Append(IsClosed ? ')' : ']');
-        return builder.ToString();
-    });
+    private readonly Lazy<string> _geometryLiteral = new(
+        () => GeometryUtils.GeneratePointCollectionLiteral(points, isClosed));
 
-    public string PostGisLiteral => _postGisLiteral.Value;
+    public bool IsClosed { get; } = isClosed;
 
-    public static void Encode(PgPath value, WriteBuffer buffer)
+    public ImmutableArray<PgPoint> Points { get; } = points;
+
+    public string GeometryLiteral => _geometryLiteral.Value;
+
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// <para>
+    /// Writes a 1/0 byte (1 = is closed path, 0 = is open path) followed by the points encoded
+    /// using <see cref="GeometryUtils.EncodePoints"/>.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1488">pg source code</a>
+    /// </summary>
+    public static void Encode(PgPath value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteByte((byte)(value.IsClosed ? 1 : 0));
-        buffer.WriteInt(value.Points.Length);
-        foreach (PgPoint point in value.Points)
-        {
-            PgPoint.Encode(point, buffer);
-        }
+        GeometryUtils.EncodePoints(value.Points, buffer);
     }
 
-    public static PgPath DecodeBytes(PgBinaryValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// <para>
+    /// Reads the first byte in the buffer to figure out if the path is closed or open. Then reads
+    /// all points using <see cref="GeometryUtils.DecodePoints(ref PgBinaryValue)"/>.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1526">pg source code</a>
+    /// </summary>
+    public static PgPath DecodeBytes(ref PgBinaryValue value)
     {
         var isClosed = value.Buffer.ReadByte() == 1;
-        var size = value.Buffer.ReadInt();
-        var points = new PgPoint[size];
-        for (var i = 0; i < size; i++)
-        {
-            points[i] = PgPoint.DecodeBytes(value);
-        }
-        return new PgPath(isClosed, points);
+        return new PgPath(isClosed, GeometryUtils.DecodePoints(ref value));
     }
 
-    public static PgPath DecodeText(PgTextValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <summary>
+    /// <para>
+    /// Uses the first character to decide if the path is closed or open, then extracts all points
+    /// from the characters using <see cref="GeometryUtils.DecodePoints{T}(in PgTextValue)"/>. The
+    /// format is assumed to be <c>((x1,y1),...(xn,yn))</c> for closed paths and
+    /// <c>[(x1,y1),...(xn,yn)]</c> for open paths.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1474">pg source code</a>
+    /// </summary>
+    /// <exception cref="Sqlx.Core.Exceptions.ColumnDecodeException">
+    /// If characters do not represent a collection of points
+    /// </exception>
+    public static PgPath DecodeText(in PgTextValue value)
     {
         var isClosed = value.Chars[0] == '(';
-        PgTextValue pointChars = value.Slice(1..^1);
-        var indexPairs = GeometryUtils.ExtractPointIndexes(pointChars);
-        var points = new PgPoint[indexPairs.Count];
-        for (var i = 0; i < points.Length; i++)
-        {
-            var (pointStart, pointEnd) = indexPairs[i];
-            points[i] = PgPoint.DecodeText(pointChars.Slice(pointStart..pointEnd));
-        }
-        return new PgPath(isClosed, points);
+        return new PgPath(isClosed, GeometryUtils.DecodePoints<PgPath>(value));
     }
     
-    public static PgType DbType => PgType.Path;
+    public static PgTypeInfo DbType => PgTypeInfo.Path;
 
-    public static bool IsCompatible(PgType dbType)
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.PathArray;
+
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return typeInfo == DbType;
     }
 
-    public static PgType GetActualType(PgPath value)
+    public bool Equals(PgPath other)
     {
-        return DbType;
+        return IsClosed == other.IsClosed && Points.SequenceEqual(other.Points);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is PgPath other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(IsClosed, Points);
+    }
+    
+    public static bool operator ==(PgPath left, PgPath right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(PgPath left, PgPath right)
+    {
+        return !(left == right);
+    }
+
+    public override string ToString()
+    {
+        return $"{nameof(PgPath)} {{ {nameof(IsClosed)} = {IsClosed}, {nameof(Points)} = [{string.Join(",", Points)}] }}";
     }
 }

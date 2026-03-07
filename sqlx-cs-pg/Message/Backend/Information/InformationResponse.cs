@@ -1,10 +1,15 @@
 using System.Diagnostics.CodeAnalysis;
 using Sqlx.Core.Buffer;
+using Sqlx.Postgres.Exceptions;
 
 namespace Sqlx.Postgres.Message.Backend.Information;
 
+/// <summary>
+/// Contents of an information based database server response message. Specify a number of
+/// properties about the error or notice message.
+/// </summary>
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-public class InformationResponse
+internal class InformationResponse
 {
     private const byte SEVERITY = (byte)'S';
     private const byte SEVERITY2 = (byte)'V';
@@ -29,7 +34,7 @@ public class InformationResponse
     {
         Severity = SeverityExtensions.FromString(
             fields.GetValueOrDefault(SEVERITY, ThrowIfMissing(fields, SEVERITY2)));
-        Code = SqlStateExtensions.FromChars(ThrowIfMissing(fields, CODE));
+        Code = SqlState.FromChars(ThrowIfMissing(fields, CODE));
         Message = ThrowIfMissing(fields, MESSAGE);
         Detail = fields.GetValueOrDefault(DETAIL);
         Hint = fields.GetValueOrDefault(HINT);
@@ -56,26 +61,77 @@ public class InformationResponse
         Routine = fields.GetValueOrDefault(ROUTINE);
     }
 
+    /// <summary>
+    /// Severity of the message
+    /// </summary>
     public Severity Severity { get; }
+    /// <summary>
+    /// SQLSTATE code of the message
+    /// </summary>
     public SqlState Code { get; }
+    /// <summary>
+    /// Human-readable version of the message
+    /// </summary>
     public string Message { get; }
+    /// <summary>
+    /// Optional extra details along with the message
+    /// </summary>
     public string? Detail { get; }
+    /// <summary>
+    /// Optional suggestion about the problem
+    /// </summary>
     public string? Hint { get; }
+    /// <summary>
+    /// Error cursor position within the original query string. Index is character not bytes
+    /// </summary>
     public int? Position { get; }
+    /// <summary>
+    /// Pair where the first value is the error cursor position within the internal command and the
+    /// second value is the internal command's query (e.g. the SQL query within a PL/pgsql
+    /// function).
+    /// </summary>
     public KeyValuePair<int, string>? InternalQueryData { get; }
+    /// <summary>
+    /// Call stack traceback of the active procedural language function or internal-generated query
+    /// </summary>
     public string? Where { get; }
+    /// <summary>
+    /// If the message is associated with a specific database object, this is the name of the schema
+    /// containing the object
+    /// </summary>
     public string? SchemaName { get; }
+    /// <summary>
+    /// If the message is associated with a specific database table, this is the name of the table
+    /// </summary>
     public string? TableName { get; }
+    /// <summary>
+    /// If the message is associated with a specific table column, this is the name of the column
+    /// </summary>
     public string? ColumnName { get; }
+    /// <summary>
+    /// If the message is associated with a specific data type, this is the name of the data type
+    /// </summary>
     public string? DataTypeName { get; }
+    /// <summary>
+    /// If the message is associated with a specific constraint, this is the name of the constraint
+    /// </summary>
     public string? ConstraintName { get; }
+    /// <summary>
+    /// The file name of the source code where the error was reported
+    /// </summary>
     public string? File { get; }
+    /// <summary>
+    /// The line number of the source code where the error was reported
+    /// </summary>
     public int? Line { get; }
+    /// <summary>
+    /// The name of the source code routine reporting the error
+    /// </summary>
     public string? Routine { get; }
 
     public override string ToString()
     {
-        var (errorCode, conditionName) = Code.GetDetails();
+        var (errorCode, conditionName) = Code.Details;
         var internalQueryString = InternalQueryData is not null
             ? $"Position={InternalQueryData.Value.Key}, Query={InternalQueryData.Value.Value}"
             : string.Empty;
@@ -99,16 +155,25 @@ public class InformationResponse
                """;
     }
 
-    public static InformationResponse Decode(ReadBuffer buffer)
+    /// <summary>
+    /// <para>
+    /// Generic decoder for messages that contains similarly structured information messages. The
+    /// contents are 1 or more error code and String value pairs where the key is a
+    /// <see cref="byte"/> and the value is a CString.
+    /// </para>
+    /// <a href="https://www.postgresql.org/docs/current/protocol-error-fields.html">docs</a>
+    /// </summary>
+    /// <param name="buffer">Buffer of message contents to parse</param>
+    /// <returns>Deserialized information response object</returns>
+    public static InformationResponse Decode(ReadOnlySpan<byte> buffer)
     {
         Dictionary<byte, string> fields = [];
-        while (!buffer.IsExhausted)
+        while (!buffer.IsEmpty)
         {
             var kind = buffer.ReadByte();
-            if (kind != 0)
-            {
-                fields[kind] = buffer.ReadCString();
-            }
+            if (kind == 0) continue;
+            
+            fields[kind] = buffer.ReadCString();
         }
 
         return new InformationResponse(fields);
@@ -119,6 +184,7 @@ public class InformationResponse
         byte desiredField)
     {
         return fields.GetValueOrDefault(desiredField)
-               ?? throw new InvalidInformationResponse(desiredField);
+               ?? throw new PgException(
+                   $"InformationResponse message missing expected field '{desiredField}");
     }
 }

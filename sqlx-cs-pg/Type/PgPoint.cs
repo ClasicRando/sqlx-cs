@@ -1,50 +1,113 @@
+using System.Buffers;
+using System.Runtime.CompilerServices;
 using Sqlx.Core.Buffer;
-using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Result;
 
 namespace Sqlx.Postgres.Type;
 
-public readonly record struct PgPoint(double X, double Y) : IPgDbType<PgPoint>, IPostGisType
+/// <summary>
+/// <para>
+/// Postgres <c>POINT</c> type represented as a pair of coordinates in a two-dimensional space
+/// </para>
+/// <a href="https://www.postgresql.org/docs/current/datatype-geometric.html#DATATYPE-GEOMETRIC-POINTS">docs</a>
+/// </summary>
+public readonly struct PgPoint(double x, double y)
+    : IPgDbType<PgPoint>, IGeometryType, IHasArrayType, IEquatable<PgPoint>
 {
-    private readonly Lazy<string> _postGisLiteral = new(() => $"({X},{Y})");
+    private readonly Lazy<string> _geometryLiteral = new(() => $"({x},{y})");
 
-    public string PostGisLiteral => _postGisLiteral.Value;
+    public double X { get; } = x;
+    
+    public double Y { get; } = y;
 
-    public static void Encode(PgPoint value, WriteBuffer buffer)
+    public string GeometryLiteral => _geometryLiteral.Value;
+
+    public static PgPoint operator +(PgPoint p1, PgPoint p2) => p1.Add(p2);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public PgPoint Add(PgPoint other)
     {
+        return new PgPoint(X + other.X, Y + other.Y);
+    }
+
+    public static PgPoint operator -(PgPoint p1, PgPoint p2) => p1.Subtract(p2);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public PgPoint Subtract(PgPoint other)
+    {
+        return new PgPoint(X - other.X, Y - other.Y);
+    }
+
+    /// <inheritdoc cref="IPgDbType{T}.Encode"/>
+    /// <summary>
+    /// <para>
+    /// Writes the x and y coordinates of the point as <see cref="double"/> values
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1853">pg source code</a>
+    /// </summary>
+    public static void Encode(PgPoint value, IBufferWriter<byte> buffer)
+    {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteDouble(value.X);
         buffer.WriteDouble(value.Y);
     }
 
-    public static PgPoint DecodeBytes(PgBinaryValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
+    /// <summary>
+    /// <para>
+    /// Extracts 2 <see cref="double"/> values for the <see cref="PgPoint.X"/> and
+    /// <see cref="PgPoint.Y"/> coordinates.
+    /// </para>
+    /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1868">pg source code</a>
+    /// </summary>
+    public static PgPoint DecodeBytes(ref PgBinaryValue value)
     {
         return new PgPoint(value.Buffer.ReadDouble(), value.Buffer.ReadDouble());
     }
 
-    public static PgPoint DecodeText(PgTextValue value)
+    /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
+    /// <seealso cref="GeometryUtils.DecodePoint"/>
+    public static PgPoint DecodeText(in PgTextValue value)
     {
-        var commaIndex = value.Chars.IndexOf(',');
-        if (!double.TryParse(value.Chars.Slice(1, commaIndex - 1), out var x))
-        {
-            throw ColumnDecodeError.Create<PgPoint>(value.ColumnMetadata, "Could not parse X coordinate");
-        }
-        if (!double.TryParse(value.Chars.Slice(commaIndex + 1, value.Chars.Length - commaIndex - 2), out var y))
-        {
-            throw ColumnDecodeError.Create<PgPoint>(value.ColumnMetadata, "Could not parse Y coordinate");
-        }
-
-        return new PgPoint(x, y);
+        return GeometryUtils.DecodePoint<PgPoint>(value);
     }
     
-    public static PgType DbType => PgType.Point;
+    public static PgTypeInfo DbType => PgTypeInfo.Point;
 
-    public static bool IsCompatible(PgType dbType)
+    public static PgTypeInfo ArrayDbType => PgTypeInfo.PointArray;
+
+    public static bool IsCompatible(PgTypeInfo typeInfo)
     {
-        return dbType.TypeOid == DbType.TypeOid;
+        return typeInfo == DbType;
     }
 
-    public static PgType GetActualType(PgPoint value)
+    public bool Equals(PgPoint other)
     {
-        return DbType;
+        return X.Equals(other.X) && Y.Equals(other.Y);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is PgPoint other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(X, Y);
+    }
+    
+    public static bool operator ==(PgPoint left, PgPoint right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(PgPoint left, PgPoint right)
+    {
+        return !(left == right);
+    }
+
+    public override string ToString()
+    {
+        return $"PgPoint {{ {nameof(X)} = {X}, {nameof(Y)} = {Y} }}";
     }
 }

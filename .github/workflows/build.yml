@@ -33,13 +33,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.408'
+          dotnet-version: '10.0'
       - run: dotnet build
       - name: Run Tests
         run: |
           dotnet test
         env:
-          POSTGRES_PORT: ${{ env.POSTGRES_PORT }}
-          POSTGRES_USERNAME: ${{ env.POSTGRES_USERNAME }}
-          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
-          POSTGRES_DATABASE: ${{ env.POSTGRES_DATABASE }}
+          PG_USERNAME: ${{ env.POSTGRES_USERNAME }}
+          PG_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          PG_DATABASE: ${{ env.POSTGRES_DATABASE }}

@@ -4,42 +4,45 @@ using Sqlx.Postgres.Message.Auth;
 
 namespace Sqlx.Postgres.Message.Backend;
 
-internal sealed class AuthenticationMessage(IAuthMessage authMessage) : IPgBackendMessage, IPgBackendMessageDecoder<AuthenticationMessage>
+/// <summary>
+/// <para>
+/// <see cref="IPgBackendMessageDecoder{T}"/> for <see cref="IAuthMessage"/> messages. All
+/// authentication message contents start with an Int which designates which authentication message
+/// type is specified. Depending on the message type, more data might follow.
+/// </para>
+/// <para>
+/// For all authentication messages, search for "Byte1('R')" <a href="https://www.postgresql.org/docs/current/protocol-message-formats.html">here</a>
+/// </para> 
+/// </summary>
+internal abstract class AuthenticationMessage : IPgBackendMessage, IPgBackendMessageDecoder<IAuthMessage>
 {
-    internal IAuthMessage AuthMessage { get; } = authMessage;
-    public static AuthenticationMessage Decode(ReadBuffer buffer)
+    public static PgBackendMessageType MessageType => PgBackendMessageType.Authentication;
+
+    public static IAuthMessage Decode(ReadOnlySpan<byte> buffer)
     {
         var authMethod = buffer.ReadInt();
-        IAuthMessage message;
         switch (authMethod)
         {
             case 0:
-                message = OkAuthMessage.Instance;
-                break;
+                return OkAuthMessage.Instance;
             case 3:
-                message = ClearTextPasswordAuthMessage.Instance;
-                break;
+                return ClearTextPasswordAuthMessage.Instance;
             case 5:
-                message = new MD5PasswordAuthMessage(buffer.ReadBytes(4));
-                break;
+                var bytes = buffer.ReadBytes(4);
+                return new MD5PasswordAuthMessage(bytes);
             case 10:
                 List<string> authMechanisms = [];
-                while (buffer.Remaining > 0)
+                while (!buffer.IsEmpty)
                 {
                     authMechanisms.Add(buffer.ReadCString());
                 }
-                message = new SaslAuthMessage(authMechanisms);
-                break;
+                return new SaslAuthMessage(authMechanisms);
             case 11:
-                message = new SaslContinueAuthMessage(buffer.ReadBytes());
-                break;
+                return new SaslContinueAuthMessage(buffer.ReadString());
             case 12:
-                message = new SaslFinalAuthMessage(buffer.ReadBytes());
-                break;
+                return new SaslFinalAuthMessage(buffer.ReadString());
             default:
                 throw new PgException($"Unknown authentication method: {authMethod}");
         }
-
-        return new AuthenticationMessage(message);
     }
 }
