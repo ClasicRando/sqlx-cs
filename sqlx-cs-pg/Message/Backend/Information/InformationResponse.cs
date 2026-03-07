@@ -34,7 +34,7 @@ internal class InformationResponse
     {
         Severity = SeverityExtensions.FromString(
             fields.GetValueOrDefault(SEVERITY, ThrowIfMissing(fields, SEVERITY2)));
-        Code = SqlStateExtensions.FromChars(ThrowIfMissing(fields, CODE));
+        Code = SqlState.FromChars(ThrowIfMissing(fields, CODE));
         Message = ThrowIfMissing(fields, MESSAGE);
         Detail = fields.GetValueOrDefault(DETAIL);
         Hint = fields.GetValueOrDefault(HINT);
@@ -131,7 +131,7 @@ internal class InformationResponse
 
     public override string ToString()
     {
-        var (errorCode, conditionName) = Code.GetDetails();
+        var (errorCode, conditionName) = Code.Details;
         var internalQueryString = InternalQueryData is not null
             ? $"Position={InternalQueryData.Value.Key}, Query={InternalQueryData.Value.Value}"
             : string.Empty;
