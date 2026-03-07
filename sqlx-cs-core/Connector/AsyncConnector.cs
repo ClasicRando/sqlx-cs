@@ -5,7 +5,6 @@ using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
-using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 
 namespace Sqlx.Core.Connector;
@@ -167,25 +166,6 @@ public sealed class AsyncConnector : IAsyncConnector
             ArrayPool.Return(tempBuffer);
             _bufferLength = bytesRemaining;
         }
-    }
-
-    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
-    public async ValueTask<byte> ReadByteAsync(CancellationToken cancellationToken)
-    {
-        CheckIfConnected();
-        await FillBufferAsync(1, cancellationToken).ConfigureAwait(false);
-        return _innerBuffer[_bufferPosition++];
-    }
-
-    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
-    public async ValueTask<int> ReadIntAsync(CancellationToken cancellationToken)
-    {
-        CheckIfConnected();
-        await FillBufferAsync(4, cancellationToken).ConfigureAwait(false);
-        ReadOnlySpan<byte> span = _innerBuffer.AsSpan(_bufferPosition);
-        var result = span.ReadInt();
-        _bufferPosition += 4;
-        return result;
     }
 
     public ValueTask EnsureBufferFilled(int size, CancellationToken cancellationToken)

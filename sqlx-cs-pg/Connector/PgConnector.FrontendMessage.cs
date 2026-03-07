@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Globalization;
+using System.IO.Pipelines;
 using Sqlx.Core;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Buffer;
@@ -39,6 +40,22 @@ public sealed partial class PgConnector
 
     private static readonly byte[] DefaultProperties =
         Charsets.Default.GetBytes(DefaultPropertiesStr);
+
+    private PipeWriter Writer => _asyncConnector.Writer;
+    
+    /// <summary>
+    /// Write all buffered content to the <see cref="_asyncConnector"/> and reset the
+    /// <see cref="Writer"/> for future writes.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the async operation</param>
+    private async ValueTask FlushStream(CancellationToken cancellationToken)
+    {
+        FlushResult result = await Writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+        if (result.IsCanceled)
+        {
+            throw new OperationCanceledException();
+        }
+    }
 
     private ValueTask SendStartupMessage(PgConnectOptions options, CancellationToken cancellationToken)
     {

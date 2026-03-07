@@ -1,4 +1,3 @@
-using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Sqlx.Core;
@@ -51,8 +50,6 @@ public sealed partial class PgConnector : IPooledConnection
     }
 
     internal PgConnectOptions ConnectOptions { get; }
-
-    private PipeWriter Writer => _asyncConnector.Writer;
 
     internal int PendingReadyForQuery => _pendingReadyForQuery;
 
@@ -549,20 +546,6 @@ public sealed partial class PgConnector : IPooledConnection
             SqlxConfig.DetailedLoggingLevel,
             message.NewestMinorProtocolVersion,
             message.ProtocolOptionsNotRecognized);
-    }
-
-    /// <summary>
-    /// Write all content in <see cref="Writer"/> to the <see cref="_asyncConnector"/> and reset
-    /// the <see cref="Writer"/> for future writes.
-    /// </summary>
-    /// <param name="cancellationToken">Token to cancel the async operation</param>
-    private async ValueTask FlushStream(CancellationToken cancellationToken)
-    {
-        FlushResult result = await Writer.FlushAsync(cancellationToken).ConfigureAwait(false);
-        if (result.IsCanceled)
-        {
-            throw new OperationCanceledException();
-        }
     }
 
     internal readonly struct UserAction : IDisposable

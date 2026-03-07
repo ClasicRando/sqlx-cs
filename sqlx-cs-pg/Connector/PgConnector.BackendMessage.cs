@@ -1,4 +1,5 @@
 using Sqlx.Core.Buffer;
+using Sqlx.Core.Connector;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Exceptions;
