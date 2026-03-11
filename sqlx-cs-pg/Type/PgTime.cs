@@ -11,6 +11,8 @@ namespace Sqlx.Postgres.Type;
 /// </summary>
 internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
 {
+    public const int Size = sizeof(long);
+    
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
     /// <para>
@@ -33,9 +35,10 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L1547">pg source code</a>
     /// </summary>
-    public static TimeOnly DecodeBytes(ref PgBinaryValue value)
+    public static TimeOnly DecodeBytes(in PgBinaryValue value)
     {
-        var microSeconds = value.Buffer.ReadLong();
+        var buff = value.Buffer;
+        var microSeconds = buff.ReadLong();
         return new TimeOnly(microSeconds * TimeSpan.TicksPerMicrosecond);
     }
 

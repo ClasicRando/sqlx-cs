@@ -88,7 +88,7 @@ public class PgJsonTest
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
         Inner actualValue = PgJson<Inner>.DecodeBytes(
-            ref binaryValue,
+            binaryValue,
             useSourceGeneration ? SourceGenerationContext.Default.Inner : null);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);

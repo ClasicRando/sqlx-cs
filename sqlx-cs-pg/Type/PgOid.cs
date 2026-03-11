@@ -27,7 +27,7 @@ public readonly struct PgOid(uint inner) : IEquatable<PgOid>, IPgDbType<PgOid>, 
     /// <exception cref="ColumnDecodeException">
     /// If the integer value is outside a valid <see cref="uint"/>
     /// </exception>
-    public static PgOid DecodeBytes(ref PgBinaryValue value)
+    public static PgOid DecodeBytes(in PgBinaryValue value)
     {
         var integer = value.ExtractInteger<uint>();
         return new PgOid(PgInteger.ValidateUInt(integer, value.ColumnMetadata));

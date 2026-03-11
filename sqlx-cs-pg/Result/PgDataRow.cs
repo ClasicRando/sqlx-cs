@@ -169,7 +169,7 @@ internal sealed class PgDataRow : IPgDataRow
                 }
             case PgFormatCode.Binary:
                 PgBinaryValue binaryValue = new(bytes, columnMetadata);
-                return PgJson<T>.DecodeBytes(ref binaryValue, jsonTypeInfo);
+                return PgJson<T>.DecodeBytes(binaryValue, jsonTypeInfo);
             default:
                 throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                     columnData.ColumnMetadata,
@@ -264,7 +264,7 @@ internal sealed class PgDataRow : IPgDataRow
                 }
             case PgFormatCode.Binary:
                 var value = new PgBinaryValue(bytes, columnMetadata);
-                return TType.DecodeBytes(ref value);
+                return TType.DecodeBytes(value);
             default:
                 throw ColumnDecodeException.Create<TResult, PgColumnMetadata>(
                     columnData.ColumnMetadata,

@@ -29,10 +29,10 @@ internal abstract class PgIpNetwork : IPgDbType<IPNetwork>, IHasArrayType
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
     /// <see cref="NetworkUtils.DecodeNetworkValuesAsBytes{T}"/>
-    public static IPNetwork DecodeBytes(ref PgBinaryValue value)
+    public static IPNetwork DecodeBytes(in PgBinaryValue value)
     {
         (IPAddress address, var prefix) = NetworkUtils.DecodeNetworkValuesAsBytes<IPNetwork>(
-            ref value);
+            in value);
         return new IPNetwork(address, prefix);
     }
 

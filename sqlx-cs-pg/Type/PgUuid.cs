@@ -32,7 +32,7 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
     /// <summary>
     /// Read the all available bytes as a new <see cref="Guid"/>
     /// </summary>
-    public static Guid DecodeBytes(ref PgBinaryValue value)
+    public static Guid DecodeBytes(in PgBinaryValue value)
     {
         return new Guid(value.Buffer);
     }

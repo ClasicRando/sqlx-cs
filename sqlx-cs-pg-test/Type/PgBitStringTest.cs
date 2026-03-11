@@ -40,7 +40,7 @@ public class PgBitStringTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        BitArray actualValue = PgBitString.DecodeBytes(ref binaryValue);
+        BitArray actualValue = PgBitString.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEquivalentTo(expectedValue);
     }

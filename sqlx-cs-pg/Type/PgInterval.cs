@@ -64,11 +64,12 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/timestamp.c#L1032">pg source code</a>
     /// </summary>
-    public static PgInterval DecodeBytes(ref PgBinaryValue value)
+    public static PgInterval DecodeBytes(in PgBinaryValue value)
     {
-        var microSeconds = value.Buffer.ReadLong();
-        var days = value.Buffer.ReadInt();
-        var months = value.Buffer.ReadInt();
+        var buff = value.Buffer;
+        var microSeconds = buff.ReadLong();
+        var days = buff.ReadInt();
+        var months = buff.ReadInt();
         return new PgInterval(months, days, microSeconds);
     }
 

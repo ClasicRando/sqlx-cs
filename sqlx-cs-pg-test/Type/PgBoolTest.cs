@@ -34,7 +34,7 @@ public class PgBoolTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        var actualValue = PgBool.DecodeBytes(ref binaryValue);
+        var actualValue = PgBool.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

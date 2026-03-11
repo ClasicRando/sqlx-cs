@@ -69,7 +69,7 @@ public class PgTimeTzTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgTimeTz actualValue = PgTimeTz.DecodeBytes(ref binaryValue);
+        PgTimeTz actualValue = PgTimeTz.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

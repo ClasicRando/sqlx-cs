@@ -66,7 +66,7 @@ public class PgDecimalTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        var actualValue = PgDecimal.DecodeBytes(ref binaryValue);
+        var actualValue = PgDecimal.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

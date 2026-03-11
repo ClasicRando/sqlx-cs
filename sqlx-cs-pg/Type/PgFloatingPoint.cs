@@ -11,12 +11,13 @@ namespace Sqlx.Postgres.Type;
 /// </summary>
 internal static class PgFloatingPoint
 {
-    public static double ExtractFloat<T>(ref this PgBinaryValue value) where T : notnull
+    public static double ExtractFloat<T>(in this PgBinaryValue value) where T : notnull
     {
-        return value.Buffer.Length switch
+        var buff = value.Buffer;
+        return buff.Length switch
         {
-            4 => value.Buffer.ReadFloat(),
-            8 => value.Buffer.ReadDouble(),
+            4 => buff.ReadFloat(),
+            8 => buff.ReadDouble(),
             _ => throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Could not extract float from buffer. Number of bytes = {value.Buffer.Length}"),
@@ -60,7 +61,7 @@ internal abstract class PgDouble : IPgDbType<double>, IHasArrayType
     /// Read the bytes available to get a floating point number. If the underlining value is a
     /// <see cref="float"/> it's cast to a <see cref="double"/>.
     /// </summary>
-    public static double DecodeBytes(ref PgBinaryValue value)
+    public static double DecodeBytes(in PgBinaryValue value)
     {
         return value.ExtractFloat<double>();
     }
@@ -109,7 +110,7 @@ internal abstract class PgFloat : IPgDbType<float>, IHasArrayType
     /// <exception cref="ColumnDecodeException">
     /// If the <see cref="double"/> value extracted is not a valid float
     /// </exception>
-    public static float DecodeBytes(ref PgBinaryValue value)
+    public static float DecodeBytes(in PgBinaryValue value)
     {
         return ValidateFloat(value.ExtractFloat<float>(), value.ColumnMetadata);
     }

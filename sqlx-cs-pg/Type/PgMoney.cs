@@ -58,9 +58,10 @@ public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<P
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/cash.c#L524">pg source code</a>
     /// </summary>
-    public static PgMoney DecodeBytes(ref PgBinaryValue value)
+    public static PgMoney DecodeBytes(in PgBinaryValue value)
     {
-        return new PgMoney(value.Buffer.ReadLong());
+        var buff = value.Buffer;
+        return new PgMoney(buff.ReadLong());
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>

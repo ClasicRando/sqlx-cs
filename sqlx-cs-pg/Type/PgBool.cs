@@ -33,9 +33,9 @@ internal abstract class PgBool : IPgDbType<bool>, IHasArrayType
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/a6c21887a9f0251fa2331ea3ad0dd20b31c4d11d/src/backend/utils/adt/bool.c#L187">pg source code</a>
     /// </summary>
-    public static bool DecodeBytes(ref PgBinaryValue value)
+    public static bool DecodeBytes(in PgBinaryValue value)
     {
-        return value.Buffer.ReadByte() != 0;
+        return value.Buffer[0] != 0;
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>

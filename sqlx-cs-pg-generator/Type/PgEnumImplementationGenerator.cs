@@ -106,9 +106,10 @@ internal static class PgEnumImplementationGenerator
                       buffer.WriteString(value.ToEncodeString());
                   }
 
-                  public static {{fullName}} DecodeBytes(ref PgBinaryValue value)
+                  public static {{fullName}} DecodeBytes(in PgBinaryValue value)
                   {
-                      return {{fullName}}.FromChars(value.Buffer.ReadString(), value.ColumnMetadata);
+                      var buff = value.Buffer;
+                      return {{fullName}}.FromChars(buff.ReadString(), value.ColumnMetadata);
                   }
 
                   public static {{fullName}} DecodeText(in PgTextValue value)

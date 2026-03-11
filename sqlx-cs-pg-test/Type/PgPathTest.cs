@@ -36,7 +36,7 @@ public class PgPathTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgPath actualValue = PgPath.DecodeBytes(ref binaryValue);
+        PgPath actualValue = PgPath.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

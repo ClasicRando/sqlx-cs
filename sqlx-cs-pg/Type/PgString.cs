@@ -23,9 +23,10 @@ internal abstract class PgString : IPgDbType<string>, IHasArrayType
     /// <summary>
     /// Read the entire byte buffer as UTF8 encoded characters
     /// </summary>
-    public static string DecodeBytes(ref PgBinaryValue value)
+    public static string DecodeBytes(in PgBinaryValue value)
     {
-        return value.Buffer.ReadString();
+        var buff = value.Buffer;
+        return buff.ReadString();
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>

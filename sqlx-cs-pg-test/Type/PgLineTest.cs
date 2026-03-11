@@ -39,7 +39,7 @@ public class PgLineTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgLine actualValue = PgLine.DecodeBytes(ref binaryValue);
+        PgLine actualValue = PgLine.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

@@ -43,7 +43,7 @@ public class PgDoubleTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        var actualValue = PgDouble.DecodeBytes(ref binaryValue);
+        var actualValue = PgDouble.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
@@ -62,7 +62,7 @@ public class PgDoubleTest
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
         try
         {
-            PgDouble.DecodeBytes(ref binaryValue);
+            PgDouble.DecodeBytes(binaryValue);
             Assert.Fail("Decoding should have failed");
         }
         catch (ColumnDecodeException e)

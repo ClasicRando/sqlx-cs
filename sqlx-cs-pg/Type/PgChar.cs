@@ -30,9 +30,9 @@ internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/char.c#L105">pg source code</a>
     /// </summary>
-    public static sbyte DecodeBytes(ref PgBinaryValue value)
+    public static sbyte DecodeBytes(in PgBinaryValue value)
     {
-        return value.Buffer.Length == 0 ? (sbyte)0 : (sbyte)value.Buffer.ReadByte();
+        return value.Buffer.Length == 0 ? (sbyte)0 : (sbyte)value.Buffer[0];
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>

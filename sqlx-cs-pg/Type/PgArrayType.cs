@@ -40,41 +40,50 @@ internal static class PgArrayTypeUtils
     /// <summary>
     /// Decode the initial metadata fields from the value buffer
     /// </summary>
-    /// <param name="value">Binary encoded value</param>
+    /// <param name="buff">Raw bytes of binary array value</param>
+    /// <param name="columnMetadata">Metadata of column to be decoded</param>
     /// <typeparam name="TElement">Array element type</typeparam>
     /// <typeparam name="TType">Array element's <see cref="IPgDbType{T}"/></typeparam>
     /// <returns>Number of items in the array</returns>
-    public static int DecodeMetaFields<TElement, TType>(ref PgBinaryValue value)
+    public static int DecodeMetaFields<TElement, TType>(
+        ref ReadOnlySpan<byte> buff,
+        in PgColumnMetadata columnMetadata)
         where TType : IPgDbType<TElement>
         where TElement : notnull
     {
-        var dimensions = value.Buffer.ReadInt();
+        var dimensions = buff.ReadInt();
         if (dimensions == 0)
         {
             return 0;
         }
 
-        ColumnDecodeException.CheckOrThrow<TElement[], PgColumnMetadata>(
-            dimensions == 1,
-            value.ColumnMetadata,
-            $"Attempted to decode an array of {dimensions} dimensions. Only 1-dimensional arrays are supported");
+        if (dimensions != 1)
+        {
+            throw ColumnDecodeException.Create<TElement[], PgColumnMetadata>(
+                columnMetadata,
+                $"Attempted to decode an array of {dimensions} dimensions. Only 1-dimensional arrays are supported");
+        }
 
         // Discard flags value. No longer in use
-        value.Buffer.ReadInt();
+        buff.ReadInt();
 
-        var elementTypeOid = value.Buffer.ReadInt();
-        ColumnDecodeException.CheckOrThrow<TElement[], PgColumnMetadata>(
-            elementTypeOid == TType.DbType.TypeOid.Inner,
-            value.ColumnMetadata,
-            $"Attempted to read an array with another element type. Expected {TType.DbType.TypeOid} but found {elementTypeOid}");
+        var elementTypeOid = buff.ReadInt();
+        if (elementTypeOid != TType.DbType.TypeOid.Inner)
+        {
+            throw ColumnDecodeException.Create<TElement[], PgColumnMetadata>(
+                columnMetadata,
+                $"Attempted to read an array with another element type. Expected {TType.DbType.TypeOid} but found {elementTypeOid}");
+        }
 
-        var length = value.Buffer.ReadInt();
-        var lowerBound = value.Buffer.ReadInt();
+        var length = buff.ReadInt();
+        var lowerBound = buff.ReadInt();
 
-        ColumnDecodeException.CheckOrThrow<TElement[], PgColumnMetadata>(
-            lowerBound == 1,
-            value.ColumnMetadata,
-            $"Attempted to read an array with a lower bound other than 1. Got {lowerBound}");
+        if (lowerBound != 1)
+        {
+            throw ColumnDecodeException.Create<TElement[], PgColumnMetadata>(
+                columnMetadata,
+                $"Attempted to read an array with a lower bound other than 1. Got {lowerBound}");
+        }
 
         return length;
     }
@@ -199,9 +208,10 @@ internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/d57b7cc3338e9d9aa1d7c5da1b25a17c5a72dcce/src/backend/utils/adt/arrayfuncs.c#L1549">pg source code</a>
     /// </summary>
-    public static TElement?[] DecodeBytes(ref PgBinaryValue value)
+    public static TElement?[] DecodeBytes(in PgBinaryValue value)
     {
-        var length = PgArrayTypeUtils.DecodeMetaFields<TElement, TType>(ref value);
+        var buff = value.Buffer;
+        var length = PgArrayTypeUtils.DecodeMetaFields<TElement, TType>(ref buff, value.ColumnMetadata);
         if (length == 0)
         {
             return [];
@@ -210,15 +220,17 @@ internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[
         var result = new TElement?[length];
         for (var i = 0; i < length; i++)
         {
-            var elementLength = value.Buffer.ReadInt();
+            var elementLength = buff.ReadInt();
             if (elementLength == -1)
             {
                 result[i] = null;
                 continue;
             }
 
-            PgBinaryValue slice = value.Slice(elementLength);
-            result[i] = TType.DecodeBytes(ref slice);
+            var slice = new PgBinaryValue(
+                buff.ReadBytesAsSpan(elementLength),
+                value.ColumnMetadata);
+            result[i] = TType.DecodeBytes(slice);
         }
 
         return result;
@@ -320,9 +332,10 @@ internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/d57b7cc3338e9d9aa1d7c5da1b25a17c5a72dcce/src/backend/utils/adt/arrayfuncs.c#L1549">pg source code</a>
     /// </summary>
-    public static TElement?[] DecodeBytes(ref PgBinaryValue value)
+    public static TElement?[] DecodeBytes(in PgBinaryValue value)
     {
-        var length = PgArrayTypeUtils.DecodeMetaFields<TElement, TType>(ref value);
+        var buff = value.Buffer;
+        var length = PgArrayTypeUtils.DecodeMetaFields<TElement, TType>(ref buff, value.ColumnMetadata);
         if (length == 0)
         {
             return [];
@@ -331,15 +344,17 @@ internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?
         var result = new TElement?[length];
         for (var i = 0; i < length; i++)
         {
-            var elementLength = value.Buffer.ReadInt();
+            var elementLength = buff.ReadInt();
             if (elementLength == -1)
             {
                 result[i] = null;
                 continue;
             }
 
-            PgBinaryValue slice = value.Slice(elementLength);
-            result[i] = TType.DecodeBytes(ref slice);
+            var slice = new PgBinaryValue(
+                buff.ReadBytesAsSpan(elementLength),
+                value.ColumnMetadata);
+            result[i] = TType.DecodeBytes(slice);
         }
 
         return result;

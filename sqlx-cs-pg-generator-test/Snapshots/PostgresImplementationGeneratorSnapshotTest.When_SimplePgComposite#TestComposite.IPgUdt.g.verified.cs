@@ -19,9 +19,9 @@ public partial struct TestComposite : IPgUdt<TestComposite>
         PgRecordEncoder.EncodeRecord(value, buffer);
     }
 
-    public static TestComposite DecodeBytes(ref PgBinaryValue value)
+    public static TestComposite DecodeBytes(in PgBinaryValue value)
     {
-        return PgRecordDecoder.DecodeBinary<TestComposite>(ref value);
+        return PgRecordDecoder.DecodeBinary<TestComposite>(in value);
     }
     
     public static TestComposite DecodeText(in PgTextValue value)

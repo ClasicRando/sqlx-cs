@@ -2,7 +2,7 @@
 ## Queries
 ### Overview
 Benchmarks are run using BenchmarkDotNet and run the same SQL query and deserialization. Init SQL:
-```postgresql
+```sql
 DROP TABLE IF EXISTS public.posts;
 CREATE TABLE public.posts (
     id int primary key generated always as identity, 
@@ -17,7 +17,7 @@ SELECT REPEAT('x', 2000), current_timestamp, current_timestamp
 FROM generate_series(1, 5000) s
 ```
 Queries executed during benchmarks:
-```postgresql
+```sql
 -- Single row
 SELECT id, text_field, creation_date, last_change_date, counter
 FROM public.posts
@@ -56,7 +56,7 @@ is minimal difference between the 2 drivers.
 ## PostgreSQL COPY
 ### Overview
 Benchmarks are run using BenchmarkDotNet and run the same SQL query and copy data. Init SQL:
-```postgresql
+```sql
 DROP TABLE IF EXISTS public.copy_target;
 CREATE TABLE public.copy_target(
     id int primary key,
@@ -65,12 +65,29 @@ CREATE TABLE public.copy_target(
     last_change_date timestamp not null,
     counter int
 );
+
+DROP TABLE IF EXISTS public.copy_source;
+CREATE TABLE public.copy_source(
+    id int primary key,
+    text_field text not null,
+    creation_date timestamp not null,
+    last_change_date timestamp not null,
+    counter int
+);
+
+INSERT INTO public.copy_source(id, text_field, creation_date, last_change_date)
+SELECT s.a, REPEAT('x', 2000), current_timestamp, current_timestamp
+FROM generate_series(1, 5000) AS s(a);
 ```
 Queries executed during benchmarks:
-```postgresql
+```sql
 COPY public.copy_target FROM STDIN WITH (FORMAT CSV);
 
 COPY public.copy_target FROM STDIN WITH (FORMAT binary);
+
+COPY public.copy_target TO STDOUT WITH (FORMAT CSV);
+
+COPY public.copy_target TO STDOUT WITH (FORMAT binary);
 ```
 
 ### Results

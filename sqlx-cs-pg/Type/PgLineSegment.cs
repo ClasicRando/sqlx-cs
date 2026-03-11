@@ -43,9 +43,18 @@ public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L2111">pg source code</a>
     /// </summary>
-    public static PgLineSegment DecodeBytes(ref PgBinaryValue value)
+    public static PgLineSegment DecodeBytes(in PgBinaryValue value)
     {
-        return new PgLineSegment(PgPoint.DecodeBytes(ref value), PgPoint.DecodeBytes(ref value));
+        var buff = value.Buffer;
+        var point1Value = new PgBinaryValue(
+            buff.ReadBytesAsSpan(PgPoint.Size),
+            value.ColumnMetadata);
+        var point2Value = new PgBinaryValue(
+            buff.ReadBytesAsSpan(PgPoint.Size),
+            value.ColumnMetadata);
+        return new PgLineSegment(
+            PgPoint.DecodeBytes(point1Value),
+            PgPoint.DecodeBytes(point2Value));
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>

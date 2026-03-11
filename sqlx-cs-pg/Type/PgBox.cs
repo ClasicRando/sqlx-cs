@@ -1,4 +1,5 @@
 using System.Buffers;
+using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
 using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Result;
@@ -51,12 +52,19 @@ public readonly struct PgBox : IPgDbType<PgBox>, IGeometryType, IHasArrayType, I
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L501">pg source code</a>
     /// </summary>
-    public static PgBox DecodeBytes(ref PgBinaryValue value)
+    public static PgBox DecodeBytes(in PgBinaryValue value)
     {
+        var buff = value.Buffer;
+        var highValue = new PgBinaryValue(
+            buff.ReadBytesAsSpan(PgPoint.Size),
+            value.ColumnMetadata);
+        var lowValue = new PgBinaryValue(
+            buff.ReadBytesAsSpan(PgPoint.Size),
+            value.ColumnMetadata);
         return new PgBox
         {
-            High = PgPoint.DecodeBytes(ref value),
-            Low = PgPoint.DecodeBytes(ref value),
+            High = PgPoint.DecodeBytes(highValue),
+            Low = PgPoint.DecodeBytes(lowValue),
         };
     }
 

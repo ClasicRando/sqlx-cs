@@ -43,7 +43,7 @@ public class PgArrayTypeStructTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        var actualValue = PgArrayTypeStruct<int, PgInt>.DecodeBytes(ref binaryValue);
+        var actualValue = PgArrayTypeStruct<int, PgInt>.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEquivalentTo(expectedValue);
     }

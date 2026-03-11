@@ -33,9 +33,10 @@ internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayTy
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L231">pg source code</a>
     /// </summary>
-    public static DateOnly DecodeBytes(ref PgBinaryValue value)
+    public static DateOnly DecodeBytes(in PgBinaryValue value)
     {
-        return PostgresEpoch.AddDays(value.Buffer.ReadInt());
+        var buff = value.Buffer;
+        return PostgresEpoch.AddDays(buff.ReadInt());
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>

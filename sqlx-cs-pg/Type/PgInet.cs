@@ -52,10 +52,10 @@ public readonly record struct PgInet : IPgDbType<PgInet>, IHasArrayType
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
     /// <see cref="NetworkUtils.DecodeNetworkValuesAsBytes{T}"/>
-    public static PgInet DecodeBytes(ref PgBinaryValue value)
+    public static PgInet DecodeBytes(in PgBinaryValue value)
     {
         (IPAddress address, var prefix) = NetworkUtils.DecodeNetworkValuesAsBytes<PgInet>(
-            ref value);
+            in value);
         return new PgInet(address, prefix);
     }
 

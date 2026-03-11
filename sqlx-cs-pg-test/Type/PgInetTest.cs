@@ -48,7 +48,7 @@ public class PgInetTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgInet actualValue = PgInet.DecodeBytes(ref binaryValue);
+        PgInet actualValue = PgInet.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

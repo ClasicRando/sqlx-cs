@@ -31,7 +31,7 @@ public class PgMacAddressTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgMacAddress actualValue = PgMacAddress.DecodeBytes(ref binaryValue);
+        PgMacAddress actualValue = PgMacAddress.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

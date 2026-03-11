@@ -41,7 +41,7 @@ public class PgUuidTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        Guid actualValue = PgUuid.DecodeBytes(ref binaryValue);
+        Guid actualValue = PgUuid.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

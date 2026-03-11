@@ -46,12 +46,13 @@ public readonly struct PgLine(double a, double b, double c)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1061">pg source code</a>
     /// </summary>
-    public static PgLine DecodeBytes(ref PgBinaryValue value)
+    public static PgLine DecodeBytes(in PgBinaryValue value)
     {
+        var buff = value.Buffer;
         return new PgLine(
-            value.Buffer.ReadDouble(),
-            value.Buffer.ReadDouble(),
-            value.Buffer.ReadDouble());
+            buff.ReadDouble(),
+            buff.ReadDouble(),
+            buff.ReadDouble());
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>

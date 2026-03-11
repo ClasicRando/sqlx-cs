@@ -59,7 +59,7 @@ public class PgBoxTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgBox actualValue = PgBox.DecodeBytes(ref binaryValue);
+        PgBox actualValue = PgBox.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

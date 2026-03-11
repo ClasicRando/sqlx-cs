@@ -36,7 +36,7 @@ public class PgCharTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        var actualValue = PgChar.DecodeBytes(ref binaryValue);
+        var actualValue = PgChar.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

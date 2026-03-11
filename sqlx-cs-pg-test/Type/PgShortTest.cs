@@ -39,7 +39,7 @@ public class PgShortTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        var actualValue = PgShort.DecodeBytes(ref binaryValue);
+        var actualValue = PgShort.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
@@ -55,7 +55,7 @@ public class PgShortTest
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
         try
         {
-            var temp = PgShort.DecodeBytes(ref binaryValue);
+            var temp = PgShort.DecodeBytes(binaryValue);
             Assert.Fail($"Decoding should have failed. Found '{temp}'");
         }
         catch (ColumnDecodeException e)
@@ -82,7 +82,7 @@ public class PgShortTest
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
         try
         {
-            PgShort.DecodeBytes(ref binaryValue);
+            PgShort.DecodeBytes(binaryValue);
             Assert.Fail("Decoding should have failed");
         }
         catch (ColumnDecodeException e)

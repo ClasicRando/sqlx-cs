@@ -43,9 +43,13 @@ public readonly struct PgCircle(PgPoint center, double radius)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L4727">pg source code</a>
     /// </summary>
-    public static PgCircle DecodeBytes(ref PgBinaryValue value)
+    public static PgCircle DecodeBytes(in PgBinaryValue value)
     {
-        return new PgCircle(PgPoint.DecodeBytes(ref value), value.Buffer.ReadDouble());
+        var buff = value.Buffer;
+        var pointValue = new PgBinaryValue(
+            buff.ReadBytesAsSpan(PgPoint.Size),
+            value.ColumnMetadata);
+        return new PgCircle(PgPoint.DecodeBytes(pointValue), buff.ReadDouble());
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>

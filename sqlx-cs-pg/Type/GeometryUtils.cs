@@ -128,13 +128,17 @@ public static class GeometryUtils
     /// </summary>
     /// <param name="value">Binary encoded value that contains a collection of points</param>
     /// <returns>An array of points decoded from the binary value</returns>
-    public static ImmutableArray<PgPoint> DecodePoints(ref PgBinaryValue value)
+    public static ImmutableArray<PgPoint> DecodePoints(in PgBinaryValue value)
     {
-        var size = value.Buffer.ReadInt();
+        var buff = value.Buffer;
+        var size = buff.ReadInt();
         ImmutableArray<PgPoint>.Builder arrayBuilder = ImmutableArray.CreateBuilder<PgPoint>(size);
         for (var i = 0; i < size; i++)
         {
-            arrayBuilder.Add(PgPoint.DecodeBytes(ref value));
+            var span = buff.ReadBytesAsSpan(PgPoint.Size);
+            var pointValue = new PgBinaryValue(span, value.ColumnMetadata);
+            PgPoint point = PgPoint.DecodeBytes(pointValue);
+            arrayBuilder.Add(point);
         }
 
         return arrayBuilder.MoveToImmutable();

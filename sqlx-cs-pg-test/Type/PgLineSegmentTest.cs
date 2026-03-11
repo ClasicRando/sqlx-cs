@@ -39,7 +39,7 @@ public class PgLineSegmentTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgLineSegment actualValue = PgLineSegment.DecodeBytes(ref binaryValue);
+        PgLineSegment actualValue = PgLineSegment.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

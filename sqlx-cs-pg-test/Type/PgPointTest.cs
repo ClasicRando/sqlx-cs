@@ -33,7 +33,7 @@ public class PgPointTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgPoint actualValue = PgPoint.DecodeBytes(ref binaryValue);
+        PgPoint actualValue = PgPoint.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

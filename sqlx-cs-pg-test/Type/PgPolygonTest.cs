@@ -76,7 +76,7 @@ public class PgPolygonTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgPolygon actualValue = PgPolygon.DecodeBytes(ref binaryValue);
+        PgPolygon actualValue = PgPolygon.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

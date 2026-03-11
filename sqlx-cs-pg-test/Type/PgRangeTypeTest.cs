@@ -39,7 +39,7 @@ public class PgRangeTypeTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        var actualValue = PgRangeType<int, PgInt>.DecodeBytes(ref binaryValue);
+        var actualValue = PgRangeType<int, PgInt>.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

@@ -39,7 +39,7 @@ public class PgCircleTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgCircle actualValue = PgCircle.DecodeBytes(ref binaryValue);
+        PgCircle actualValue = PgCircle.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

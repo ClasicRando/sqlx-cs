@@ -37,7 +37,7 @@ public class PgDateTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        DateOnly actualValue = PgDate.DecodeBytes(ref binaryValue);
+        DateOnly actualValue = PgDate.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

@@ -54,36 +54,4 @@ public class ColumnDecodeException(
             reason,
             cause);
     }
-
-    /// <summary>
-    /// Check a boolean condition and if that is false, create and throw a
-    /// <see cref="ColumnDecodeException"/> using the supplied information. This is a shorthand for:
-    /// <code>
-    /// if (!check)
-    /// {
-    ///     throw Create&lt;T&gt;(metadata, reason());
-    /// }
-    /// </code>
-    /// This method should be preferred when you decode error reason is a static string and not a
-    /// computed string since this method might allocate the string even though the check is true.
-    /// </summary>
-    /// <param name="check">boolean expression to check</param>
-    /// <param name="metadata">column metadata instance to extract column type data</param>
-    /// <param name="reason">optional reason for the decoding failure</param>
-    /// <typeparam name="TType">CLR decoding type</typeparam>
-    /// <typeparam name="TMetadata">Metadata type</typeparam>
-    /// <exception cref="ColumnDecodeException">if the check fails</exception>
-    [StackTraceHidden]
-    public static void CheckOrThrow<TType, TMetadata>(
-        [DoesNotReturnIf(false)] bool check,
-        TMetadata metadata,
-        string reason)
-        where TType : notnull
-        where TMetadata : IColumnMetadata
-    {
-        if (!check)
-        {
-            throw Create<TType, TMetadata>(metadata, reason);
-        }
-    }
 }

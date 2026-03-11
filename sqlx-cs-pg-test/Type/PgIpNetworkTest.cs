@@ -48,7 +48,7 @@ public class PgIpNetworkTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        IPNetwork actualValue = PgIpNetwork.DecodeBytes(ref binaryValue);
+        IPNetwork actualValue = PgIpNetwork.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

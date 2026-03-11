@@ -94,9 +94,9 @@ internal static class PgCompositeImplementationGenerator
                          PgRecordEncoder.EncodeRecord(value, buffer);
                      }
                  
-                     public static {{pgCompositeToGenerate.ShortName}} DecodeBytes(ref PgBinaryValue value)
+                     public static {{pgCompositeToGenerate.ShortName}} DecodeBytes(in PgBinaryValue value)
                      {
-                         return PgRecordDecoder.DecodeBinary<{{pgCompositeToGenerate.ShortName}}>(ref value);
+                         return PgRecordDecoder.DecodeBinary<{{pgCompositeToGenerate.ShortName}}>(in value);
                      }
                      
                      public static {{pgCompositeToGenerate.ShortName}} DecodeText(in PgTextValue value)

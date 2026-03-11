@@ -70,19 +70,20 @@ public abstract class PgBitString : IPgDbType<BitArray>, IHasArrayType
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/d57b7cc3338e9d9aa1d7c5da1b25a17c5a72dcce/src/backend/utils/adt/varbit.c#L681">pg source code</a>
     /// </summary>
-    public static BitArray DecodeBytes(ref PgBinaryValue value)
+    public static BitArray DecodeBytes(in PgBinaryValue value)
     {
-        var bitsLength = value.Buffer.ReadInt();
+        var buff = value.Buffer;
+        var bitsLength = buff.ReadInt();
         var bytesLength = GetByteCountFromBitCount(bitsLength);
 
-        if (bytesLength != value.Buffer.Length)
+        if (bytesLength != buff.Length)
         {
             throw ColumnDecodeException.Create<BitArray, PgColumnMetadata>(
                 value.ColumnMetadata,
-                $"Expected buffer to contain {bytesLength} bytes but found {value.Buffer.Length}");
+                $"Expected buffer to contain {bytesLength} bytes but found {buff.Length}");
         }
 
-        var bytes = value.Buffer.ReadBytes();
+        var bytes = buff.ReadBytes();
 
         for (var i = 0; i < bytes.Length; i++)
         {

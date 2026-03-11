@@ -86,12 +86,13 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/a6c21887a9f0251fa2331ea3ad0dd20b31c4d11d/src/backend/utils/adt/numeric.c#L1153">pg source code</a>
     /// </summary>
-    public static decimal DecodeBytes(ref PgBinaryValue value)
+    public static decimal DecodeBytes(in PgBinaryValue value)
     {
-        var digitCount = value.Buffer.ReadShort();
-        var weight = value.Buffer.ReadShort();
-        var sign = value.Buffer.ReadShort();
-        var scale = value.Buffer.ReadShort();
+        var buff = value.Buffer;
+        var digitCount = buff.ReadShort();
+        var weight = buff.ReadShort();
+        var sign = buff.ReadShort();
+        var scale = buff.ReadShort();
 
         if ((ushort)sign == SignNan)
         {
@@ -106,7 +107,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
             : stackalloc short[digitCount];
         for (var i = 0; i < digits.Length; i++)
         {
-            digits[i] = value.Buffer.ReadShort();
+            digits[i] = buff.ReadShort();
         }
 
         return CreateDecimal(digits, weight, sign, scale, value.ColumnMetadata);

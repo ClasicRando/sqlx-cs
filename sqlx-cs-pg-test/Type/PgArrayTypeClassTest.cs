@@ -63,7 +63,7 @@ public class PgArrayTypeClassTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        var actualValue = PgArrayTypeClass<string, PgString>.DecodeBytes(ref binaryValue);
+        var actualValue = PgArrayTypeClass<string, PgString>.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEquivalentTo(expectedValue);
     }

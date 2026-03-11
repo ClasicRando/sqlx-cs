@@ -27,9 +27,10 @@ public abstract class PgPostgresEnumType : IPgUdt<PostgresEnumType>
         buffer.WriteString(value.ToEncodeString());
     }
 
-    public static PostgresEnumType DecodeBytes(ref PgBinaryValue value)
+    public static PostgresEnumType DecodeBytes(in PgBinaryValue value)
     {
-        return PostgresEnumType.FromChars(value.Buffer.ReadString(), value.ColumnMetadata);
+        var buff = value.Buffer;
+        return PostgresEnumType.FromChars(buff.ReadString(), value.ColumnMetadata);
     }
 
     public static PostgresEnumType DecodeText(in PgTextValue value)

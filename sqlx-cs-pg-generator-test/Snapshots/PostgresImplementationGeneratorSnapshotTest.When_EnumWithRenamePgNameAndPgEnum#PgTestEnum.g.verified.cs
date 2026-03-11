@@ -27,9 +27,10 @@ public abstract class PgTestEnum : IPgUdt<TestEnum>
         buffer.WriteString(value.ToEncodeString());
     }
 
-    public static TestEnum DecodeBytes(ref PgBinaryValue value)
+    public static TestEnum DecodeBytes(in PgBinaryValue value)
     {
-        return TestEnum.FromChars(value.Buffer.ReadString(), value.ColumnMetadata);
+        var buff = value.Buffer;
+        return TestEnum.FromChars(buff.ReadString(), value.ColumnMetadata);
     }
 
     public static TestEnum DecodeText(in PgTextValue value)

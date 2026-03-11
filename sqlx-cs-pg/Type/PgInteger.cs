@@ -22,14 +22,15 @@ internal static class PgInteger
     /// <exception cref="ColumnDecodeException">
     /// If the number of bytes is not 2, 4 or 8
     /// </exception>
-    public static long ExtractInteger<T>(ref this PgBinaryValue value) where T : notnull
+    public static long ExtractInteger<T>(in this PgBinaryValue value) where T : notnull
     {
-        return value.Buffer.Length switch
+        var buff = value.Buffer;
+        return buff.Length switch
         {
-            2 => value.Buffer.ReadShort(),
-            4 when typeof(T) == typeof(uint) => value.Buffer.ReadUInt(),
-            4 => value.Buffer.ReadInt(),
-            8 => value.Buffer.ReadLong(),
+            2 => buff.ReadShort(),
+            4 when typeof(T) == typeof(uint) => buff.ReadUInt(),
+            4 => buff.ReadInt(),
+            8 => buff.ReadLong(),
             _ => throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 value.ColumnMetadata,
                 $"Could not extract integer from buffer. Number of bytes = {value.Buffer.Length}"),
@@ -45,7 +46,7 @@ internal static class PgInteger
     /// <exception cref="ColumnDecodeException">
     /// If the characters are not a valid <see cref="long"/> value
     /// </exception>
-    public static long ExtractInteger<T>(this PgTextValue value) where T : notnull
+    public static long ExtractInteger<T>(in this PgTextValue value) where T : notnull
     {
         if (!long.TryParse(value.Chars, null, out var parseResult))
         {
@@ -132,7 +133,7 @@ internal abstract class PgLong : IPgDbType<long>, IHasRangeType, IHasArrayType
     /// <summary>
     /// Read a <see cref="long"/> value from the buffer
     /// </summary>
-    public static long DecodeBytes(ref PgBinaryValue value)
+    public static long DecodeBytes(in PgBinaryValue value)
     {
         return value.ExtractInteger<long>();
     }
@@ -185,7 +186,7 @@ internal abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
     /// <exception cref="ColumnDecodeException">
     /// If the integer value is outside a valid <see cref="int"/>
     /// </exception>
-    public static int DecodeBytes(ref PgBinaryValue value)
+    public static int DecodeBytes(in PgBinaryValue value)
     {
         var integer = value.ExtractInteger<int>();
         return PgInteger.ValidateInt(integer, value.ColumnMetadata);
@@ -241,7 +242,7 @@ internal abstract class PgShort : IPgDbType<short>, IHasArrayType
     /// <exception cref="ColumnDecodeException">
     /// If the integer value is outside a valid <see cref="short"/>
     /// </exception>
-    public static short DecodeBytes(ref PgBinaryValue value)
+    public static short DecodeBytes(in PgBinaryValue value)
     {
         var integer = value.ExtractInteger<short>();
         return PgInteger.ValidateShort(integer, value.ColumnMetadata);

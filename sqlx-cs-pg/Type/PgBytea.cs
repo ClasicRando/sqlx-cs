@@ -34,9 +34,9 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/varlena.c#L490">pg source code</a>
     /// </summary>
-    public static byte[] DecodeBytes(ref PgBinaryValue value)
+    public static byte[] DecodeBytes(in PgBinaryValue value)
     {
-        return value.Buffer.ReadBytes();
+        return value.Buffer.ToArray();
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -77,13 +77,15 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
     /// <param name="value">Span of hex encoded characters</param>
     /// <param name="metadata">Column metadata</param>
     /// <returns>A byte array that corresponds to the hex string</returns>
-    private static byte[] DecodeWithPrefix(ReadOnlySpan<char> value, PgColumnMetadata metadata)
+    private static byte[] DecodeWithPrefix(ReadOnlySpan<char> value, in PgColumnMetadata metadata)
     {
         var hexCharCount = value.Length - HexStart.Length;
-        ColumnDecodeException.CheckOrThrow<byte[], PgColumnMetadata>(
-            (hexCharCount & 0x01) == 0,
-            metadata,
-            "Hex encoded byte array must have an even number of elements");
+        if ((hexCharCount & 0x01) != 0)
+        {
+            throw ColumnDecodeException.Create<byte[], PgColumnMetadata>(
+                metadata,
+                "Hex encoded byte array must have an even number of elements");
+        }
 
         var size = hexCharCount >> 1;
         var index = HexStart.Length;

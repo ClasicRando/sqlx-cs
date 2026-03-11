@@ -38,9 +38,10 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/timestamp.c#L292">pg source code</a>
     /// </summary>
-    public static DateTime DecodeBytes(ref PgBinaryValue value)
+    public static DateTime DecodeBytes(in PgBinaryValue value)
     {
-        return new DateTime(value.Buffer.ReadLong() * TimeSpan.TicksPerMicrosecond + PostgresEpochTicks);
+        var buff = value.Buffer;
+        return new DateTime(buff.ReadLong() * TimeSpan.TicksPerMicrosecond + PostgresEpochTicks);
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
