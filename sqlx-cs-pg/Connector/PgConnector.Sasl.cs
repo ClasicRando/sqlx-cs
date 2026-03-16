@@ -12,7 +12,7 @@ public partial class PgConnector
     private const string Mechanism = "SCRAM-SHA-256";
     private const string CbindFlag = "n";
     private const string Cbind = "biws";
-    
+
     /// <summary>
     /// Perform SASL authentication flow. This involves multiple back and forths with the server
     /// to fully authenticate and should resolve with an OK auth message.
@@ -37,16 +37,18 @@ public partial class PgConnector
     {
         var clientNonce = await SendScramInit(saslAuthMessage, cancellationToken)
             .ConfigureAwait(false);
-        SaslContinueAuthMessage continueAuthMessage = await ReceiveAuthMessageAs<SaslContinueAuthMessage>(cancellationToken)
-            .ConfigureAwait(false);
+        SaslContinueAuthMessage continueAuthMessage =
+            await ReceiveAuthMessageAs<SaslContinueAuthMessage>(cancellationToken)
+                .ConfigureAwait(false);
         var serverSignature = await SendClientFinalMessage(
                 continueAuthMessage,
                 clientNonce,
                 password,
                 cancellationToken)
             .ConfigureAwait(false);
-        SaslFinalAuthMessage finalAuthMessage = await ReceiveAuthMessageAs<SaslFinalAuthMessage>(cancellationToken)
-            .ConfigureAwait(false);
+        SaslFinalAuthMessage finalAuthMessage =
+            await ReceiveAuthMessageAs<SaslFinalAuthMessage>(cancellationToken)
+                .ConfigureAwait(false);
         var finalServerSignature = ValidateServerFinalMessage(finalAuthMessage);
 
         if (finalServerSignature != Convert.ToBase64String(serverSignature))
@@ -93,9 +95,9 @@ public partial class PgConnector
         var clientNonce = GetNonce();
 
         await SendSaslInitialMessage(
-            Mechanism,
-            $"{CbindFlag},,n=*,r={clientNonce}",
-            cancellationToken)
+                Mechanism,
+                $"{CbindFlag},,n=*,r={clientNonce}",
+                cancellationToken)
             .ConfigureAwait(false);
         return clientNonce;
     }
@@ -107,11 +109,11 @@ public partial class PgConnector
     {
         using var rngProvider = RandomNumberGenerator.Create();
         var nonceBytes = new byte[18];
-        
+
         rngProvider.GetBytes(nonceBytes);
         return Convert.ToBase64String(nonceBytes);
     }
-    
+
     private async Task<byte[]> SendClientFinalMessage(
         SaslContinueAuthMessage continueAuthMessage,
         string clientNonce,
@@ -134,7 +136,8 @@ public partial class PgConnector
         var serverFirstMessage = $"r={serverNonce},s={salt},i={iterations}";
         var clientFinalMessageWithoutProof = $"c={Cbind},r={serverNonce}";
 
-        var authMessage = $"{clientFirstMessageBare},{serverFirstMessage},{clientFinalMessageWithoutProof}";
+        var authMessage =
+            $"{clientFirstMessageBare},{serverFirstMessage},{clientFinalMessageWithoutProof}";
 
         var clientSignature = Hmac(storedKey, authMessage);
         Xor(clientKey, clientSignature);
@@ -176,7 +179,7 @@ public partial class PgConnector
                 // Unknown part of SCRAM continue response
             }
         }
-        
+
         PgException.ThrowIfNull(nonce);
         PgException.ThrowIfNull(salt);
         return iteration == -1
@@ -222,7 +225,7 @@ public partial class PgConnector
                 // Unknown part of SCRAM final response
             }
         }
-        
+
         PgException.ThrowIfNull(serverSignature);
         return serverSignature;
     }

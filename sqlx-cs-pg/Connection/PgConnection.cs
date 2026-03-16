@@ -92,14 +92,14 @@ public sealed class PgConnection :
     }
 
     public async IAsyncEnumerable<TRow> CopyOutRowsAsync<TRow>(
-        TableToBinary copyOutStatement,
+        CopyTableToBinary copyOutStatement,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
         where TRow : IFromRow<IPgDataRow, TRow>
     {
         ArgumentNullException.ThrowIfNull(copyOutStatement);
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        
+
         var columns = await QueryTableMetadataAsync(copyOutStatement, cancellationToken)
             .ConfigureAwait(false);
         var statementMetadata = new PgStatementMetadata(columns);
@@ -179,7 +179,7 @@ public sealed class PgConnection :
     }
 
     private async ValueTask<PgColumnMetadata[]> QueryTableMetadataAsync(
-        TableToBinary copyTable,
+        CopyTableToBinary copyTable,
         CancellationToken cancellationToken)
     {
         IPgExecutableQuery query = CreateQuery(CopyTableMetadata.Query);

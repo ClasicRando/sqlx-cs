@@ -11,7 +11,7 @@ internal interface IHasRangeType
     /// <see cref="PgTypeInfo"/> of this type's range
     /// </summary>
     static abstract PgTypeInfo RangeType { get; }
-    
+
     /// <summary>
     /// <see cref="PgTypeInfo"/> of this type's array range
     /// </summary>

@@ -1,5 +1,4 @@
 using Sqlx.Core.Query;
-using Sqlx.Postgres.Connector;
 using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
 

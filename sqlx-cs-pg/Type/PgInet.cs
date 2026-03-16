@@ -41,7 +41,7 @@ public readonly record struct PgInet : IPgDbType<PgInet>, IHasArrayType
         NetworkUtils.GetDefaultNetworkMaskSize(ipAddress))
     {
     }
-    
+
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <see cref="NetworkUtils.EncodeNetworkValue"/>
     public static void Encode(PgInet value, IBufferWriter<byte> buffer)

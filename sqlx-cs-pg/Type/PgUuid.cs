@@ -25,6 +25,7 @@ public abstract class PgUuid : IPgDbType<Guid>, IHasArrayType
                 DbType.TypeOid.Inner,
                 "Failed to write Guid bytes to buffer");
         }
+
         buffer.Advance(16);
     }
 

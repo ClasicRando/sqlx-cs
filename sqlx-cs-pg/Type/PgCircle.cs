@@ -15,7 +15,8 @@ namespace Sqlx.Postgres.Type;
 public readonly struct PgCircle(PgPoint center, double radius)
     : IPgDbType<PgCircle>, IGeometryType, IHasArrayType, IEquatable<PgCircle>
 {
-    private readonly Lazy<string> _geometryLiteral = new(() => $"<{center.GeometryLiteral},{radius}>");
+    private readonly Lazy<string> _geometryLiteral =
+        new(() => $"<{center.GeometryLiteral},{radius}>");
 
     public PgPoint Center { get; } = center;
 
@@ -74,9 +75,10 @@ public readonly struct PgCircle(PgPoint center, double radius)
                 value.ColumnMetadata,
                 $"Could not parse radius from '{value.Chars}'");
         }
+
         return new PgCircle(center, radius);
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Circle;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.CircleArray;
@@ -100,7 +102,7 @@ public readonly struct PgCircle(PgPoint center, double radius)
     {
         return HashCode.Combine(Center, Radius);
     }
-    
+
     public static bool operator ==(PgCircle left, PgCircle right)
     {
         return left.Equals(right);

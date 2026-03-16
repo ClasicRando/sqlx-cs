@@ -23,12 +23,12 @@ public sealed class AsyncConnector : IAsyncConnector
 {
     private static readonly ArrayPool<byte> ArrayPool = ArrayPool<byte>.Shared;
     private const int DefaultBufferSize = 1024 * 8;
-    
+
     private Socket? _socket;
     private Stream? _stream;
     private PipeWriter? _pipeWriter;
     private bool _disposed;
-    
+
     private byte[] _innerBuffer = ArrayPool.Rent(DefaultBufferSize);
     private int _bufferPosition;
     private int _bufferLength;
@@ -41,7 +41,8 @@ public sealed class AsyncConnector : IAsyncConnector
 
     public ReadOnlySpan<byte> ReadBuffer => _innerBuffer.AsSpan(_bufferPosition.._bufferLength);
 
-    public ReadOnlyMemory<byte> ReadBufferMemory => _innerBuffer.AsMemory(_bufferPosition.._bufferLength);
+    public ReadOnlyMemory<byte> ReadBufferMemory =>
+        _innerBuffer.AsMemory(_bufferPosition.._bufferLength);
 
     public async Task OpenAsync(string host, ushort port, CancellationToken cancellationToken)
     {
@@ -96,7 +97,7 @@ public sealed class AsyncConnector : IAsyncConnector
 
         return ipEndPoints;
     }
-    
+
     /// <summary>
     /// Fill the internal buffer up the desired length. If the buffer's size meets or exceeds the
     /// required length, no async operation is performed and the method exists early.

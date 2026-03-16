@@ -12,7 +12,7 @@ namespace Sqlx.Postgres.Type;
 internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
 {
     public const int Size = sizeof(long);
-    
+
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
     /// <para>
@@ -22,7 +22,6 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
     /// </summary>
     public static void Encode(TimeOnly value, IBufferWriter<byte> buffer)
     {
-        
         buffer.WriteLong(value.Ticks / TimeSpan.TicksPerMicrosecond);
     }
 
@@ -60,10 +59,10 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
                 value.ColumnMetadata,
                 $"Could not parse '{value.Chars}' into a time value");
         }
-        
+
         return time;
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Time;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.TimeArray;

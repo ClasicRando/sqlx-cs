@@ -6,7 +6,7 @@ namespace Sqlx.Postgres.Copy;
 /// <see cref="ICopyStatement"/> implementation for copying from STDIN as binary data into the table
 /// specified
 /// </summary>
-public record TableFromBinary : ICopyFrom, ICopyTable, ICopyBinary
+public record CopyTableFromBinary : ICopyFrom, ICopyTable, ICopyBinary
 {
     public required string SchemaName { get; init; }
 

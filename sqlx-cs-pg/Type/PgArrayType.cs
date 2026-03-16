@@ -211,7 +211,8 @@ internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[
     public static TElement?[] DecodeBytes(in PgBinaryValue value)
     {
         var buff = value.Buffer;
-        var length = PgArrayTypeUtils.DecodeMetaFields<TElement, TType>(ref buff, value.ColumnMetadata);
+        var length =
+            PgArrayTypeUtils.DecodeMetaFields<TElement, TType>(ref buff, value.ColumnMetadata);
         if (length == 0)
         {
             return [];
@@ -335,7 +336,8 @@ internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?
     public static TElement?[] DecodeBytes(in PgBinaryValue value)
     {
         var buff = value.Buffer;
-        var length = PgArrayTypeUtils.DecodeMetaFields<TElement, TType>(ref buff, value.ColumnMetadata);
+        var length =
+            PgArrayTypeUtils.DecodeMetaFields<TElement, TType>(ref buff, value.ColumnMetadata);
         if (length == 0)
         {
             return [];

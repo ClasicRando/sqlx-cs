@@ -1,8 +1,7 @@
 using Sqlx.Core.Pool;
 using Sqlx.Postgres.Connection;
-using Sqlx.Postgres.Pool;
 
-namespace Sqlx.Postgres;
+namespace Sqlx.Postgres.Pool;
 
 public static class PostgresPool
 {

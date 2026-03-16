@@ -15,7 +15,8 @@ namespace Sqlx.Postgres.Type;
 public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
     : IPgDbType<PgLineSegment>, IGeometryType, IHasArrayType, IEquatable<PgLineSegment>
 {
-    private readonly Lazy<string> _geometryLiteral = new(() => $"({point1.GeometryLiteral},{point2.GeometryLiteral})");
+    private readonly Lazy<string> _geometryLiteral =
+        new(() => $"({point1.GeometryLiteral},{point2.GeometryLiteral})");
 
     public PgPoint Point1 { get; } = point1;
 
@@ -87,7 +88,7 @@ public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
         PgPoint point2 = GeometryUtils.DecodePoint<PgLineSegment>(slice2);
         return new PgLineSegment(point1, point2);
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Lseg;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.LsegArray;
@@ -111,7 +112,7 @@ public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
     {
         return HashCode.Combine(Point1, Point2);
     }
-    
+
     public static bool operator ==(PgLineSegment left, PgLineSegment right)
     {
         return left.Equals(right);
@@ -124,6 +125,7 @@ public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
 
     public override string ToString()
     {
-        return $"{nameof(PgLineSegment)} {{ {nameof(Point1)} = {Point1}, {nameof(Point2)} = {Point2} }}";
+        return
+            $"{nameof(PgLineSegment)} {{ {nameof(Point1)} = {Point1}, {nameof(Point2)} = {Point2} }}";
     }
 }

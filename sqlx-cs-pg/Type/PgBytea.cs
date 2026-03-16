@@ -13,7 +13,7 @@ namespace Sqlx.Postgres.Type;
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-binary.html">docs</a>
 /// </summary>
-internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
+internal abstract class PgBytea : IPgDbType<byte[]>, IHasArrayType
 {
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -54,7 +54,7 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
             ? DecodeWithPrefix(value.Chars, value.ColumnMetadata)
             : DecodeWithoutPrefix(value.Chars);
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Bytea;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.ByteaArray;
@@ -96,6 +96,7 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
             var other = HexUtils.CharToDigit<byte[]>(value[index++], metadata);
             result[i] = (byte)(currentByte | other);
         }
+
         return result;
     }
 
@@ -140,6 +141,7 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
             var result = thirdDigit + secondDigit * 8 + nextChar * 8 * 8;
             buffer.WriteByte((byte)result);
         }
+
         return buffer.ReadableSpan.ToArray();
     }
 }

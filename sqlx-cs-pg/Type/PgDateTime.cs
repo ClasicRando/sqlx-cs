@@ -15,7 +15,7 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
 {
     private const long PostgresEpochSeconds = 946_684_800;
     private const long PostgresEpochTicks = PostgresEpochSeconds * TimeSpan.TicksPerSecond;
-    
+
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
     /// <para>
@@ -56,16 +56,20 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
     /// </exception>
     public static DateTime DecodeText(in PgTextValue value)
     {
-        if (DateTime.TryParse(value.Chars, null, DateTimeStyles.AdjustToUniversal, out DateTime dateTime))
+        if (DateTime.TryParse(
+                value.Chars,
+                null,
+                DateTimeStyles.AdjustToUniversal,
+                out DateTime dateTime))
         {
             return dateTime;
         }
-        
+
         throw ColumnDecodeException.Create<DateTime, PgColumnMetadata>(
             value.ColumnMetadata,
             $"Cannot parse '{value.Chars}' as a DateTime");
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Timestamp;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.TimestampArray;

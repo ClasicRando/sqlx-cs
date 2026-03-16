@@ -10,7 +10,8 @@ namespace Sqlx.Postgres.Message.Backend;
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-ERRORRESPONSE">docs</a>
 /// </summary>
-internal record NoticeResponseMessage(InformationResponse InformationResponse) : IPgBackendMessage, IPgBackendMessageDecoder<NoticeResponseMessage>
+internal record NoticeResponseMessage(InformationResponse InformationResponse)
+    : IPgBackendMessage, IPgBackendMessageDecoder<NoticeResponseMessage>
 {
     public static PgBackendMessageType MessageType => PgBackendMessageType.NoticeResponse;
 

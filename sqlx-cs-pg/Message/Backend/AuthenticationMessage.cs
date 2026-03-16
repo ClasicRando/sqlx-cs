@@ -14,7 +14,8 @@ namespace Sqlx.Postgres.Message.Backend;
 /// For all authentication messages, search for "Byte1('R')" <a href="https://www.postgresql.org/docs/current/protocol-message-formats.html">here</a>
 /// </para> 
 /// </summary>
-internal abstract class AuthenticationMessage : IPgBackendMessage, IPgBackendMessageDecoder<IAuthMessage>
+internal abstract class AuthenticationMessage : IPgBackendMessage,
+    IPgBackendMessageDecoder<IAuthMessage>
 {
     public static PgBackendMessageType MessageType => PgBackendMessageType.Authentication;
 
@@ -28,14 +29,16 @@ internal abstract class AuthenticationMessage : IPgBackendMessage, IPgBackendMes
             case 3:
                 return ClearTextPasswordAuthMessage.Instance;
             case 5:
-                var bytes = buffer.ReadBytes(4);
-                return new MD5PasswordAuthMessage(bytes);
+                throw new PgException(
+                    "MD5 passwords are not supported by sqlx-cs-pg. They have been deprecated " +
+                    "for removal by Postgres in version 18 so we will not support their usage");
             case 10:
                 List<string> authMechanisms = [];
                 while (!buffer.IsEmpty)
                 {
                     authMechanisms.Add(buffer.ReadCString());
                 }
+
                 return new SaslAuthMessage(authMechanisms);
             case 11:
                 return new SaslContinueAuthMessage(buffer.ReadString());

@@ -94,7 +94,7 @@ internal sealed class PgExecutableQuery : IPgExecutableQuery
     {
         Bind<decimal, PgDecimal>(value);
     }
-    
+
     public void Bind(byte[]? value)
     {
         this.BindRef<byte[], PgBytea>(value);
@@ -147,7 +147,7 @@ internal sealed class PgExecutableQuery : IPgExecutableQuery
     public void Dispose()
     {
         if (_disposed) return;
-        
+
         _buffer.Dispose();
         _parameterWriter.Dispose();
         _queryExecutor = null;

@@ -14,7 +14,7 @@ internal static class NetworkUtils
     private const byte PgsqlAfInet6 = PgsqlAfInet + 1;
     public const byte MaxIpv6NetmaskSize = 128;
     public const byte MaxIpv4NetmaskSize = 32;
-    
+
     /// <summary>
     /// <para>
     /// Writes 5 values to the buffer:
@@ -58,9 +58,10 @@ internal static class NetworkUtils
                 dataType.TypeOid.Inner,
                 "Wrote a different number of bytes to the parameter buffer than expected");
         }
+
         buffer.Advance(written);
     }
-    
+
     /// <summary>
     /// <para>
     /// Reads the buffer for the following components:

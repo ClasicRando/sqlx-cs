@@ -16,7 +16,7 @@ namespace Sqlx.Postgres.Type;
 internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnull
 {
     private const byte JsonBVersion = 1;
-    
+
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
     /// <para>
@@ -31,7 +31,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     {
         Encode(value, buffer, null);
     }
-    
+
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
     /// <para>
@@ -138,7 +138,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     {
         return JsonHelper.FromChars(value.Chars, typeInfo);
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Jsonb;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.JsonbArray;

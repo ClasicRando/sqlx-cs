@@ -56,10 +56,11 @@ public sealed class PgRecordEncoder : IPgBindable
             throw new PgException(
                 $"Attempted to encode a type using a {nameof(PgRecordEncoder)} but that type if not a composite or the composite type was not mapped to the connection pool using {nameof(PgConnectionPool.MapCompositeAsync)}");
         }
+
         _compositeFields = compositeType.Fields;
         _buffer.WriteInt(_compositeFields.Length);
     }
-    
+
     public void Bind(bool value)
     {
         Bind<bool, PgBool>(value);
@@ -119,7 +120,7 @@ public sealed class PgRecordEncoder : IPgBindable
     {
         Bind<decimal, PgDecimal>(value);
     }
-    
+
     public void Bind(byte[]? value)
     {
         this.BindRef<byte[], PgBytea>(value);
@@ -164,7 +165,7 @@ public sealed class PgRecordEncoder : IPgBindable
         _buffer.Dispose();
         _parameterWriter.Dispose();
     }
-    
+
     public void Bind<TValue, TType>(TValue value)
         where TType : IPgDbType<TValue>
         where TValue : notnull

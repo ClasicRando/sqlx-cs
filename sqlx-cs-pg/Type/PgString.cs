@@ -37,7 +37,7 @@ internal abstract class PgString : IPgDbType<string>, IHasArrayType
     {
         return new string(value.Chars);
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Text;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.TextArray;

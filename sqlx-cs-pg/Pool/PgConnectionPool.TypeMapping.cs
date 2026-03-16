@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Sqlx.Core.Query;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Exceptions;
@@ -22,8 +23,10 @@ internal sealed partial class PgConnectionPool
                 AND n.nspname = $2
                 AND t.typcategory = 'E'
             """;
-        using IPgConnection connection = CreateConnection();
-        using IPgExecutableQuery typeOidQuery = connection.CreateQuery(pgEnumTypeByName);
+        IPgConnection connection = CreateConnection();
+        await using ConfiguredAsyncDisposable _1 = connection.ConfigureAwait(false);
+        IPgExecutableQuery typeOidQuery = connection.CreateQuery(pgEnumTypeByName);
+        await using ConfiguredAsyncDisposable _2 = typeOidQuery.ConfigureAwait(false);
         AddTypeNameAndSchemaToQuery<TEnum, TType>(typeOidQuery);
 
         try
@@ -63,8 +66,10 @@ internal sealed partial class PgConnectionPool
                 and t.typcategory = 'C'
                 and a.attnum > 0
             """;
-        using IPgConnection connection = CreateConnection();
-        using IPgExecutableQuery typeOidQuery = connection.CreateQuery(pgCompositeTypeByName);
+        IPgConnection connection = CreateConnection();
+        await using ConfiguredAsyncDisposable _1 = connection.ConfigureAwait(false);
+        IPgExecutableQuery typeOidQuery = connection.CreateQuery(pgCompositeTypeByName);
+        await using ConfiguredAsyncDisposable _2 = typeOidQuery.ConfigureAwait(false);
         AddTypeNameAndSchemaToQuery<TComposite, TComposite>(typeOidQuery);
 
         PgOid oid;
@@ -79,8 +84,9 @@ internal sealed partial class PgConnectionPool
                 e);
         }
 
-        using IPgExecutableQuery attributeOidsQuery =
+        IPgExecutableQuery attributeOidsQuery =
             connection.CreateQuery(pgCompositeAttributeOidsByOid);
+        await using ConfiguredAsyncDisposable _3 = attributeOidsQuery.ConfigureAwait(false);
         attributeOidsQuery.Bind(oid);
 
         var attributeOids = await attributeOidsQuery

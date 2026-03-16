@@ -209,7 +209,7 @@ internal sealed class PgDataRow : IPgDataRow
                     ? default
                     : span[..length];
             }
-            
+
             if (length < 0)
             {
                 continue;
@@ -231,7 +231,7 @@ internal sealed class PgDataRow : IPgDataRow
         {
             throw new SqlxException($"Expected field #{index} to be non-null but found null");
         }
-        
+
         ref readonly PgColumnMetadata columnMetadata = ref columnData.ColumnMetadata;
         if (TType.DbType != columnMetadata.TypeInfo
             && !TType.IsCompatible(columnMetadata.TypeInfo))
@@ -274,10 +274,19 @@ internal sealed class PgDataRow : IPgDataRow
 
     private void CheckValidIndex(int index)
     {
-        if (index >= 0 && index < _columnCount) return;
-        throw new ArgumentOutOfRangeException(
-            nameof(index),
-            $"Invalid index. Must be between 0..{_columnCount - 1}");
+        switch (index)
+        {
+            case -1:
+                throw new ArgumentOutOfRangeException(
+                    nameof(index),
+                    "Invalid Index. Could not find column name");
+            case >= 0 when index < _columnCount:
+                return;
+            default:
+                throw new ArgumentOutOfRangeException(
+                    nameof(index),
+                    $"Invalid index. Must be between 0..{_columnCount - 1}");
+        }
     }
 
     private void CheckDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, typeof(PgDataRow));
@@ -287,7 +296,7 @@ internal sealed class PgDataRow : IPgDataRow
         if (_isDisposed) return;
 
         _isDisposed = true;
-        
+
         _rowData = default;
     }
 }

@@ -8,7 +8,7 @@ namespace Sqlx.Postgres.Type;
 public readonly struct PgOid(uint inner) : IEquatable<PgOid>, IPgDbType<PgOid>, IHasArrayType
 {
     public uint Inner { get; } = inner;
-    
+
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
     /// Writes the <see cref="uint"/> value to the buffer
@@ -50,7 +50,7 @@ public readonly struct PgOid(uint inner) : IEquatable<PgOid>, IPgDbType<PgOid>, 
     public static PgTypeInfo DbType => PgTypeInfo.Oid;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.OidArray;
-    
+
     public static bool IsCompatible(PgTypeInfo typeInfo)
     {
         return PgInteger.IsIntegerCompatible(typeInfo);

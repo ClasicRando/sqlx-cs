@@ -11,7 +11,7 @@ namespace Sqlx.Postgres.Notify;
 /// <param name="ProcessId">ID of the backend process that sent the notification</param>
 /// <param name="ChannelName">Channel name of the notification</param>
 /// <param name="Payload">Contents of the notification</param>
-public record PgNotification(int ProcessId, string ChannelName, string Payload)
+public readonly record struct PgNotification(int ProcessId, string ChannelName, string Payload)
     : IPgBackendMessage, IPgBackendMessageDecoder<PgNotification>
 {
     public static PgBackendMessageType MessageType => PgBackendMessageType.NotificationResponse;

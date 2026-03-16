@@ -12,7 +12,8 @@ namespace Sqlx.Postgres.Connector;
 
 public partial class PgConnector
 {
-    internal async ValueTask<PgBackendMessageType> ReceiveNextMessageType(CancellationToken cancellationToken)
+    internal async ValueTask<PgBackendMessageType> ReceiveNextMessageType(
+        CancellationToken cancellationToken)
     {
         var format = await _asyncConnector.ReadByteAsync(cancellationToken).ConfigureAwait(false);
         return (PgBackendMessageType)format;
@@ -57,7 +58,7 @@ public partial class PgConnector
         }
 
         AdvanceReadBuffer(size);
-        
+
         return metadata;
     }
 
@@ -91,7 +92,7 @@ public partial class PgConnector
         for (; i >= 0; i--)
         {
             if (char.IsDigit(message[i])) continue;
-            
+
             i++;
             break;
         }
@@ -120,7 +121,7 @@ public partial class PgConnector
         PgBackendMessageType messageType =
             await ReceiveNextMessageType(cancellationToken).ConfigureAwait(false);
         var size = await ReceiveNextMessageSize(cancellationToken).ConfigureAwait(false);
-        
+
         cancellationToken.ThrowIfCancellationRequested();
 
         if (messageType is not PgBackendMessageType.Authentication)
@@ -128,7 +129,7 @@ public partial class PgConnector
             AdvanceReadBuffer(size);
             throw new PgException($"Expected an Authentication message but found {messageType}");
         }
-        
+
         var buffer = _asyncConnector.ReadBuffer[..size];
         IAuthMessage message = AuthenticationMessage.Decode(buffer);
         AdvanceReadBuffer(size);

@@ -12,7 +12,7 @@ namespace Sqlx.Postgres.Type;
 internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayType
 {
     private static readonly DateOnly PostgresEpoch = new(2000, 1, 1);
-    
+
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
     /// <para>
@@ -55,12 +55,12 @@ internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayTy
         {
             return date;
         }
-        
+
         throw ColumnDecodeException.Create<DateOnly, PgColumnMetadata>(
             value.ColumnMetadata,
             $"Cannot parse '{value.Chars}' as a DateOnly");
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Date;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.DateArray;

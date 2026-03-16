@@ -73,7 +73,9 @@ internal sealed class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
             _pgStatementMetadata ??=
                 new PgStatementMetadata(_statements[_statementIndex++].ColumnMetadata);
         }
-        var nextStatementOnCommandComplete = !_isSyncAll && hasStatements && _statementIndex != statementCount;
+
+        var nextStatementOnCommandComplete =
+            !_isSyncAll && hasStatements && _statementIndex != statementCount;
 
         while (true)
         {

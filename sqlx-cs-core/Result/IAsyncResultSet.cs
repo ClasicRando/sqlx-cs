@@ -11,11 +11,11 @@ namespace Sqlx.Core.Result;
 /// Although this type exists and is available to use, in most cases there are extension methods for
 /// <see cref="Sqlx.Core.Query.IExecutableQuery{T}"/> to execute the query and extract rows or rows
 /// affected rather than interfacing with this type itself. However, for query batches where you are
-/// retrieving multiple result sets you can those methods are not going to work. In that case you
-/// can either:
+/// retrieving multiple result sets, you cannot use those methods since they are not going to work.
+/// In that case you can either:
 /// <list type="bullet">
 ///     <item>use this interface directly to continue to extract query results</item>
-///     <item>use this interface's extension methods to extract the know result sets</item>
+///     <item>use this interface's extension methods to extract the known result sets</item>
 /// </list>
 /// </para>
 /// </summary>

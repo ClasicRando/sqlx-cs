@@ -6,7 +6,7 @@ namespace Sqlx.Postgres.Copy;
 /// <see cref="ICopyStatement"/> implementation for copying to STDOUT as CSV data extracted from the
 /// table specified
 /// </summary>
-public record TableToCsv : ICopyTo, ICopyTable, ICopyCsv
+public record CopyTableToCsv : ICopyTo, ICopyTable, ICopyCsv
 {
     public required string SchemaName { get; init; }
 

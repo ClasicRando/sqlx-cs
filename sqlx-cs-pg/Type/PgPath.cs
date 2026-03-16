@@ -14,8 +14,8 @@ namespace Sqlx.Postgres.Type;
 public readonly struct PgPath(bool isClosed, ImmutableArray<PgPoint> points)
     : IPgDbType<PgPath>, IGeometryType, IHasArrayType, IEquatable<PgPath>
 {
-    private readonly Lazy<string> _geometryLiteral = new(
-        () => GeometryUtils.GeneratePointCollectionLiteral(points, isClosed));
+    private readonly Lazy<string> _geometryLiteral =
+        new(() => GeometryUtils.GeneratePointCollectionLiteral(points, isClosed));
 
     public bool IsClosed { get; } = isClosed;
 
@@ -72,7 +72,7 @@ public readonly struct PgPath(bool isClosed, ImmutableArray<PgPoint> points)
         var isClosed = value.Chars[0] == '(';
         return new PgPath(isClosed, GeometryUtils.DecodePoints<PgPath>(value));
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Path;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.PathArray;
@@ -96,7 +96,7 @@ public readonly struct PgPath(bool isClosed, ImmutableArray<PgPoint> points)
     {
         return HashCode.Combine(IsClosed, Points);
     }
-    
+
     public static bool operator ==(PgPath left, PgPath right)
     {
         return left.Equals(right);
@@ -109,6 +109,7 @@ public readonly struct PgPath(bool isClosed, ImmutableArray<PgPoint> points)
 
     public override string ToString()
     {
-        return $"{nameof(PgPath)} {{ {nameof(IsClosed)} = {IsClosed}, {nameof(Points)} = [{string.Join(",", Points)}] }}";
+        return
+            $"{nameof(PgPath)} {{ {nameof(IsClosed)} = {IsClosed}, {nameof(Points)} = [{string.Join(",", Points)}] }}";
     }
 }

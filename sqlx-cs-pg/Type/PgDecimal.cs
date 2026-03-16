@@ -294,7 +294,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
             buffer.WriteLong(0);
             return;
         }
-        
+
         Span<uint> bits = stackalloc uint[DecimalBits];
         decimal.GetBits(value, MemoryMarshal.Cast<uint, int>(bits));
         bits = bits[..(DecimalBits - 1)];

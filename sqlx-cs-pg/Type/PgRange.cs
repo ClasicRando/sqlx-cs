@@ -15,48 +15,47 @@ namespace Sqlx.Postgres.Type;
 public sealed class PgRange<T>(Bound<T> lower, Bound<T> upper) : IEquatable<PgRange<T>>
     where T : notnull
 {
-    private readonly Lazy<string> _postgresLiteral = new(
-        () =>
+    private readonly Lazy<string> _postgresLiteral = new(() =>
+    {
+        var builder = new StringBuilder();
+        switch (lower.Type)
         {
-            var builder = new StringBuilder();
-            switch (lower.Type)
-            {
-                case BoundType.Included:
-                    builder.Append('[');
-                    builder.Append(lower.Value);
-                    break;
-                case BoundType.Excluded:
-                    builder.Append('(');
-                    builder.Append(lower.Value);
-                    break;
-                case BoundType.Unbounded:
-                    builder.Append('(');
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            case BoundType.Included:
+                builder.Append('[');
+                builder.Append(lower.Value);
+                break;
+            case BoundType.Excluded:
+                builder.Append('(');
+                builder.Append(lower.Value);
+                break;
+            case BoundType.Unbounded:
+                builder.Append('(');
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
 
-            builder.Append(',');
-            
-            switch (upper.Type)
-            {
-                case BoundType.Included:
-                    builder.Append(upper.Value);
-                    builder.Append(']');
-                    break;
-                case BoundType.Excluded:
-                    builder.Append(upper.Value);
-                    builder.Append(')');
-                    break;
-                case BoundType.Unbounded:
-                    builder.Append(')');
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+        builder.Append(',');
 
-            return builder.ToString();
-        });
+        switch (upper.Type)
+        {
+            case BoundType.Included:
+                builder.Append(upper.Value);
+                builder.Append(']');
+                break;
+            case BoundType.Excluded:
+                builder.Append(upper.Value);
+                builder.Append(')');
+                break;
+            case BoundType.Unbounded:
+                builder.Append(')');
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
+        return builder.ToString();
+    });
 
     /// <summary>
     /// Lower bound of the range
@@ -109,7 +108,7 @@ public sealed class Bound<T> : IEquatable<Bound<T>> where T : notnull
 {
     public T? Value { get; }
     public BoundType Type { get; }
-    
+
     internal Bound(T? value, BoundType type)
     {
         Value = value;
@@ -127,10 +126,12 @@ public sealed class Bound<T> : IEquatable<Bound<T>> where T : notnull
         {
             return false;
         }
+
         if (Type is BoundType.Unbounded && other.Type is BoundType.Unbounded)
         {
             return true;
         }
+
         return Value is not null && Value.Equals(other.Value) && Type == other.Type;
     }
 
@@ -138,7 +139,7 @@ public sealed class Bound<T> : IEquatable<Bound<T>> where T : notnull
     {
         return HashCode.Combine(Value, (int)Type);
     }
-    
+
     public override string ToString()
     {
         return $"{nameof(Bound<T>)}({nameof(Value)}: {Value}, {nameof(Type)}: {Type})";
@@ -156,7 +157,7 @@ public static class Bound
     {
         return new Bound<T>(value, BoundType.Included);
     }
-    
+
     /// <summary>
     /// Create a new instance with value specified as an exclusive bound (range does not include
     /// this value)
@@ -177,7 +178,7 @@ public static class Bound
         return new Bound<T>(default, BoundType.Unbounded);
     }
 }
-    
+
 public enum BoundType
 {
     Included,

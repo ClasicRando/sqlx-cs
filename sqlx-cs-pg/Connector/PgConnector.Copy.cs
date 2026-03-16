@@ -49,7 +49,9 @@ public sealed partial class PgConnector
             switch (backendMessageType)
             {
                 case PgBackendMessageType.CopyData:
-                    await stream.WriteAsync(_asyncConnector.ReadBufferMemory[..size], cancellationToken)
+                    await stream.WriteAsync(
+                            _asyncConnector.ReadBufferMemory[..size],
+                            cancellationToken)
                         .ConfigureAwait(false);
                     AdvanceReadBuffer(size);
                     break;
@@ -79,7 +81,7 @@ public sealed partial class PgConnector
     /// <param name="cancellationToken">Token to cancel async operation</param>
     /// <returns>Stream of data rows as raw bytes</returns>
     internal async IAsyncEnumerable<TRow> CopyOut<TRow>(
-        TableToBinary copyOutStatement,
+        CopyTableToBinary copyOutStatement,
         PgStatementMetadata statementMetadata,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
         where TRow : IFromRow<IPgDataRow, TRow>
@@ -101,17 +103,17 @@ public sealed partial class PgConnector
             switch (backendMessageType)
             {
                 case PgBackendMessageType.CopyData:
-                    TRow currentRow;
+                    var rowData = _asyncConnector.ReadBufferMemory[..size];
+                    // The first row will always be prefixed by 19 bytes of header data. We can
+                    // just skip that
+                    if (isFirstRow)
                     {
-                        var rowData = _asyncConnector.ReadBufferMemory[..size];
-                        // The first row will always be prefixed by 19 bytes of header data. We can just
-                        // skip that
-                        if (isFirstRow)
-                        {
-                            isFirstRow = false;
-                            rowData = rowData[19..];
-                        }
+                        isFirstRow = false;
+                        rowData = rowData[19..];
+                    }
 
+                    // ReSharper disable once BadControlBracesIndent
+                    {
                         // The final row will just be a -1 short value to indicate no more rows are
                         // present so we skip that row. To ensure we complete the async enumeration
                         // we continue here but the enumerable should not yield any more rows
@@ -121,12 +123,13 @@ public sealed partial class PgConnector
                             AdvanceReadBuffer(size);
                             continue;
                         }
-                        
-                        using var dataRow = new PgDataRow(rowData, statementMetadata);
-                        currentRow = TRow.FromRow(dataRow);
+                    }
+
+                    using (var dataRow = new PgDataRow(rowData, statementMetadata))
+                    {
+                        yield return TRow.FromRow(dataRow);
                     }
                     AdvanceReadBuffer(size);
-                    yield return currentRow;
                     break;
                 case PgBackendMessageType.CopyDone:
                 case PgBackendMessageType.CommandComplete:
@@ -152,11 +155,12 @@ public sealed partial class PgConnector
         await WaitUntilReady(cancellationToken).ConfigureAwait(false);
         await SendQueryMessage(copyOutStatement.ToCopyQuery(), cancellationToken)
             .ConfigureAwait(false);
-        CopyOutResponseMessage message = await WaitForOrThrowError<CopyOutResponseMessage>(cancellationToken)
-            .ConfigureAwait(false);
+        CopyOutResponseMessage message =
+            await WaitForOrThrowError<CopyOutResponseMessage>(cancellationToken)
+                .ConfigureAwait(false);
         _pendingReadyForQuery++;
         _logger.LogCopyOutResponse(message);
-        
+
         Status = ConnectionStatus.Fetching;
     }
 
@@ -211,7 +215,8 @@ public sealed partial class PgConnector
         {
             var bytesWritten = 0;
             int length;
-            while ((length = await data.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false)) > 0)
+            while ((length = await data.ReadAsync(buffer.AsMemory(), cancellationToken)
+                       .ConfigureAwait(false)) > 0)
             {
                 if (bytesWritten > MaxCopyDataSendSize)
                 {
@@ -221,6 +226,7 @@ public sealed partial class PgConnector
                 WriteCopyDataMessage(buffer.AsSpan(0, length));
                 bytesWritten += length;
             }
+
             await FlushStream(cancellationToken).ConfigureAwait(false);
             await SendCopyDoneMessage(cancellationToken).ConfigureAwait(false);
         }
@@ -272,8 +278,9 @@ public sealed partial class PgConnector
         await WaitUntilReady(cancellationToken).ConfigureAwait(false);
         await SendQueryMessage(copyInStatement.ToCopyQuery(), cancellationToken)
             .ConfigureAwait(false);
-        CopyInResponseMessage message = await WaitForOrThrowError<CopyInResponseMessage>(cancellationToken)
-            .ConfigureAwait(false);
+        CopyInResponseMessage message =
+            await WaitForOrThrowError<CopyInResponseMessage>(cancellationToken)
+                .ConfigureAwait(false);
         _pendingReadyForQuery++;
         _logger.LogCopyInResponse(message);
     }
@@ -282,7 +289,7 @@ public sealed partial class PgConnector
 
     private static readonly byte[] BinaryCopyHeader =
     [
-        (byte)'P',(byte)'G',(byte)'C',(byte)'O',(byte)'P',(byte)'Y',
+        (byte)'P', (byte)'G', (byte)'C', (byte)'O', (byte)'P', (byte)'Y',
         (byte)'\n', 0xFF, (byte)'\r', (byte)'\n', 0x00,
         0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00,
@@ -368,8 +375,9 @@ public sealed partial class PgConnector
         var result = new QueryResult(0L, "Default copy in complete message");
         while (true)
         {
-            PgBackendMessageType backendMessageType = await ReceiveNextMessageType(cancellationToken)
-                .ConfigureAwait(false);
+            PgBackendMessageType backendMessageType =
+                await ReceiveNextMessageType(cancellationToken)
+                    .ConfigureAwait(false);
             var size = await ReceiveNextMessageSize(cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
             switch (backendMessageType)

@@ -46,9 +46,12 @@ public abstract record ForceAgainstColumns
                 {
                     return;
                 }
-                
+
                 AppendOptionName(builder, name);
-                select.Columns.JoinTo(builder, separator: ",", append: Utils.AppendQuotedIdentifier);
+                select.Columns.JoinTo(
+                    builder,
+                    separator: ",",
+                    append: Utils.AppendQuotedIdentifier);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(

@@ -87,7 +87,7 @@ public readonly struct PgLine(double a, double b, double c)
         }
 
         var thirdPointSpan = value.Chars.Slice(
-            secondCommaIndex + 1, 
+            secondCommaIndex + 1,
             value.Chars.Length - secondCommaIndex - 2);
         if (!double.TryParse(thirdPointSpan, out var c))
         {
@@ -122,7 +122,7 @@ public readonly struct PgLine(double a, double b, double c)
     {
         return HashCode.Combine(A, B, C);
     }
-    
+
     public static bool operator ==(PgLine left, PgLine right)
     {
         return left.Equals(right);

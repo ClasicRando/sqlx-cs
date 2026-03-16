@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("sqlx-cs-pg")]
 [assembly: InternalsVisibleTo("sqlx-cs-core-test")]
+
 namespace Sqlx.Core.Buffer;
 
 /// <summary>
@@ -16,15 +17,19 @@ public sealed class PooledArrayBufferWriter : IBufferWriter<byte>, IDisposable
 {
     private const int DefaultCapacity = 8192;
     private static readonly ArrayPool<byte> ArrayPool = ArrayPool<byte>.Shared;
-    
+
+    private bool _disposed;
     private byte[] _buffer;
 
     public PooledArrayBufferWriter(int initialCapacity = DefaultCapacity)
     {
         if (initialCapacity <= 0)
         {
-            throw new ArgumentException("Buffer size must be greater than 0", nameof(initialCapacity));
+            throw new ArgumentException(
+                "Buffer size must be greater than 0",
+                nameof(initialCapacity));
         }
+
         _buffer = ArrayPool.Rent(initialCapacity);
     }
 
@@ -35,20 +40,8 @@ public sealed class PooledArrayBufferWriter : IBufferWriter<byte>, IDisposable
     {
         get
         {
-            ObjectDisposedException.ThrowIf(WrittenCount == -1, this);
-            var writtenCount = WrittenCount;
-            if (writtenCount == 0)
-            {
-                return default;
-            }
-
-            if (writtenCount > _buffer.Length)
-            {
-                throw new InvalidOperationException(
-                    $"Written count is beyond buffer size. Buffer Size: {_buffer.Length}, Written Count: {WrittenCount}: Bytes: [{string.Join(",", _buffer)}]");
-            }
-
-            return _buffer.AsSpan(0, writtenCount);
+            var writtenCount = CheckWrittenCount();
+            return writtenCount == 0 ? default : _buffer.AsSpan(0, writtenCount);
         }
     }
 
@@ -57,21 +50,27 @@ public sealed class PooledArrayBufferWriter : IBufferWriter<byte>, IDisposable
     {
         get
         {
-            ObjectDisposedException.ThrowIf(WrittenCount == -1, this);
-            var writtenCount = WrittenCount;
-            if (writtenCount == 0)
-            {
-                return default;
-            }
-
-            if (writtenCount > _buffer.Length)
-            {
-                throw new InvalidOperationException(
-                    $"Written count is beyond buffer size. Buffer Size: {_buffer.Length}, Written Count: {WrittenCount}: Bytes: [{string.Join(",", _buffer)}]");
-            }
-
-            return _buffer.AsMemory(0, writtenCount);
+            var writtenCount = CheckWrittenCount();
+            return writtenCount == 0 ? default : _buffer.AsMemory(0, writtenCount);
         }
+    }
+
+    private int CheckWrittenCount()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        var writtenCount = WrittenCount;
+        if (writtenCount == 0)
+        {
+            return 0;
+        }
+
+        if (writtenCount > _buffer.Length)
+        {
+            throw new InvalidOperationException(
+                $"Written count is beyond buffer size. Buffer Size: {_buffer.Length}, Written Count: {WrittenCount}: Bytes: [{string.Join(",", _buffer)}]");
+        }
+
+        return writtenCount;
     }
 
     internal int StartWritingLengthPrefixed()
@@ -103,7 +102,7 @@ public sealed class PooledArrayBufferWriter : IBufferWriter<byte>, IDisposable
         {
             return;
         }
-        
+
         var currentLength = _buffer.Length;
         var growBy = int.Max(sizeHint, currentLength);
         var newSize = currentLength + growBy;
@@ -120,11 +119,14 @@ public sealed class PooledArrayBufferWriter : IBufferWriter<byte>, IDisposable
 
     public void Dispose()
     {
+        if (_disposed) return;
+
+        _disposed = true;
         ArrayPool.Return(_buffer);
         _buffer = [];
         WrittenCount = -1;
     }
-    
+
     // IBufferWriter<byte> implementation
 
     public void Advance(int count)

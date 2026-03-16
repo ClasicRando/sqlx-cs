@@ -18,7 +18,7 @@ public interface IDataRow
     /// Total number of columns for this row
     /// </summary>
     int ColumnCount { get; }
-    
+
     /// <param name="name">Column name to check</param>
     /// <returns>
     /// The 0-based index of the column name specified or -1 if the name does not exist
@@ -189,24 +189,22 @@ public static class DataRowExtensions
         /// </summary>
         /// <param name="name">name of the column to check</param>
         /// <returns>Metadata for the specified column</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IColumnMetadata GetColumnMetadata(string name)
         {
             return dataRow.GetColumnMetadata(dataRow.IndexOf(name));
         }
-        
+
         /// <summary>
         /// Extract a possibly null <see cref="bool"/> value. The <c>BOOLEAN</c> type is not consistent
         /// across all databases so the driver specific implementation might vary.
         /// </summary>
         /// <param name="index">0-based index of the column to extract</param>
         /// <returns>Boolean value at the specified column or null if the DB value was null</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool? GetBoolean(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetBooleanNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetBooleanNotNull(index);
         }
 
         /// <summary>
@@ -215,13 +213,10 @@ public static class DataRowExtensions
         /// </summary>
         /// <param name="index">0-based index of the column to extract</param>
         /// <returns>Sbyte value at the specified column or null if the DB value was null</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public sbyte? GetByte(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetByteNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetByteNotNull(index);
         }
 
         /// <summary>
@@ -230,13 +225,10 @@ public static class DataRowExtensions
         /// </summary>
         /// <param name="index">0-based index of the column to extract</param>
         /// <returns>Short value at the specified column or null if the DB value was null</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public short? GetShort(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetShortNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetShortNotNull(index);
         }
 
         /// <summary>
@@ -245,13 +237,10 @@ public static class DataRowExtensions
         /// </summary>
         /// <param name="index">0-based index of the column to extract</param>
         /// <returns>Int value at the specified column or null if the DB value was null</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int? GetInt(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetIntNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetIntNotNull(index);
         }
 
         /// <summary>
@@ -259,13 +248,10 @@ public static class DataRowExtensions
         /// </summary>
         /// <param name="index">0-based index of the column to extract</param>
         /// <returns>Long value at the specified column or null if the DB value was null</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public long? GetLong(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetLongNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetLongNotNull(index);
         }
 
         /// <summary>
@@ -275,13 +261,10 @@ public static class DataRowExtensions
         /// </summary>
         /// <param name="index">0-based index of the column to extract</param>
         /// <returns>Float value at the specified column or null if the DB value was null</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float? GetFloat(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetFloatNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetFloatNotNull(index);
         }
 
         /// <summary>
@@ -290,13 +273,10 @@ public static class DataRowExtensions
         /// </summary>
         /// <param name="index">0-based index of the column to extract</param>
         /// <returns>Double value at the specified column or null if the DB value was null</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double? GetDouble(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetDoubleNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetDoubleNotNull(index);
         }
 
         /// <summary>
@@ -304,13 +284,10 @@ public static class DataRowExtensions
         /// </summary>
         /// <param name="index">0-based index of the column to extract</param>
         /// <returns>Time value at the specified column or null if the DB value was null</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TimeOnly? GetTime(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetTimeNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetTimeNotNull(index);
         }
 
         /// <summary>
@@ -318,13 +295,10 @@ public static class DataRowExtensions
         /// </summary>
         /// <param name="index">0-based index of the column to extract</param>
         /// <returns>Date value at the specified column or null if the DB value was null</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DateOnly? GetDate(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetDateNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetDateNotNull(index);
         }
 
         /// <summary>
@@ -333,13 +307,10 @@ public static class DataRowExtensions
         /// </summary>
         /// <param name="index">0-based index of the column to extract</param>
         /// <returns>DateTime value at the specified column or null if the DB value was null</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DateTime? GetDateTime(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetDateTimeNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetDateTimeNotNull(index);
         }
 
         /// <summary>
@@ -350,13 +321,10 @@ public static class DataRowExtensions
         /// <returns>
         /// DateTimeOffset value at the specified column or null if the DB value was null
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DateTimeOffset? GetDateTimeOffset(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetDateTimeOffsetNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetDateTimeOffsetNotNull(index);
         }
 
         /// <summary>
@@ -364,13 +332,10 @@ public static class DataRowExtensions
         /// </summary>
         /// <param name="index">0-based index of the column to extract</param>
         /// <returns>Decimal value at the specified column or null if the DB value was null</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public decimal? GetDecimal(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetDecimalNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetDecimalNotNull(index);
         }
 
         /// <summary>
@@ -379,13 +344,10 @@ public static class DataRowExtensions
         /// </summary>
         /// <param name="index">0-based index of the column to extract</param>
         /// <returns>Bytes value at the specified column or null if the DB value was null</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte[]? GetBytes(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetBytesNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetBytesNotNull(index);
         }
 
         /// <summary>
@@ -394,13 +356,10 @@ public static class DataRowExtensions
         /// </summary>
         /// <param name="index">0-based index of the column to extract</param>
         /// <returns>String value at the specified column or null if the DB value was null</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string? GetString(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetStringNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetStringNotNull(index);
         }
 
         /// <summary>
@@ -411,13 +370,10 @@ public static class DataRowExtensions
         /// </summary>
         /// <param name="index">0-based index of the column to extract</param>
         /// <returns>Guid value at the specified column or null if the DB value was null</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Guid? GetGuid(int index)
         {
-            if (dataRow.IsNull(index))
-            {
-                return null;
-            }
-            return dataRow.GetGuidNotNull(index);
+            return dataRow.IsNull(index) ? null : dataRow.GetGuidNotNull(index);
         }
 
         /// <summary>
@@ -431,6 +387,7 @@ public static class DataRowExtensions
         /// <returns>
         /// <c>T</c> value at the specified column or default if the DB value was null
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T? GetJson<T>(
             int index,
             JsonTypeInfo<T>? jsonTypeInfo = null)

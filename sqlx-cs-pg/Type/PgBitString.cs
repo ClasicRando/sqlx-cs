@@ -46,9 +46,9 @@ public abstract class PgBitString : IPgDbType<BitArray>, IHasArrayType
                     currentByte += (value[bitPosition + j] ? 1 : 0) << (8 - j - 1);
                 }
 
-                bytes[i] = (byte) currentByte;
+                bytes[i] = (byte)currentByte;
             }
-            
+
             buffer.Write(bytes);
         }
         finally
@@ -89,7 +89,7 @@ public abstract class PgBitString : IPgDbType<BitArray>, IHasArrayType
         {
             bytes[i] = ReverseBits(bytes[i]);
         }
-        
+
         return new BitArray(bytes)
         {
             Length = bitsLength,
@@ -114,7 +114,7 @@ public abstract class PgBitString : IPgDbType<BitArray>, IHasArrayType
     public static BitArray DecodeText(in PgTextValue value)
     {
         var bitArray = new BitArray(value.Chars.Length);
-        
+
         for (var i = 0; i < value.Chars.Length; i++)
         {
             bitArray[i] = value.Chars[i] switch
@@ -129,7 +129,7 @@ public abstract class PgBitString : IPgDbType<BitArray>, IHasArrayType
 
         return bitArray;
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Varbit;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.VarbitArray;

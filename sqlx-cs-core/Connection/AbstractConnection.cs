@@ -4,7 +4,9 @@ using Sqlx.Core.Result;
 
 namespace Sqlx.Core.Connection;
 
-public abstract class AbstractConnection<TQuery, TBindable, TQueryBatch, TDataRow> : IConnection<TQuery, TBindable, TQueryBatch, TDataRow>
+public abstract class
+    AbstractConnection<TQuery, TBindable, TQueryBatch, TDataRow> : IConnection<TQuery, TBindable,
+    TQueryBatch, TDataRow>
     where TQuery : IExecutableQuery<TDataRow>
     where TBindable : IBindable
     where TQueryBatch : IQueryBatch<TBindable, TDataRow>

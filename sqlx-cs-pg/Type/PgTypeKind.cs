@@ -6,7 +6,14 @@ namespace Sqlx.Postgres.Type;
 
 internal interface IPgTypeKind;
 
-public readonly record struct SimpleType : IPgTypeKind;
+public record SimpleType : IPgTypeKind
+{
+    private SimpleType()
+    {
+    }
+
+    public static readonly SimpleType Instance = new();
+}
 
 public readonly record struct PseudoType : IPgTypeKind;
 

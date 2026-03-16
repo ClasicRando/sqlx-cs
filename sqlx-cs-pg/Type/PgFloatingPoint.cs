@@ -23,7 +23,7 @@ internal static class PgFloatingPoint
                 $"Could not extract float from buffer. Number of bytes = {value.Buffer.Length}"),
         };
     }
-    
+
     public static double ExtractFloat<T>(in this PgTextValue value) where T : notnull
     {
         if (!double.TryParse(value.Chars, null, out var parseResult))
@@ -32,9 +32,10 @@ internal static class PgFloatingPoint
                 value.ColumnMetadata,
                 $"Could not convert '{value.Chars}' into {typeof(T)}");
         }
+
         return parseResult;
     }
-    
+
     public static bool IsFloatCompatible(PgTypeInfo dbType)
     {
         return dbType == PgTypeInfo.Float4 || dbType == PgTypeInfo.Float8;
@@ -81,7 +82,7 @@ internal abstract class PgDouble : IPgDbType<double>, IHasArrayType
     public static PgTypeInfo DbType => PgTypeInfo.Float8;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.Float8Array;
-    
+
     public static bool IsCompatible(PgTypeInfo typeInfo)
     {
         return PgFloatingPoint.IsFloatCompatible(typeInfo);
@@ -137,13 +138,14 @@ internal abstract class PgFloat : IPgDbType<float>, IHasArrayType
                 columnMetadata,
                 "Floating point value is outside the bounds of float");
         }
+
         return (float)floatingPoint;
     }
 
     public static PgTypeInfo DbType => PgTypeInfo.Float4;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.Float4Array;
-    
+
     public static bool IsCompatible(PgTypeInfo typeInfo)
     {
         return PgFloatingPoint.IsFloatCompatible(typeInfo);

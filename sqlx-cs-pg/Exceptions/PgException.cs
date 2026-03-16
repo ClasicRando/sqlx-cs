@@ -11,17 +11,26 @@ namespace Sqlx.Postgres.Exceptions;
 /// </summary>
 public class PgException : SqlxException
 {
-    internal PgException(string message, Exception exception) : base(message, exception) {}
-    
-    internal PgException(string message) : base(message) {}
+    internal PgException(string message, Exception exception) : base(message, exception)
+    {
+    }
 
-    internal PgException(ErrorResponseMessage errorResponse) : this($"General Postgresql Error:\n{errorResponse.InformationResponse}") {}
+    internal PgException(string message) : base(message)
+    {
+    }
+
+    internal PgException(ErrorResponseMessage errorResponse) : this(
+        $"General Postgresql Error:\n{errorResponse.InformationResponse}")
+    {
+    }
 
     [StackTraceHidden]
-    internal static void ThrowIfNull<T>([NotNull] T? value, [CallerArgumentExpression(nameof(value))] string name = "") where T : notnull
+    internal static void ThrowIfNull<T>(
+        [NotNull] T? value,
+        [CallerArgumentExpression(nameof(value))] string name = "") where T : notnull
     {
         if (value is not null) return;
-        
+
         throw new PgException($"Expected value {name} to be non-null");
     }
 }

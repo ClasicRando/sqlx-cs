@@ -42,7 +42,7 @@ public sealed partial class PgConnector
         Charsets.Default.GetBytes(DefaultPropertiesStr);
 
     private PipeWriter Writer => _asyncConnector.Writer;
-    
+
     /// <summary>
     /// Write all buffered content to the <see cref="_asyncConnector"/> and reset the
     /// <see cref="Writer"/> for future writes.
@@ -57,7 +57,9 @@ public sealed partial class PgConnector
         }
     }
 
-    private ValueTask SendStartupMessage(PgConnectOptions options, CancellationToken cancellationToken)
+    private ValueTask SendStartupMessage(
+        PgConnectOptions options,
+        CancellationToken cancellationToken)
     {
         var extractFloatPointsStr = options.ExtraFloatPoints.ToString(CultureInfo.InvariantCulture);
         var queryTimeout = int.Max((int)options.QueryTimeout.TotalMilliseconds, 0);
@@ -199,12 +201,12 @@ public sealed partial class PgConnector
                      sizeof(short) + (sizeof(uint) * pgTypes.Count) + sizeof(int);
         Writer.WriteInt(length);
         Writer.WriteCString(preparedStatementName);
-        
+
         var span = Writer.GetSpan(queryByteLength);
         Charsets.Default.GetBytes(query, span);
         Writer.Advance(queryByteLength);
         Writer.WriteByte(0);
-        
+
         Writer.WriteShort((short)pgTypes.Count);
         foreach (PgTypeInfo pgType in pgTypes)
         {
@@ -223,18 +225,20 @@ public sealed partial class PgConnector
         Writer.WriteCString(preparedStatementName);
     }
 
-    internal ValueTask SendQueryMessage(in ReadOnlySpan<char> query, CancellationToken cancellationToken)
+    internal ValueTask SendQueryMessage(
+        in ReadOnlySpan<char> query,
+        CancellationToken cancellationToken)
     {
         Writer.WriteCode(PgFrontendMessageType.Query);
         var queryByteLength = Charsets.Default.GetByteCount(query);
         var length = queryByteLength + sizeof(byte) + sizeof(int);
         Writer.WriteInt(length);
-        
+
         var span = Writer.GetSpan(queryByteLength);
         Charsets.Default.GetBytes(query, span);
         Writer.Advance(queryByteLength);
         Writer.WriteByte(0);
-        
+
         return FlushStream(cancellationToken);
     }
 

@@ -213,7 +213,6 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
             stream.Id);
         CloseStream(stream);
         return false;
-
     }
 
     [SuppressMessage(

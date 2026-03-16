@@ -6,7 +6,7 @@ namespace Sqlx.Postgres.Copy;
 /// <see cref="ICopyStatement"/> implementation for copying from STDIN as CSV data into the table
 /// specified
 /// </summary>
-public record TableFromCsv : ICopyFrom, ICopyTable, ICopyCsv
+public record CopyTableFromCsv : ICopyFrom, ICopyTable, ICopyCsv
 {
     public required string SchemaName { get; init; }
 
@@ -36,7 +36,7 @@ public record TableFromCsv : ICopyFrom, ICopyTable, ICopyCsv
     /// strings rather than nulls, even when they are not quoted.
     /// </summary>
     public ForceAgainstColumns.SelectNames? ForceNotNull { get; init; }
-    
+
     /// <summary>
     /// Match the specified columns' values against the null string, even if it has been quoted, and
     /// if a match is found set the value to NULL. In the default case where the null string is

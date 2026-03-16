@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Sqlx.Core.Exceptions;
 
 namespace Sqlx.Core.Result;
 
@@ -28,7 +27,7 @@ public static class AsyncResultSet
 
             return result;
         }
-        
+
         /// <summary>
         /// Collect all results and sum the <see cref="QueryResult.RowsAffected"/> values returned
         /// from the database to represent all rows affected by the executed query(s).
@@ -52,7 +51,7 @@ public static class AsyncResultSet
 
             return result;
         }
-        
+
         /// <summary>
         /// Stream all rows until the end of the current query result. Each row is mapped to
         /// <typeparamref name="TRow"/> using the static constructor method

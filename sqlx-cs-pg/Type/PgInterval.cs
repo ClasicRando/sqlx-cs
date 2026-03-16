@@ -29,9 +29,10 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
     {
         return Months > 0
             ? throw new ArgumentException("TimeSpan does not support a month value", nameof(Months))
-            : new TimeSpan(Microseconds * TimeSpan.TicksPerMicrosecond + Days * TimeSpan.TicksPerDay);
+            : new TimeSpan(
+                Microseconds * TimeSpan.TicksPerMicrosecond + Days * TimeSpan.TicksPerDay);
     }
-    
+
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
     /// <para>
@@ -123,6 +124,7 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
                     {
                         month = currentNumber * scale;
                     }
+
                     currentNumber = 0;
                     scale = 1;
                     break;
@@ -202,6 +204,7 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
                     {
                         millisecond = currentNumber * scale;
                     }
+
                     break;
                 case '0':
                 case '1':
@@ -219,6 +222,7 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
                         millisecond = currentNumber * scale;
                         currentNumber = 0;
                     }
+
                     break;
             }
         }
@@ -227,10 +231,10 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
             year * 12 + month,
             week * 7 + day,
             hour * MicrosecondsPerHour +
-                minute * MicrosecondsPerMinute +
-                second * MicrosecondsPerSecond +
-                millisecond * MicrosecondsPerMillisecond +
-                microsecond);
+            minute * MicrosecondsPerMinute +
+            second * MicrosecondsPerSecond +
+            millisecond * MicrosecondsPerMillisecond +
+            microsecond);
     }
 
     public static PgTypeInfo DbType => PgTypeInfo.Interval;

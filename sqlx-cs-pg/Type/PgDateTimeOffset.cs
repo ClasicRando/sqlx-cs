@@ -40,7 +40,7 @@ public abstract class PgDateTimeOffset : IPgDbType<DateTimeOffset>, IHasRangeTyp
     {
         return new DateTimeOffset(PgDateTime.DecodeText(value), TimeSpan.Zero);
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Timestamptz;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.TimestamptzArray;

@@ -64,7 +64,7 @@ public readonly struct PgPolygon(ImmutableArray<PgPoint> points)
     {
         return new PgPolygon(GeometryUtils.DecodePoints<PgPolygon>(value));
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Polygon;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.PolygonArray;
@@ -91,14 +91,17 @@ public readonly struct PgPolygon(ImmutableArray<PgPoint> points)
             {
                 x1 = point.X;
             }
+
             if (point.X > x2)
             {
                 x2 = point.X;
             }
+
             if (point.Y < y1)
             {
                 y1 = point.Y;
             }
+
             if (point.Y > y2)
             {
                 y2 = point.Y;
@@ -126,7 +129,7 @@ public readonly struct PgPolygon(ImmutableArray<PgPoint> points)
     {
         return HashCode.Combine(Points);
     }
-    
+
     public static bool operator ==(PgPolygon left, PgPolygon right)
     {
         return left.Equals(right);

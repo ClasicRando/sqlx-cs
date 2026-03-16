@@ -19,7 +19,7 @@ public partial class PgConnectionTest
         try
         {
             using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-            ICopyTo copyStatement = new TableToCsv
+            ICopyTo copyStatement = new CopyTableToCsv
             {
                 SchemaName = "public",
                 TableName = "copy_out_test",
@@ -51,7 +51,7 @@ public partial class PgConnectionTest
     [Test]
     public async Task CopyOutRowsAsync_Should_CopyRows_When_CopyTable(CancellationToken ct)
     {
-        var copyStatement = new TableToBinary
+        var copyStatement = new CopyTableToBinary
         {
             SchemaName = "public",
             TableName = "copy_out_test",
@@ -88,7 +88,7 @@ public partial class PgConnectionTest
             using IPgExecutableQuery
                 query = connection.CreateQuery("TRUNCATE public.copy_out_test");
             await query.ExecuteNonQueryAsync(ct);
-            ICopyFrom copyStatement = new TableFromCsv
+            ICopyFrom copyStatement = new CopyTableFromCsv
             {
                 SchemaName = "public",
                 TableName = "copy_out_test",
@@ -110,7 +110,7 @@ public partial class PgConnectionTest
         CancellationToken ct)
     {
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-        var copyStatement = new TableFromBinary
+        var copyStatement = new CopyTableFromBinary
         {
             SchemaName = "public",
             TableName = "copy_out_test",

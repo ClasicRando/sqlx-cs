@@ -65,7 +65,7 @@ internal static class PgInteger
                || dbType == PgTypeInfo.Int2
                || dbType == PgTypeInfo.Oid;
     }
-    
+
     /// <summary>
     /// Check to see if this <see cref="long"/> value is a valid <see cref="uint"/>
     /// </summary>
@@ -79,9 +79,10 @@ internal static class PgInteger
         {
             Integers.ThrowColumnDecodeException<uint, PgColumnMetadata>(columnMetadata);
         }
+
         return (uint)value;
     }
-    
+
     /// <summary>
     /// Check to see if this <see cref="long"/> value is a valid int
     /// </summary>
@@ -95,9 +96,10 @@ internal static class PgInteger
         {
             Integers.ThrowColumnDecodeException<int, PgColumnMetadata>(columnMetadata);
         }
+
         return (int)value;
     }
-    
+
     /// <summary>
     /// Check to see if this <see cref="long"/> value is a valid short
     /// </summary>
@@ -111,6 +113,7 @@ internal static class PgInteger
         {
             Integers.ThrowColumnDecodeException<short, PgColumnMetadata>(columnMetadata);
         }
+
         return (short)value;
     }
 }

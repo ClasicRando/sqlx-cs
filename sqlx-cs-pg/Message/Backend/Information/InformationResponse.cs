@@ -65,65 +65,80 @@ internal class InformationResponse
     /// Severity of the message
     /// </summary>
     public Severity Severity { get; }
+
     /// <summary>
     /// SQLSTATE code of the message
     /// </summary>
     public SqlState Code { get; }
+
     /// <summary>
     /// Human-readable version of the message
     /// </summary>
     public string Message { get; }
+
     /// <summary>
     /// Optional extra details along with the message
     /// </summary>
     public string? Detail { get; }
+
     /// <summary>
     /// Optional suggestion about the problem
     /// </summary>
     public string? Hint { get; }
+
     /// <summary>
     /// Error cursor position within the original query string. Index is character not bytes
     /// </summary>
     public int? Position { get; }
+
     /// <summary>
     /// Pair where the first value is the error cursor position within the internal command and the
     /// second value is the internal command's query (e.g. the SQL query within a PL/pgsql
     /// function).
     /// </summary>
     public KeyValuePair<int, string>? InternalQueryData { get; }
+
     /// <summary>
     /// Call stack traceback of the active procedural language function or internal-generated query
     /// </summary>
     public string? Where { get; }
+
     /// <summary>
     /// If the message is associated with a specific database object, this is the name of the schema
     /// containing the object
     /// </summary>
     public string? SchemaName { get; }
+
     /// <summary>
     /// If the message is associated with a specific database table, this is the name of the table
     /// </summary>
     public string? TableName { get; }
+
     /// <summary>
     /// If the message is associated with a specific table column, this is the name of the column
     /// </summary>
     public string? ColumnName { get; }
+
     /// <summary>
     /// If the message is associated with a specific data type, this is the name of the data type
     /// </summary>
     public string? DataTypeName { get; }
+
     /// <summary>
     /// If the message is associated with a specific constraint, this is the name of the constraint
     /// </summary>
     public string? ConstraintName { get; }
+
     /// <summary>
     /// The file name of the source code where the error was reported
     /// </summary>
     public string? File { get; }
+
     /// <summary>
     /// The line number of the source code where the error was reported
     /// </summary>
     public int? Line { get; }
+
     /// <summary>
     /// The name of the source code routine reporting the error
     /// </summary>
@@ -136,23 +151,23 @@ internal class InformationResponse
             ? $"Position={InternalQueryData.Value.Key}, Query={InternalQueryData.Value.Value}"
             : string.Empty;
         return $"""
-               Severity: {Severity.AsReadOnlySpan()}
-               SQL State: {errorCode} -> ${conditionName}
-               Message: {Message}
-               Detail: {Detail}
-               Hint: {Hint}
-               Position: {Position}
-               Internal Query Data: {internalQueryString}
-               Where: {Where}
-               Schema: {SchemaName}
-               Table: {TableName}
-               Column: {ColumnName}
-               Data Type: {DataTypeName}
-               Constraint: {ConstraintName}
-               File: {File}
-               Line: {Line}
-               Routine: {Routine}
-               """;
+                Severity: {Severity.AsReadOnlySpan()}
+                SQL State: {errorCode} -> ${conditionName}
+                Message: {Message}
+                Detail: {Detail}
+                Hint: {Hint}
+                Position: {Position}
+                Internal Query Data: {internalQueryString}
+                Where: {Where}
+                Schema: {SchemaName}
+                Table: {TableName}
+                Column: {ColumnName}
+                Data Type: {DataTypeName}
+                Constraint: {ConstraintName}
+                File: {File}
+                Line: {Line}
+                Routine: {Routine}
+                """;
     }
 
     /// <summary>
@@ -172,13 +187,13 @@ internal class InformationResponse
         {
             var kind = buffer.ReadByte();
             if (kind == 0) continue;
-            
+
             fields[kind] = buffer.ReadCString();
         }
 
         return new InformationResponse(fields);
     }
-    
+
     private static string ThrowIfMissing(
         Dictionary<byte, string> fields,
         byte desiredField)

@@ -40,7 +40,7 @@ public interface IPgConnection :
     /// If the copy statement is not <see cref="ICopyQuery"/> or <see cref="ICopyTable"/>
     /// </exception>
     IAsyncEnumerable<TRow> CopyOutRowsAsync<TRow>(
-        TableToBinary copyOutStatement,
+        CopyTableToBinary copyOutStatement,
         CancellationToken cancellationToken = default)
         where TRow : IFromRow<IPgDataRow, TRow>;
 

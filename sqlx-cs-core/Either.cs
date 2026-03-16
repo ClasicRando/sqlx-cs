@@ -17,14 +17,21 @@ public readonly record struct Either<TLeft, TRight>
         Right = right;
         IsLeft = isLeft;
     }
-    
+
     public bool IsLeft { get; }
 
     public bool IsRight => !IsLeft;
 
-    public TLeft Left => IsLeft ? field : throw new InvalidOperationException($"Tried to access {nameof(Left)} when value is {nameof(Right)}");
+    public TLeft Left =>
+        IsLeft
+            ? field
+            : throw new InvalidOperationException(
+                $"Tried to access {nameof(Left)} when value is {nameof(Right)}");
 
-    public TRight Right => !IsLeft ? field : throw new InvalidOperationException($"Tried to access {nameof(Left)} when value is {nameof(Right)}");
+    public TRight Right => !IsLeft
+        ? field
+        : throw new InvalidOperationException(
+            $"Tried to access {nameof(Right)} when value is {nameof(Left)}");
 }
 
 public static class Either
@@ -33,7 +40,7 @@ public static class Either
     {
         return new Either<TLeft, TRight>(left, default, true);
     }
-    
+
     public static Either<TLeft, TRight> Right<TLeft, TRight>(TRight right)
     {
         return new Either<TLeft, TRight>(default, right, false);

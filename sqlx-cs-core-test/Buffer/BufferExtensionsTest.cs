@@ -35,7 +35,7 @@ public class BufferExtensionsTest
             }
             catch (Exception e)
             {
-                await Assert.That(e).IsTypeOf<SourceExhaustedException>();
+                await Assert.That(e).IsTypeOf<InvalidOperationException>();
             }
         }
 

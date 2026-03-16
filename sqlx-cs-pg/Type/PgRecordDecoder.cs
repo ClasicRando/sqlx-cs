@@ -89,11 +89,13 @@ public static class PgRecordDecoder
             {
                 continue;
             }
-            
+
             bufferWriter.Write(buff.ReadBytesAsSpan(attributeLength));
         }
 
-        using var row = new PgDataRow(bufferWriter.ReadableMemory, new PgStatementMetadata(columns));
+        using var row = new PgDataRow(
+            bufferWriter.ReadableMemory,
+            new PgStatementMetadata(columns));
         return T.FromRow(row);
     }
 
@@ -114,7 +116,7 @@ public static class PgRecordDecoder
             throw new PgException(
                 $"Mismatch in attribute counts. Expected {compositeType.Fields.Length}, Found {attributeLiterals.Count}");
         }
-        
+
         var columns = new PgColumnMetadata[attributeLiterals.Count];
         using PooledArrayBufferWriter bufferWriter = new();
         bufferWriter.WriteShort((short)attributeLiterals.Count);
@@ -145,7 +147,9 @@ public static class PgRecordDecoder
             bufferWriter.Advance(literalByteCount);
         }
 
-        using var row = new PgDataRow(bufferWriter.ReadableMemory, new PgStatementMetadata(columns));
+        using var row = new PgDataRow(
+            bufferWriter.ReadableMemory,
+            new PgStatementMetadata(columns));
         return T.FromRow(row);
     }
 
@@ -158,7 +162,7 @@ public static class PgRecordDecoder
                 value.ColumnMetadata,
                 $"Composite literal must be enclosed in parenthesis. Found '{value.Chars}'");
         }
-        
+
         List<string?> result = [];
         using ReadOnlySpan<char>.Enumerator chars = value.Chars[1..^1].GetEnumerator();
         var builder = new StringBuilder();
@@ -177,7 +181,7 @@ public static class PgRecordDecoder
                     isDone = true;
                     break;
                 }
-                
+
                 var currentChar = chars.Current;
                 if (inEscape)
                 {
@@ -198,6 +202,7 @@ public static class PgRecordDecoder
                         {
                             builder.Append(currentChar);
                         }
+
                         break;
                     }
                     case '\\' when !inEscape:
@@ -210,7 +215,7 @@ public static class PgRecordDecoder
                         builder.Append(currentChar);
                         break;
                 }
-                
+
                 if (foundDelimiter) break;
 
                 previousChar = currentChar;

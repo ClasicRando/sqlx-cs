@@ -59,7 +59,8 @@ internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
     {
         return value.Chars.Length switch
         {
-            4 => (sbyte)(((value.Chars[1] - '0') << 6) | ((value.Chars[2] - '0') << 3) | (value.Chars[3] - '0')),
+            4 => (sbyte)(((value.Chars[1] - '0') << 6) | ((value.Chars[2] - '0') << 3) |
+                         (value.Chars[3] - '0')),
             1 => (sbyte)value.Chars[0],
             0 => 0,
             _ => throw ColumnDecodeException.Create<sbyte, PgColumnMetadata>(

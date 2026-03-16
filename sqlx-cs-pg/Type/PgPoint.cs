@@ -18,7 +18,7 @@ public readonly struct PgPoint(double x, double y)
     private readonly Lazy<string> _geometryLiteral = new(() => $"({x},{y})");
 
     public double X { get; } = x;
-    
+
     public double Y { get; } = y;
 
     public string GeometryLiteral => _geometryLiteral.Value;
@@ -73,7 +73,7 @@ public readonly struct PgPoint(double x, double y)
     {
         return GeometryUtils.DecodePoint<PgPoint>(value);
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Point;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.PointArray;
@@ -97,7 +97,7 @@ public readonly struct PgPoint(double x, double y)
     {
         return HashCode.Combine(X, Y);
     }
-    
+
     public static bool operator ==(PgPoint left, PgPoint right)
     {
         return left.Equals(right);

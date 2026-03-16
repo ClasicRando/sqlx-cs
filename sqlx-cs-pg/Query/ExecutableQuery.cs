@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
@@ -23,12 +24,13 @@ public static class ExecutableQuery
             where TType : IPgDbType<TValue>
             where TValue : notnull
         {
-            using var resultSet = await executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            using var resultSet = await executableQuery.ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
             if (!await resultSet.MoveNextAsync(cancellationToken).ConfigureAwait(false))
             {
                 throw new InvalidOperationException("Scalar queries must return at least 1 row");
             }
-            
+
             var current = resultSet.Current;
             return current.IsLeft
                 ? current.Left.GetPgNotNull<TValue, TType>(0)
@@ -63,12 +65,13 @@ public static class ExecutableQuery
             CancellationToken cancellationToken = default)
             where TValue : notnull
         {
-            using var resultSet = await executableQuery.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            using var resultSet = await executableQuery.ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
             if (!await resultSet.MoveNextAsync(cancellationToken).ConfigureAwait(false))
             {
                 throw new InvalidOperationException("Scalar queries must return at least 1 row");
             }
-            
+
             var current = resultSet.Current;
             return current.IsLeft
                 ? current.Left.GetJsonNotNull(0, jsonTypeInfo)
@@ -76,6 +79,7 @@ public static class ExecutableQuery
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchAsync{TDataRow,TRow}"/>>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IAsyncEnumerable<TRow> FetchAsync<TRow>(
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<IPgDataRow, TRow>
@@ -84,6 +88,7 @@ public static class ExecutableQuery
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchAllAsync{TDataRow,TRow}"/>>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Task<List<TRow>> FetchAllAsync<TRow>(
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<IPgDataRow, TRow>
@@ -92,6 +97,7 @@ public static class ExecutableQuery
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchFirstAsync{TDataRow,TRow}"/>>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Task<TRow> FetchFirstAsync<TRow>(CancellationToken cancellationToken = default)
             where TRow : IFromRow<IPgDataRow, TRow>
         {
@@ -99,6 +105,7 @@ public static class ExecutableQuery
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchFirstOrDefaultAsync{TDataRow,TRow}"/>>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Task<TRow?> FetchFirstOrDefaultAsync<TRow>(
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<IPgDataRow, TRow>
@@ -107,6 +114,7 @@ public static class ExecutableQuery
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchSingleAsync{TDataRow,TRow}"/>>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Task<TRow> FetchSingleAsync<TRow>(
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<IPgDataRow, TRow>
@@ -115,6 +123,7 @@ public static class ExecutableQuery
         }
 
         /// <inheritdoc cref="Core.Query.ExecutableQuery.FetchSingleOrDefaultAsync{TDataRow,TRow}"/>>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Task<TRow?> FetchSingleOrDefaultAsync<TRow>(
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<IPgDataRow, TRow>

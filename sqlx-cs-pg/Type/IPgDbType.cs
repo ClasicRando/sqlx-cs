@@ -19,7 +19,7 @@ public interface IPgDbType<T> where T : notnull
     /// <param name="value">Value to encode</param>
     /// <param name="buffer">Buffer to encode into</param>
     static abstract void Encode(T value, IBufferWriter<byte> buffer);
-    
+
     /// <param name="value">Binary encoded value sent from the database</param>
     /// <returns>
     /// A new instance of <typeparamref name="T"/> decoded from the binary encoded value
@@ -31,7 +31,7 @@ public interface IPgDbType<T> where T : notnull
     /// A new instance of <typeparamref name="T"/> decoded from the text encoded value
     /// </returns>
     static abstract T DecodeText(in PgTextValue value);
-    
+
     /// <summary>
     /// <see cref="PgTypeInfo"/> definition for this type
     /// </summary>

@@ -86,7 +86,7 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
             offsetStart = value.Chars.Length;
             return 0;
         }
-        
+
         var offsetChar = value.Chars[offsetStart];
         if (offsetChar is 'Z')
         {
@@ -108,6 +108,7 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
                     value.ColumnMetadata,
                     $"Could not parse offset from '{value.Chars}'");
             }
+
             offset += result * (int)Math.Pow(60.0, digitMultiplier--);
         }
 
