@@ -4,52 +4,48 @@ using Sqlx.Core;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Column;
 using Sqlx.Core.Exceptions;
-using Sqlx.Core.Result;
 using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Result;
 
 /// <summary>
-/// <see cref="IDataRow"/> implementation for Postgres. Represents the bytes sent by the database
-/// backend, the statement's metadata and the slices into the bytes that represent each column.
+/// <see cref="Sqlx.Core.Result.IDataRow"/> implementation for Postgres. Represents the bytes sent
+/// by the database backend and the statement's metadata.
 /// </summary>
-internal sealed class PgDataRow : IPgDataRow
+internal abstract class AbstractPgDataRow : IPgDataRow
 {
     private const int MaxStackSize = 256 / (sizeof(char) / sizeof(byte));
     private static readonly ArrayPool<char> CharArrayPool = ArrayPool<char>.Shared;
-
-    private bool _isDisposed;
-    private ReadOnlyMemory<byte> _rowData;
-    private readonly PgStatementMetadata _statementMetadata;
-    private readonly short _columnCount;
-
-    public PgDataRow(ReadOnlyMemory<byte> rowData, PgStatementMetadata statementMetadata)
+    
+    protected ReadOnlyMemory<byte> RowData;
+    protected PgStatementMetadata? StatementMetadata;
+        
+    public int ColumnCount
     {
-        _rowData = rowData;
-        _statementMetadata = statementMetadata;
-        var temp = rowData.Span;
-        _columnCount = temp.ReadShort();
+        get
+        {
+            CheckIfWithinRow();
+            return StatementMetadata!.ColumnCount;
+        }
     }
-
-    public int ColumnCount => _columnCount;
 
     public int IndexOf(string name)
     {
-        CheckDisposed();
-        return _statementMetadata.IndexOfFieldName(name);
+        CheckIfWithinRow();
+        return StatementMetadata!.IndexOfFieldName(name);
     }
 
     public IColumnMetadata GetColumnMetadata(int index)
     {
-        CheckDisposed();
+        CheckIfWithinRow();
         CheckValidIndex(index);
-        return _statementMetadata[index];
+        return StatementMetadata![index];
     }
 
     public bool IsNull(int index)
     {
-        CheckDisposed();
+        CheckIfWithinRow();
         return GetColumnData(index).IsNull;
     }
 
@@ -130,7 +126,7 @@ internal sealed class PgDataRow : IPgDataRow
 
     public T GetJsonNotNull<T>(int index, JsonTypeInfo<T>? jsonTypeInfo = null) where T : notnull
     {
-        CheckDisposed();
+        CheckIfWithinRow();
         ColumnData columnData = GetColumnData(index);
         if (columnData.IsNull)
         {
@@ -190,15 +186,16 @@ internal sealed class PgDataRow : IPgDataRow
     private ColumnData GetColumnData(int index)
     {
         CheckValidIndex(index);
-        ref PgColumnMetadata columnMetadata = ref _statementMetadata[index];
+        ref PgColumnMetadata columnMetadata = ref StatementMetadata![index];
         var span = GetColumnSpan(index, out var isNull);
         return new ColumnData(isNull, span, in columnMetadata);
     }
 
     private ReadOnlySpan<byte> GetColumnSpan(int index, out bool isNull)
     {
-        var span = _rowData.Span[2..];
-        for (var i = 0; i < _columnCount; i++)
+        var columnCount = ColumnCount;
+        var span = RowData.Span[2..];
+        for (var i = 0; i < columnCount; i++)
         {
             var length = span.ReadInt();
 
@@ -225,7 +222,7 @@ internal sealed class PgDataRow : IPgDataRow
         where TType : IPgDbType<TResult>
         where TResult : notnull
     {
-        CheckDisposed();
+        CheckIfWithinRow();
         ColumnData columnData = GetColumnData(index);
         if (columnData.IsNull)
         {
@@ -274,29 +271,37 @@ internal sealed class PgDataRow : IPgDataRow
 
     private void CheckValidIndex(int index)
     {
+        var columnCount = ColumnCount;
         switch (index)
         {
             case -1:
                 throw new ArgumentOutOfRangeException(
                     nameof(index),
                     "Invalid Index. Could not find column name");
-            case >= 0 when index < _columnCount:
+            case >= 0 when index < columnCount:
                 return;
             default:
                 throw new ArgumentOutOfRangeException(
                     nameof(index),
-                    $"Invalid index. Must be between 0..{_columnCount - 1}");
+                    $"Invalid index. Must be between 0..{columnCount - 1}");
         }
     }
 
-    private void CheckDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, typeof(PgDataRow));
+    private void CheckIfWithinRow()
+    {
+        if (RowData.IsEmpty)
+        {
+            throw new InvalidOperationException(
+                "Attempted to interact with row while row data not loaded");
+        }
+    }
+
+    protected abstract void Dispose(bool disposing);
 
     public void Dispose()
     {
-        if (_isDisposed) return;
-
-        _isDisposed = true;
-
-        _rowData = default;
+        RowData = default;
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

@@ -5,6 +5,8 @@ namespace Sqlx.Postgres.Result;
 internal sealed class PgStatementMetadata
 {
     private readonly PgColumnMetadata[] _columns;
+
+    public int ColumnCount => _columns.Length;
     
     public PgStatementMetadata(PgColumnMetadata[] columns)
     {

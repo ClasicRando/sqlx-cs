@@ -5,7 +5,6 @@ using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Message.Auth;
 using Sqlx.Postgres.Message.Backend;
-using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Connector;
@@ -62,12 +61,11 @@ public partial class PgConnector
         return metadata;
     }
 
-    internal PgDataRow ReceiveRowDataMessage(int size, PgStatementMetadata pgStatementMetadata)
+    internal ReadOnlyMemory<byte> ReceiveRowDataMessage(int size)
     {
         var buffer = _asyncConnector.ReadBufferMemory[..size];
-        var dataRow = new PgDataRow(buffer, pgStatementMetadata);
         AdvanceReadBuffer(size);
-        return dataRow;
+        return buffer;
     }
 
     internal QueryResult ReceiveQueryResult(int size)

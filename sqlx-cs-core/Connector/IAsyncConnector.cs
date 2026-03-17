@@ -30,18 +30,18 @@ public interface IAsyncConnector : IDisposable
     /// True if the underlining stream is connected to the host
     /// </summary>
     bool IsConnected { get; }
-    
+
     /// <summary>
     /// Writer for the underlining stream
     /// </summary>
     PipeWriter Writer { get; }
-    
+
     /// <summary>
     /// Read-only view of the read buffer. This span is only valid until a call to
     /// <see cref="EnsureBufferFilled"/> where the underlining buffer might become reset.
     /// </summary>
     ReadOnlySpan<byte> ReadBuffer { get; }
-    
+
     /// <summary>
     /// Read-only view of the read buffer. This memory segment is only valid until a call to
     /// <see cref="EnsureBufferFilled"/> where the underlining buffer might become reset. Prefer
@@ -49,7 +49,7 @@ public interface IAsyncConnector : IDisposable
     /// that a ref struct can persist.
     /// </summary>
     ReadOnlyMemory<byte> ReadBufferMemory { get; }
-    
+
     /// <summary>
     /// Open the stream's connection to a remote host at the specified port
     /// </summary>
@@ -88,14 +88,15 @@ public static class AsyncConnectorExtensions
         [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
         public async ValueTask<byte> ReadByteAsync(CancellationToken cancellationToken)
         {
-            await asyncConnector.EnsureBufferFilled(sizeof(byte), cancellationToken)
+            const int bytesNeeded = sizeof(byte);
+            await asyncConnector.EnsureBufferFilled(bytesNeeded, cancellationToken)
                 .ConfigureAwait(false);
             var span = asyncConnector.ReadBuffer;
             var result = span.ReadByte();
-            asyncConnector.AdvanceBufferPosition(sizeof(byte));
+            asyncConnector.AdvanceBufferPosition(bytesNeeded);
             return result;
         }
-        
+
         /// <summary>
         /// Read 4 bytes from the connection as an int. Returns immediately if the internal read
         /// buffer has enough bytes already.
@@ -105,11 +106,12 @@ public static class AsyncConnectorExtensions
         [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
         public async ValueTask<int> ReadIntAsync(CancellationToken cancellationToken)
         {
-            await asyncConnector.EnsureBufferFilled(sizeof(int), cancellationToken)
+            const int bytesNeeded = sizeof(int);
+            await asyncConnector.EnsureBufferFilled(bytesNeeded, cancellationToken)
                 .ConfigureAwait(false);
             var span = asyncConnector.ReadBuffer;
             var result = span.ReadInt();
-            asyncConnector.AdvanceBufferPosition(sizeof(int));
+            asyncConnector.AdvanceBufferPosition(bytesNeeded);
             return result;
         }
     }

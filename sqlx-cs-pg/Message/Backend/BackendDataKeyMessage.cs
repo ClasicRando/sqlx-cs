@@ -10,13 +10,15 @@ namespace Sqlx.Postgres.Message.Backend;
 /// </list>
 /// <a href="https://www.postgresql.org/docs/current/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-BACKENDKEYDATA">docs</a>
 /// </summary>
-internal sealed class BackendDataKeyMessage(int processId, int secretKey)
+internal readonly record struct BackendDataKeyMessage(int ProcessId, int SecretKey)
     : IPgBackendMessage, IPgBackendMessageDecoder<BackendDataKeyMessage>
 {
     public static PgBackendMessageType MessageType => PgBackendMessageType.BackendDataKey;
 
-    internal int ProcessId { get; } = processId;
-    internal int SecretKey { get; } = secretKey;
+    public override string ToString()
+    {
+        return $"{nameof(BackendDataKeyMessage)}({nameof(ProcessId)}={ProcessId})";
+    }
 
     public static BackendDataKeyMessage Decode(ReadOnlySpan<byte> buffer)
     {

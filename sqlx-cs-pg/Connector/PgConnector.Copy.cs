@@ -16,7 +16,7 @@ namespace Sqlx.Postgres.Connector;
 
 public sealed partial class PgConnector
 {
-    private const int MaxCopyDataSendSize = 8192;
+    private const int MaxCopyBufferSize = 1024 * 8;
 
     /// <summary>
     /// Execute a <c>COPY TO</c> statement against this connection. Initiates the copy operation
@@ -89,6 +89,7 @@ public sealed partial class PgConnector
         ThrowIfNotOpen();
 
         using UserAction _ = StartUserAction();
+        using SimplePgDataRow dataRow = new();
 
         await InitializeCopyOut(copyOutStatement, cancellationToken).ConfigureAwait(false);
 
@@ -103,17 +104,16 @@ public sealed partial class PgConnector
             switch (backendMessageType)
             {
                 case PgBackendMessageType.CopyData:
-                    var rowData = _asyncConnector.ReadBufferMemory[..size];
-                    // The first row will always be prefixed by 19 bytes of header data. We can
-                    // just skip that
-                    if (isFirstRow)
-                    {
-                        isFirstRow = false;
-                        rowData = rowData[19..];
-                    }
-
                     // ReSharper disable once BadControlBracesIndent
                     {
+                        var rowData = _asyncConnector.ReadBufferMemory[..size];
+                        // The first row will always be prefixed by 19 bytes of header data. We can
+                        // just skip that
+                        if (isFirstRow)
+                        {
+                            isFirstRow = false;
+                            rowData = rowData[19..];
+                        }
                         // The final row will just be a -1 short value to indicate no more rows are
                         // present so we skip that row. To ensure we complete the async enumeration
                         // we continue here but the enumerable should not yield any more rows
@@ -123,12 +123,11 @@ public sealed partial class PgConnector
                             AdvanceReadBuffer(size);
                             continue;
                         }
-                    }
 
-                    using (var dataRow = new PgDataRow(rowData, statementMetadata))
-                    {
+                        dataRow.SetRowData(rowData, statementMetadata);
                         yield return TRow.FromRow(dataRow);
                     }
+
                     AdvanceReadBuffer(size);
                     break;
                 case PgBackendMessageType.CopyDone:
@@ -213,18 +212,19 @@ public sealed partial class PgConnector
         var buffer = ArrayPool<byte>.Shared.Rent(1024 * 4);
         try
         {
-            var bytesWritten = 0;
+            var bytesBuffered = 0;
             int length;
             while ((length = await data.ReadAsync(buffer.AsMemory(), cancellationToken)
                        .ConfigureAwait(false)) > 0)
             {
-                if (bytesWritten > MaxCopyDataSendSize)
+                if (bytesBuffered > MaxCopyBufferSize)
                 {
                     await FlushStream(cancellationToken).ConfigureAwait(false);
+                    bytesBuffered = 0;
                 }
 
                 WriteCopyDataMessage(buffer.AsSpan(0, length));
-                bytesWritten += length;
+                bytesBuffered += length;
             }
 
             await FlushStream(cancellationToken).ConfigureAwait(false);
@@ -284,8 +284,6 @@ public sealed partial class PgConnector
         _pendingReadyForQuery++;
         _logger.LogCopyInResponse(message);
     }
-
-    private const int MaxCopyBufferSize = 8192;
 
     private static readonly byte[] BinaryCopyHeader =
     [

@@ -9,7 +9,7 @@ using Sqlx.Postgres.Query;
 
 namespace Sqlx.Postgres.Result;
 
-internal sealed class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
+internal sealed class PgAsyncResultSet : AbstractPgDataRow, IAsyncResultSet<IPgDataRow>
 {
     private bool _disposed;
     private bool _isBeforeStart = true;
@@ -20,7 +20,6 @@ internal sealed class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
     private readonly PgConnector.UserAction _userAction;
     private readonly PgPreparedStatement[] _statements;
     private readonly bool _isSyncAll;
-    private PgStatementMetadata? _pgStatementMetadata;
 
     public PgAsyncResultSet(
         PgConnector connector,
@@ -45,32 +44,24 @@ internal sealed class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
                     "Attempted to view current item before starting result collection")
                 : field;
         }
-        private set
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-            if (!_isBeforeStart && field.IsLeft)
-            {
-                field.Left.Dispose();
-            }
-
-            field = value;
-        }
+        private set;
     }
 
     public async ValueTask<bool> MoveNextAsync(CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         _isBeforeStart = false;
+        RowData = default;
         var statementCount = _statements.Length;
         var hasStatements = statementCount > 0;
-        if (_pgStatementMetadata is null && hasStatements && _statementIndex >= statementCount)
+        if (StatementMetadata is null && hasStatements && _statementIndex >= statementCount)
         {
             return false;
         }
 
         if (hasStatements)
         {
-            _pgStatementMetadata ??=
+            StatementMetadata ??=
                 new PgStatementMetadata(_statements[_statementIndex++].ColumnMetadata);
         }
 
@@ -92,27 +83,24 @@ internal sealed class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
             {
                 case PgBackendMessageType.RowDescription:
                     var columnMetadata = _connector.ReceiveRowDescriptionMessage(size);
-                    _pgStatementMetadata = new PgStatementMetadata(columnMetadata);
+                    StatementMetadata = new PgStatementMetadata(columnMetadata);
                     break;
                 case PgBackendMessageType.DataRow:
-#pragma warning disable CA2000
-                    PgDataRow dataRow =
-                        _connector.ReceiveRowDataMessage(size, _pgStatementMetadata!);
-#pragma warning restore CA2000
-                    Current = Either.Left<IPgDataRow, QueryResult>(dataRow);
+                    RowData = _connector.ReceiveRowDataMessage(size);
+                    Current = Either.Left<IPgDataRow, QueryResult>(this);
                     return true;
                 case PgBackendMessageType.CommandComplete:
                     QueryResult queryResult = _connector.ReceiveQueryResult(size);
                     Current = Either.Right<IPgDataRow, QueryResult>(queryResult);
                     if (nextStatementOnCommandComplete)
                     {
-                        _pgStatementMetadata = null;
+                        StatementMetadata = null;
                     }
 
                     return true;
                 case PgBackendMessageType.ReadyForQuery:
                     _connector.HandleReadyForQueryMessage(size);
-                    _pgStatementMetadata = null;
+                    StatementMetadata = null;
                     return _connector.PendingReadyForQuery > 0;
                 case PgBackendMessageType.BindComplete:
                 case PgBackendMessageType.ParseComplete:
@@ -132,15 +120,11 @@ internal sealed class PgAsyncResultSet : IAsyncResultSet<IPgDataRow>
         }
     }
 
-    public void Dispose()
+    protected override void Dispose(bool disposing)
     {
         if (_disposed) return;
 
         _userAction.Dispose();
-        if (!_isBeforeStart && Current.IsLeft)
-        {
-            Current.Left.Dispose();
-        }
 
         _disposed = true;
         _connector = null!;

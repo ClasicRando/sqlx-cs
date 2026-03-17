@@ -93,7 +93,7 @@ public static class PgRecordDecoder
             bufferWriter.Write(buff.ReadBytesAsSpan(attributeLength));
         }
 
-        using var row = new PgDataRow(
+        using var row = new SimplePgDataRow(
             bufferWriter.ReadableMemory,
             new PgStatementMetadata(columns));
         return T.FromRow(row);
@@ -147,7 +147,7 @@ public static class PgRecordDecoder
             bufferWriter.Advance(literalByteCount);
         }
 
-        using var row = new PgDataRow(
+        using var row = new SimplePgDataRow(
             bufferWriter.ReadableMemory,
             new PgStatementMetadata(columns));
         return T.FromRow(row);
