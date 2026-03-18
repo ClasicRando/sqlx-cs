@@ -33,7 +33,7 @@ public class PgTimeTzTest
         var value = new PgTimeTz(
             new TimeOnly(hour, minute, second, millisecond, microsecond),
             offset);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgTimeTz.Encode(value, buffer);
 

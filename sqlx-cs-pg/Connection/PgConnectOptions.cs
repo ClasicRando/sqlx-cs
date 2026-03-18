@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Sqlx.Core.Buffer;
 using Sqlx.Core.Connector;
 using Sqlx.Postgres.Auth.Sasl;
 
@@ -48,6 +49,7 @@ public record PgConnectOptions
     /// disabled. Default to 15 seconds.
     /// <see cref="Timeout.InfiniteTimeSpan"/>
     /// </summary>
+    /// <exception cref="ArgumentException">If the value is zero or negative</exception>
     public TimeSpan ConnectTimeout
     {
         get;
@@ -55,6 +57,42 @@ public record PgConnectOptions
             ? throw new ArgumentException("Connect timeout cannot be zero or negative")
             : value;
     } = TimeSpan.FromSeconds(15);
+
+    /// <summary>
+    /// <para>
+    /// Optional read buffer size passed to the underlining stream manager. This value is the
+    /// initial and resting buffer size. If the read buffer needs to be larger than this value to
+    /// read a message, the buffer will grow and return to this size in subsequent reads.
+    /// </para>
+    /// <para>
+    /// This value should almost never be set. Although it might be tempting to make this smaller to
+    /// conserve memory, it's likely the buffer will expand to match message protocol packets either
+    /// way. Generally users should only set this larger than the default because the data rows you
+    /// will receive are going to surpass this size.
+    /// </para>
+    /// </summary>
+    /// <exception cref="ArgumentException">If the value is zero or negative</exception>
+    public int ReadBufferSize
+    {
+        get;
+        init => field = value <= 0
+            ? throw new ArgumentException("Read buffer size must be a non-zero, positive value")
+            : value;
+    } = BufferConstants.DefaultBufferSize;
+
+    /// <summary>
+    /// Optional write buffer size passed to the underlining stream manager. This value is the
+    /// initial and resting buffer size. If the write buffer needs to be larger than this value to
+    /// send a message, the buffer will grow and return to this size in subsequent writes.
+    /// </summary>
+    /// <exception cref="ArgumentException">If the value is zero or negative</exception>
+    public int WriteBufferSize
+    {
+        get;
+        init => field = value <= 0
+            ? throw new ArgumentException("Write buffer size must be a non-zero, positive value")
+            : value;
+    } = BufferConstants.DefaultBufferSize;
 
     /// <summary>
     /// Optional global query timeout. Values less than or equal to zero are treated as a disabled

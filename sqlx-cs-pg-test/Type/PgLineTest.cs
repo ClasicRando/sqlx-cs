@@ -18,7 +18,7 @@ public class PgLineTest
             0, 0, 0,
         ];
         var value = new PgLine(5.63, 8.59, 4);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgLine.Encode(value, buffer);
 

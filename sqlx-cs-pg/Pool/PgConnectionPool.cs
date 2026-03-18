@@ -22,7 +22,9 @@ internal sealed partial class PgConnectionPool
 
     protected override PgConnector CreateNewConnection()
     {
-        return new PgConnector(new AsyncConnector(), ConnectOptions);
+        return new PgConnector(
+            new AsyncConnector(ConnectOptions.ReadBufferSize, ConnectOptions.WriteBufferSize),
+            ConnectOptions);
     }
 
     public IPgConnection CreateConnection()

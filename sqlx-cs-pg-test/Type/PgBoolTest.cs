@@ -14,7 +14,7 @@ public class PgBoolTest
     [Arguments(false, new byte[] { 0 })]
     public async Task Encode_Should_WriteByte(bool value, byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgBool.Encode(value, buffer);
 

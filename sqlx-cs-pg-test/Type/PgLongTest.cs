@@ -19,7 +19,7 @@ public class PgLongTest
     [Arguments(long.MaxValue, new byte[] { 127, 255, 255, 255, 255, 255, 255, 255 })]
     public async Task Encode_Should_WriteLong(long value, byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgLong.Encode(value, buffer);
 

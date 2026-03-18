@@ -26,6 +26,7 @@ namespace Sqlx.Postgres.Connector;
 /// </summary>
 public sealed partial class PgConnector : IPooledConnection
 {
+    private const int MessageHeaderSize = sizeof(byte) + sizeof(int);
     private const string BeginQuery = "BEGIN;";
     private const string CommitQuery = "COMMIT;";
     private const string RollbackQuery = "ROLLBACK;";
@@ -601,6 +602,11 @@ public sealed partial class PgConnector : IPooledConnection
     {
         Status = ConnectionStatus.Broken;
         Dispose();
+    }
+
+    public void Cleanup()
+    {
+        _asyncConnector.ResetBuffers();
     }
 
     private void CheckDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);

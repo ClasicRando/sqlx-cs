@@ -30,7 +30,7 @@ public class PgDecimalTest
     [Arguments("-12345678", new byte[] { 0, 2, 0, 1, 64, 0, 0, 0, 4, 210, 22, 46 })]
     public async Task Encode_Should_WriteDecimal(string str, byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
         var value = decimal.Parse(str);
 
         PgDecimal.Encode(value, buffer);

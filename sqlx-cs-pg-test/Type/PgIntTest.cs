@@ -17,7 +17,7 @@ public class PgIntTest
     [Arguments(int.MaxValue, new byte[] { 127, 255, 255, 255 })]
     public async Task Encode_Should_WriteInt(int value, byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgInt.Encode(value, buffer);
 

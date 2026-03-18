@@ -5,7 +5,6 @@ using CsvHelper;
 using Npgsql;
 using Sqlx.Core.Pool;
 using Sqlx.Core.Result;
-using Sqlx.Postgres;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Copy;
 using Sqlx.Postgres.Pool;

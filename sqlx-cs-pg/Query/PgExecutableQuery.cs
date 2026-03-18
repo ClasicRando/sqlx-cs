@@ -16,14 +16,14 @@ internal sealed class PgExecutableQuery : IPgExecutableQuery
 {
     private bool _disposed;
     private PgConnection? _queryExecutor;
-    private readonly PooledArrayBufferWriter _buffer;
+    private readonly ArrayBufferWriter _buffer;
     private readonly PgParameterWriter _parameterWriter;
 
     public PgExecutableQuery(string sql, PgConnection queryExecutor)
     {
         _queryExecutor = queryExecutor;
         Query = sql;
-        _buffer = new PooledArrayBufferWriter();
+        _buffer = new ArrayBufferWriter();
         _parameterWriter = new PgParameterWriter(_buffer);
     }
 

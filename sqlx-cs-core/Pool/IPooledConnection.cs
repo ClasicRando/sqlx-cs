@@ -35,4 +35,6 @@ public interface IPooledConnection : IDisposable
     /// <param name="cancellationToken">Token to cancel the async operations</param>
     /// <returns>True if the connection is still valid</returns>
     Task<bool> IsValidAsync(CancellationToken cancellationToken);
+
+    void Cleanup();
 }

@@ -4,8 +4,8 @@ using JetBrains.Annotations;
 
 namespace Sqlx.Core.Buffer;
 
-[TestSubject(typeof(PooledArrayBufferWriter))]
-public class PooledArrayBufferWriterTest
+[TestSubject(typeof(ArrayBufferWriter))]
+public class ArrayBufferWriterTest
 {
     [Test]
     [Arguments(54)]
@@ -13,7 +13,7 @@ public class PooledArrayBufferWriterTest
     [Arguments(byte.MinValue)]
     public async Task WriteByte_Should_FillBufferWithByte(byte value)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
         
         buffer.WriteByte(value);
         
@@ -26,7 +26,7 @@ public class PooledArrayBufferWriterTest
     [Arguments(short.MinValue)]
     public async Task WriteShort_Should_FillBufferWithShort(short value)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
         var shortValue = BitConverter.IsLittleEndian
             ? BinaryPrimitives.ReverseEndianness(value)
             : value;
@@ -43,7 +43,7 @@ public class PooledArrayBufferWriterTest
     [Arguments(int.MinValue)]
     public async Task WriteInt_Should_FillBufferWithInt(int value)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
         var intValue = BitConverter.IsLittleEndian
             ? BinaryPrimitives.ReverseEndianness(value)
             : value;
@@ -65,7 +65,7 @@ public class PooledArrayBufferWriterTest
     [Arguments(long.MinValue)]
     public async Task WriteLong_Should_FillBufferWithLong(long value)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
         var longValue = BitConverter.IsLittleEndian
             ? BinaryPrimitives.ReverseEndianness(value)
             : value;
@@ -91,7 +91,7 @@ public class PooledArrayBufferWriterTest
     [Arguments(float.MinValue)]
     public async Task WriteFloat_Should_FillBufferWithFloat(float value)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
         var floatValue = BitConverter.IsLittleEndian
             ? BinaryPrimitives.ReverseEndianness(BitConverter.SingleToInt32Bits(value))
             : BitConverter.SingleToInt32Bits(value);
@@ -113,7 +113,7 @@ public class PooledArrayBufferWriterTest
     [Arguments(double.MinValue)]
     public async Task WriteDouble_Should_FillBufferWithDouble(double value)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
         var doubleValue = BitConverter.IsLittleEndian
             ? BinaryPrimitives.ReverseEndianness(BitConverter.DoubleToInt64Bits(value))
             : BitConverter.DoubleToInt64Bits(value);
@@ -136,7 +136,7 @@ public class PooledArrayBufferWriterTest
     [Test]
     public async Task WriteString_Should_FillBufferWithUtf8Bytes()
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
         const string value = "This is a test";
 
         buffer.WriteString(value);
@@ -147,7 +147,7 @@ public class PooledArrayBufferWriterTest
     [Test]
     public async Task WriteCString_Should_FillBufferWithNullTerminatedUtf8Bytes()
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
         const string value = "This is a test";
 
         buffer.WriteCString(value);
@@ -161,7 +161,7 @@ public class PooledArrayBufferWriterTest
     [Arguments(false)]
     public async Task WriteLengthPrefixed_Should_AllowForWritingToBufferWithALengthPrefix(bool includeLength)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
         
         var startingPosition = buffer.StartWritingLengthPrefixed();
         buffer.WriteByte(1);

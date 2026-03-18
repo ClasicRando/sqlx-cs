@@ -41,7 +41,7 @@ namespace Sqlx.Postgres.Type;
 public sealed class PgRecordEncoder : IPgBindable
 {
     private readonly ImmutableArray<CompositeField> _compositeFields;
-    private readonly PooledArrayBufferWriter _buffer;
+    private readonly ArrayBufferWriter _buffer;
     private readonly PgParameterWriter _parameterWriter;
 
     private ReadOnlySpan<byte> Data => _buffer.ReadableSpan;
@@ -49,7 +49,7 @@ public sealed class PgRecordEncoder : IPgBindable
     private PgRecordEncoder(PgTypeInfo typeInfo)
     {
         ArgumentNullException.ThrowIfNull(typeInfo);
-        _buffer = new PooledArrayBufferWriter();
+        _buffer = new ArrayBufferWriter();
         _parameterWriter = new PgParameterWriter(_buffer);
         if (typeInfo.TypeKind is not CompositeType compositeType)
         {

@@ -14,10 +14,10 @@ namespace Sqlx.Postgres.Query;
 /// </summary>
 internal sealed class PgParameterWriter : IPgBindable
 {
-    private readonly PooledArrayBufferWriter _buffer;
+    private readonly ArrayBufferWriter _buffer;
     private readonly List<PgTypeInfo> _pgTypes = [];
 
-    public PgParameterWriter(PooledArrayBufferWriter buffer)
+    public PgParameterWriter(ArrayBufferWriter buffer)
     {
         _buffer = buffer;
     }
@@ -150,7 +150,7 @@ internal sealed class PgParameterWriter : IPgBindable
     public void Reset()
     {
         _pgTypes.Clear();
-        _buffer.Reset();
+        _buffer.Clear();
     }
 
     public void Dispose()

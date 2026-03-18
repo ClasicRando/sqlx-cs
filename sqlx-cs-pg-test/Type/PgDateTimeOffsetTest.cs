@@ -34,7 +34,7 @@ public class PgDateTimeOffsetTest
             millisecond,
             microsecond,
             TimeSpan.FromHours(offsetHours));
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgDateTimeOffset.Encode(value, buffer);
 

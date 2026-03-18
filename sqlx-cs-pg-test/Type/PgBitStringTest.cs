@@ -18,7 +18,7 @@ public class PgBitStringTest
     public async Task Encode_Should_WriteVarBit(bool[] bits, byte[] expectedBytes)
     {
         var value = new BitArray(bits);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgBitString.Encode(value, buffer);
 

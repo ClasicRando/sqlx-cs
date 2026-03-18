@@ -15,7 +15,7 @@ public class PgShortTest
     [Arguments(short.MaxValue, new byte[] { 127, 255 })]
     public async Task Encode_Should_WriteShort(short value, byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgShort.Encode(value, buffer);
 

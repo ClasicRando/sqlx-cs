@@ -66,7 +66,7 @@ public static class PgRecordDecoder
         }
 
         var columns = new PgColumnMetadata[attributeCount];
-        using PooledArrayBufferWriter bufferWriter = new();
+        using ArrayBufferWriter bufferWriter = new();
         bufferWriter.WriteShort((short)attributeCount);
 
         for (var i = 0; i < attributeCount; i++)
@@ -118,7 +118,7 @@ public static class PgRecordDecoder
         }
 
         var columns = new PgColumnMetadata[attributeLiterals.Count];
-        using PooledArrayBufferWriter bufferWriter = new();
+        using ArrayBufferWriter bufferWriter = new();
         bufferWriter.WriteShort((short)attributeLiterals.Count);
 
         for (var i = 0; i < attributeLiterals.Count; i++)

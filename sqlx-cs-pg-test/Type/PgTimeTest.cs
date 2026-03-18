@@ -23,7 +23,7 @@ public class PgTimeTest
         byte[] expectedBytes)
     {
         var value = new TimeOnly(hour, minute, second, millisecond, microsecond);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgTime.Encode(value, buffer);
 

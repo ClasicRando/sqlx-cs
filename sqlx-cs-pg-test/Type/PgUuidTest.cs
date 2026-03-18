@@ -19,7 +19,7 @@ public class PgUuidTest
     public async Task Encode_Should_WriteGuid(string uuid, byte[] address)
     {
         Guid value = Guid.Parse(uuid);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgUuid.Encode(value, buffer);
 

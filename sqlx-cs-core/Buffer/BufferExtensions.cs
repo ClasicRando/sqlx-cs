@@ -357,13 +357,13 @@ public static class BufferExtensions
         /// </para>
         /// <para>
         /// This is a general method for all buffer writers but does have a special case for
-        /// <see cref="PooledArrayBufferWriter"/> to avoid copying to a temp buffer before
-        /// performing the final write. A temp buffer is needed in other cases because there is no
-        /// way to reliably write a prefix and update it later with the actual number of bytes
-        /// written. Therefore, we must first perform the write action to a temp buffer, write that
-        /// size to the target buffer and finally copy all bytes to the target buffer. In the case
-        /// where the target buffer is a <see cref="PooledArrayBufferWriter"/> there is custom
-        /// functionality to write length prefix so we defer to that instead.
+        /// <see cref="ArrayBufferWriter"/> to avoid copying to a temp buffer before performing the
+        /// final write. A temp buffer is needed in other cases because there is no way to reliably
+        /// write a prefix and update it later with the actual number of bytes written. Therefore,
+        /// we must first perform the write action to a temp buffer, write that size to the target
+        /// buffer and finally copy all bytes to the target buffer. In the case where the target
+        /// buffer is a <see cref="ArrayBufferWriter"/> there is custom functionality to write
+        /// length prefix so we defer to that instead.
         /// </para>
         /// </summary>
         /// <param name="writeAction">Write actions that must be length prefixed</param>
@@ -376,7 +376,7 @@ public static class BufferExtensions
             bool includeLength = true)
         {
             ArgumentNullException.ThrowIfNull(writeAction);
-            if (bufferWriter is PooledArrayBufferWriter wb)
+            if (bufferWriter is ArrayBufferWriter wb)
             {
                 var startLocation = wb.StartWritingLengthPrefixed();
                 writeAction(wb);
@@ -384,7 +384,7 @@ public static class BufferExtensions
                 return;
             }
 
-            using PooledArrayBufferWriter tempWriter = new(initialCapacity: 1024);
+            using ArrayBufferWriter tempWriter = new(initialCapacity: 1024);
             writeAction(tempWriter);
             var length = tempWriter.WrittenCount + (includeLength ? sizeof(int) : 0);
             var totalWritten = sizeof(int) + length;

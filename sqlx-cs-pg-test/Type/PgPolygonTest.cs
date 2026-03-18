@@ -26,7 +26,7 @@ public class PgPolygonTest
         double[] values,
         byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
         var points = new PgPoint[values.Length / 2];
         var j = 0;
         for (var i = 0; i < points.Length; i++)

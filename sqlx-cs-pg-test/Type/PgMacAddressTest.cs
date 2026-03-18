@@ -14,7 +14,7 @@ public class PgMacAddressTest
     public async Task Encode_Should_WriteMacAddr(byte[] address)
     {
         PgMacAddress value = PgMacAddress.FromBytes(address);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgMacAddress.Encode(value, buffer);
 

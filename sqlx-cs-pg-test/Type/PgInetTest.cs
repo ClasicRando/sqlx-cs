@@ -23,7 +23,7 @@ public class PgInetTest
         byte[] expectedBytes)
     {
         var value = new PgInet(new IPAddress(address), prefixLength);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgInet.Encode(value, buffer);
 

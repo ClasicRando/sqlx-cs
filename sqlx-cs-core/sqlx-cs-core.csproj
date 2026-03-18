@@ -15,5 +15,10 @@
     <ItemGroup>
       <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.8" />
     </ItemGroup>
+    
+    <ItemGroup>
+        <InternalsVisibleTo Include="sqlx-cs-pg"/>
+        <InternalsVisibleTo Include="sqlx-cs-core-test"/>
+    </ItemGroup>
 
 </Project>
