@@ -131,7 +131,7 @@ public sealed class ArrayBufferWriter : IBufferWriter<byte>, IDisposable
     public void ResetToInitialCapacity()
     {
         Clear();
-        if (_buffer.Length != _initialCapacity) return;
+        if (_buffer.Length == _initialCapacity) return;
 
         var newBuffer = _usePooledArray
             ? ArrayPool.Rent(_initialCapacity)

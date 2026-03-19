@@ -47,7 +47,7 @@ internal sealed class ArrayBufferReader : IBufferReader
         int length,
         CancellationToken cancellationToken)
     {
-        ObjectDisposedException.ThrowIf(_disposed, typeof(ArrayBufferReader));
+        CheckIfDisposed();
         var bytesRemaining = _bufferLength - _bufferPosition;
         if (bytesRemaining >= length)
         {
@@ -109,10 +109,15 @@ internal sealed class ArrayBufferReader : IBufferReader
     /// </summary>
     public void ResetToInitialCapacity()
     {
-        if (_readBuffer.Length != _initialCapacity) return;
+        CheckIfDisposed();
+        if (_readBuffer.Length == _initialCapacity) return;
 
         ReallocateInternalBuffer(_initialCapacity);
     }
+    
+    private void CheckIfDisposed() => ObjectDisposedException.ThrowIf(
+        _disposed,
+        typeof(ArrayBufferReader));
 
     public void Dispose()
     {
