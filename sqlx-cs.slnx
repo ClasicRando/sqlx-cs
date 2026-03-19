@@ -14,4 +14,5 @@
     <Project Path="sqlx-cs-pg-test/sqlx-cs-pg-test.csproj" />
     <Project Path="sqlx-cs-pg/sqlx-cs-pg.csproj" />
     <Project Path="benchmarks/benchmarks.csproj" />
+    <Project Path="examples/examples.csproj" />
 </Solution>
