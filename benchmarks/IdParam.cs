@@ -1,14 +1,9 @@
-using Sqlx.Core.Query;
-using Sqlx.Postgres.Query;
+using Sqlx.Postgres.Generator.Query;
 
 namespace benchmarks;
 
-public readonly struct IdParam : IBindMany<IPgBindable>
+[ToParam]
+public readonly partial struct IdParam
 {
     public required int Id { get; init; }
-
-    public void BindMany(IPgBindable bindable)
-    {
-        bindable.Bind(Id);
-    }
 }

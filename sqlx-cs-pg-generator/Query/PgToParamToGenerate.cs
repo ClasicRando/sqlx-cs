@@ -15,8 +15,7 @@ internal readonly struct PgToParamToGenerate
 
     public bool IsStruct => _typeSymbol.IsValueType;
 
-    public ImmutableArray<string> Properties { get; } =
-        ImmutableArray<string>.Empty;
+    public ImmutableArray<string> Properties { get; }
 
     public PgToParamToGenerate(
         INamedTypeSymbol namedTypeSymbol,
