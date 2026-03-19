@@ -169,10 +169,11 @@ public class PostgresGenerator : IIncrementalGenerator
 
         /// <summary>
         /// Source generation attribute applied to class/struct types that represent a single row of
-        /// a result. Applying this attribute generates a <see cref="Sqlx.Core.Result.IFromRow" />
-        /// implementation that uses the best constructor or field initializers to create new
-        /// instances of the type from a given row. You can also set type level rules for how the
-        /// property names are mapped to the field names of the result rows.
+        /// a result. Applying this attribute generates a
+        /// <see cref="Sqlx.Core.Result.IFromRow{TDataRow,TResult}"/> implementation that uses the
+        /// best constructor or field initializers to create new instances of the type from a given
+        /// row. You can also set type level rules for how the property names are mapped to the
+        /// field names of the result rows.
         /// </summary>
         [global::System.AttributeUsage(validOn: global::System.AttributeTargets.Struct | global::System.AttributeTargets.Class)]
         public sealed class FromRowAttribute : global::System.Attribute
@@ -191,8 +192,8 @@ public class PostgresGenerator : IIncrementalGenerator
         /// <summary>
         /// Source generation attribute applied to properties that combine 1 or more fields of a
         /// result row into a single type. This type must implement
-        /// <see cref="Sqlx.Core.Result.IFromRow" /> to allow for the type to extract the required
-        /// result fields into a new instance of that type.
+        /// <see cref="Sqlx.Core.Result.IFromRow{TDataRow,TResult}"/> to allow for the type to
+        /// extract the required result fields into a new instance of that type.
         /// </summary>
         [global::System.AttributeUsage(validOn: global::System.AttributeTargets.Property | global::System.AttributeTargets.Parameter)]
         public sealed class FlattenFieldAttribute : global::System.Attribute
@@ -227,7 +228,7 @@ public class PostgresGenerator : IIncrementalGenerator
         /// <summary>
         /// Source generation attribute applied to class/struct types that represent a prepared
         /// statements parameters. Applying this attribute generates a
-        /// <see cref="Sqlx.Core.Query.IBindMany" /> implementation where every readable property
+        /// <see cref="Sqlx.Core.Query.IBindMany{T}"/> implementation where every readable property
         /// is bound to the query in the order they are declared in the type definition.
         /// </summary>
         [global::System.AttributeUsage(validOn: global::System.AttributeTargets.Struct | global::System.AttributeTargets.Class)]
@@ -245,7 +246,7 @@ public class PostgresGenerator : IIncrementalGenerator
 
         /// <summary>
         /// Source generation attribute applied to class/struct types that represent a binary copy
-        /// in row. Applying this attribute generates a <see cref="Sqlx.Core.Query.IBindMany" />
+        /// in row. Applying this attribute generates a <see cref="Sqlx.Core.Query.IBindMany{T}"/>
         /// implementation where every readable property is bound to the query in the order they are
         /// declared in the type definition as well as the <c>ColumnCount</c> property as the number
         /// of properties found to bind.

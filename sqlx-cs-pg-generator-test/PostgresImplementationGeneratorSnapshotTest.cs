@@ -5,7 +5,7 @@ public class PostgresImplementationGeneratorSnapshotTest
     [Test]
     public async Task When_SimpleEnum()
     {
-        const string source = 
+        const string source =
             """
             using Sqlx.Postgres.Generator;
             using Sqlx.Postgres.Generator.Type;
@@ -22,11 +22,11 @@ public class PostgresImplementationGeneratorSnapshotTest
 
         await TestHelper.VerifyPostgresGenerator(source);
     }
-    
+
     [Test]
     public async Task When_EnumWithRenameAndSimpleTextWrapper()
     {
-        const string source = 
+        const string source =
             """
             using Sqlx.Postgres.Generator;
             using Sqlx.Postgres.Generator.Type;
@@ -45,11 +45,11 @@ public class PostgresImplementationGeneratorSnapshotTest
 
         await TestHelper.VerifyPostgresGenerator(source);
     }
-    
+
     [Test]
     public async Task When_EnumWithRenameAndSimpleIntWrapper()
     {
-        const string source = 
+        const string source =
             """
             using Sqlx.Postgres.Generator;
             using Sqlx.Postgres.Generator.Type;
@@ -68,11 +68,11 @@ public class PostgresImplementationGeneratorSnapshotTest
 
         await TestHelper.VerifyPostgresGenerator(source);
     }
-    
+
     [Test]
     public async Task When_EnumWithRenamePgNameAndPgEnum()
     {
-        const string source = 
+        const string source =
             """
             using Sqlx.Postgres.Generator;
             using Sqlx.Postgres.Generator.Type;
@@ -89,11 +89,11 @@ public class PostgresImplementationGeneratorSnapshotTest
 
         await TestHelper.VerifyPostgresGenerator(source);
     }
-    
+
     [Test]
     public async Task When_SimplePgComposite()
     {
-        const string source = 
+        const string source =
             """
             using Sqlx.Postgres.Type;
             using Sqlx.Postgres.Generator;
@@ -114,11 +114,11 @@ public class PostgresImplementationGeneratorSnapshotTest
 
         await TestHelper.VerifyPostgresGenerator(source);
     }
-    
+
     [Test]
     public async Task When_FromRow()
     {
-        const string source = 
+        const string source =
             """
             using System.Collections;
             using System.Net;
@@ -126,14 +126,14 @@ public class PostgresImplementationGeneratorSnapshotTest
             using Sqlx.Postgres.Generator;
             using Sqlx.Postgres.Generator.Result;
             using Sqlx.Postgres.Generator.Type;
-            
+
             [WrapperEnum(Representation = EnumRepresentation.Int)]
             public enum WrapperEnumType
             {
                 None,
                 Some,
             }
-            
+
             [PgEnum(Name = "postgres_enum_type")]
             public enum PostgresEnumType
             {
@@ -181,7 +181,7 @@ public class PostgresImplementationGeneratorSnapshotTest
     [Test]
     public async Task When_FromRow_ShouldHandleAttributes()
     {
-        const string source = 
+        const string source =
             """
             using System.Collections;
             using System.Net;
@@ -189,7 +189,7 @@ public class PostgresImplementationGeneratorSnapshotTest
             using Sqlx.Postgres.Generator;
             using Sqlx.Postgres.Generator.Result;
             using Sqlx.Postgres.Generator.Type;
-            
+
             public readonly struct InnerRow : IFromRow<IPgDataRow, InnerRow>
             {
                 public string InnerField { get; init; }
@@ -199,7 +199,7 @@ public class PostgresImplementationGeneratorSnapshotTest
                     return new InnerRow { InnerField = dataRow.GetStringNotNull("inner_field") };
                 }
             }
-            
+
             public readonly struct JsonFieldType
             {
                 public required int NumberField { get; init; }
@@ -232,15 +232,14 @@ public class PostgresImplementationGeneratorSnapshotTest
     [Test]
     public async Task When_FromRow_ShouldFailIfDuplicateAttributes()
     {
-        const string source = 
+        const string source =
             """
             using System.Collections;
-            using System.Net;
             using Sqlx.Postgres.Type;
             using Sqlx.Postgres.Generator;
             using Sqlx.Postgres.Generator.Result;
             using Sqlx.Postgres.Generator.Type;
-            
+
             public readonly struct InnerRow : IFromRow<IPgDataRow, InnerRow>
             {
                 public string InnerField { get; init; }
@@ -258,7 +257,7 @@ public class PostgresImplementationGeneratorSnapshotTest
                 [JsonField]
                 public InnerRow Inner { get; init; }
             }
-            
+
             [FromRow]
             public readonly partial struct TestRowDuplicateParameterAttribute
             {
@@ -280,19 +279,60 @@ public class PostgresImplementationGeneratorSnapshotTest
     [Test]
     public async Task When_FromRow_ShouldFailIfUnknownType()
     {
-        const string source = 
+        const string source =
             """
-            using System.Collections;
-            using System.Net;
-            using Sqlx.Postgres.Type;
-            using Sqlx.Postgres.Generator;
             using Sqlx.Postgres.Generator.Result;
-            using Sqlx.Postgres.Generator.Type;
 
             [FromRow]
             public readonly partial struct TestRowUnknownType
             {
                 public Dictionary<int, string> Inner { get; init; }
+            }
+            """;
+
+        await TestHelper.VerifyPostgresGenerator(source);
+    }
+
+    [Test]
+    public async Task When_ToParam_ShouldSucceed()
+    {
+        const string source =
+            """
+            using Sqlx.Postgres.Generator;
+            using Sqlx.Postgres.Generator.Query;
+
+            [ToParam]
+            public readonly partial struct TestParamBinding
+            {
+                public required int Id { get; init; }
+                
+                public required string Id { get; init; }
+                
+                [PgPropertySkip]
+                public string IdString => Id.ToString();
+            }
+            """;
+
+        await TestHelper.VerifyPostgresGenerator(source);
+    }
+
+    [Test]
+    public async Task When_ToPgBinaryCopyRow_ShouldSucceed()
+    {
+        const string source =
+            """
+            using Sqlx.Postgres.Generator;
+            using Sqlx.Postgres.Generator.Copy;
+
+            [ToPgBinaryCopyRow]
+            public readonly partial struct TestParamBinding
+            {
+                public required int Id { get; init; }
+                
+                public required string Id { get; init; }
+                
+                [PgPropertySkip]
+                public string IdString => Id.ToString();
             }
             """;
 

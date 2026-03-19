@@ -4,6 +4,12 @@
 
 namespace Sqlx.Postgres.Generator.Type;
 
+/// <summary>
+/// Source generation attribute applied to properties that combine 1 or more fields of a
+/// result row into a single type. This type must implement
+/// <see cref="Sqlx.Core.Result.IFromRow{TDataRow,TResult}"/> to allow for the type to
+/// extract the required result fields into a new instance of that type.
+/// </summary>
 [global::System.AttributeUsage(validOn: global::System.AttributeTargets.Property | global::System.AttributeTargets.Parameter)]
 public sealed class FlattenFieldAttribute : global::System.Attribute
 {

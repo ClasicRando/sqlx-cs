@@ -4,6 +4,14 @@
 
 namespace Sqlx.Postgres.Generator.Result;
 
+/// <summary>
+/// Source generation attribute applied to class/struct types that represent a single row of
+/// a result. Applying this attribute generates a
+/// <see cref="Sqlx.Core.Result.IFromRow{TDataRow,TResult}"/> implementation that uses the
+/// best constructor or field initializers to create new instances of the type from a given
+/// row. You can also set type level rules for how the property names are mapped to the
+/// field names of the result rows.
+/// </summary>
 [global::System.AttributeUsage(validOn: global::System.AttributeTargets.Struct | global::System.AttributeTargets.Class)]
 public sealed class FromRowAttribute : global::System.Attribute
 {

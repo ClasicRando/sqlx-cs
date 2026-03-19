@@ -4,6 +4,11 @@
 
 namespace Sqlx.Postgres.Generator;
 
+/// <summary>
+/// Source generation attribute applied to properties that need to be skipped when
+/// generating serialization or deserialization interfaces for composite, row or parameter
+/// types.
+/// </summary>
 [global::System.AttributeUsage(validOn: global::System.AttributeTargets.Property)]
 public sealed class PgPropertySkipAttribute : global::System.Attribute
 {
