@@ -58,5 +58,7 @@ internal readonly struct PgEnumToGenerate : IFullNameType
 
     public string PgTypeName { get; }
 
+    public Accessibility DeclaredAccessibility => _enumType.DeclaredAccessibility;
+
     public ImmutableArray<KeyValuePair<string, string>> ValueNames { get; }
 }

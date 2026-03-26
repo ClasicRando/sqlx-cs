@@ -15,6 +15,8 @@ internal readonly struct PgCompositeToGenerate : IFullNameType
     public string ContainingNamespace { get; }
 
     public bool IsStruct => _typeSymbol.IsValueType;
+
+    public Accessibility DeclaredAccessibility => _typeSymbol.DeclaredAccessibility;
     
     public bool IsIFromRow { get; }
     

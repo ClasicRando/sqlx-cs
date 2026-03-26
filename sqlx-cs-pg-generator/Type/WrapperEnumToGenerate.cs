@@ -60,6 +60,8 @@ internal readonly struct WrapperEnumToGenerate : IFullNameType
 
     public EnumRepresentation Representation { get; }
 
+    public Accessibility DeclaredAccessibility => _enumType.DeclaredAccessibility;
+
     public ImmutableArray<KeyValuePair<string, string>> ValueNames { get; }
 
     public bool Validate(SourceProductionContext context)

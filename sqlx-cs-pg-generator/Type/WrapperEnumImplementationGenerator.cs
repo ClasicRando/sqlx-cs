@@ -1,15 +1,17 @@
 using System.Collections.Immutable;
-using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
-[assembly: InternalsVisibleTo("sqlx-cs-pg-generator-test")]
 namespace Sqlx.Postgres.Generator.Type;
 
-internal static class WrapperEnumImplementationGenerator
+internal class WrapperEnumImplementationGenerator : ISourceGenerationPipeline<WrapperEnumToGenerate>
 {
-    public static WrapperEnumToGenerate? GetWrapperEnumTargetForGeneration(
+    public string AttributeName => "Sqlx.Postgres.Generator.Type.WrapperEnumAttribute";
+
+    public bool IsValidSyntax(SyntaxNode node, CancellationToken cancellationToken) => node.IsEnum;
+
+    public WrapperEnumToGenerate? CreateGenerationContext(
         GeneratorAttributeSyntaxContext context,
         CancellationToken cancellationToken)
     {
@@ -22,9 +24,9 @@ internal static class WrapperEnumImplementationGenerator
         return new WrapperEnumToGenerate(enumSymbol);
     }
 
-    public static void ExecuteWrapperEnumGeneration(
-        ImmutableArray<WrapperEnumToGenerate?> implementationsToGenerate,
-        SourceProductionContext context)
+    public void ExecuteGeneration(
+        SourceProductionContext context,
+        ImmutableArray<WrapperEnumToGenerate> implementationsToGenerate)
     {
         if (implementationsToGenerate.IsEmpty)
         {
@@ -51,13 +53,9 @@ internal static class WrapperEnumImplementationGenerator
             {
             """);
 
-        foreach (var toGenerate in implementationsToGenerate)
+        foreach (WrapperEnumToGenerate wrapperEnumToGenerate in implementationsToGenerate)
         {
             context.CancellationToken.ThrowIfCancellationRequested();
-            if (toGenerate is not { } wrapperEnumToGenerate)
-            {
-                continue;
-            }
 
             if (!wrapperEnumToGenerate.Validate(context))
             {
@@ -79,13 +77,16 @@ internal static class WrapperEnumImplementationGenerator
         WrapperEnumToGenerate wrapperEnumToGenerate,
         StringBuilder builder)
     {
+        var typeAccessibility = wrapperEnumToGenerate.DeclaredAccessibility.GetModifierToken();
         if (wrapperEnumToGenerate.Representation is EnumRepresentation.Text)
         {
             builder.Append("    extension(")
                 .AppendFullName(wrapperEnumToGenerate)
                 .AppendLine(" enumValue)");
             builder.AppendLine("    {");
-            builder.AppendLine("        public ReadOnlySpan<char> ToEncodeString()");
+            builder.Append("        ")
+                .Append(typeAccessibility)
+                .AppendLine(" ReadOnlySpan<char> ToEncodeString()");
             builder.AppendLine("        {");
             builder.AppendLine("            return enumValue switch");
             builder.AppendLine("            {");
@@ -106,7 +107,9 @@ internal static class WrapperEnumImplementationGenerator
             builder.AppendLine("        }");
             builder.AppendLine();
 
-            builder.Append("        public static ")
+            builder.Append("        ")
+                .Append(typeAccessibility)
+                .Append(" static ")
                 .AppendFullName(wrapperEnumToGenerate)
                 .AppendLine(" FromChars(in ReadOnlySpan<char> chars)");
             builder.AppendLine("        {");
@@ -132,9 +135,11 @@ internal static class WrapperEnumImplementationGenerator
             builder.AppendLine();
         }
 
-        builder.Append("    public static void Bind(this IPgBindable pgBindable, ");
-        builder.AppendFullName(wrapperEnumToGenerate);
-        builder.AppendLine(" enumValue)");
+        builder.Append("    ")
+            .Append(typeAccessibility)
+            .Append(" static void Bind(this IPgBindable pgBindable, ")
+            .AppendFullName(wrapperEnumToGenerate)
+            .AppendLine(" enumValue)");
         builder.AppendLine("    {");
         switch (wrapperEnumToGenerate.Representation)
         {
@@ -149,9 +154,11 @@ internal static class WrapperEnumImplementationGenerator
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.Append("    public static void Bind(this IPgBindable pgBindable, ");
-        builder.AppendFullName(wrapperEnumToGenerate);
-        builder.AppendLine("? enumValue)");
+        builder.Append("    ")
+            .Append(typeAccessibility)
+            .Append(" static void Bind(this IPgBindable pgBindable, ")
+            .AppendFullName(wrapperEnumToGenerate)
+            .AppendLine("? enumValue)");
         builder.AppendLine("    {");
         switch (wrapperEnumToGenerate.Representation)
         {
@@ -180,11 +187,13 @@ internal static class WrapperEnumImplementationGenerator
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.Append("    public static ");
-        builder.AppendFullName(wrapperEnumToGenerate);
-        builder.Append(" Get");
-        builder.Append(wrapperEnumToGenerate.ShortName);
-        builder.AppendLine("NotNull(this IPgDataRow pgDataRow, int index)");
+        builder.Append("    ")
+            .Append(typeAccessibility)
+            .Append(" static ")
+            .AppendFullName(wrapperEnumToGenerate)
+            .Append(" Get")
+            .Append(wrapperEnumToGenerate.ShortName)
+            .AppendLine("NotNull(this IPgDataRow pgDataRow, int index)");
         builder.AppendLine("    {");
         switch (wrapperEnumToGenerate.Representation)
         {
@@ -203,11 +212,13 @@ internal static class WrapperEnumImplementationGenerator
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.Append("    public static ");
-        builder.AppendFullName(wrapperEnumToGenerate);
-        builder.Append(" Get");
-        builder.Append(wrapperEnumToGenerate.ShortName);
-        builder.AppendLine("NotNull(this IPgDataRow pgDataRow, string name)");
+        builder.Append("    ")
+            .Append(typeAccessibility)
+            .Append(" static ")
+            .AppendFullName(wrapperEnumToGenerate)
+            .Append(" Get")
+            .Append(wrapperEnumToGenerate.ShortName)
+            .AppendLine("NotNull(this IPgDataRow pgDataRow, string name)");
         builder.AppendLine("    {");
         switch (wrapperEnumToGenerate.Representation)
         {
@@ -226,11 +237,13 @@ internal static class WrapperEnumImplementationGenerator
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.Append("    public static ");
-        builder.AppendFullName(wrapperEnumToGenerate);
-        builder.Append("? Get");
-        builder.Append(wrapperEnumToGenerate.ShortName);
-        builder.AppendLine("(this IPgDataRow pgDataRow, int index)");
+        builder.Append("    ")
+            .Append(typeAccessibility)
+            .Append(" static ")
+            .AppendFullName(wrapperEnumToGenerate)
+            .Append("? Get")
+            .Append(wrapperEnumToGenerate.ShortName)
+            .AppendLine("(this IPgDataRow pgDataRow, int index)");
         builder.AppendLine("    {");
         switch (wrapperEnumToGenerate.Representation)
         {
@@ -251,11 +264,13 @@ internal static class WrapperEnumImplementationGenerator
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.Append("    public static ");
-        builder.AppendFullName(wrapperEnumToGenerate);
-        builder.Append("? Get");
-        builder.Append(wrapperEnumToGenerate.ShortName);
-        builder.AppendLine("(this IPgDataRow pgDataRow, string name)");
+        builder.Append("    ")
+            .Append(typeAccessibility)
+            .Append(" static ")
+            .AppendFullName(wrapperEnumToGenerate)
+            .Append("? Get")
+            .Append(wrapperEnumToGenerate.ShortName)
+            .AppendLine("(this IPgDataRow pgDataRow, string name)");
         builder.AppendLine("    {");
         switch (wrapperEnumToGenerate.Representation)
         {

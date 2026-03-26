@@ -5,9 +5,13 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Sqlx.Postgres.Generator.Type;
 
-internal static class PgEnumImplementationGenerator
+internal class PgEnumImplementationGenerator : ISourceGenerationPipeline<PgEnumToGenerate>
 {
-    public static PgEnumToGenerate? GetPgEnumTargetForGeneration(
+    public string AttributeName => "Sqlx.Postgres.Generator.Type.PgEnumAttribute";
+
+    public bool IsValidSyntax(SyntaxNode node, CancellationToken cancellationToken) => node.IsEnum;
+
+    public PgEnumToGenerate? CreateGenerationContext(
         GeneratorAttributeSyntaxContext context,
         CancellationToken cancellationToken)
     {
@@ -20,9 +24,7 @@ internal static class PgEnumImplementationGenerator
         return new PgEnumToGenerate(enumSymbol);
     }
 
-    public static void ExecutePgEnumGeneration(
-        ImmutableArray<PgEnumToGenerate?> implementationsToGenerate,
-        SourceProductionContext context)
+    public void ExecuteGeneration(SourceProductionContext context, ImmutableArray<PgEnumToGenerate> implementationsToGenerate)
     {
         if (implementationsToGenerate.IsEmpty)
         {
@@ -49,13 +51,9 @@ internal static class PgEnumImplementationGenerator
             {
             """);
 
-        foreach (var toGenerate in implementationsToGenerate)
+        foreach (PgEnumToGenerate pgEnumToGenerate in implementationsToGenerate)
         {
             context.CancellationToken.ThrowIfCancellationRequested();
-            if (toGenerate is not { } pgEnumToGenerate)
-            {
-                continue;
-            }
 
             context.AddSource(
                 $"{pgEnumToGenerate.TypeDefName}.g.cs",
@@ -88,7 +86,7 @@ internal static class PgEnumImplementationGenerator
 
               namespace Sqlx.Postgres.Generator.Type;
 
-              public abstract class {{name}} : IPgUdt<{{fullName}}>
+              {{pgEnumToGenerate.DeclaredAccessibility.GetModifierToken()}} abstract class {{name}} : IPgUdt<{{fullName}}>
               {
                   private {{name}}() {}
 
@@ -125,8 +123,11 @@ internal static class PgEnumImplementationGenerator
         StringBuilder builder)
     {
         var name = pgEnumToGenerate.TypeDefName;
+        var typeAccessibility = pgEnumToGenerate.DeclaredAccessibility.GetModifierToken();
 
-        builder.Append("    public static ValueTask Map")
+        builder.Append("    ")
+            .Append(typeAccessibility)
+            .Append(" static ValueTask Map")
             .Append(pgEnumToGenerate.ShortName)
             .AppendLine(
             "Async(this IPgConnectionPool pgConnectionPool, CancellationToken cancellationToken = default)");
@@ -144,7 +145,9 @@ internal static class PgEnumImplementationGenerator
             .AppendLine(" enumValue)");
         builder.AppendLine("    {");
 
-        builder.AppendLine("        public ReadOnlySpan<char> ToEncodeString()");
+        builder.Append("        ")
+            .Append(typeAccessibility)
+            .AppendLine(" ReadOnlySpan<char> ToEncodeString()");
         builder.AppendLine("        {");
         builder.AppendLine("            return enumValue switch");
         builder.AppendLine("            {");
@@ -169,7 +172,9 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine("        }");
         builder.AppendLine();
 
-        builder.Append("        public static ")
+        builder.Append("        ")
+            .Append(typeAccessibility)
+            .Append(" static ")
             .AppendFullName(pgEnumToGenerate)
             .AppendLine(" FromChars(in ReadOnlySpan<char> chars, in PgColumnMetadata columnMetadata)");
         builder.AppendLine("        {");
@@ -196,9 +201,11 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.Append("    public static void Bind(this IPgBindable pgBindable, ");
-        builder.AppendFullName(pgEnumToGenerate);
-        builder.AppendLine(" enumValue)");
+        builder.Append("    ")
+            .Append(typeAccessibility)
+            .Append(" static void Bind(this IPgBindable pgBindable, ")
+            .AppendFullName(pgEnumToGenerate)
+            .AppendLine(" enumValue)");
         builder.AppendLine("    {");
         builder.Append("        pgBindable.Bind<")
             .AppendFullName(pgEnumToGenerate)
@@ -208,9 +215,11 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.Append("    public static void Bind(this IPgBindable pgBindable, ");
-        builder.AppendFullName(pgEnumToGenerate);
-        builder.AppendLine("? enumValue)");
+        builder.Append("    ")
+            .Append(typeAccessibility)
+            .Append(" static void Bind(this IPgBindable pgBindable, ")
+            .AppendFullName(pgEnumToGenerate)
+            .AppendLine("? enumValue)");
         builder.AppendLine("    {");
         builder.Append("        pgBindable.BindVal<")
             .AppendFullName(pgEnumToGenerate)
@@ -220,7 +229,9 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.Append("    public static ")
+        builder.Append("    ")
+            .Append(typeAccessibility)
+            .Append(" static ")
             .AppendFullName(pgEnumToGenerate)
             .Append(" Get")
             .Append(pgEnumToGenerate.ShortName)
@@ -234,7 +245,9 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.Append("    public static ")
+        builder.Append("    ")
+            .Append(typeAccessibility)
+            .Append(" static ")
             .AppendFullName(pgEnumToGenerate)
             .Append(" Get")
             .Append(pgEnumToGenerate.ShortName)
@@ -248,7 +261,9 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.Append("    public static ")
+        builder.Append("    ")
+            .Append(typeAccessibility)
+            .Append(" static ")
             .AppendFullName(pgEnumToGenerate)
             .Append("? Get")
             .Append(pgEnumToGenerate.ShortName)
@@ -262,7 +277,9 @@ internal static class PgEnumImplementationGenerator
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.Append("    public static ")
+        builder.Append("    ")
+            .Append(typeAccessibility)
+            .Append(" static ")
             .AppendFullName(pgEnumToGenerate)
             .Append("? Get")
             .Append(pgEnumToGenerate.ShortName)

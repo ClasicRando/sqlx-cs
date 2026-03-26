@@ -190,4 +190,27 @@ internal static class SourceGenerationHelper
                                             attr.AttributeClass?.Name is "PgEnumAttribute"
                                                 or "WrapperEnumAttribute");
     }
+
+    extension(SyntaxNode syntaxNode)
+    {
+        public bool IsEnum => syntaxNode is EnumDeclarationSyntax;
+        
+        public bool IsProductType => syntaxNode is ClassDeclarationSyntax or StructDeclarationSyntax
+            or RecordDeclarationSyntax;
+    }
+
+    extension(Accessibility accessibility)
+    {
+        public string GetModifierToken()
+        {
+            return accessibility switch
+            {
+                Accessibility.Private => "private",
+                Accessibility.ProtectedAndInternal or Accessibility.Protected => "protected",
+                Accessibility.Internal or Accessibility.ProtectedOrInternal => "internal",
+                Accessibility.Public => "public",
+                _ => throw new ArgumentOutOfRangeException(nameof(accessibility), accessibility, null),
+            };
+        }
+    }
 }

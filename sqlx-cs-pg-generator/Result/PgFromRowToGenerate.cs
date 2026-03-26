@@ -15,6 +15,8 @@ internal readonly struct PgFromRowToGenerate
 
     public bool IsStruct => _typeSymbol.IsValueType;
 
+    public Accessibility DeclaredAccessibility => _typeSymbol.DeclaredAccessibility;
+
     public ImmutableArray<RowField> ConstructorParameters { get; } =
         ImmutableArray<RowField>.Empty;
 

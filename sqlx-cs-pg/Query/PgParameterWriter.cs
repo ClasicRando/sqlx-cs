@@ -82,7 +82,7 @@ internal sealed class PgParameterWriter : IPgBindable
         Bind<DateTime, PgDateTime>(value);
     }
 
-    public void Bind(DateTimeOffset value)
+    public void Bind(in DateTimeOffset value)
     {
         Bind<DateTimeOffset, PgDateTimeOffset>(value);
     }
@@ -97,7 +97,7 @@ internal sealed class PgParameterWriter : IPgBindable
         this.BindRef<byte[], PgBytea>(value);
     }
 
-    public void Bind(ReadOnlySpan<byte> value)
+    public void Bind(in ReadOnlySpan<byte> value)
     {
         _buffer.WriteInt(value.Length);
         _buffer.Write(value);
@@ -109,7 +109,7 @@ internal sealed class PgParameterWriter : IPgBindable
         this.BindRef<string, PgString>(value);
     }
 
-    public void Bind(ReadOnlySpan<char> value)
+    public void Bind(in ReadOnlySpan<char> value)
     {
         var byteLength = Charsets.Default.GetByteCount(value);
         _buffer.WriteInt(byteLength);
@@ -119,7 +119,7 @@ internal sealed class PgParameterWriter : IPgBindable
         _pgTypes.Add(PgString.DbType);
     }
 
-    public void Bind(Guid value)
+    public void Bind(in Guid value)
     {
         Bind<Guid, PgUuid>(value);
     }

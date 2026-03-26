@@ -76,7 +76,7 @@ public interface IBindable : IDisposable
     /// Bind a DateTimeOffset value. This maps to the <c>TIMESTAMP WITH TIME ZONE</c> type.
     /// </summary>
     /// <param name="value">DateTimeOffset value</param>
-    void Bind(DateTimeOffset value);
+    void Bind(in DateTimeOffset value);
 
     /// <summary>
     /// Bind a decimal value. This maps to the <c>DECIMAL</c>/<c>NUMERIC</c> type.
@@ -96,7 +96,7 @@ public interface IBindable : IDisposable
     /// implementations might have custom types (e.g. Postgres has <c>BYTEA</c>)
     /// </summary>
     /// <param name="value">ReadOnlySpan&lt;byte&gt; value</param>
-    void Bind(ReadOnlySpan<byte> value);
+    void Bind(in ReadOnlySpan<byte> value);
 
     /// <summary>
     /// Bind a string value. This maps to the <c>VARCHAR</c>/<c>TEXT</c>/<c>CLOB</c> type although
@@ -112,7 +112,7 @@ public interface IBindable : IDisposable
     /// <c>CITEXT</c>).
     /// </summary>
     /// <param name="value">ReadOnlySpan&lt;char&gt; value</param>
-    void Bind(ReadOnlySpan<char> value);
+    void Bind(in ReadOnlySpan<char> value);
 
     /// <summary>
     /// Bind a Guid value. The <c>UUID</c>/<c>UNIQUEIDENTIFIER</c> type is not consistent across all
@@ -120,7 +120,7 @@ public interface IBindable : IDisposable
     /// type or this method tries to interpret a <see cref="Guid"/> as bytes or a string.
     /// </summary>
     /// <param name="value">Guid value</param>
-    void Bind(Guid value);
+    void Bind(in Guid value);
 
     /// <summary>
     /// Bind a <typeparamref name="T"/> value as a JSON. Some databases have a JSON specific field

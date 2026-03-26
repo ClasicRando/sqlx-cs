@@ -15,6 +15,8 @@ internal readonly struct PgToParamToGenerate
 
     public bool IsStruct => _typeSymbol.IsValueType;
 
+    public Accessibility DeclaredAccessibility => _typeSymbol.DeclaredAccessibility;
+
     public ImmutableArray<string> Properties { get; }
 
     public PgToParamToGenerate(

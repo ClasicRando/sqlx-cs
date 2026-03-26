@@ -6,9 +6,14 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Sqlx.Postgres.Generator.Query;
 
-internal static class PgToParamImplementationGenerator
+internal class PgToParamImplementationGenerator : ISourceGenerationPipeline<PgToParamToGenerate>
 {
-    public static PgToParamToGenerate? GetPgToParamToGenerate(
+    public string AttributeName => "Sqlx.Postgres.Generator.Query.ToParamAttribute";
+
+    public bool IsValidSyntax(SyntaxNode node, CancellationToken cancellationToken) =>
+        node.IsProductType;
+
+    public PgToParamToGenerate? CreateGenerationContext(
         GeneratorAttributeSyntaxContext context,
         CancellationToken cancellationToken)
     {
@@ -22,22 +27,25 @@ internal static class PgToParamImplementationGenerator
         return new PgToParamToGenerate(typeSymbol, typeDeclarationSyntax);
     }
 
+    public void ExecuteGeneration(
+        SourceProductionContext context,
+        ImmutableArray<PgToParamToGenerate> implementationsToGenerate)
+    {
+        ExecutePgToParamGeneration(context, implementationsToGenerate);
+    }
+
     public static void ExecutePgToParamGeneration(
         SourceProductionContext context,
-        ImmutableArray<PgToParamToGenerate?> implementationsToGenerate)
+        ImmutableArray<PgToParamToGenerate> implementationsToGenerate)
     {
         if (implementationsToGenerate.IsEmpty)
         {
             return;
         }
 
-        foreach (var toGenerate in implementationsToGenerate)
+        foreach (PgToParamToGenerate pgToParamToGenerate in implementationsToGenerate)
         {
             context.CancellationToken.ThrowIfCancellationRequested();
-            if (toGenerate is not { } pgToParamToGenerate)
-            {
-                continue;
-            }
 
             if (!pgToParamToGenerate.Validate(context))
             {
@@ -71,8 +79,10 @@ internal static class PgToParamImplementationGenerator
                 .Append(pgToParamToGenerate.ContainingNamespace)
                 .AppendLine(";");
         }
+
         builder.AppendLine();
-        builder.Append("public partial ")
+        builder.Append(pgToParamToGenerate.DeclaredAccessibility.GetModifierToken())
+            .Append(" partial ")
             .Append(pgToParamToGenerate.IsStruct ? "struct " : "class ")
             .Append(pgToParamToGenerate.ShortName)
             .AppendLine(" : IBindMany<IPgBindable>");
@@ -83,8 +93,9 @@ internal static class PgToParamImplementationGenerator
         {
             builder.Append("        bindable.Bind(this.")
                 .Append(property)
-                .AppendLine(");");  
+                .AppendLine(");");
         }
+
         builder.AppendLine("    }");
         builder.AppendLine("}");
         return builder.ToString();

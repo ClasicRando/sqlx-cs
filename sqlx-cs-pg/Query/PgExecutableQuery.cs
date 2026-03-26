@@ -85,7 +85,7 @@ internal sealed class PgExecutableQuery : IPgExecutableQuery
         Bind<DateTime, PgDateTime>(value);
     }
 
-    public void Bind(DateTimeOffset value)
+    public void Bind(in DateTimeOffset value)
     {
         Bind<DateTimeOffset, PgDateTimeOffset>(value);
     }
@@ -100,7 +100,7 @@ internal sealed class PgExecutableQuery : IPgExecutableQuery
         this.BindRef<byte[], PgBytea>(value);
     }
 
-    public void Bind(ReadOnlySpan<byte> value)
+    public void Bind(in ReadOnlySpan<byte> value)
     {
         _parameterWriter.Bind(value);
     }
@@ -110,12 +110,12 @@ internal sealed class PgExecutableQuery : IPgExecutableQuery
         this.BindRef<string, PgString>(value);
     }
 
-    public void Bind(ReadOnlySpan<char> value)
+    public void Bind(in ReadOnlySpan<char> value)
     {
         _parameterWriter.Bind(value);
     }
 
-    public void Bind(Guid value)
+    public void Bind(in Guid value)
     {
         Bind<Guid, PgUuid>(value);
     }

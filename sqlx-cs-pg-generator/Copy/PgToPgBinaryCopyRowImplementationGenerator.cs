@@ -7,9 +7,14 @@ using Sqlx.Postgres.Generator.Query;
 
 namespace Sqlx.Postgres.Generator.Copy;
 
-internal static class PgToPgBinaryCopyRowImplementationGenerator
+internal class PgToPgBinaryCopyRowImplementationGenerator : ISourceGenerationPipeline<PgToParamToGenerate>
 {
-    public static PgToParamToGenerate? GetPgToPgBinaryCopyRowToGenerate(
+    public string AttributeName => "Sqlx.Postgres.Generator.Copy.ToPgBinaryCopyRowAttribute";
+
+    public bool IsValidSyntax(SyntaxNode node, CancellationToken cancellationToken) =>
+        node.IsProductType;
+
+    public PgToParamToGenerate? CreateGenerationContext(
         GeneratorAttributeSyntaxContext context,
         CancellationToken cancellationToken)
     {
@@ -23,22 +28,18 @@ internal static class PgToPgBinaryCopyRowImplementationGenerator
         return new PgToParamToGenerate(typeSymbol, typeDeclarationSyntax);
     }
 
-    public static void ExecutePgToPgBinaryCopyRowGeneration(
+    public void ExecuteGeneration(
         SourceProductionContext context,
-        ImmutableArray<PgToParamToGenerate?> implementationsToGenerate)
+        ImmutableArray<PgToParamToGenerate> implementationsToGenerate)
     {
         if (implementationsToGenerate.IsEmpty)
         {
             return;
         }
 
-        foreach (var toGenerate in implementationsToGenerate)
+        foreach (PgToParamToGenerate pgToParamToGenerate in implementationsToGenerate)
         {
             context.CancellationToken.ThrowIfCancellationRequested();
-            if (toGenerate is not { } pgToParamToGenerate)
-            {
-                continue;
-            }
 
             if (!pgToParamToGenerate.Validate(context))
             {
@@ -47,7 +48,7 @@ internal static class PgToPgBinaryCopyRowImplementationGenerator
 
             PgToParamImplementationGenerator.ExecutePgToParamGeneration(
                 context,
-                ImmutableArray.Create<PgToParamToGenerate?>(pgToParamToGenerate));
+                ImmutableArray.Create(pgToParamToGenerate));
 
             var pgBinaryCopyRowImplementation = GeneratePgBinaryCopyRowTypeImplementation(pgToParamToGenerate);
             context.AddSource(
@@ -75,7 +76,8 @@ internal static class PgToPgBinaryCopyRowImplementationGenerator
                 .AppendLine(";");
         }
         builder.AppendLine();
-        builder.Append("public partial ")
+        builder.Append(pgToParamToGenerate.DeclaredAccessibility.GetModifierToken())
+            .Append(" partial ")
             .Append(pgToParamToGenerate.IsStruct ? "struct " : "class ")
             .Append(pgToParamToGenerate.ShortName)
             .AppendLine(" : IPgBinaryCopyRow");

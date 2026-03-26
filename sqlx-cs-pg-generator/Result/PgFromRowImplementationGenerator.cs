@@ -6,9 +6,14 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Sqlx.Postgres.Generator.Result;
 
-internal static class PgFromRowImplementationGenerator
+internal class PgFromRowImplementationGenerator : ISourceGenerationPipeline<PgFromRowToGenerate>
 {
-    public static PgFromRowToGenerate? GetPgFromRowToGenerate(
+    public string AttributeName => "Sqlx.Postgres.Generator.Result.FromRowAttribute";
+
+    public bool IsValidSyntax(SyntaxNode node, CancellationToken cancellationToken) =>
+        node.IsProductType;
+
+    public PgFromRowToGenerate? CreateGenerationContext(
         GeneratorAttributeSyntaxContext context,
         CancellationToken cancellationToken)
     {
@@ -22,22 +27,25 @@ internal static class PgFromRowImplementationGenerator
         return new PgFromRowToGenerate(typeSymbol, typeDeclarationSyntax);
     }
 
-    public static void ExecutePgFromRowGeneration(
+    public void ExecuteGeneration(
         SourceProductionContext context,
-        ImmutableArray<PgFromRowToGenerate?> implementationsToGenerate)
+        ImmutableArray<PgFromRowToGenerate> implementationsToGenerate)
+    {
+        ExecutePgFromRowGeneration(context, implementationsToGenerate);
+    }
+
+    public static void ExecutePgFromRowGeneration(
+        in SourceProductionContext context,
+        ImmutableArray<PgFromRowToGenerate> implementationsToGenerate)
     {
         if (implementationsToGenerate.IsEmpty)
         {
             return;
         }
 
-        foreach (var toGenerate in implementationsToGenerate)
+        foreach (PgFromRowToGenerate pgFromRowToGenerate in implementationsToGenerate)
         {
             context.CancellationToken.ThrowIfCancellationRequested();
-            if (toGenerate is not { } pgFromRowToGenerate)
-            {
-                continue;
-            }
 
             if (!pgFromRowToGenerate.Validate(context))
             {
@@ -72,6 +80,7 @@ internal static class PgFromRowImplementationGenerator
                 .Append(pgFromRowToGenerate.ContainingNamespace)
                 .AppendLine(";");
         }
+
         builder.AppendLine();
         builder.Append("public partial ")
             .Append(pgFromRowToGenerate.IsStruct ? "struct " : "class ")

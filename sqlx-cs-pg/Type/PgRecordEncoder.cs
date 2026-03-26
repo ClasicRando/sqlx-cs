@@ -111,7 +111,7 @@ public sealed class PgRecordEncoder : IPgBindable
         Bind<DateTime, PgDateTime>(value);
     }
 
-    public void Bind(DateTimeOffset value)
+    public void Bind(in DateTimeOffset value)
     {
         Bind<DateTimeOffset, PgDateTimeOffset>(value);
     }
@@ -126,7 +126,7 @@ public sealed class PgRecordEncoder : IPgBindable
         this.BindRef<byte[], PgBytea>(value);
     }
 
-    public void Bind(ReadOnlySpan<byte> value)
+    public void Bind(in ReadOnlySpan<byte> value)
     {
         _buffer.WriteUInt(PgBytea.DbType.TypeOid.Inner);
         _parameterWriter.Bind(value);
@@ -137,13 +137,13 @@ public sealed class PgRecordEncoder : IPgBindable
         this.BindRef<string, PgString>(value);
     }
 
-    public void Bind(ReadOnlySpan<char> value)
+    public void Bind(in ReadOnlySpan<char> value)
     {
         _buffer.WriteUInt(PgString.DbType.TypeOid.Inner);
         _parameterWriter.Bind(value);
     }
 
-    public void Bind(Guid value)
+    public void Bind(in Guid value)
     {
         Bind<Guid, PgUuid>(value);
     }
