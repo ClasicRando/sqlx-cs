@@ -14,7 +14,7 @@ namespace Sqlx.Postgres.Type;
 /// <c>JSONB</c>/<c>JSON</c> type.
 /// </summary>
 [SuppressMessage("Design", "CA1000:Do not declare static members on generic types")]
-public abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnull
+internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnull
 {
     private const byte JsonBVersion = 1;
 
