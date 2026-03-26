@@ -13,7 +13,8 @@ namespace Sqlx.Postgres.Type;
 /// <see cref="IPgDbType{T}"/> for a JSON values of type <typeparamref name="T"/>. Maps to the
 /// <c>JSONB</c>/<c>JSON</c> type.
 /// </summary>
-internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnull
+[SuppressMessage("Design", "CA1000:Do not declare static members on generic types")]
+public abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnull
 {
     private const byte JsonBVersion = 1;
 
@@ -48,6 +49,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// </summary>
     public static void Encode(T value, IBufferWriter<byte> buffer, JsonTypeInfo<T>? typeInfo)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteByte(JsonBVersion);
         JsonHelper.WriteToBuffer(buffer, value, typeInfo);
     }

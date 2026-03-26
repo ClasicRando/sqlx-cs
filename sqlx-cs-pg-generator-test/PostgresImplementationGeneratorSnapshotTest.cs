@@ -120,6 +120,7 @@ public class PostgresImplementationGeneratorSnapshotTest
     {
         const string source =
             """
+            using System;
             using System.Collections;
             using System.Net;
             using Sqlx.Postgres.Type;

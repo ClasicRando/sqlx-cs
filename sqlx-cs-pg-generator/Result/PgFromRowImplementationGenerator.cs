@@ -143,37 +143,106 @@ internal class PgFromRowImplementationGenerator : ISourceGenerationPipeline<PgFr
                 .Append(rowField.Name)
                 .Append(assignmentChars);
 
-            if (rowField.Flatten)
+            switch (rowField)
             {
-                builder.AppendFullName(rowField.FieldType)
-                    .Append(".FromRow(dataRow)");
-            }
-            else if (rowField.IsJson)
-            {
-                if (rowField.FieldType.IsNullable)
-                {
+                case { Flatten: true }:
+                    builder.AppendFullName(rowField.FieldType)
+                        .Append(".FromRow(dataRow)");
+                    break;
+                case { IsJson: true, FieldType.IsNullable: true }:
                     builder.Append("dataRow.GetJson<")
                         .AppendFullName(rowField.FieldType.AsNotNullType())
                         .Append(">(\"")
                         .Append(rowField.FieldName)
                         .Append("\")");
-                }
-                else
-                {
+                    break;
+                case { IsJson: true }:
                     builder.Append("dataRow.GetJsonNotNull<")
                         .AppendFullName(rowField.FieldType)
                         .Append(">(\"")
                         .Append(rowField.FieldName)
                         .Append("\")");
-                }
-            }
-            else
-            {
-                builder.Append("dataRow.Get")
-                    .Append(rowField.FieldType.GetDecodeMethodSuffix())
-                    .Append("(\"")
-                    .Append(rowField.FieldName)
-                    .Append("\")");
+                    break;
+                case { FieldType: { IsDbType: true, IsNullable: true, IsValueType: true } }:
+                    builder.Append("dataRow.GetPgVal<")
+                        .AppendFullName(rowField.FieldType)
+                        .Append(">(\"")
+                        .Append(rowField.FieldName)
+                        .Append("\")");
+                    break;
+                case { FieldType: { IsDbType: true, IsNullable: true, IsValueType: false } }:
+                    builder.Append("dataRow.GetPgRef<")
+                        .AppendFullName(rowField.FieldType)
+                        .Append(">(\"")
+                        .Append(rowField.FieldName)
+                        .Append("\")");
+                    break;
+                case { FieldType: { IsDbType: true, IsNullable: false } }:
+                    builder.Append("dataRow.GetPgNotNull<")
+                        .AppendFullName(rowField.FieldType)
+                        .Append(">(\"")
+                        .Append(rowField.FieldName)
+                        .Append("\")");
+                    break;
+                case { FieldType: INamedTypeSymbol { IsPgEnum: true, IsNullable: true } }:
+                    builder.Append("dataRow.GetPgVal<")
+                        .AppendFullName(rowField.FieldType)
+                        .Append(',')
+                        .Append(rowField.FieldType.GetIPgDbType())
+                        .Append(">(\"")
+                        .Append(rowField.FieldName)
+                        .Append("\")");
+                    break;
+                case { FieldType: INamedTypeSymbol { IsPgEnum: true } }:
+                    builder.Append("dataRow.GetPgNotNull<")
+                        .AppendFullName(rowField.FieldType)
+                        .Append(',')
+                        .Append(rowField.FieldType.GetIPgDbType())
+                        .Append(">(\"")
+                        .Append(rowField.FieldName)
+                        .Append("\")");
+                    break;
+                case { FieldType: INamedTypeSymbol { IsDecodableEnum: true, IsNullable: true } }:
+                    builder.Append("dataRow.Get")
+                        .Append(rowField.FieldType.AsNotNullType())
+                        .Append("(\"")
+                        .Append(rowField.FieldName)
+                        .Append("\")");
+                    break;
+                case { FieldType: INamedTypeSymbol { IsDecodableEnum: true, IsNullable: false } }:
+                    builder.Append("dataRow.Get")
+                        .Append(rowField.FieldType.Name)
+                        .Append("NotNull").Append("(\"")
+                        .Append(rowField.FieldName)
+                        .Append("\")");
+                    break;
+                case { FieldType: { IsNullable: true, IsValueType: true } }:
+                    builder.Append("dataRow.GetPgVal<")
+                        .AppendFullName(rowField.FieldType.AsNotNullType())
+                        .Append(',')
+                        .Append(rowField.FieldType.GetIPgDbType())
+                        .Append(">(\"")
+                        .Append(rowField.FieldName)
+                        .Append("\")");
+                    break;
+                case { FieldType: { IsNullable: true, IsValueType: false } }:
+                    builder.Append("dataRow.GetPgRef<")
+                        .AppendFullName(rowField.FieldType)
+                        .Append(',')
+                        .Append(rowField.FieldType.GetIPgDbType())
+                        .Append(">(\"")
+                        .Append(rowField.FieldName)
+                        .Append("\")");
+                    break;
+                default:
+                    builder.Append("dataRow.GetPgNotNull<")
+                        .AppendFullName(rowField.FieldType)
+                        .Append(',')
+                        .Append(rowField.FieldType.GetIPgDbType())
+                        .Append(">(\"")
+                        .Append(rowField.FieldName)
+                        .Append("\")");
+                    break;
             }
 
             if (allowTrailingCommas || index != rowFields.Length - 1)

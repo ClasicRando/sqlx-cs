@@ -14,12 +14,13 @@ namespace Sqlx.Postgres.Type;
 /// <a href="https://www.postgresql.org/docs/current/datatype-net-types.html#DATATYPE-INET">inet docs</a>
 /// <a href="https://www.postgresql.org/docs/current/datatype-net-types.html#DATATYPE-CIDR">cidr docs</a>
 /// </summary>
-internal abstract class PgIpNetwork : IPgDbType<IPNetwork>, IHasArrayType
+public abstract class PgIpNetwork : IPgDbType<IPNetwork>, IHasArrayType
 {
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <see cref="NetworkUtils.EncodeNetworkValue"/>
     public static void Encode(IPNetwork value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         NetworkUtils.EncodeNetworkValue<IPNetwork>(
             value.BaseAddress,
             (byte)value.PrefixLength,

@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Sqlx.Postgres.Connection;
@@ -12,6 +13,7 @@ public static class TestHelper
         IEnumerable<PortableExecutableReference> references =
         [
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(IPNetwork).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(PgConnection).Assembly.Location),
         ];
 

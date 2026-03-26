@@ -5,7 +5,7 @@ namespace Sqlx.Postgres.Type;
 /// technically be used within ranges, only <see cref="IPgDbType{T}"/> definitions that implement
 /// this interface can be encoded/decoded by <see cref="PgRangeType{TValue,TType}"/> .
 /// </summary>
-internal interface IHasRangeType
+public interface IHasRangeType
 {
     /// <summary>
     /// <see cref="PgTypeInfo"/> of this type's range

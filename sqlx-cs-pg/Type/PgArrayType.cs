@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
@@ -170,7 +171,8 @@ internal static class PgArrayTypeUtils
 /// </summary>
 /// <typeparam name="TElement">Array element type</typeparam>
 /// <typeparam name="TType">Array element's <see cref="IPgDbType{T}"/></typeparam>
-internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
+[SuppressMessage("Design", "CA1000:Do not declare static members on generic types")]
+public abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[]>
     where TType : IPgDbType<TElement>, IHasArrayType
     where TElement : class
 {
@@ -185,6 +187,8 @@ internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[
     /// </summary>
     public static void Encode(TElement?[] value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(value);
+        ArgumentNullException.ThrowIfNull(buffer);
         PgArrayTypeUtils.EncodeMetaFields<TElement, TType>(value.Length, buffer);
         foreach (TElement? element in value)
         {
@@ -274,6 +278,7 @@ internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[
 
     public static bool IsCompatible(PgTypeInfo typeInfo)
     {
+        ArgumentNullException.ThrowIfNull(typeInfo);
         if (typeInfo == DbType)
         {
             return true;
@@ -293,7 +298,8 @@ internal abstract class PgArrayTypeClass<TElement, TType> : IPgDbType<TElement?[
 /// </summary>
 /// <typeparam name="TElement">Array element type</typeparam>
 /// <typeparam name="TType">Array element's <see cref="IPgDbType{T}"/></typeparam>
-internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?[]>
+[SuppressMessage("Design", "CA1000:Do not declare static members on generic types")]
+public abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?[]>
     where TType : IPgDbType<TElement>, IHasArrayType
     where TElement : struct
 {
@@ -308,6 +314,8 @@ internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?
     /// </summary>
     public static void Encode(TElement?[] value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(value);
+        ArgumentNullException.ThrowIfNull(buffer);
         PgArrayTypeUtils.EncodeMetaFields<TElement, TType>(value.Length, buffer);
         foreach (var element in value)
         {
@@ -399,6 +407,7 @@ internal abstract class PgArrayTypeStruct<TElement, TType> : IPgDbType<TElement?
 
     public static bool IsCompatible(PgTypeInfo typeInfo)
     {
+        ArgumentNullException.ThrowIfNull(typeInfo);
         if (typeInfo == DbType)
         {
             return true;

@@ -46,7 +46,7 @@ internal static class PgFloatingPoint
 /// <see cref="IPgDbType{T}"/> for <see cref="double"/> values. Maps to the <c>DOUBLE PRECISION</c>
 /// type.
 /// </summary>
-internal abstract class PgDouble : IPgDbType<double>, IHasArrayType
+public abstract class PgDouble : IPgDbType<double>, IHasArrayType
 {
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -54,6 +54,7 @@ internal abstract class PgDouble : IPgDbType<double>, IHasArrayType
     /// </summary>
     public static void Encode(double value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteDouble(value);
     }
 
@@ -92,7 +93,7 @@ internal abstract class PgDouble : IPgDbType<double>, IHasArrayType
 /// <summary>
 /// <see cref="IPgDbType{T}"/> for <see cref="float"/> values. Maps to the <c>REAL</c> type.
 /// </summary>
-internal abstract class PgFloat : IPgDbType<float>, IHasArrayType
+public abstract class PgFloat : IPgDbType<float>, IHasArrayType
 {
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -100,6 +101,7 @@ internal abstract class PgFloat : IPgDbType<float>, IHasArrayType
     /// </summary>
     public static void Encode(float value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteFloat(value);
     }
 

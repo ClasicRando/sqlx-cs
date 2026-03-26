@@ -10,7 +10,7 @@ namespace Sqlx.Postgres.Type;
 /// <summary>
 /// <see cref="IPgDbType{T}"/> for <see cref="decimal"/> values. Maps to the <c>NUMERIC</c> type.
 /// </summary>
-internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArrayType
+public abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArrayType
 {
     private const int DecimalBits = 4;
 
@@ -64,6 +64,7 @@ internal abstract class PgDecimal : IPgDbType<decimal>, IHasRangeType, IHasArray
     /// </summary>
     public static void Encode(decimal value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         EncodeDecimal(value, buffer);
     }
 

@@ -121,7 +121,7 @@ internal static class PgInteger
 /// <summary>
 /// <see cref="IPgDbType{T}"/> for <see cref="long"/> values. Maps to the <c>BIGINT</c> type.
 /// </summary>
-internal abstract class PgLong : IPgDbType<long>, IHasRangeType, IHasArrayType
+public abstract class PgLong : IPgDbType<long>, IHasRangeType, IHasArrayType
 {
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -129,6 +129,7 @@ internal abstract class PgLong : IPgDbType<long>, IHasRangeType, IHasArrayType
     /// </summary>
     public static void Encode(long value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteLong(value);
     }
 
@@ -170,7 +171,7 @@ internal abstract class PgLong : IPgDbType<long>, IHasRangeType, IHasArrayType
 /// <summary>
 /// <see cref="IPgDbType{T}"/> for <see cref="int"/> values. Maps to the <c>INTEGER</c> type.
 /// </summary>
-internal abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
+public abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
 {
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -178,6 +179,7 @@ internal abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
     /// </summary>
     public static void Encode(int value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteInt(value);
     }
 
@@ -226,7 +228,7 @@ internal abstract class PgInt : IPgDbType<int>, IHasRangeType, IHasArrayType
 /// <summary>
 /// <see cref="IPgDbType{T}"/> for <see cref="short"/> values. Maps to the <c>SMALLINT</c> type.
 /// </summary>
-internal abstract class PgShort : IPgDbType<short>, IHasArrayType
+public abstract class PgShort : IPgDbType<short>, IHasArrayType
 {
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -234,6 +236,7 @@ internal abstract class PgShort : IPgDbType<short>, IHasArrayType
     /// </summary>
     public static void Encode(short value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteShort(value);
     }
 

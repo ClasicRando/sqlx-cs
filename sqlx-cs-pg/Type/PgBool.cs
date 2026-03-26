@@ -12,7 +12,7 @@ namespace Sqlx.Postgres.Type;
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-boolean.html">docs</a>
 /// </summary>
-internal abstract class PgBool : IPgDbType<bool>, IHasArrayType
+public abstract class PgBool : IPgDbType<bool>, IHasArrayType
 {
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -23,6 +23,7 @@ internal abstract class PgBool : IPgDbType<bool>, IHasArrayType
     /// </summary>
     public static void Encode(bool value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteByte((byte)(value ? 1 : 0));
     }
 

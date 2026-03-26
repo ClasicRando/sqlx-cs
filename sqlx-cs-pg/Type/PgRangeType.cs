@@ -11,7 +11,8 @@ namespace Sqlx.Postgres.Type;
 /// <see cref="IPgDbType{T}"/> for <see cref="PgRange{T}"/> values. Maps to any database type that
 /// has a range and the CLR type must implement <see cref="IHasRangeType"/>.
 /// </summary>
-internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>, IHasArrayType
+[SuppressMessage("Design", "CA1000:Do not declare static members on generic types")]
+public abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>, IHasArrayType
     where TType : IPgDbType<TValue>, IHasRangeType
     where TValue : notnull
 {
@@ -27,6 +28,8 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
     /// </summary>
     public static void Encode(PgRange<TValue> value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(value);
+        ArgumentNullException.ThrowIfNull(buffer);
         var flags = RangeMetadata.None;
 
         flags |= value.Lower.Type switch
@@ -198,6 +201,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
 
     public static bool IsCompatible(PgTypeInfo typeInfo)
     {
+        ArgumentNullException.ThrowIfNull(typeInfo);
         if (typeInfo == DbType)
         {
             return true;

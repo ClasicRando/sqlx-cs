@@ -13,7 +13,7 @@ namespace Sqlx.Postgres.Type;
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-binary.html">docs</a>
 /// </summary>
-internal abstract class PgBytea : IPgDbType<byte[]>, IHasArrayType
+public abstract class PgBytea : IPgDbType<byte[]>, IHasArrayType
 {
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>

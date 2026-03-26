@@ -13,7 +13,7 @@ public partial struct TestRow : IFromRow<IPgDataRow, TestRow>
     {
         return new TestRow
         {
-            Id = dataRow.GetIntNotNull("Id"),
+            Id = dataRow.GetPgNotNull<System.Int32,Sqlx.Postgres.Type.PgInt>("Id"),
             Inner = InnerRow.FromRow(dataRow),
             JsonField = dataRow.GetJsonNotNull<JsonFieldType>("JsonField"),
             OptionalJsonField = dataRow.GetJson<JsonFieldType>("OptionalJsonField"),

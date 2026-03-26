@@ -9,7 +9,7 @@ namespace Sqlx.Postgres.Type;
 /// <summary>
 /// <see cref="IPgDbType{T}"/> for <see cref="DateOnly"/> values. Maps to the <c>DATE</c> type.
 /// </summary>
-internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayType
+public abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayType
 {
     private static readonly DateOnly PostgresEpoch = new(2000, 1, 1);
 
@@ -22,6 +22,7 @@ internal abstract class PgDate : IPgDbType<DateOnly>, IHasRangeType, IHasArrayTy
     /// </summary>
     public static void Encode(DateOnly value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteInt(value.DayNumber - PostgresEpoch.DayNumber);
     }
 

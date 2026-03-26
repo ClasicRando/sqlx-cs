@@ -12,7 +12,7 @@ namespace Sqlx.Postgres.Type;
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER-SPECIAL-TABLE">docs</a>
 /// </summary>
-internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
+public abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
 {
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -20,6 +20,7 @@ internal abstract class PgChar : IPgDbType<sbyte>, IHasArrayType
     /// </summary>
     public static void Encode(sbyte value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteByte((byte)value);
     }
 

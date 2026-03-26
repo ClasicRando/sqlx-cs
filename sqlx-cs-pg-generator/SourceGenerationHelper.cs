@@ -172,67 +172,9 @@ internal static class SourceGenerationHelper
                 : typeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
         }
 
-        private bool IsDbType =>
+        public bool IsDbType =>
             typeSymbol.AllInterfaces.Any(i => i.Name.StartsWith("IPgDbType")) ||
             typeSymbol.HasAttribute("PgCompositeAttribute", "WrapperTypeAttribute");
-
-        public string? GetDecodeMethodSuffix()
-        {
-            var isNullable = typeSymbol.IsNullable;
-            ITypeSymbol finalType = typeSymbol.AsNotNullType();
-            var name = finalType.GetDecodeMethodSuffixInner();
-            if (name is "PgVal" or "PgRef")
-            {
-                return isNullable ? name : "PgNotNull";
-            }
-
-            return isNullable ? name : name + "NotNull";
-        }
-
-        private string? GetDecodeMethodSuffixInner()
-        {
-            return typeSymbol switch
-            {
-                { IsDbType: true } => typeSymbol.IsValueType ? "PgVal" : "PgRef",
-                INamedTypeSymbol { IsDecodableEnum: true } => typeSymbol.Name,
-                IArrayTypeSymbol { ElementType.Name: nameof(Byte) } => "Bytes",
-                IArrayTypeSymbol arrayTypeSymbol =>
-                    $"{arrayTypeSymbol.ElementType.AsNotNullType().GetDecodeMethodSuffixInner()}Array",
-                { Name: nameof(Boolean) } => "Boolean",
-                { Name: nameof(SByte) } => "Byte",
-                { Name: nameof(Int16) } => "Short",
-                { Name: nameof(Int32) } => "Int",
-                { Name: nameof(Int64) } => "Long",
-                { Name: nameof(Single) } => "Float",
-                { Name: nameof(Double) } => "Double",
-                { Name: "TimeOnly" } => "Time",
-                { Name: "DateOnly" } => "Date",
-                { Name: nameof(DateTime) } => "DateTime",
-                { Name: "DateTimeOffset" } => "DateTimeOffset",
-                { Name: nameof(Decimal) } => "Decimal",
-                { Name: nameof(String) } => "String",
-                { Name: nameof(Guid) } => "Guid",
-                { Name: "IPNetwork" } => "IpNetwork",
-                { Name: nameof(BitArray) } => "BitArray",
-                INamedTypeSymbol { Name: "PgRange" } namedTypeSymbol => namedTypeSymbol
-                        .TypeArguments[0] switch
-                    {
-                        { Name: nameof(Int64) } => "PgRangeLong",
-                        { Name: nameof(Int32) } => "PgRangeInt",
-                        { Name: "DateOnly" } => "PgRangeDate",
-                        { Name: nameof(DateTime) } => "PgRangeDateTime",
-                        { Name: "DateTimeOffset" } => "PgRangeDateTimeOffset",
-                        { Name: nameof(Decimal) } => "PgRangeDecimal",
-                        _ => null,
-                    },
-                _ => null,
-            };
-        }
-
-        public bool IsValidDbType()
-        {
-            return typeSymbol.AsNotNullType().GetDecodeMethodSuffixInner() is not null;
-        }
 
         public string? GetIPgDbType()
         {
@@ -244,7 +186,7 @@ internal static class SourceGenerationHelper
                     name = namedTypeSymbol.FullName;
                     break;
                 case INamedTypeSymbol { IsPgEnum: true } namedTypeSymbol:
-                    name = namedTypeSymbol.FullName;
+                    name = $"Sqlx.Postgres.Generator.Type.Pg{namedTypeSymbol.Name}";
                     break;
                 case IArrayTypeSymbol { ElementType.Name: nameof(Byte) }:
                     name = $"{typeNamespace}.PgBytea";
@@ -324,18 +266,19 @@ internal static class SourceGenerationHelper
 
         public bool HasIPgDbType()
         {
-            return typeSymbol.GetIPgDbType() is not null;
+            return typeSymbol.GetIPgDbType() is not null ||
+                   typeSymbol is INamedTypeSymbol { IsDecodableEnum: true };
         }
     }
 
     extension(INamedTypeSymbol namedTypeSymbol)
     {
-        private bool IsDecodableEnum => namedTypeSymbol.EnumUnderlyingType is not null &&
+        public bool IsDecodableEnum => namedTypeSymbol.EnumUnderlyingType is not null &&
                                         namedTypeSymbol.HasAttribute(
                                             "PgEnumAttribute",
                                             "WrapperEnumAttribute");
 
-        private bool IsPgEnum => namedTypeSymbol.EnumUnderlyingType is not null &&
+        public bool IsPgEnum => namedTypeSymbol.EnumUnderlyingType is not null &&
                                  namedTypeSymbol.HasAttribute("PgEnumAttribute");
 
         private bool IsValidRangeType => namedTypeSymbol.Name is nameof(Int64) or nameof(Int32)

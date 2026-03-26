@@ -71,7 +71,7 @@ internal readonly struct PgFromRowToGenerate
 
         var invalidParameterTypes = ConstructorParameters
             .Where(param => param is not { Flatten: true } and not { IsJson: true })
-            .Where(param => !param.FieldType.IsValidDbType())
+            .Where(param => !param.FieldType.HasIPgDbType())
             .ToImmutableArray();
         if (!invalidParameterTypes.IsEmpty)
         {
@@ -100,7 +100,7 @@ internal readonly struct PgFromRowToGenerate
 
         var invalidPropertyTypes = InitProperties
             .Where(param => param is not { Flatten: true } and not { IsJson: true })
-            .Where(property => !property.FieldType.IsValidDbType())
+            .Where(property => !property.FieldType.HasIPgDbType())
             .ToImmutableArray();
         if (!invalidPropertyTypes.IsEmpty)
         {

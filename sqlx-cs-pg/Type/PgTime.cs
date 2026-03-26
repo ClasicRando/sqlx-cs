@@ -9,7 +9,7 @@ namespace Sqlx.Postgres.Type;
 /// <summary>
 /// <see cref="IPgDbType{T}"/> for <see cref="TimeOnly"/> values. Maps to the <c>TIME</c> type.
 /// </summary>
-internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
+public abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
 {
     public const int Size = sizeof(long);
 
@@ -22,6 +22,7 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
     /// </summary>
     public static void Encode(TimeOnly value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteLong(value.Ticks / TimeSpan.TicksPerMicrosecond);
     }
 
