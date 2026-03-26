@@ -102,6 +102,11 @@ internal static class SourceGenerationHelper
 
         public StringBuilder AppendFullName(ITypeSymbol typeSymbol)
         {
+            if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
+            {
+                return builder.AppendFullName(arrayTypeSymbol);
+            }
+
             var containingNamespace = typeSymbol.ContainingNamespace.GetFullNamespaceName();
             if (!string.IsNullOrEmpty(containingNamespace))
             {
@@ -111,6 +116,12 @@ internal static class SourceGenerationHelper
 
             builder.Append(typeSymbol.Name);
             return builder;
+        }
+
+        private StringBuilder AppendFullName(IArrayTypeSymbol typeSymbol)
+        {
+            return builder.AppendFullName(typeSymbol.ElementType)
+                .Append("[]");
         }
     }
 
@@ -136,6 +147,7 @@ internal static class SourceGenerationHelper
                 {
                     return arrayTypeSymbol.FullName;
                 }
+
                 var namespaceFullName = typeSymbol.ContainingNamespace is null
                     ? string.Empty
                     : typeSymbol.ContainingNamespace.GetFullNamespaceName();
@@ -239,8 +251,11 @@ internal static class SourceGenerationHelper
                     break;
                 case IArrayTypeSymbol arrayTypeSymbol:
                     var elementType = (INamedTypeSymbol)arrayTypeSymbol.ElementType;
-                    var decoderName = elementType.IsValueType ? "PgArrayTypeStruct" : "PgArrayTypeClass";
-                    name = $"{typeNamespace}.{decoderName}<{elementType.FullName}, {elementType.GetIPgDbType()}>";
+                    var decoderName = elementType.IsValueType
+                        ? "PgArrayTypeStruct"
+                        : "PgArrayTypeClass";
+                    name =
+                        $"{typeNamespace}.{decoderName}<{elementType.FullName}, {elementType.GetIPgDbType()}>";
                     break;
                 case { Name: nameof(Boolean) }:
                     name = $"{typeNamespace}.PgBool";
