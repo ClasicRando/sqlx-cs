@@ -338,4 +338,43 @@ public class PostgresImplementationGeneratorSnapshotTest
 
         await TestHelper.VerifyPostgresGenerator(source);
     }
+    
+    [Test]
+    public async Task When_WrapperType_ShouldSucceed()
+    {
+        const string source =
+            """
+            using Sqlx.Postgres.Generator;
+            using Sqlx.Postgres.Generator.Type;
+
+            [WrapperType]
+            public readonly partial record struct TestWrapperType
+            {
+                public required int Id { get; init; }
+                
+                [PgPropertySkip]
+                public string IdString => Id.ToString();
+            }
+            """;
+
+        await TestHelper.VerifyPostgresGenerator(source);
+    }
+    
+    [Test]
+    public async Task When_WrapperTypeOverComplexType_ShouldSucceed()
+    {
+        const string source =
+            """
+            using Sqlx.Postgres.Generator;
+            using Sqlx.Postgres.Generator.Type;
+
+            [WrapperType]
+            public readonly partial record struct TestWrapperIds
+            {
+                public required int[] Inner { get; init; }
+            }
+            """;
+
+        await TestHelper.VerifyPostgresGenerator(source);
+    }
 }

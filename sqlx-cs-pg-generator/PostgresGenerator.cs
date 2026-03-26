@@ -303,9 +303,9 @@ public class PostgresGenerator : IIncrementalGenerator
             ctx.AddSource(
                 "ToParamAttribute.g.cs",
                 SourceText.From(ToParamAttribute, Encoding.UTF8));
-            // ctx.AddSource(
-            //     "WrapperTypeAttribute.g.cs",
-            //     SourceText.From(WrapperTypeAttribute, Encoding.UTF8));
+            ctx.AddSource(
+                "WrapperTypeAttribute.g.cs",
+                SourceText.From(WrapperTypeAttribute, Encoding.UTF8));
             ctx.AddSource(
                 "WrapperEnumAttribute.g.cs",
                 SourceText.From(WrapperEnumAttribute, Encoding.UTF8));
@@ -320,6 +320,7 @@ public class PostgresGenerator : IIncrementalGenerator
                 SourceText.From(ToPgBinaryCopyRowAttribute, Encoding.UTF8));
         });
 
+        RegisterSourceGeneration<WrapperTypeImplementationGenerator, WrapperTypeToGenerate>(context);
         RegisterSourceGeneration<PgEnumImplementationGenerator, PgEnumToGenerate>(context);
         RegisterSourceGeneration<WrapperEnumImplementationGenerator, WrapperEnumToGenerate>(context);
         RegisterSourceGeneration<PgCompositeImplementationGenerator, PgCompositeToGenerate>(context);

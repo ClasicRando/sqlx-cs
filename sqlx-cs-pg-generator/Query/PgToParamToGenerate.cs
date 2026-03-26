@@ -28,9 +28,7 @@ internal readonly struct PgToParamToGenerate
         ContainingNamespace = namedTypeSymbol.ContainingNamespace.GetFullNamespaceName();
         Properties = namedTypeSymbol.GetMembers()
             .OfType<IPropertySymbol>()
-            .Where(property => !property.IsWriteOnly)
-            .Where(property => !property.GetAttributes().Any(attr =>
-                attr.AttributeClass?.Name == "PgPropertySkipAttribute"))
+            .Where(property => !property.IsWriteOnly && property.IsNotSkip)
             .Select(property => property.Name)
             .ToImmutableArray();
     }

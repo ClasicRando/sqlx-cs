@@ -51,8 +51,7 @@ internal readonly struct PgFromRowToGenerate
             InitProperties = namedTypeSymbol.GetMembers()
                 .OfType<IPropertySymbol>()
                 .Where(property => property.IsRequired || !property.IsReadOnly)
-                .Where(property => !property.GetAttributes().Any(attr =>
-                    attr.AttributeClass?.Name == "PgPropertySkipAttribute"))
+                .Where(property => property.IsNotSkip)
                 .Select(property => RowField.FromProperty(property, renameAll))
                 .ToImmutableArray();
         }

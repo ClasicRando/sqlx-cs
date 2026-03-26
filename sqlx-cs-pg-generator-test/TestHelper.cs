@@ -1,7 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Sqlx.Postgres.Connection;
-using Sqlx.Postgres.Generator.Type;
 
 namespace Sqlx.Postgres.Generator.Tests;
 

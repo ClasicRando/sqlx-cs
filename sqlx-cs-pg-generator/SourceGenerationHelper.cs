@@ -46,6 +46,24 @@ internal static class SourceGenerationHelper
             DiagnosticSeverity.Error,
             true);
 
+    public static readonly DiagnosticDescriptor DefinitionShouldBeValueType =
+        new(
+            "SQLxPG001",
+            "Annotated type declaration should be a struct",
+            "Currently, '{0}' is a reference type but it's recommended to be a value type",
+            "sqlx-cs-pg Generation",
+            DiagnosticSeverity.Warning,
+            true);
+
+    public static readonly DiagnosticDescriptor InvalidTypeDefinition =
+        new(
+            "SQLxPG001",
+            "Annotated type declaration is not valid",
+            "'{0}' is invalid for the purposes of the attached source generation attribute '{1}'. {2}",
+            "sqlx-cs-pg Generation",
+            DiagnosticSeverity.Error,
+            true);
+
     extension(INamespaceSymbol namespaceSymbol)
     {
         public string GetFullNamespaceName()
@@ -102,8 +120,31 @@ internal static class SourceGenerationHelper
             .Any(mod => mod.IsKind(SyntaxKind.PartialKeyword));
     }
 
+    extension(ISymbol symbol)
+    {
+        public bool HasAttribute(params string[] name) => symbol.GetAttributes()
+            .Any(attr => name.Contains(attr.AttributeClass?.Name));
+    }
+
     extension(ITypeSymbol typeSymbol)
     {
+        public string FullName
+        {
+            get
+            {
+                if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
+                {
+                    return arrayTypeSymbol.FullName;
+                }
+                var namespaceFullName = typeSymbol.ContainingNamespace is null
+                    ? string.Empty
+                    : typeSymbol.ContainingNamespace.GetFullNamespaceName();
+                return string.IsNullOrEmpty(namespaceFullName)
+                    ? typeSymbol.Name
+                    : namespaceFullName + "." + typeSymbol.Name;
+            }
+        }
+
         public bool IsNullable => typeSymbol.NullableAnnotation is NullableAnnotation.Annotated ||
                                   typeSymbol.Name.StartsWith("Nullable");
 
@@ -121,8 +162,7 @@ internal static class SourceGenerationHelper
 
         private bool IsDbType =>
             typeSymbol.AllInterfaces.Any(i => i.Name.StartsWith("IPgDbType")) ||
-            typeSymbol.GetAttributes()
-                .Any(attr => attr.AttributeClass?.Name is "PgCompositeAttribute");
+            typeSymbol.HasAttribute("PgCompositeAttribute", "WrapperTypeAttribute");
 
         public string? GetDecodeMethodSuffix()
         {
@@ -181,20 +221,128 @@ internal static class SourceGenerationHelper
         {
             return typeSymbol.AsNotNullType().GetDecodeMethodSuffixInner() is not null;
         }
+
+        public string? GetIPgDbType()
+        {
+            const string typeNamespace = "Sqlx.Postgres.Type";
+            string name;
+            switch (typeSymbol.AsNotNullType())
+            {
+                case INamedTypeSymbol { IsDbType: true } namedTypeSymbol:
+                    name = namedTypeSymbol.FullName;
+                    break;
+                case INamedTypeSymbol { IsPgEnum: true } namedTypeSymbol:
+                    name = namedTypeSymbol.FullName;
+                    break;
+                case IArrayTypeSymbol { ElementType.Name: nameof(Byte) }:
+                    name = $"{typeNamespace}.PgBytea";
+                    break;
+                case IArrayTypeSymbol arrayTypeSymbol:
+                    var elementType = (INamedTypeSymbol)arrayTypeSymbol.ElementType;
+                    var decoderName = elementType.IsValueType ? "PgArrayTypeStruct" : "PgArrayTypeClass";
+                    name = $"{typeNamespace}.{decoderName}<{elementType.FullName}, {elementType.GetIPgDbType()}>";
+                    break;
+                case { Name: nameof(Boolean) }:
+                    name = $"{typeNamespace}.PgBool";
+                    break;
+                case { Name: nameof(SByte) }:
+                    name = $"{typeNamespace}.PgChar";
+                    break;
+                case { Name: nameof(Int16) }:
+                    name = $"{typeNamespace}.PgShort";
+                    break;
+                case { Name: nameof(Int32) }:
+                    name = $"{typeNamespace}.PgInt";
+                    break;
+                case { Name: nameof(Int64) }:
+                    name = $"{typeNamespace}.PgLong";
+                    break;
+                case { Name: nameof(Single) }:
+                    name = $"{typeNamespace}.PgFloat";
+                    break;
+                case { Name: nameof(Double) }:
+                    name = $"{typeNamespace}.PgDouble";
+                    break;
+                case { Name: "TimeOnly" }:
+                    name = $"{typeNamespace}.PgTime";
+                    break;
+                case { Name: "DateOnly" }:
+                    name = $"{typeNamespace}.PgDate";
+                    break;
+                case { Name: nameof(DateTime) }:
+                    name = $"{typeNamespace}.PgDateTime";
+                    break;
+                case { Name: "DateTimeOffset" }:
+                    name = $"{typeNamespace}.PgDateTimeOffset";
+                    break;
+                case { Name: nameof(Decimal) }:
+                    name = $"{typeNamespace}.PgDecimal";
+                    break;
+                case { Name: nameof(String) }:
+                    name = $"{typeNamespace}.PgString";
+                    break;
+                case { Name: nameof(Guid) }:
+                    name = $"{typeNamespace}.PgUuid";
+                    break;
+                case { Name: "IPNetwork" }:
+                    name = $"{typeNamespace}.PgIpNetwork";
+                    break;
+                case { Name: nameof(BitArray) }:
+                    name = $"{typeNamespace}.PgBitString";
+                    break;
+                case INamedTypeSymbol { Name: "PgRange" } namedTypeSymbol:
+                    var innerType = (INamedTypeSymbol)namedTypeSymbol.TypeArguments[0];
+                    if (!innerType.IsValidRangeType)
+                    {
+                        return null;
+                    }
+
+                    name =
+                        $"{typeNamespace}.PgRangeType<{innerType.FullName}, {innerType.GetIPgDbType()}>";
+                    break;
+                default:
+                    return null;
+            }
+
+            return name;
+        }
+
+        public bool HasIPgDbType()
+        {
+            return typeSymbol.GetIPgDbType() is not null;
+        }
     }
 
     extension(INamedTypeSymbol namedTypeSymbol)
     {
         private bool IsDecodableEnum => namedTypeSymbol.EnumUnderlyingType is not null &&
-                                        namedTypeSymbol.GetAttributes().Any(attr =>
-                                            attr.AttributeClass?.Name is "PgEnumAttribute"
-                                                or "WrapperEnumAttribute");
+                                        namedTypeSymbol.HasAttribute(
+                                            "PgEnumAttribute",
+                                            "WrapperEnumAttribute");
+
+        private bool IsPgEnum => namedTypeSymbol.EnumUnderlyingType is not null &&
+                                 namedTypeSymbol.HasAttribute("PgEnumAttribute");
+
+        private bool IsValidRangeType => namedTypeSymbol.Name is nameof(Int64) or nameof(Int32)
+            or "DateOnly" or nameof(DateTime) or "DateTimeOffset" or nameof(Decimal);
+    }
+
+    extension(IArrayTypeSymbol arrayTypeSymbol)
+    {
+        private string FullName => $"{arrayTypeSymbol.ElementType.FullName}[]";
+    }
+
+    extension(IPropertySymbol propertySymbol)
+    {
+        public bool IsNotSkip => !(propertySymbol.IsIndexer ||
+                                   propertySymbol.IsImplicitlyDeclared ||
+                                   propertySymbol.HasAttribute("PgPropertySkipAttribute"));
     }
 
     extension(SyntaxNode syntaxNode)
     {
         public bool IsEnum => syntaxNode is EnumDeclarationSyntax;
-        
+
         public bool IsProductType => syntaxNode is ClassDeclarationSyntax or StructDeclarationSyntax
             or RecordDeclarationSyntax;
     }
@@ -209,7 +357,10 @@ internal static class SourceGenerationHelper
                 Accessibility.ProtectedAndInternal or Accessibility.Protected => "protected",
                 Accessibility.Internal or Accessibility.ProtectedOrInternal => "internal",
                 Accessibility.Public => "public",
-                _ => throw new ArgumentOutOfRangeException(nameof(accessibility), accessibility, null),
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(accessibility),
+                    accessibility,
+                    null),
             };
         }
     }
