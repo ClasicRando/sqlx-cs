@@ -46,6 +46,7 @@ internal abstract class AbstractPgDataRow : IPgDataRow
     public bool IsNull(int index)
     {
         CheckIfWithinRow();
+        CheckValidIndex(index);
         return GetColumnData(index).IsNull;
     }
 

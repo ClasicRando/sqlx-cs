@@ -115,7 +115,23 @@ internal static class SourceGenerationHelper
             }
 
             builder.Append(typeSymbol.Name);
-            return builder;
+
+            if (typeSymbol is not INamedTypeSymbol { TypeArguments.IsEmpty: false } namedTypeSymbol)
+            {
+                return builder;
+            }
+
+            builder.Append('<');
+            for (var i = 0; i < namedTypeSymbol.TypeArguments.Length; i++)
+            {
+                builder.AppendFullName(namedTypeSymbol.TypeArguments[i]);
+                if (i != namedTypeSymbol.TypeArguments.Length - 1)
+                {
+                    builder.Append(',');
+                }
+            }
+
+            return builder.Append('>');
         }
 
         private StringBuilder AppendFullName(IArrayTypeSymbol typeSymbol)
@@ -247,7 +263,7 @@ internal static class SourceGenerationHelper
                 case { Name: nameof(BitArray) }:
                     name = $"{typeNamespace}.PgBitString";
                     break;
-                case INamedTypeSymbol { Name: "PgRange" } namedTypeSymbol:
+                case INamedTypeSymbol { IsRangeType: true } namedTypeSymbol:
                     var innerType = (INamedTypeSymbol)namedTypeSymbol.TypeArguments[0];
                     if (!innerType.IsValidRangeType)
                     {
@@ -274,12 +290,12 @@ internal static class SourceGenerationHelper
     extension(INamedTypeSymbol namedTypeSymbol)
     {
         public bool IsDecodableEnum => namedTypeSymbol.EnumUnderlyingType is not null &&
-                                        namedTypeSymbol.HasAttribute(
-                                            "PgEnumAttribute",
-                                            "WrapperEnumAttribute");
+                                        namedTypeSymbol.HasAttribute("WrapperEnumAttribute");
 
         public bool IsPgEnum => namedTypeSymbol.EnumUnderlyingType is not null &&
                                  namedTypeSymbol.HasAttribute("PgEnumAttribute");
+
+        public bool IsRangeType => namedTypeSymbol.Name == "PgRange";
 
         private bool IsValidRangeType => namedTypeSymbol.Name is nameof(Int64) or nameof(Int32)
             or "DateOnly" or nameof(DateTime) or "DateTimeOffset" or nameof(Decimal);

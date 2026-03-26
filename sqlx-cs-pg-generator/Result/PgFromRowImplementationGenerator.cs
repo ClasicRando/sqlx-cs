@@ -163,15 +163,10 @@ internal class PgFromRowImplementationGenerator : ISourceGenerationPipeline<PgFr
                         .Append(rowField.FieldName)
                         .Append("\")");
                     break;
-                case { FieldType: { IsDbType: true, IsNullable: true, IsValueType: true } }:
-                    builder.Append("dataRow.GetPgVal<")
-                        .AppendFullName(rowField.FieldType)
-                        .Append(">(\"")
+                case { FieldType: { IsDbType: true, IsNullable: true } }:
+                    builder.Append("dataRow.IsNull(dataRow.IndexOf(\"")
                         .Append(rowField.FieldName)
-                        .Append("\")");
-                    break;
-                case { FieldType: { IsDbType: true, IsNullable: true, IsValueType: false } }:
-                    builder.Append("dataRow.GetPgRef<")
+                        .Append("\")) ? null : dataRow.GetPgNotNull<")
                         .AppendFullName(rowField.FieldType)
                         .Append(">(\"")
                         .Append(rowField.FieldName)
@@ -185,7 +180,9 @@ internal class PgFromRowImplementationGenerator : ISourceGenerationPipeline<PgFr
                         .Append("\")");
                     break;
                 case { FieldType: INamedTypeSymbol { IsPgEnum: true, IsNullable: true } }:
-                    builder.Append("dataRow.GetPgVal<")
+                    builder.Append("dataRow.IsNull(dataRow.IndexOf(\"")
+                        .Append(rowField.FieldName)
+                        .Append("\")) ? null : dataRow.GetPgNotNull<")
                         .AppendFullName(rowField.FieldType)
                         .Append(',')
                         .Append(rowField.FieldType.GetIPgDbType())
@@ -216,18 +213,11 @@ internal class PgFromRowImplementationGenerator : ISourceGenerationPipeline<PgFr
                         .Append(rowField.FieldName)
                         .Append("\")");
                     break;
-                case { FieldType: { IsNullable: true, IsValueType: true } }:
-                    builder.Append("dataRow.GetPgVal<")
-                        .AppendFullName(rowField.FieldType.AsNotNullType())
-                        .Append(',')
-                        .Append(rowField.FieldType.GetIPgDbType())
-                        .Append(">(\"")
+                case { FieldType.IsNullable: true }:
+                    builder.Append("dataRow.IsNull(dataRow.IndexOf(\"")
                         .Append(rowField.FieldName)
-                        .Append("\")");
-                    break;
-                case { FieldType: { IsNullable: true, IsValueType: false } }:
-                    builder.Append("dataRow.GetPgRef<")
-                        .AppendFullName(rowField.FieldType)
+                        .Append("\")) ? null : dataRow.GetPgNotNull<")
+                        .AppendFullName(rowField.FieldType.AsNotNullType())
                         .Append(',')
                         .Append(rowField.FieldType.GetIPgDbType())
                         .Append(">(\"")

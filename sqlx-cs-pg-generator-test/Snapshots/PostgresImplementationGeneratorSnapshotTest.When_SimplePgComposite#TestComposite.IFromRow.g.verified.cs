@@ -13,10 +13,10 @@ public partial struct TestComposite : IFromRow<IPgDataRow, TestComposite>
     {
         return new TestComposite
         {
-            Id = dataRow.GetIntNotNull("Id"),
-            Name = dataRow.GetStringNotNull("Name"),
-            Bytes = dataRow.GetBytes("Bytes"),
-            LongRange = dataRow.GetPgRangeLongNotNull("LongRange"),
+            Id = dataRow.GetPgNotNull<System.Int32,Sqlx.Postgres.Type.PgInt>("Id"),
+            Name = dataRow.GetPgNotNull<System.String,Sqlx.Postgres.Type.PgString>("Name"),
+            Bytes = dataRow.IsNull(dataRow.IndexOf("Bytes")) ? null : dataRow.GetPgNotNull<System.Byte[],Sqlx.Postgres.Type.PgBytea>("Bytes"),
+            LongRange = dataRow.GetPgNotNull<Sqlx.Postgres.Type.PgRange<System.Int64>,Sqlx.Postgres.Type.PgRangeType<System.Int64, Sqlx.Postgres.Type.PgLong>>("LongRange"),
         };
     }
 }
