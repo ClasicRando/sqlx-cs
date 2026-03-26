@@ -51,7 +51,7 @@ public static partial class DataRowExtensions
             where TType : IPgDbType<TValue>
             where TValue : class
         {
-            return pgDataRow.GetPgRef<TValue, TType>(index);
+            return pgDataRow.IsNull(index) ? null : pgDataRow.GetPgNotNull<TValue, TType>(index);
         }
         
         /// <summary>
@@ -75,7 +75,7 @@ public static partial class DataRowExtensions
             where TType : IPgDbType<TValue>
             where TValue : class
         {
-            return pgDataRow.GetPgRef<TValue, TType>(name);
+            return pgDataRow.GetPgRef<TValue, TType>(pgDataRow.IndexOf(name));
         }
         
         /// <summary>
@@ -99,7 +99,7 @@ public static partial class DataRowExtensions
             where TType : IPgDbType<TValue>
             where TValue : struct
         {
-            return pgDataRow.GetPgVal<TValue, TType>(index);
+            return pgDataRow.IsNull(index) ? null : pgDataRow.GetPgNotNull<TValue, TType>(index);
         }
         
         /// <summary>
@@ -123,7 +123,7 @@ public static partial class DataRowExtensions
             where TType : IPgDbType<TValue>
             where TValue : struct
         {
-            return pgDataRow.GetPgVal<TValue, TType>(name);
+            return pgDataRow.GetPgVal<TValue, TType>(pgDataRow.IndexOf(name));
         }
         
         /// <summary>
