@@ -57,24 +57,4 @@ public static class PgEnumTypes
         pgBindable.BindVal<TestEnum, PgTestEnum>(enumValue);
     }
 
-    public static TestEnum GetTestEnumNotNull(this IPgDataRow pgDataRow, int index)
-    {
-        return pgDataRow.GetPgNotNull<TestEnum, PgTestEnum>(index);
-    }
-
-    public static TestEnum GetTestEnumNotNull(this IPgDataRow pgDataRow, string name)
-    {
-        return pgDataRow.GetPgNotNull<TestEnum, PgTestEnum>(name);
-    }
-
-    public static TestEnum? GetTestEnum(this IPgDataRow pgDataRow, int index)
-    {
-        return pgDataRow.GetPgVal<TestEnum, PgTestEnum>(index);
-    }
-
-    public static TestEnum? GetTestEnum(this IPgDataRow pgDataRow, string name)
-    {
-        return pgDataRow.GetPgVal<TestEnum, PgTestEnum>(name);
-    }
-
 }

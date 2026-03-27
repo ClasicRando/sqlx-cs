@@ -245,16 +245,15 @@ internal class WrapperEnumImplementationGenerator : ISourceGenerationPipeline<Wr
             .Append(wrapperEnumToGenerate.ShortName)
             .AppendLine("(this IPgDataRow pgDataRow, int index)");
         builder.AppendLine("    {");
+        builder.AppendLine("        if (pgDataRow.IsNull(index)) return null;");
         switch (wrapperEnumToGenerate.Representation)
         {
             case EnumRepresentation.Int:
-                builder.AppendLine("        if (pgDataRow.IsNull(index)) return null;");
                 builder.Append("        return (")
                     .AppendFullName(wrapperEnumToGenerate)
                     .AppendLine(")pgDataRow.GetIntNotNull(index);");
                 break;
             case EnumRepresentation.Text:
-                builder.AppendLine("        if (pgDataRow.IsNull(index)) return null;");
                 builder.Append("        return ")
                     .AppendFullName(wrapperEnumToGenerate)
                     .AppendLine(".FromChars(pgDataRow.GetStringNotNull(index));");
@@ -272,18 +271,16 @@ internal class WrapperEnumImplementationGenerator : ISourceGenerationPipeline<Wr
             .Append(wrapperEnumToGenerate.ShortName)
             .AppendLine("(this IPgDataRow pgDataRow, string name)");
         builder.AppendLine("    {");
+        builder.AppendLine("        int index = pgDataRow.IndexOf(name);");
+        builder.AppendLine("        if (pgDataRow.IsNull(index)) return null;");
         switch (wrapperEnumToGenerate.Representation)
         {
             case EnumRepresentation.Int:
-                builder.AppendLine("        int index = pgDataRow.IndexOf(name);");
-                builder.AppendLine("        if (pgDataRow.IsNull(index)) return null;");
                 builder.Append("        return (")
                     .AppendFullName(wrapperEnumToGenerate)
                     .AppendLine(")pgDataRow.GetIntNotNull(index);");
                 break;
             case EnumRepresentation.Text:
-                builder.AppendLine("        int index = pgDataRow.IndexOf(name);");
-                builder.AppendLine("        if (pgDataRow.IsNull(index)) return null;");
                 builder.Append("        return ")
                     .AppendFullName(wrapperEnumToGenerate)
                     .AppendLine(".FromChars(pgDataRow.GetStringNotNull(index));");

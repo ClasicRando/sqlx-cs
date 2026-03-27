@@ -9,8 +9,6 @@
     <Project Path="sqlx-cs-core/sqlx-cs-core.csproj" />
     <Project Path="sqlx-cs-pg-generator-test/sqlx-cs-pg-generator-test.csproj" />
     <Project Path="sqlx-cs-pg-generator/sqlx-cs-pg-generator.csproj" />
-    <Project Path="sqlx-cs-pg-internal-generator-test/sqlx-cs-pg-internal-generator-test.csproj" />
-    <Project Path="sqlx-cs-pg-internal-generator/sqlx-cs-pg-internal-generator.csproj" />
     <Project Path="sqlx-cs-pg-test/sqlx-cs-pg-test.csproj" />
     <Project Path="sqlx-cs-pg/sqlx-cs-pg.csproj" />
     <Project Path="benchmarks/benchmarks.csproj" />

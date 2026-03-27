@@ -53,24 +53,4 @@ public static class PgEnumTypes
         pgBindable.BindVal<PostgresEnumType, PgPostgresEnumType>(enumValue);
     }
 
-    public static PostgresEnumType GetPostgresEnumTypeNotNull(this IPgDataRow pgDataRow, int index)
-    {
-        return pgDataRow.GetPgNotNull<PostgresEnumType, PgPostgresEnumType>(index);
-    }
-
-    public static PostgresEnumType GetPostgresEnumTypeNotNull(this IPgDataRow pgDataRow, string name)
-    {
-        return pgDataRow.GetPgNotNull<PostgresEnumType, PgPostgresEnumType>(name);
-    }
-
-    public static PostgresEnumType? GetPostgresEnumType(this IPgDataRow pgDataRow, int index)
-    {
-        return pgDataRow.GetPgVal<PostgresEnumType, PgPostgresEnumType>(index);
-    }
-
-    public static PostgresEnumType? GetPostgresEnumType(this IPgDataRow pgDataRow, string name)
-    {
-        return pgDataRow.GetPgVal<PostgresEnumType, PgPostgresEnumType>(name);
-    }
-
 }
