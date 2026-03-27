@@ -22,4 +22,8 @@ public interface IPgDataRow : IDataRow, IDisposable
     TValue GetPgNotNull<TValue, TType>(int index)
         where TType : IPgDbType<TValue>
         where TValue : notnull;
+
+    T GetField<T>(int index) => throw new NotImplementedException();
+
+    T GetField<T>(string name) => throw new NotImplementedException();
 }

@@ -1,15 +1,20 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Sqlx.Postgres.Generator.Type;
 
 internal readonly struct WrapperEnumToGenerate : IFullNameType
 {
     private readonly INamedTypeSymbol _enumType;
+    private readonly EnumDeclarationSyntax _enumDeclarationSyntax;
 
-    public WrapperEnumToGenerate(INamedTypeSymbol namedTypeSymbol)
+    public WrapperEnumToGenerate(
+        INamedTypeSymbol namedTypeSymbol,
+        EnumDeclarationSyntax enumDeclarationSyntax)
     {
         _enumType = namedTypeSymbol;
+        _enumDeclarationSyntax = enumDeclarationSyntax;
         ContainingNamespace = namedTypeSymbol.ContainingNamespace.GetFullNamespaceName();
         var namedArguments = namedTypeSymbol.GetAttributes()
             .FirstOrDefault(attr => attr.AttributeClass!.Name == "WrapperEnumAttribute")
@@ -73,7 +78,7 @@ internal readonly struct WrapperEnumToGenerate : IFullNameType
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     SourceGenerationHelper.IntWrapperEnumNotIntBacked,
-                    Location.None,
+                    _enumDeclarationSyntax.GetLocation(),
                     ShortName));
             return false;
         }

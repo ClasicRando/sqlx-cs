@@ -327,6 +327,7 @@ public class PostgresGenerator : IIncrementalGenerator
         RegisterSourceGeneration<PgFromRowImplementationGenerator, PgFromRowToGenerate>(context);
         RegisterSourceGeneration<PgToParamImplementationGenerator, PgToParamToGenerate>(context);
         RegisterSourceGeneration<PgToPgBinaryCopyRowImplementationGenerator, PgToParamToGenerate>(context);
+        RegisterSourceInterceptor<PgGetFieldInterceptor, GetFieldInvocation>(context);
     }
 
     private static void RegisterSourceGeneration<TPipeline, TUnit>(
@@ -343,5 +344,22 @@ public class PostgresGenerator : IIncrementalGenerator
             .Where(static m => m is not null)
             .Select((m, _) => m!.Value);
         context.RegisterSourceOutput(itemToGeneration.Collect(), pipeline.ExecuteGeneration);
+    }
+
+    private static void RegisterSourceInterceptor<TPipeline, TUnit>(
+        in IncrementalGeneratorInitializationContext context)
+        where TPipeline : ISourceInterceptorPipeline<TUnit>, new()
+        where TUnit : struct
+    {
+        TPipeline pipeline = new();
+        var itemToGeneration = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: pipeline.IsValidSyntax,
+                transform: pipeline.CreateInterceptorContext)
+            .Where(static m => m is not null)
+            .Select((m, _) => m!.Value);
+        context.RegisterSourceOutput(
+            itemToGeneration.Collect(),
+            pipeline.ExecuteInterceptorGeneration);
     }
 }

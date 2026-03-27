@@ -30,8 +30,8 @@ internal static class SourceGenerationHelper
         new(
             "SQLxPG005",
             "Unknown DB type reference",
-            "Type definition {0} must reference a type that can " +
-            "be encoded to or decoded from the database. Fields: [{1}]",
+            "Type reference must be a type that can be encoded to or decoded " +
+            "from the database. {0}.",
             "sqlx-cs-pg Generation",
             DiagnosticSeverity.Error,
             true);
@@ -41,7 +41,7 @@ internal static class SourceGenerationHelper
             "SQLxPG006",
             "Excessive field attributes",
             "Type definition {0} has multiple row field attributes. Must either " +
-            "be Flatten or Json but not both. Field(s): [{1}]",
+            "be Flatten or Json but not both. Field(s): [{1}].",
             "sqlx-cs-pg Generation",
             DiagnosticSeverity.Error,
             true);
@@ -59,7 +59,7 @@ internal static class SourceGenerationHelper
         new(
             "SQLxPG001",
             "Annotated type declaration is not valid",
-            "'{0}' is invalid for the purposes of the attached source generation attribute '{1}'. {2}",
+            "'{0}' is invalid for the purposes of the attached source generation attribute '{1}'. {2}.",
             "sqlx-cs-pg Generation",
             DiagnosticSeverity.Error,
             true);

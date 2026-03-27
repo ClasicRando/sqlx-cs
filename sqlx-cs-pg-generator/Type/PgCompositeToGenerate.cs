@@ -59,7 +59,7 @@ internal readonly struct PgCompositeToGenerate : IFullNameType
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     SourceGenerationHelper.DefinitionIsNotPartial,
-                    Location.None,
+                    _typeDeclarationSyntax.GetLocation(),
                     ShortName));
             return false;
         }

@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Sqlx.Postgres.Generator.Type;
@@ -15,13 +16,14 @@ internal class WrapperEnumImplementationGenerator : ISourceGenerationPipeline<Wr
         GeneratorAttributeSyntaxContext context,
         CancellationToken cancellationToken)
     {
-        if (context.TargetSymbol is not INamedTypeSymbol enumSymbol)
+        if (context.TargetSymbol is not INamedTypeSymbol enumSymbol ||
+            context.TargetNode is not EnumDeclarationSyntax enumDeclarationSyntax)
         {
             return null;
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        return new WrapperEnumToGenerate(enumSymbol);
+        return new WrapperEnumToGenerate(enumSymbol, enumDeclarationSyntax);
     }
 
     public void ExecuteGeneration(
@@ -175,7 +177,8 @@ internal class WrapperEnumImplementationGenerator : ISourceGenerationPipeline<Wr
             case EnumRepresentation.Text:
                 builder.AppendLine("        if (enumValue.HasValue)");
                 builder.AppendLine("        {");
-                builder.AppendLine("            pgBindable.Bind(enumValue.Value.ToEncodeString());");
+                builder.AppendLine(
+                    "            pgBindable.Bind(enumValue.Value.ToEncodeString());");
                 builder.AppendLine("        }");
                 builder.AppendLine("        else");
                 builder.AppendLine("        {");

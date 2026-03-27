@@ -64,7 +64,7 @@ internal readonly struct PgFromRowToGenerate
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     SourceGenerationHelper.DefinitionIsNotPartial,
-                    Location.None,
+                    _typeDeclarationSyntax.GetLocation(),
                     ShortName));
             return false;
         }
@@ -78,9 +78,8 @@ internal readonly struct PgFromRowToGenerate
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     SourceGenerationHelper.UnknownDbType,
-                    Location.None,
-                    "parameter",
-                    string.Join(",", invalidParameterTypes.Select(field => field.Name))));
+                    _typeDeclarationSyntax.GetLocation(),
+                    $"FromRow type declaration parameters that failed: {string.Join(",", invalidParameterTypes.Select(field => field.Name))}"));
             return false;
         }
 
@@ -92,7 +91,7 @@ internal readonly struct PgFromRowToGenerate
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     SourceGenerationHelper.ExcessiveFieldAttributes,
-                    Location.None,
+                    _typeDeclarationSyntax.GetLocation(),
                     "parameter",
                     string.Join(",", invalidParameters.Select(field => field.Name))));
             return false;
@@ -107,9 +106,8 @@ internal readonly struct PgFromRowToGenerate
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     SourceGenerationHelper.UnknownDbType,
-                    Location.None,
-                    "property",
-                    string.Join(",", invalidPropertyTypes.Select(field => field.Name))));
+                    _typeDeclarationSyntax.GetLocation(),
+                    $"FromRow type declaration properties that failed: {string.Join(",", invalidPropertyTypes.Select(field => field.Name))}"));
             return false;
         }
 
@@ -121,7 +119,7 @@ internal readonly struct PgFromRowToGenerate
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     SourceGenerationHelper.ExcessiveFieldAttributes,
-                    Location.None,
+                    _typeDeclarationSyntax.GetLocation(),
                     "property",
                     string.Join(",", invalidProperties.Select(field => field.Name))));
             return false;

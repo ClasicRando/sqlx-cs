@@ -1,11 +1,13 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using Sqlx.Core.Pool;
+using Sqlx.Core.Result;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Generator;
 using Sqlx.Postgres.Generator.Query;
 using Sqlx.Postgres.Generator.Result;
 using Sqlx.Postgres.Pool;
+using Sqlx.Postgres.Result;
 
 namespace examples;
 
@@ -51,8 +53,8 @@ public readonly partial struct Param
     public required int Count { get; init; }
 }
 
-[FromRow(RenameAll = Rename.SnakeCase)]
-public readonly partial struct Row
+// [FromRow(RenameAll = Rename.SnakeCase)]
+public readonly partial struct Row : IFromRow<IPgDataRow, Row>
 {
     public required int Id { get; init; }
 
@@ -64,6 +66,18 @@ public readonly partial struct Row
     public required DateTime LastChangeDate { get; init; }
 
     public required int? Counter { get; init; }
+
+    public static Row FromRow(IPgDataRow dataRow)
+    {
+        return new Row
+        {
+            Id = dataRow.GetField<int>("id"),
+            Text = dataRow.GetField<string>("text_field"),
+            CreationDate = dataRow.GetField<DateTime>("creation_date"),
+            LastChangeDate = dataRow.GetField<DateTime>("last_change_date"),
+            Counter = dataRow.GetField<int?>("counter"),
+        };
+    }
 
     public override string ToString()
     {
