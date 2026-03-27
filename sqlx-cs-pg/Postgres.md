@@ -63,7 +63,7 @@ These options are provided to a connection pool to use for every new connection 
 | PgTimeTz*                      | TIME WITH TIME ZONE                          |
 | T                              | JSONB, JSON                                  |
 
-\* Type custom to the sqlx-cs library
+\* Type custom to the sqlx-cs-pg library
 
 ### JSON
 Postgres supports unstructured data through the `JSON` and `JSONB` types. Extracting those field
@@ -75,9 +75,7 @@ database.
 
 ### Array Types
 All postgres types have an implicit array type created and can be extracted as a `T[]` using
-`IPgDataRow` extension methods. These methods are either:
-1. Generic when the CLR type is a custom type that implements `IPgDbType` for itself
-2. Named methods where binding/decoding is handled by a wrapper type
+`IPgDataRow` methods.
 
 Note that array types are automatically mapped for custom enum and composite types created by a
 user when that type if mapped to a connection pool.
@@ -149,22 +147,22 @@ that the database specific OID is collected.
 
 ## COPY Protocol
 [Copy](https://www.postgresql.org/docs/current/sql-copy.html) statements are supported for
-`COPY FROM` and `COPY TO`. To execute either statement you must create a `ICopyStatment` type.
+`COPY FROM` and `COPY TO`. To execute either statement you must create a `ICopyStatment` instance.
 `ICopyStatement`s provide all the features that a raw copy query provides but with some guardrails
 to avoid issues (such as specifying the wrong value for options).
 
-To interact with the copy API, there are 2 base methods:
-- `IPgConnection.CopyOutAsync` => returns an async stream of bytes
-- `IPgConnection.CopyInAsync` => return a `QueryResult` with the rows affected
+To interact with the copy API, there are 4 methods:
+- `IPgConnection.CopyOutAsync` => writes the copy data to a provided stream
+- `IPgConnection.CopyOutRowsAsync` => transforms binary copy data to row type instances
+- `IPgConnection.CopyInAsync` => copies a stream to the connection and returns a `QueryResult` with
+the rows affected
+- `IPgConnection.CopyInRowsAsync` => consumes a stream of `IPgBinaryCopyRow` instances as copy data
+and returns a `QueryResult` with the rows affected
 
 However, there are convenience methods that wrap these base methods to handle common use cases such
 as:
-- Passing a `Stream` as the input data
 - Passing a file as the input data using a file path
-- Passing row objects as binary input data
-- Writing output data to a stream
 - Writing output data to a file
-- Parsing output data as row objects using `IFromRow`
 
 ## Listen/Notify
 PostgreSQL databases support a [LISTEN](https://www.postgresql.org/docs/current/sql-listen.html)/[NOTIFY](https://www.postgresql.org/docs/current/sql-notify.html)
