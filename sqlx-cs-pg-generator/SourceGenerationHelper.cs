@@ -48,7 +48,7 @@ internal static class SourceGenerationHelper
 
     public static readonly DiagnosticDescriptor DefinitionShouldBeValueType =
         new(
-            "SQLxPG001",
+            "SQLxPG002",
             "Annotated type declaration should be a struct",
             "Currently, '{0}' is a reference type but it's recommended to be a value type",
             "sqlx-cs-pg Generation",
@@ -57,7 +57,7 @@ internal static class SourceGenerationHelper
 
     public static readonly DiagnosticDescriptor InvalidTypeDefinition =
         new(
-            "SQLxPG001",
+            "SQLxPG003",
             "Annotated type declaration is not valid",
             "'{0}' is invalid for the purposes of the attached source generation attribute '{1}'. {2}.",
             "sqlx-cs-pg Generation",

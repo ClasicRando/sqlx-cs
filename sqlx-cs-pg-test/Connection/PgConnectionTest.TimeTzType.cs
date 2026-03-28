@@ -11,7 +11,7 @@ public partial class PgConnectionTest
         var value = new PgTimeTz(new TimeOnly(4, 5, 6, 789, 0), 3600);
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 timetz_col;");
-        query.Bind(value);
+        query.BindPg(value);
         var result = await query.ExecuteScalar<PgTimeTz>(ct);
         await Assert.That(result).IsEqualTo(value);
     }

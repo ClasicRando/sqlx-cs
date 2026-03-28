@@ -11,7 +11,7 @@ public partial class PgConnectionTest
         string?[] input = ["this", "is", null, "a", "test"];
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 text_array_col;");
-        query.Bind(input);
+        query.BindPg<string?[], PgArrayTypeClass<string, PgString>>(input);
         var result = await query.ExecuteScalar<string?[], PgArrayTypeClass<string, PgString>>(ct);
         await Assert.That(result).IsEquivalentTo(input);
     }
@@ -24,7 +24,7 @@ public partial class PgConnectionTest
             connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query =
             connection.CreateQuery("SELECT '{this,is,NULL,a,test}'::text[];");
-        query.Bind(input);
+        query.BindPg<string?[], PgArrayTypeClass<string, PgString>>(input);
         var result = await query.ExecuteScalar<string?[], PgArrayTypeClass<string, PgString>>(ct);
         await Assert.That(result).IsEquivalentTo(input);
     }
@@ -35,7 +35,7 @@ public partial class PgConnectionTest
         int?[] input = [-493, 0, null, 34, 68095];
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 int_array_col;");
-        query.Bind(input);
+        query.BindPg<int?[], PgArrayTypeStruct<int, PgInt>>(input);
         var result = await query.ExecuteScalar<int?[], PgArrayTypeStruct<int, PgInt>>(ct);
         await Assert.That(result).IsEquivalentTo(input);
     }
@@ -48,7 +48,7 @@ public partial class PgConnectionTest
             connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
         using IPgExecutableQuery query =
             connection.CreateQuery("SELECT '{-493,0,NULL,34,68095}'::int[];");
-        query.Bind(input);
+        query.BindPg<int?[], PgArrayTypeStruct<int, PgInt>>(input);
         var result = await query.ExecuteScalar<int?[], PgArrayTypeStruct<int, PgInt>>(ct);
         await Assert.That(result).IsEquivalentTo(input);
     }

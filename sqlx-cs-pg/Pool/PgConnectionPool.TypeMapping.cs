@@ -87,7 +87,7 @@ internal sealed partial class PgConnectionPool
         IPgExecutableQuery attributeOidsQuery =
             connection.CreateQuery(pgCompositeAttributeOidsByOid);
         await using ConfiguredAsyncDisposable _3 = attributeOidsQuery.ConfigureAwait(false);
-        attributeOidsQuery.Bind(oid);
+        attributeOidsQuery.BindPg(oid);
 
         var attributeOids = await attributeOidsQuery
             .FetchAsync<CompositeField>(cancellationToken)

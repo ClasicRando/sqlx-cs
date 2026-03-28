@@ -11,7 +11,7 @@ public partial class PgConnectionTest
         var value = new PgPoint(5.63, 8.59);
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 point_col;");
-        query.Bind(value);
+        query.BindPg(value);
         var result = await query.ExecuteScalar<PgPoint>(ct);
         await Assert.That(result).IsEqualTo(value);
     }

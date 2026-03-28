@@ -34,67 +34,74 @@ internal sealed class PgParameterWriter : IPgBindable
 
     public void Bind(bool value)
     {
-        Bind<bool, PgBool>(value);
+        BindPg<bool, PgBool>(value);
     }
 
     public void Bind(sbyte value)
     {
-        Bind<sbyte, PgChar>(value);
+        BindPg<sbyte, PgChar>(value);
     }
 
     public void Bind(short value)
     {
-        Bind<short, PgShort>(value);
+        BindPg<short, PgShort>(value);
     }
 
     public void Bind(int value)
     {
-        Bind<int, PgInt>(value);
+        BindPg<int, PgInt>(value);
     }
 
     public void Bind(long value)
     {
-        Bind<long, PgLong>(value);
+        BindPg<long, PgLong>(value);
     }
 
     public void Bind(float value)
     {
-        Bind<float, PgFloat>(value);
+        BindPg<float, PgFloat>(value);
     }
 
     public void Bind(double value)
     {
-        Bind<double, PgDouble>(value);
+        BindPg<double, PgDouble>(value);
     }
 
     public void Bind(TimeOnly value)
     {
-        Bind<TimeOnly, PgTime>(value);
+        BindPg<TimeOnly, PgTime>(value);
     }
 
     public void Bind(DateOnly value)
     {
-        Bind<DateOnly, PgDate>(value);
+        BindPg<DateOnly, PgDate>(value);
     }
 
     public void Bind(DateTime value)
     {
-        Bind<DateTime, PgDateTime>(value);
+        BindPg<DateTime, PgDateTime>(value);
     }
 
     public void Bind(in DateTimeOffset value)
     {
-        Bind<DateTimeOffset, PgDateTimeOffset>(value);
+        BindPg<DateTimeOffset, PgDateTimeOffset>(value);
     }
 
     public void Bind(decimal value)
     {
-        Bind<decimal, PgDecimal>(value);
+        BindPg<decimal, PgDecimal>(value);
     }
 
     public void Bind(byte[]? value)
     {
-        this.BindRef<byte[], PgBytea>(value);
+        if (value is null)
+        {
+            BindNull<PgBytea>();
+        }
+        else
+        {
+            BindPg<byte[], PgBytea>(value);
+        }
     }
 
     public void Bind(in ReadOnlySpan<byte> value)
@@ -106,7 +113,14 @@ internal sealed class PgParameterWriter : IPgBindable
 
     public void Bind(string? value)
     {
-        this.BindRef<string, PgString>(value);
+        if (value is null)
+        {
+            BindNull<PgString>();
+        }
+        else
+        {
+            BindPg<string, PgString>(value);
+        }
     }
 
     public void Bind(in ReadOnlySpan<char> value)
@@ -121,7 +135,7 @@ internal sealed class PgParameterWriter : IPgBindable
 
     public void Bind(in Guid value)
     {
-        Bind<Guid, PgUuid>(value);
+        BindPg<Guid, PgUuid>(value);
     }
 
     public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
@@ -138,7 +152,7 @@ internal sealed class PgParameterWriter : IPgBindable
         _pgTypes.Add(PgTypeInfo.Unspecified);
     }
 
-    public void Bind<TValue, TType>(TValue value)
+    public void BindPg<TValue, TType>(TValue value)
         where TValue : notnull where TType : IPgDbType<TValue>
     {
         var startLocation = _buffer.StartWritingLengthPrefixed();

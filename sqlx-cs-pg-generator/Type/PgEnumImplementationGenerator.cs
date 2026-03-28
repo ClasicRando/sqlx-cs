@@ -195,7 +195,7 @@ internal class PgEnumImplementationGenerator : ISourceGenerationPipeline<PgEnumT
             .AppendFullName(pgEnumToGenerate)
             .AppendLine(" enumValue)");
         builder.AppendLine("    {");
-        builder.Append("        pgBindable.Bind<")
+        builder.Append("        pgBindable.BindPg<")
             .AppendFullName(pgEnumToGenerate)
             .Append(", ")
             .Append(name)
@@ -217,7 +217,7 @@ internal class PgEnumImplementationGenerator : ISourceGenerationPipeline<PgEnumT
         builder.AppendLine("        }");
         builder.AppendLine("        else");
         builder.AppendLine("        {");
-        builder.Append("            pgBindable.Bind<")
+        builder.Append("            pgBindable.BindPg<")
             .AppendFullName(pgEnumToGenerate)
             .Append(", ")
             .Append(name)

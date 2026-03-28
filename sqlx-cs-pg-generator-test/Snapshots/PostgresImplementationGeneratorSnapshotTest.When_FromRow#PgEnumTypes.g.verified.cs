@@ -36,7 +36,7 @@ public static class PgEnumTypes
 
     public static void Bind(this global::Sqlx.Postgres.Query.IPgBindable pgBindable, PostgresEnumType enumValue)
     {
-        pgBindable.Bind<PostgresEnumType, PgPostgresEnumType>(enumValue);
+        pgBindable.BindPg<PostgresEnumType, PgPostgresEnumType>(enumValue);
     }
 
     public static void Bind(this global::Sqlx.Postgres.Query.IPgBindable pgBindable, PostgresEnumType? enumValue)
@@ -47,7 +47,7 @@ public static class PgEnumTypes
         }
         else
         {
-            pgBindable.Bind<PostgresEnumType, PgPostgresEnumType>(enumValue.Value);
+            pgBindable.BindPg<PostgresEnumType, PgPostgresEnumType>(enumValue.Value);
         }
     }
 

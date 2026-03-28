@@ -17,7 +17,7 @@ internal readonly struct PgToParamToGenerate
 
     public Accessibility DeclaredAccessibility => _typeSymbol.DeclaredAccessibility;
 
-    public ImmutableArray<string> Properties { get; }
+    public ImmutableArray<IPropertySymbol> Properties { get; }
 
     public PgToParamToGenerate(
         INamedTypeSymbol namedTypeSymbol,
@@ -29,7 +29,6 @@ internal readonly struct PgToParamToGenerate
         Properties = namedTypeSymbol.GetMembers()
             .OfType<IPropertySymbol>()
             .Where(property => !property.IsWriteOnly && property.IsNotSkip)
-            .Select(property => property.Name)
             .ToImmutableArray();
     }
 
@@ -42,6 +41,18 @@ internal readonly struct PgToParamToGenerate
                     SourceGenerationHelper.DefinitionIsNotPartial,
                     _typeDeclarationSyntax.GetLocation(),
                     ShortName));
+            return false;
+        }
+
+        var invalidProperties = Properties.Where(property => !property.Type.HasIPgDbType())
+            .ToImmutableArray();
+        if (!invalidProperties.IsEmpty)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    SourceGenerationHelper.UnknownDbType,
+                    _typeDeclarationSyntax.GetLocation(),
+                    $"Properties to bind have invalid DB types: [{string.Join(",", invalidProperties.Select(p => p.Name))}]"));
             return false;
         }
 

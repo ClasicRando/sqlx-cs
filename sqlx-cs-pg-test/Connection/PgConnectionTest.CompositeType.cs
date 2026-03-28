@@ -17,7 +17,7 @@ public partial class PgConnectionTest
         };
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 comp_col;");
-        query.Bind(value);
+        query.BindPg(value);
         var result = await query.ExecuteScalar<TestCompositeType>(ct);
         await Assert.That(result).IsEqualTo(value);
     }

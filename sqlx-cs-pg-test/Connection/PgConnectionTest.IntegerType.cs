@@ -57,7 +57,7 @@ public partial class PgConnectionTest
         const uint value = 523566486u;
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 oid_col;");
-        query.Bind(new PgOid(value));
+        query.BindPg(new PgOid(value));
         var result = await query.ExecuteScalar<PgOid>(ct);
         await Assert.That(result).Member(r => r.Inner, r => r.IsEqualTo(value));
     }

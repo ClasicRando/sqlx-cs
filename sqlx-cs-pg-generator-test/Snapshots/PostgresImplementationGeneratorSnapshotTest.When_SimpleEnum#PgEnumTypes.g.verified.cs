@@ -40,7 +40,7 @@ public static class PgEnumTypes
 
     public static void Bind(this global::Sqlx.Postgres.Query.IPgBindable pgBindable, TestEnum enumValue)
     {
-        pgBindable.Bind<TestEnum, PgTestEnum>(enumValue);
+        pgBindable.BindPg<TestEnum, PgTestEnum>(enumValue);
     }
 
     public static void Bind(this global::Sqlx.Postgres.Query.IPgBindable pgBindable, TestEnum? enumValue)
@@ -51,7 +51,7 @@ public static class PgEnumTypes
         }
         else
         {
-            pgBindable.Bind<TestEnum, PgTestEnum>(enumValue.Value);
+            pgBindable.BindPg<TestEnum, PgTestEnum>(enumValue.Value);
         }
     }
 

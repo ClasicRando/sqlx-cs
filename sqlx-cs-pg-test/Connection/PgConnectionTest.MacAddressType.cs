@@ -11,7 +11,7 @@ public partial class PgConnectionTest
         PgMacAddress value = PgMacAddress.FromBytes([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03]);
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 macaddr_col;");
-        query.Bind(value);
+        query.BindPg(value);
         var result = await query.ExecuteScalar<PgMacAddress>(ct);
         await Assert.That(result).IsEqualTo(value);
     }
@@ -34,7 +34,7 @@ public partial class PgConnectionTest
         PgMacAddress8 value = PgMacAddress8.FromBytes([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03, 0x04, 0x05]);
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 macaddr8_col;");
-        query.Bind(value);
+        query.BindPg(value);
         var result = await query.ExecuteScalar<PgMacAddress8>(ct);
         await Assert.That(result).IsEqualTo(value);
     }

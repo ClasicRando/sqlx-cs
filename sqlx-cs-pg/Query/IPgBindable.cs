@@ -18,7 +18,7 @@ public interface IPgBindable : IBindable
     /// <param name="value">Value to bind</param>
     /// <typeparam name="TValue">Type of the value</typeparam>
     /// <typeparam name="TType">Type used to encode the value</typeparam>
-    void Bind<TValue, TType>(TValue value)
+    void BindPg<TValue, TType>(TValue value)
         where TType : IPgDbType<TValue>
         where TValue : notnull;
 }

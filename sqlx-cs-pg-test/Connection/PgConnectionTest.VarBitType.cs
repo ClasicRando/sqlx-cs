@@ -16,7 +16,7 @@ public partial class PgConnectionTest
         var value = new BitArray(bits);
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 varbit_col;");
-        query.Bind(value);
+        query.BindPg<BitArray, PgBitString>(value);
         BitArray result = await query.ExecuteScalar<BitArray, PgBitString>(ct);
         await Assert.That(result).IsEquivalentTo(value);
     }
