@@ -149,7 +149,7 @@ internal static class SourceGenerationHelper
 
     extension(ISymbol symbol)
     {
-        public bool HasAttribute(params string[] name) => symbol.GetAttributes()
+        private bool HasAttribute(params string[] name) => symbol.GetAttributes()
             .Any(attr => name.Contains(attr.AttributeClass?.Name));
     }
 

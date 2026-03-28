@@ -5,7 +5,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <InterceptorsNamespaces>$(InterceptorsNamespaces);Interceptor</InterceptorsNamespaces>
+        <InterceptorsNamespaces>$(InterceptorsNamespaces);Sqlx.Postgres.Interceptors</InterceptorsNamespaces>
     </PropertyGroup>
 
     <ItemGroup>

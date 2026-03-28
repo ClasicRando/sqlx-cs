@@ -230,11 +230,11 @@ public sealed class PgConnection :
         {
             return new CopyTableMetadata
             {
-                TableOid = dataRow.GetIntNotNull("table_oid"),
-                ColumnName = dataRow.GetStringNotNull("column_name"),
-                ColumnOrder = dataRow.GetShortNotNull("column_order"),
+                TableOid = dataRow.GetPgNotNull<int, PgInt>("table_oid"),
+                ColumnName = dataRow.GetPgNotNull<string, PgString>("column_name"),
+                ColumnOrder = dataRow.GetPgNotNull<short, PgShort>("column_order"),
                 PgTypeInfo = PgTypeInfo.FromOid(dataRow.GetPgNotNull<PgOid>("type_oid")),
-                ColumnLength = dataRow.GetShortNotNull("column_length"),
+                ColumnLength = dataRow.GetPgNotNull<short, PgShort>("column_length"),
             };
         }
     }

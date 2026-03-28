@@ -96,7 +96,7 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
                             }
                         }
                         
-                        namespace Interceptor
+                        namespace Sqlx.Postgres.Interceptors
                         {
                             static file class GetInterceptors
                             {

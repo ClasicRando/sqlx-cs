@@ -21,7 +21,7 @@ public partial class PgConnectionTest
         query.Bind(1);
         query.Bind(10);
         using var resultSet = await query.ExecuteAsync(ct);
-        var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
+        var results = await resultSet.CollectResults(row => (row.GetField<int>(0), row.GetField<string>(1)));
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
         await Assert.That(result.RowsAffected).IsEqualTo(10);
@@ -45,7 +45,7 @@ public partial class PgConnectionTest
         procedureCall.Bind((int?)null);
         procedureCall.Bind((int?)null);
         using var resultSet = await procedureCall.ExecuteAsync(ct);
-        var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
+        var results = await resultSet.CollectResults(row => (row.GetField<int>(0), row.GetField<string>(1)));
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
         await Assert.That(result.RowsAffected).IsEqualTo(0);
@@ -66,7 +66,7 @@ public partial class PgConnectionTest
         procedureCall.Bind(2);
         procedureCall.Bind("start");
         using var resultSet = await procedureCall.ExecuteAsync(ct);
-        var results = await resultSet.CollectResults(row => (row.GetIntNotNull(0), row.GetStringNotNull(1)));
+        var results = await resultSet.CollectResults(row => (row.GetField<int>(0), row.GetField<string>(1)));
         await Assert.That(results).IsSingleElement();
         (var rows, QueryResult result) = results[0];
         await Assert.That(result.RowsAffected).IsEqualTo(0);
@@ -86,7 +86,7 @@ public partial class PgConnectionTest
         var ex = await Assert.ThrowsAsync<PgException>(async () =>
         {
             var resultSet = await sleepStatement.ExecuteAsync(ct);
-            await resultSet.CollectResults(row => row.GetIntNotNull(0));
+            await resultSet.CollectResults(row => row.GetField<int>(0));
         });
         await Assert.That(ex!.Message).Contains("canceling statement due to statement timeout");
     }

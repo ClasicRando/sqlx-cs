@@ -4,11 +4,13 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>Latest</LangVersion>
         <IncludeBuildOutput>false</IncludeBuildOutput>
+        <PackageId>Sqlx.Postgres.Generator</PackageId>
+        <AssemblyName>$(PackageId)</AssemblyName>
+        <RootNamespace>$(PackageId)</RootNamespace>
         <Nullable>enable</Nullable>
         <ImplicitUsings>true</ImplicitUsings>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
-        <RootNamespace>Sqlx.Postgres.Generator</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -22,6 +24,7 @@
     <ItemGroup>
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true"
               PackagePath="analyzers/dotnet/cs" Visible="false" />
+        <None Include="build\Sqlx.Postgres.Generator.props" Pack="true" PackagePath="build\" />
     </ItemGroup>
 
     <ItemGroup>

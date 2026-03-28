@@ -37,7 +37,7 @@ public readonly record struct CompositeField : IFromRow<IPgDataRow, CompositeFie
         ArgumentNullException.ThrowIfNull(dataRow);
         return new CompositeField
         {
-            Name = dataRow.GetStringNotNull("attname"),
+            Name = dataRow.GetPgNotNull<string, PgString>("attname"),
             TypeOid = dataRow.GetPgNotNull<PgOid>("atttypid"),
         };
     }

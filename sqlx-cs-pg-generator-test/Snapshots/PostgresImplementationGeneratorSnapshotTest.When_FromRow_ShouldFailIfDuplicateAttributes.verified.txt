@@ -1,24 +1,73 @@
 ﻿{
   Diagnostics: [
     {
-      Message: Type definition property has multiple row field attributes. Must either be Flatten or Json but not both. Field(s): [Inner],
+      Location: /*
+
+[FromRow]
+^^^^^^^^^
+public readonly partial struct TestRowDuplicatePropertyAttribute
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+{
+^
+    [FlattenField]
+^^^^^^^^^^^^^^^^^^
+    [JsonField]
+^^^^^^^^^^^^^^^
+    public InnerRow Inner { get; init; }
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+}
+^
+
+*/
+ : (16,0)-(22,1),
+      Message: Type definition property has multiple row field attributes. Must either be Flatten or Json but not both. Field(s): [Inner].,
       Severity: Error,
       Descriptor: {
         Id: SQLxPG006,
         Title: Excessive field attributes,
-        MessageFormat: Type definition {0} has multiple row field attributes. Must either be Flatten or Json but not both. Field(s): [{1}],
+        MessageFormat: Type definition {0} has multiple row field attributes. Must either be Flatten or Json but not both. Field(s): [{1}].,
         Category: sqlx-cs-pg Generation,
         DefaultSeverity: Error,
         IsEnabledByDefault: true
       }
     },
     {
-      Message: Type definition parameter has multiple row field attributes. Must either be Flatten or Json but not both. Field(s): [inner],
+      Location: /*
+
+[FromRow]
+^^^^^^^^^
+public readonly partial struct TestRowDuplicateParameterAttribute
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+{
+^
+    public InnerRow Inner { get; }
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    
+^^^^
+    public TestRowDuplicateParameter(
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        [FlattenField]
+^^^^^^^^^^^^^^^^^^^^^^
+        [JsonField]
+^^^^^^^^^^^^^^^^^^^
+        InnerRow inner)
+^^^^^^^^^^^^^^^^^^^^^^^
+    {
+^^^^^
+        Inner = inner;
+^^^^^^^^^^^^^^^^^^^^^^
+    }
+^^^^^
+}
+^
+*/
+ : (24,0)-(36,1),
+      Message: Type definition parameter has multiple row field attributes. Must either be Flatten or Json but not both. Field(s): [inner].,
       Severity: Error,
       Descriptor: {
         Id: SQLxPG006,
         Title: Excessive field attributes,
-        MessageFormat: Type definition {0} has multiple row field attributes. Must either be Flatten or Json but not both. Field(s): [{1}],
+        MessageFormat: Type definition {0} has multiple row field attributes. Must either be Flatten or Json but not both. Field(s): [{1}].,
         Category: sqlx-cs-pg Generation,
         DefaultSeverity: Error,
         IsEnabledByDefault: true

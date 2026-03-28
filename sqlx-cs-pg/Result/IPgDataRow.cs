@@ -23,7 +23,32 @@ public interface IPgDataRow : IDataRow, IDisposable
         where TType : IPgDbType<TValue>
         where TValue : notnull;
 
+    /*
+     * The 2 methods below will never have implementation since they are intended to be used with
+     * the source interceptor provided in 'sqlx-cs-pg-generator' to provide the actual method call
+     * at build time. The interceptor will resolve the type and extract the value without boxing or
+     * using dynamic dispatch.
+     */
+
+    /// <summary>
+    /// Method to extract the desired type from the field specified as a zero-based index. This
+    /// method is intended to be used with the source interceptor provided in
+    /// <c>sqlx-cs-pg-generator</c>. Without that dependency, this method always throws a
+    /// <see cref="NotImplementedException"/>.
+    /// </summary>
+    /// <param name="index">0-based index of the column to extract</param>
+    /// <typeparam name="T">Return type</typeparam>
+    /// <returns><typeparamref name="T"/> value at the specified column</returns>
     T GetField<T>(int index) => throw new NotImplementedException();
 
+    /// <summary>
+    /// Method to extract the desired type from the field specified as a result set field name. This
+    /// method is intended to be used with the source interceptor provided in
+    /// <c>sqlx-cs-pg-generator</c>. Without that dependency, this method always throws a
+    /// <see cref="NotImplementedException"/>.
+    /// </summary>
+    /// <param name="name">name of the column to extract</param>
+    /// <typeparam name="T">Return type</typeparam>
+    /// <returns><typeparamref name="T"/> value at the specified column</returns>
     T GetField<T>(string name) => throw new NotImplementedException();
 }

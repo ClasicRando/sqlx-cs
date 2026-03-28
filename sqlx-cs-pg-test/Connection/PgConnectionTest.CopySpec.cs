@@ -166,8 +166,8 @@ public partial class PgConnectionTest
         {
             return new CopyRow
             {
-                Id = dataRow.GetIntNotNull("id"),
-                TextField = dataRow.GetStringNotNull("text_field"),
+                Id = dataRow.GetField<int>("id"),
+                TextField = dataRow.GetField<string>("text_field"),
             };
         }
 
