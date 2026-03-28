@@ -8,48 +8,31 @@ public static class PgEnumTypes
 {
     public static ValueTask MapTestEnumAsync(this global::Sqlx.Postgres.Pool.IPgConnectionPool pgConnectionPool, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        return pgConnectionPool.MapEnumAsync<TestEnum, PgTestEnum>(cancellationToken);
+        return pgConnectionPool.MapEnumAsync<global::TestEnum, PgTestEnum>(cancellationToken);
     }
 
-    extension(TestEnum enumValue)
+    extension(global::TestEnum enumValue)
     {
         public global::System.ReadOnlySpan<char> ToEncodeString()
         {
             return enumValue switch
             {
-                TestEnum.None => "none",
-                TestEnum.Single => "single",
-                TestEnum.MultipleWords => "multi_words",
-                _ => throw global::Sqlx.Core.Exceptions.ColumnEncodeException.Create<TestEnum>(PgTestEnum.DbType.TypeOid.Inner, $"Attempted to encode an unknown enum variant, '{enumValue}'"),
+                global::TestEnum.None => "none",
+                global::TestEnum.Single => "single",
+                global::TestEnum.MultipleWords => "multi_words",
+                _ => throw global::Sqlx.Core.Exceptions.ColumnEncodeException.Create<global::TestEnum>(PgTestEnum.DbType.TypeOid.Inner, $"Attempted to encode an unknown enum variant, '{enumValue}'"),
             };
         }
 
-        public static TestEnum FromChars(in global::System.ReadOnlySpan<char> chars, in global::Sqlx.Postgres.Column.PgColumnMetadata columnMetadata)
+        public static global::TestEnum FromChars(in global::System.ReadOnlySpan<char> chars, in global::Sqlx.Postgres.Column.PgColumnMetadata columnMetadata)
         {
             return chars switch
             {
-                "none" => TestEnum.None,
-                "single" => TestEnum.Single,
-                "multi_words" => TestEnum.MultipleWords,
-                _ => throw global::Sqlx.Core.Exceptions.ColumnDecodeException.Create<TestEnum, global::Sqlx.Postgres.Column.PgColumnMetadata>(columnMetadata, $"Attempted to decode an unknown enum variant with name, '{chars}'"),
+                "none" => global::TestEnum.None,
+                "single" => global::TestEnum.Single,
+                "multi_words" => global::TestEnum.MultipleWords,
+                _ => throw global::Sqlx.Core.Exceptions.ColumnDecodeException.Create<global::TestEnum, global::Sqlx.Postgres.Column.PgColumnMetadata>(columnMetadata, $"Attempted to decode an unknown enum variant with name, '{chars}'"),
             };
-        }
-    }
-
-    public static void Bind(this global::Sqlx.Postgres.Query.IPgBindable pgBindable, TestEnum enumValue)
-    {
-        pgBindable.BindPg<TestEnum, PgTestEnum>(enumValue);
-    }
-
-    public static void Bind(this global::Sqlx.Postgres.Query.IPgBindable pgBindable, TestEnum? enumValue)
-    {
-        if (enumValue is null)
-        {
-            pgBindable.BindNull<TestEnum>();
-        }
-        else
-        {
-            pgBindable.BindPg<TestEnum, PgTestEnum>(enumValue.Value);
         }
     }
 

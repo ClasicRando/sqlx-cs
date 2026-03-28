@@ -1,20 +1,15 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Sqlx.Postgres.Generator.Type;
 
-internal readonly struct WrapperEnumToGenerate : IFullNameType
+internal readonly struct WrapperEnumToIntercept : IFullNameType
 {
     private readonly INamedTypeSymbol _enumType;
-    private readonly EnumDeclarationSyntax _enumDeclarationSyntax;
 
-    public WrapperEnumToGenerate(
-        INamedTypeSymbol namedTypeSymbol,
-        EnumDeclarationSyntax enumDeclarationSyntax)
+    public WrapperEnumToIntercept(INamedTypeSymbol namedTypeSymbol)
     {
         _enumType = namedTypeSymbol;
-        _enumDeclarationSyntax = enumDeclarationSyntax;
         ContainingNamespace = namedTypeSymbol.ContainingNamespace.GetFullNamespaceName();
         var namedArguments = namedTypeSymbol.GetAttributes()
             .FirstOrDefault(attr => attr.AttributeClass!.Name == "WrapperEnumAttribute")
@@ -65,24 +60,5 @@ internal readonly struct WrapperEnumToGenerate : IFullNameType
 
     public EnumRepresentation Representation { get; }
 
-    public Accessibility DeclaredAccessibility => _enumType.DeclaredAccessibility;
-
     public ImmutableArray<KeyValuePair<string, string>> ValueNames { get; }
-
-    public bool Validate(SourceProductionContext context)
-    {
-        if (Representation is EnumRepresentation.Int
-            && _enumType.EnumUnderlyingType is not null
-            && _enumType.EnumUnderlyingType?.ToString() != "int")
-        {
-            context.ReportDiagnostic(
-                Diagnostic.Create(
-                    SourceGenerationHelper.IntWrapperEnumNotIntBacked,
-                    _enumDeclarationSyntax.GetLocation(),
-                    ShortName));
-            return false;
-        }
-
-        return true;
-    }
 }

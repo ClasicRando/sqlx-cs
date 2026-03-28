@@ -12,10 +12,10 @@ public partial struct TestRow : global::Sqlx.Core.Result.IFromRow<global::Sqlx.P
         var indexOptionalJsonField = dataRow.IndexOf("OptionalJsonField");
         return new TestRow
         {
-            Id = dataRow.GetPgNotNull<System.Int32,Sqlx.Postgres.Type.PgInt>(indexId),
-            Inner = InnerRow.FromRow(dataRow),
-            JsonField = dataRow.GetJsonNotNull<JsonFieldType>(indexJsonField),
-            OptionalJsonField = dataRow.GetJson<JsonFieldType>(indexOptionalJsonField),
+            Id = dataRow.GetPgNotNull<global::System.Int32,global::Sqlx.Postgres.Type.PgInt>(indexId),
+            Inner = global::InnerRow.FromRow(dataRow),
+            JsonField = dataRow.GetJsonNotNull<global::JsonFieldType>(indexJsonField),
+            OptionalJsonField = dataRow.GetJson<global::JsonFieldType>(indexOptionalJsonField),
         };
     }
 }

@@ -185,8 +185,8 @@ public sealed class PgConnection :
         IPgExecutableQuery query = CreateQuery(CopyTableMetadata.Query);
         // This is a workaround for calling ConfigureAwait on an IAsyncDisposable
         await using var _ = query.ConfigureAwait(false);
-        query.Bind(copyTable.TableName);
-        query.Bind(copyTable.SchemaName);
+        query.BindPg<string, PgString>(copyTable.TableName);
+        query.BindPg<string, PgString>(copyTable.SchemaName);
         return await query.FetchAsync<CopyTableMetadata>(cancellationToken)
             .Select(m => m.GetColumnMetadata())
             .ToArrayAsync(cancellationToken)

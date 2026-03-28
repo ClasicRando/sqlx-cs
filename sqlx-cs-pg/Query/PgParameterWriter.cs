@@ -32,95 +32,11 @@ internal sealed class PgParameterWriter : IPgBindable
     /// </summary>
     public IReadOnlyList<PgTypeInfo> PgTypes => _pgTypes;
 
-    public void Bind(bool value)
-    {
-        BindPg<bool, PgBool>(value);
-    }
-
-    public void Bind(sbyte value)
-    {
-        BindPg<sbyte, PgChar>(value);
-    }
-
-    public void Bind(short value)
-    {
-        BindPg<short, PgShort>(value);
-    }
-
-    public void Bind(int value)
-    {
-        BindPg<int, PgInt>(value);
-    }
-
-    public void Bind(long value)
-    {
-        BindPg<long, PgLong>(value);
-    }
-
-    public void Bind(float value)
-    {
-        BindPg<float, PgFloat>(value);
-    }
-
-    public void Bind(double value)
-    {
-        BindPg<double, PgDouble>(value);
-    }
-
-    public void Bind(TimeOnly value)
-    {
-        BindPg<TimeOnly, PgTime>(value);
-    }
-
-    public void Bind(DateOnly value)
-    {
-        BindPg<DateOnly, PgDate>(value);
-    }
-
-    public void Bind(DateTime value)
-    {
-        BindPg<DateTime, PgDateTime>(value);
-    }
-
-    public void Bind(in DateTimeOffset value)
-    {
-        BindPg<DateTimeOffset, PgDateTimeOffset>(value);
-    }
-
-    public void Bind(decimal value)
-    {
-        BindPg<decimal, PgDecimal>(value);
-    }
-
-    public void Bind(byte[]? value)
-    {
-        if (value is null)
-        {
-            BindNull<PgBytea>();
-        }
-        else
-        {
-            BindPg<byte[], PgBytea>(value);
-        }
-    }
-
     public void Bind(in ReadOnlySpan<byte> value)
     {
         _buffer.WriteInt(value.Length);
         _buffer.Write(value);
         _pgTypes.Add(PgBytea.DbType);
-    }
-
-    public void Bind(string? value)
-    {
-        if (value is null)
-        {
-            BindNull<PgString>();
-        }
-        else
-        {
-            BindPg<string, PgString>(value);
-        }
     }
 
     public void Bind(in ReadOnlySpan<char> value)
@@ -131,11 +47,6 @@ internal sealed class PgParameterWriter : IPgBindable
         Charsets.Default.GetBytes(value, span);
         _buffer.Advance(byteLength);
         _pgTypes.Add(PgString.DbType);
-    }
-
-    public void Bind(in Guid value)
-    {
-        BindPg<Guid, PgUuid>(value);
     }
 
     public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull

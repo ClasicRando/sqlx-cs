@@ -188,42 +188,5 @@ internal class PgEnumImplementationGenerator : ISourceGenerationPipeline<PgEnumT
 
         builder.AppendLine("    }");
         builder.AppendLine();
-
-        builder.Append("    ")
-            .Append(typeAccessibility)
-            .Append(" static void Bind(this global::Sqlx.Postgres.Query.IPgBindable pgBindable, ")
-            .AppendFullName(pgEnumToGenerate)
-            .AppendLine(" enumValue)");
-        builder.AppendLine("    {");
-        builder.Append("        pgBindable.BindPg<")
-            .AppendFullName(pgEnumToGenerate)
-            .Append(", ")
-            .Append(name)
-            .AppendLine(">(enumValue);");
-        builder.AppendLine("    }");
-        builder.AppendLine();
-
-        builder.Append("    ")
-            .Append(typeAccessibility)
-            .Append(" static void Bind(this global::Sqlx.Postgres.Query.IPgBindable pgBindable, ")
-            .AppendFullName(pgEnumToGenerate)
-            .AppendLine("? enumValue)");
-        builder.AppendLine("    {");
-        builder.AppendLine("        if (enumValue is null)");
-        builder.AppendLine("        {");
-        builder.Append("            pgBindable.BindNull<")
-            .AppendFullName(pgEnumToGenerate)
-            .AppendLine(">();");
-        builder.AppendLine("        }");
-        builder.AppendLine("        else");
-        builder.AppendLine("        {");
-        builder.Append("            pgBindable.BindPg<")
-            .AppendFullName(pgEnumToGenerate)
-            .Append(", ")
-            .Append(name)
-            .AppendLine(">(enumValue.Value);");
-        builder.AppendLine("        }");
-        builder.AppendLine("    }");
-        builder.AppendLine();
     }
 }

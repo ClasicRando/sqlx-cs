@@ -24,52 +24,6 @@ public class PostgresImplementationGeneratorSnapshotTest
     }
 
     [Test]
-    public async Task When_EnumWithRenameAndSimpleTextWrapper()
-    {
-        const string source =
-            """
-            using Sqlx.Postgres.Generator;
-            using Sqlx.Postgres.Generator.Type;
-
-            [WrapperEnum(
-                RenameAll = Rename.SnakeCase,
-                Representation = EnumRepresentation.Text)]
-            public enum TestEnum
-            {
-                None,
-                Single,
-                MultipleWords,
-                Value_With4Words
-            }
-            """;
-
-        await TestHelper.VerifyPostgresGenerator(source);
-    }
-
-    [Test]
-    public async Task When_EnumWithRenameAndSimpleIntWrapper()
-    {
-        const string source =
-            """
-            using Sqlx.Postgres.Generator;
-            using Sqlx.Postgres.Generator.Type;
-
-            [WrapperEnum(
-                RenameAll = Rename.CamelCase,
-                Representation = EnumRepresentation.Int)]
-            public enum TestEnum
-            {
-                None,
-                Single,
-                MultipleWords,
-                ValueWith4Words
-            }
-            """;
-
-        await TestHelper.VerifyPostgresGenerator(source);
-    }
-
-    [Test]
     public async Task When_EnumWithRenamePgNameAndPgEnum()
     {
         const string source =

@@ -6,7 +6,7 @@ public partial struct TestParamBinding : global::Sqlx.Core.Query.IBindMany<globa
 {
     public void BindMany(global::Sqlx.Postgres.Query.IPgBindable bindable)
     {
-        bindable.BindPg<System.Int32,Sqlx.Postgres.Type.PgInt>(this.Id);
-        bindable.BindPg<System.String,Sqlx.Postgres.Type.PgString>(this.Id);
+        bindable.BindPg<global::System.Int32,global::Sqlx.Postgres.Type.PgInt>(this.Id);
+        bindable.BindPg<global::System.String,global::Sqlx.Postgres.Type.PgString>(this.Id);
     }
 }

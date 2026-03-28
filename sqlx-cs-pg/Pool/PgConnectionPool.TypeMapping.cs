@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Sqlx.Core.Query;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Query;
@@ -98,7 +97,7 @@ internal sealed partial class PgConnectionPool
             new CompositeType { Fields = [..attributeOids] });
     }
 
-    private static void AddTypeNameAndSchemaToQuery<TValue, TType>(IBindable query)
+    private static void AddTypeNameAndSchemaToQuery<TValue, TType>(IPgBindable query)
         where TValue : notnull
         where TType : IPgUdt<TValue>
     {
@@ -112,8 +111,8 @@ internal sealed partial class PgConnectionPool
         }
         else
         {
-            query.Bind(typeName);
-            query.Bind(defaultSchemaName);
+            query.Bind(typeName.AsSpan());
+            query.Bind(defaultSchemaName.AsSpan());
         }
     }
 }

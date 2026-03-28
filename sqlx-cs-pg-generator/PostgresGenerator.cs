@@ -322,12 +322,12 @@ public class PostgresGenerator : IIncrementalGenerator
 
         RegisterSourceGeneration<WrapperTypeImplementationGenerator, WrapperTypeToGenerate>(context);
         RegisterSourceGeneration<PgEnumImplementationGenerator, PgEnumToGenerate>(context);
-        RegisterSourceGeneration<WrapperEnumImplementationGenerator, WrapperEnumToGenerate>(context);
         RegisterSourceGeneration<PgCompositeImplementationGenerator, PgCompositeToGenerate>(context);
         RegisterSourceGeneration<PgFromRowImplementationGenerator, PgFromRowToGenerate>(context);
         RegisterSourceGeneration<PgToParamImplementationGenerator, PgToParamToGenerate>(context);
         RegisterSourceGeneration<PgToPgBinaryCopyRowImplementationGenerator, PgToParamToGenerate>(context);
         RegisterSourceInterceptor<PgGetFieldInterceptor, GetFieldInvocation>(context);
+        RegisterSourceInterceptor<PgBindInterceptor, BindInvocation>(context);
     }
 
     private static void RegisterSourceGeneration<TPipeline, TUnit>(

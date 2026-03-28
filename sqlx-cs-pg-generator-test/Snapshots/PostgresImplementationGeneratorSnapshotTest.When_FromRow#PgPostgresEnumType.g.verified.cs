@@ -4,7 +4,7 @@
 
 namespace Sqlx.Postgres.Generator.Type;
 
-public abstract class PgPostgresEnumType : global::Sqlx.Postgres.Type.IPgUdt<PostgresEnumType>
+public abstract class PgPostgresEnumType : global::Sqlx.Postgres.Type.IPgUdt<global::PostgresEnumType>
 {
     private PgPostgresEnumType() {}
 
@@ -17,21 +17,21 @@ public abstract class PgPostgresEnumType : global::Sqlx.Postgres.Type.IPgUdt<Pos
         return typeInfo == DbType;
     }
 
-    public static void Encode(PostgresEnumType value, global::System.Buffers.IBufferWriter<byte> buffer)
+    public static void Encode(global::PostgresEnumType value, global::System.Buffers.IBufferWriter<byte> buffer)
     {
         global::Sqlx.Core.Buffer.BufferExtensions.WriteString(buffer, value.ToEncodeString());
     }
 
-    public static PostgresEnumType DecodeBytes(in global::Sqlx.Postgres.Result.PgBinaryValue value)
+    public static global::PostgresEnumType DecodeBytes(in global::Sqlx.Postgres.Result.PgBinaryValue value)
     {
         var buff = value.Buffer;
-        return PostgresEnumType.FromChars(
+        return global::PostgresEnumType.FromChars(
             global::Sqlx.Core.Buffer.BufferExtensions.ReadString(ref buff),
             value.ColumnMetadata);
     }
 
-    public static PostgresEnumType DecodeText(in global::Sqlx.Postgres.Result.PgTextValue value)
+    public static global::PostgresEnumType DecodeText(in global::Sqlx.Postgres.Result.PgTextValue value)
     {
-        return PostgresEnumType.FromChars(value.Chars, value.ColumnMetadata);
+        return global::PostgresEnumType.FromChars(value.Chars, value.ColumnMetadata);
     }
 }

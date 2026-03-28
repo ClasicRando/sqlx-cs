@@ -39,7 +39,7 @@ public partial class PgConnectionTest
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 int_enum_col;");
         query.Bind(value);
-        TestIntEnum result = await ExecuteScalarEnumWrapperExtract(query, WrapperEnumTypes.GetTestIntEnumNotNull);
+        TestIntEnum result = await ExecuteScalarEnumWrapperExtract(query, (row, i) => row.GetField<TestIntEnum>(i));
         await Assert.That(result).IsEqualTo(value);
     }
     
@@ -51,7 +51,7 @@ public partial class PgConnectionTest
         var sql = $"SELECT {intValue};";
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        TestIntEnum result = await ExecuteScalarEnumWrapperExtract(query, WrapperEnumTypes.GetTestIntEnumNotNull);
+        TestIntEnum result = await ExecuteScalarEnumWrapperExtract(query, (row, i) => row.GetField<TestIntEnum>(i));
         await Assert.That(result).IsEqualTo(value);
     }
     
@@ -63,7 +63,7 @@ public partial class PgConnectionTest
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 text_enum_col;");
         query.Bind(value);
-        TestTextEnum result = await ExecuteScalarEnumWrapperExtract(query, WrapperEnumTypes.GetTestTextEnumNotNull);
+        TestTextEnum result = await ExecuteScalarEnumWrapperExtract(query, (row, i) => row.GetField<TestTextEnum>(i));
         await Assert.That(result).IsEqualTo(value);
     }
     
@@ -75,7 +75,7 @@ public partial class PgConnectionTest
         var sql = $"SELECT '{literal}';";
         using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         using IPgExecutableQuery query = connection.CreateQuery(sql);
-        TestTextEnum result = await ExecuteScalarEnumWrapperExtract(query, WrapperEnumTypes.GetTestTextEnumNotNull);
+        TestTextEnum result = await ExecuteScalarEnumWrapperExtract(query, (row, i) => row.GetField<TestTextEnum>(i));
         await Assert.That(result).IsEqualTo(value);
     }
 

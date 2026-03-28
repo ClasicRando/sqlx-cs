@@ -21,4 +21,21 @@ public interface IPgBindable : IBindable
     void BindPg<TValue, TType>(TValue value)
         where TType : IPgDbType<TValue>
         where TValue : notnull;
+
+    /// <summary>
+    /// Bind a byte[] value. This maps to the <c>VARBINARY</c>/<c>BLOB</c> type although database
+    /// implementations might have custom types (e.g. Postgres has <c>BYTEA</c>)
+    /// </summary>
+    /// <param name="value">ReadOnlySpan&lt;byte&gt; value</param>
+    void Bind(in ReadOnlySpan<byte> value);
+
+    /// <summary>
+    /// Bind a string value. This maps to the <c>VARCHAR</c>/<c>TEXT</c>/<c>CLOB</c> type although
+    /// database implementations might have custom character types (e.g. Postgres has
+    /// <c>CITEXT</c>).
+    /// </summary>
+    /// <param name="value">ReadOnlySpan&lt;char&gt; value</param>
+    void Bind(in ReadOnlySpan<char> value);
+
+    void Bind<T>(T value) => throw new NotImplementedException();
 }

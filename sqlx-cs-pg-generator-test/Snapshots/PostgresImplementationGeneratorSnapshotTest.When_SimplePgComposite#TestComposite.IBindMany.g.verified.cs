@@ -6,16 +6,16 @@ public partial struct TestComposite : global::Sqlx.Core.Query.IBindMany<global::
 {
     public void BindMany(global::Sqlx.Postgres.Query.IPgBindable bindable)
     {
-        bindable.BindPg<System.Int32,Sqlx.Postgres.Type.PgInt>(this.Id);
-        bindable.BindPg<System.String,Sqlx.Postgres.Type.PgString>(this.Name);
+        bindable.BindPg<global::System.Int32,global::Sqlx.Postgres.Type.PgInt>(this.Id);
+        bindable.BindPg<global::System.String,global::Sqlx.Postgres.Type.PgString>(this.Name);
         if (this.Bytes is null)
         {
-            bindable.BindNull<System.Byte[]>();
+            bindable.BindNull<global::System.Byte[]>();
         }
         else
         {
-            bindable.BindPg<System.Byte[],Sqlx.Postgres.Type.PgBytea>(this.Bytes);
+            bindable.BindPg<global::System.Byte[],global::Sqlx.Postgres.Type.PgBytea>(this.Bytes);
         }
-        bindable.BindPg<Sqlx.Postgres.Type.PgRange<System.Int64>,Sqlx.Postgres.Type.PgRangeType<System.Int64, Sqlx.Postgres.Type.PgLong>>(this.LongRange);
+        bindable.BindPg<global::Sqlx.Postgres.Type.PgRange<global::System.Int64>,global::Sqlx.Postgres.Type.PgRangeType<global::System.Int64, global::Sqlx.Postgres.Type.PgLong>>(this.LongRange);
     }
 }

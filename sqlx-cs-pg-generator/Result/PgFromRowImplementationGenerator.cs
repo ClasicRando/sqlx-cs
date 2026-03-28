@@ -210,14 +210,14 @@ internal class PgFromRowImplementationGenerator : ISourceGenerationPipeline<PgFr
                         .Append(rowField.IndexVariableName)
                         .Append(')');
                     break;
-                case { FieldType: INamedTypeSymbol { IsDecodableEnum: true, IsNullable: true } }:
+                case { FieldType: INamedTypeSymbol { IsWrapperEnum: true, IsNullable: true } }:
                     builder.Append("dataRow.Get")
                         .Append(rowField.FieldType.AsNotNullType())
                         .Append(">(")
                         .Append(rowField.IndexVariableName)
                         .Append(')');
                     break;
-                case { FieldType: INamedTypeSymbol { IsDecodableEnum: true, IsNullable: false } }:
+                case { FieldType: INamedTypeSymbol { IsWrapperEnum: true, IsNullable: false } }:
                     builder.Append("dataRow.Get")
                         .Append(rowField.FieldType.Name)
                         .Append("NotNull")

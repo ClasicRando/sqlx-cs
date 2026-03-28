@@ -12,10 +12,10 @@ public partial struct TestComposite : global::Sqlx.Core.Result.IFromRow<global::
         var indexLongRange = dataRow.IndexOf("LongRange");
         return new TestComposite
         {
-            Id = dataRow.GetPgNotNull<System.Int32,Sqlx.Postgres.Type.PgInt>(indexId),
-            Name = dataRow.GetPgNotNull<System.String,Sqlx.Postgres.Type.PgString>(indexName),
-            Bytes = dataRow.IsNull(indexBytes) ? null : dataRow.GetPgNotNull<System.Byte[],Sqlx.Postgres.Type.PgBytea>(indexBytes),
-            LongRange = dataRow.GetPgNotNull<Sqlx.Postgres.Type.PgRange<System.Int64>,Sqlx.Postgres.Type.PgRangeType<System.Int64, Sqlx.Postgres.Type.PgLong>>(indexLongRange),
+            Id = dataRow.GetPgNotNull<global::System.Int32,global::Sqlx.Postgres.Type.PgInt>(indexId),
+            Name = dataRow.GetPgNotNull<global::System.String,global::Sqlx.Postgres.Type.PgString>(indexName),
+            Bytes = dataRow.IsNull(indexBytes) ? null : dataRow.GetPgNotNull<global::System.Byte[],global::Sqlx.Postgres.Type.PgBytea>(indexBytes),
+            LongRange = dataRow.GetPgNotNull<global::Sqlx.Postgres.Type.PgRange<global::System.Int64>,global::Sqlx.Postgres.Type.PgRangeType<global::System.Int64, global::Sqlx.Postgres.Type.PgLong>>(indexLongRange),
         };
     }
 }
