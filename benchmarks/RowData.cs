@@ -1,15 +1,12 @@
-using System.Buffers;
 using CsvHelper.Configuration.Attributes;
-using Sqlx.Core.Result;
 using Sqlx.Postgres.Generator;
 using Sqlx.Postgres.Generator.Copy;
-using Sqlx.Postgres.Result;
+using Sqlx.Postgres.Generator.Result;
 
 namespace benchmarks;
 
-// [FromRow(RenameAll = Rename.SnakeCase), ToPgBinaryCopyRow]
-[ToPgBinaryCopyRow]
-public readonly partial struct RowData : IFromRow<IPgDataRow, RowData>
+[FromRow(RenameAll = Rename.SnakeCase), ToPgBinaryCopyRow]
+public readonly partial struct RowData
 {
     [Name("id")]
     public required int Id { get; init; }
@@ -26,18 +23,6 @@ public readonly partial struct RowData : IFromRow<IPgDataRow, RowData>
 
     [Name("counter")]
     public required int? Counter { get; init; }
-    
-    public static RowData FromRow(IPgDataRow dataRow)
-    {
-        return new RowData
-        {
-            Id = dataRow.GetField<int>("id"),
-            Text = dataRow.GetField<string>("text_field"),
-            CreationDate = dataRow.GetField<DateTime>("creation_date"),
-            LastChangeDate = dataRow.GetField<DateTime>("last_change_date"),
-            Counter = dataRow.GetField<int?>("counter"),
-        };
-    }
 
     public override string ToString()
     {

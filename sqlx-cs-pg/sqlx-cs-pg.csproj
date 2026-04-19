@@ -22,4 +22,11 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.8"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <None Update="build\Sqlx.Postgres.props">
+            <Pack>true</Pack>
+            <PackagePath>build/</PackagePath>
+        </None>
+    </ItemGroup>
+
 </Project>
