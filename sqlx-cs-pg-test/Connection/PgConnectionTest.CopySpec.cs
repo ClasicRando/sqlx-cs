@@ -18,7 +18,7 @@ public partial class PgConnectionTest
         var tempPath = Path.Join(Path.GetTempPath(), "copy-out-file.csv");
         try
         {
-            using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+            await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
             ICopyTo copyStatement = new CopyTableToCsv
             {
                 SchemaName = "public",
@@ -57,7 +57,7 @@ public partial class PgConnectionTest
             TableName = "copy_out_test",
         };
         
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
 
         var rows = await connection.CopyOutRowsAsync<CopyRow>(copyStatement, ct)
             .OrderBy(cr => cr.Id)
@@ -84,8 +84,8 @@ public partial class PgConnectionTest
                 Enumerable.Range(1, CopyRowCount)
                     .Select(rowIndex => $"{rowIndex},{rowIndex} Value"),
                 ct);
-            using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-            using IPgExecutableQuery
+            await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+            await using IPgExecutableQuery
                 query = connection.CreateQuery("TRUNCATE public.copy_out_test");
             await query.ExecuteNonQueryAsync(ct);
             ICopyFrom copyStatement = new CopyTableFromCsv
@@ -109,13 +109,13 @@ public partial class PgConnectionTest
     public async Task CopyInRowsAsync_Should_CopyDataFromRows_When_CopyTableAndRows(
         CancellationToken ct)
     {
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         var copyStatement = new CopyTableFromBinary
         {
             SchemaName = "public",
             TableName = "copy_out_test",
         };
-        using IPgExecutableQuery
+        await using IPgExecutableQuery
             query = connection.CreateQuery("TRUNCATE public.copy_out_test");
         await query.ExecuteNonQueryAsync(ct);
 
@@ -137,12 +137,12 @@ public partial class PgConnectionTest
         await Assert.That(result).Member(r => r.RowsAffected, l => l.IsEqualTo(CopyRowCount));
         await Assert.That(result).Member(r => r.Message, l => l.IsEqualTo($"COPY {CopyRowCount}"));
 
-        using IPgExecutableQuery query1 =
+        await using IPgExecutableQuery query1 =
             connection.CreateQuery("SELECT COUNT(*) FROM public.copy_out_test");
-        var tableCount = await query1.ExecuteScalar<int, PgInt>(ct);
+        var tableCount = await query1.ExecuteScalar<int>(ct);
         await Assert.That(tableCount).IsEqualTo(CopyRowCount);
 
-        using IPgExecutableQuery query2 = connection.CreateQuery(
+        await using IPgExecutableQuery query2 = connection.CreateQuery(
             $"""
              SELECT COUNT(*)
              FROM public.copy_out_test ct
@@ -152,7 +152,7 @@ public partial class PgConnectionTest
                  OR t.t IS NULL
                  OR ct.text_field != ct.id || ' Value'
              """);
-        var invalidRow = await query2.ExecuteScalar<int, PgInt>(ct);
+        var invalidRow = await query2.ExecuteScalarPg<int, PgInt>(ct);
         await Assert.That(invalidRow).IsEqualTo(0);
     }
 

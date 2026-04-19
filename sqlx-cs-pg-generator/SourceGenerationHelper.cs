@@ -118,6 +118,11 @@ internal static class SourceGenerationHelper
 
             builder.Append(typeSymbol.Name);
 
+            if (typeSymbol is { IsReferenceType: true, IsNullable: true })
+            {
+                builder.Append('?');
+            }
+
             if (typeSymbol is not INamedTypeSymbol { TypeArguments.IsEmpty: false } namedTypeSymbol)
             {
                 return builder;
@@ -176,23 +181,7 @@ internal static class SourceGenerationHelper
 
     extension(ITypeSymbol typeSymbol)
     {
-        public string FullName
-        {
-            get
-            {
-                if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
-                {
-                    return arrayTypeSymbol.FullName;
-                }
-
-                var namespaceFullName = typeSymbol.ContainingNamespace is null
-                    ? string.Empty
-                    : typeSymbol.ContainingNamespace.GetFullNamespaceName();
-                return "global::" + (string.IsNullOrEmpty(namespaceFullName)
-                    ? typeSymbol.Name
-                    : namespaceFullName + "." + typeSymbol.Name);
-            }
-        }
+        public string FullName => new StringBuilder().AppendFullName(typeSymbol).ToString();
 
         public bool IsNullable => typeSymbol.NullableAnnotation is NullableAnnotation.Annotated ||
                                   typeSymbol.Name.StartsWith("Nullable");
@@ -314,11 +303,6 @@ internal static class SourceGenerationHelper
 
         private bool IsValidRangeType => namedTypeSymbol.Name is nameof(Int64) or nameof(Int32)
             or "DateOnly" or nameof(DateTime) or "DateTimeOffset" or nameof(Decimal);
-    }
-
-    extension(IArrayTypeSymbol arrayTypeSymbol)
-    {
-        private string FullName => $"{arrayTypeSymbol.ElementType.FullName}[]";
     }
 
     extension(IPropertySymbol propertySymbol)

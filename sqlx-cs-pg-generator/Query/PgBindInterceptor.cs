@@ -252,8 +252,8 @@ public sealed class PgBindInterceptor : ISourceInterceptorPipeline<BindInvocatio
                 case EnumRepresentation.Text:
                     sb.AppendLine("            if (enumValue.HasValue)");
                     sb.AppendLine("            {");
-                    sb.Append("                pgBindable.Bind(global::Sqlx.Postgres.Generator.Type.WrapperEnumTypes.")
-                        .Append(wrapperEnumToGenerate.UniqueMethodName)
+                    sb.Append("                pgBindable.Bind(")
+                        .Append(wrapperEnumToGenerate.UniqueMethodFullName)
                         .AppendLine("_ToEncodeString(enumValue.Value));");
                     sb.AppendLine("            }");
                     sb.AppendLine("            else");
@@ -271,8 +271,8 @@ public sealed class PgBindInterceptor : ISourceInterceptorPipeline<BindInvocatio
                     sb.AppendLine("            pgBindable.BindPg<int, global::Sqlx.Postgres.Type.PgInt>((int)enumValue);");
                     break;
                 case EnumRepresentation.Text:
-                    sb.Append("                pgBindable.Bind(global::Sqlx.Postgres.Generator.Type.WrapperEnumTypes.")
-                        .Append(wrapperEnumToGenerate.UniqueMethodName)
+                    sb.Append("                pgBindable.Bind(")
+                        .Append(wrapperEnumToGenerate.UniqueMethodFullName)
                         .AppendLine("_ToEncodeString(enumValue));");
                     break;
             }
@@ -283,7 +283,10 @@ public sealed class PgBindInterceptor : ISourceInterceptorPipeline<BindInvocatio
 
         // Add the source to the compilation
         var contents = sb.ToString();
-        var filename = $"IPgBindable_{nonNullEncodeType.Name}_{(isNullable ? "Nullable" : "NotNull")}_Interception.g.cs";
+        var filename = SourceGenerationHelper.GetSourceInterceptorFileName(
+            "IPgBindable",
+            nonNullEncodeType,
+            isNullable);
         context.AddSource(filename, SourceText.From(contents, Encoding.UTF8));
         sb.Clear();
     }

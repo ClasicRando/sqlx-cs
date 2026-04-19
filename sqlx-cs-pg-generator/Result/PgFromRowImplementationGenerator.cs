@@ -230,8 +230,7 @@ internal class PgFromRowImplementationGenerator : ISourceGenerationPipeline<PgFr
                                 .Append(')');
                             break;
                         case EnumRepresentation.Text:
-                            builder.Append("global::Sqlx.Postgres.Generator.Type.WrapperEnumTypes.")
-                                .Append(wrapperEnum.UniqueMethodName)
+                            builder.Append(wrapperEnum.UniqueMethodFullName)
                                 .Append("_FromChars(dataRow.GetPgNotNull<global::System.String,global::Sqlx.Postgres.Type.PgString>(")
                                 .Append(rowField.IndexVariableName)
                                 .Append("))");

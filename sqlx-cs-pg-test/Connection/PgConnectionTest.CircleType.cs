@@ -9,9 +9,9 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_CircleAndDefaultEncoding(CancellationToken ct)
     {
         var value = new PgCircle(new PgPoint(5.63, 8.59), 4);
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 circle_col;");
-        query.BindPg(value);
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 circle_col;");
+        query.Bind(value);
         var result = await query.ExecuteScalar<PgCircle>(ct);
         await Assert.That(result).IsEqualTo(value);
     }
@@ -21,9 +21,9 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT '<(5.63,8.59),4>'::circle;";
         var value = new PgCircle(new PgPoint(5.63, 8.59), 4);
-        using IPgConnection
+        await using IPgConnection
             connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery(sql);
+        await using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalar<PgCircle>(ct);
         await Assert.That(result).IsEqualTo(value);
     }

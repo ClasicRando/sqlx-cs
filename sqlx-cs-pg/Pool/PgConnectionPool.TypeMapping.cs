@@ -30,7 +30,7 @@ internal sealed partial class PgConnectionPool
 
         try
         {
-            PgOid oid = await typeOidQuery.ExecuteScalar<PgOid>(cancellationToken)
+            PgOid oid = await typeOidQuery.ExecuteScalarPg<PgOid, PgOid>(cancellationToken)
                 .ConfigureAwait(false);
             TType.DbType = new PgTypeInfo(oid.Inner, new EnumType());
         }
@@ -74,7 +74,8 @@ internal sealed partial class PgConnectionPool
         PgOid oid;
         try
         {
-            oid = await typeOidQuery.ExecuteScalar<PgOid>(cancellationToken).ConfigureAwait(false);
+            oid = await typeOidQuery.ExecuteScalarPg<PgOid, PgOid>(cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (PgException e)
         {
@@ -86,7 +87,7 @@ internal sealed partial class PgConnectionPool
         IPgExecutableQuery attributeOidsQuery =
             connection.CreateQuery(pgCompositeAttributeOidsByOid);
         await using ConfiguredAsyncDisposable _3 = attributeOidsQuery.ConfigureAwait(false);
-        attributeOidsQuery.BindPg(oid);
+        attributeOidsQuery.BindPg<PgOid, PgOid>(oid);
 
         var attributeOids = await attributeOidsQuery
             .FetchAsync<CompositeField>(cancellationToken)

@@ -168,7 +168,11 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
             {
                 sb.AppendLine("            if (pgDataRow.IsNull(index)) return null;");
             }
-            sb.AppendLine($"            return pgDataRow.GetPgNotNull<{nonNullDecodeType.FullName}, {iPgDbType}>(index);");
+            sb.Append("            return pgDataRow.GetPgNotNull<")
+                .AppendFullName(nonNullDecodeType)
+                .Append(',')
+                .Append(iPgDbType)
+                .AppendLine(">(index);");
             sb.AppendLine("        }");
         }
         
@@ -240,7 +244,7 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
                 .Append(nonNullDecodeType.Name)
                 .Append(isNullable ? "Nullable" : "NotNull")
                 .Append("(this global::Sqlx.Postgres.Result.IPgDataRow pgDataRow, ")
-                .Append(isNameParam ? "string name" : "int index")
+                .Append(isNameParam ? "global::System.String name" : "global::System.Int32 index")
                 .AppendLine(")");
             sb.AppendLine("        {");
             if (isNameParam)
@@ -257,12 +261,12 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
                 case EnumRepresentation.Int:
                     sb.Append("            return (")
                         .AppendFullName(wrapperEnumToIntercept)
-                        .AppendLine(")pgDataRow.GetPgNotNull<int, global::Sqlx.Postgres.Type.PgInt>(index);");
+                        .AppendLine(")pgDataRow.GetPgNotNull<global::System.Int32, global::Sqlx.Postgres.Type.PgInt>(index);");
                     break;
                 case EnumRepresentation.Text:
-                    sb.Append("            return global::Sqlx.Postgres.Generator.Type.WrapperEnumTypes.")
-                        .Append(wrapperEnumToIntercept.UniqueMethodName)
-                        .AppendLine("_FromChars(pgDataRow.GetPgNotNull<string, global::Sqlx.Postgres.Type.PgString>(index));");
+                    sb.Append("            return ")
+                        .Append(wrapperEnumToIntercept.UniqueMethodFullName)
+                        .AppendLine("_FromChars(pgDataRow.GetPgNotNull<global::System.String, global::Sqlx.Postgres.Type.PgString>(index));");
                     break;
             }
             sb.AppendLine("        }");

@@ -9,9 +9,9 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_BoxAndDefaultEncoding(CancellationToken ct)
     {
         var value = new PgBox(new PgPoint(1,2), new PgPoint(3,4));
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 box_bol;");
-        query.BindPg(value);
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 box_bol;");
+        query.Bind(value);
         var result = await query.ExecuteScalar<PgBox>(ct);
         await Assert.That(result).IsEqualTo(value);
     }
@@ -21,9 +21,9 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT '(3,4),(1,2)'::box;";
         var value = new PgBox(new PgPoint(1,2), new PgPoint(3,4));
-        using IPgConnection
+        await using IPgConnection
             connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery(sql);
+        await using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalar<PgBox>(ct);
         await Assert.That(result).IsEqualTo(value);
     }

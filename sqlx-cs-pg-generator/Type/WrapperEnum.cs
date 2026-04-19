@@ -68,5 +68,7 @@ internal readonly struct WrapperEnum : IFullNameType
         ? "global_" + ShortName
         : ContainingNamespace.Replace('.', '_') + "_" + ShortName;
 
+    public string UniqueMethodFullName => $"global::Sqlx.Postgres.Generator.Type.WrapperEnumTypes.{UniqueMethodName}";
+
     public ImmutableArray<KeyValuePair<string, string>> ValueNames { get; }
 }

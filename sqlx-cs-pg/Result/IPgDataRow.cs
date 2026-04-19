@@ -31,10 +31,19 @@ public interface IPgDataRow : IDataRow, IDisposable
      */
 
     /// <summary>
-    /// Method to extract the desired type from the field specified as a zero-based index. This
-    /// method is intended to be used with the source interceptor provided in
+    /// <para>
+    /// Method to extract the desired type from the field specified as a zero-based index.
+    /// </para>
+    /// <para>
+    /// This method is intended to be used with the source interceptor provided in
     /// <c>sqlx-cs-pg-generator</c>. Without that dependency, this method always throws a
     /// <see cref="NotImplementedException"/>.
+    /// </para>
+    /// <para>
+    /// Internally, this method will invoke <see cref="GetPgNotNull"/> with the correct database
+    /// type based upon <typeparamref name="T"/>. If the type parameter is nullable, then the field
+    /// will first be checked for a null value.
+    /// </para>
     /// </summary>
     /// <param name="index">0-based index of the column to extract</param>
     /// <typeparam name="T">Return type</typeparam>
@@ -42,10 +51,19 @@ public interface IPgDataRow : IDataRow, IDisposable
     T GetField<T>(int index) => throw new NotImplementedException();
 
     /// <summary>
-    /// Method to extract the desired type from the field specified as a result set field name. This
-    /// method is intended to be used with the source interceptor provided in
+    /// <para>
+    /// Method to extract the desired type from the field specified as a result set field name.
+    /// </para>
+    /// <para>
+    /// This method is intended to be used with the source interceptor provided in
     /// <c>sqlx-cs-pg-generator</c>. Without that dependency, this method always throws a
     /// <see cref="NotImplementedException"/>.
+    /// </para>
+    /// <para>
+    /// Internally, this method will invoke <see cref="GetPgNotNull"/> with the correct database
+    /// type based upon <typeparamref name="T"/>. If the type parameter is nullable, then the field
+    /// will first be checked for a null value.
+    /// </para>
     /// </summary>
     /// <param name="name">name of the column to extract</param>
     /// <typeparam name="T">Return type</typeparam>

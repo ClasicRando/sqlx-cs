@@ -329,6 +329,7 @@ public class PostgresGenerator : IIncrementalGenerator
         RegisterSourceGeneration<PgToPgBinaryCopyRowImplementationGenerator, PgToParamToGenerate>(context);
         RegisterSourceInterceptor<PgGetFieldInterceptor, GetFieldInvocation>(context);
         RegisterSourceInterceptor<PgBindInterceptor, BindInvocation>(context);
+        RegisterSourceInterceptor<PgExecuteScalarInterceptor, ExecuteScalarInvocation>(context);
     }
 
     private static void RegisterSourceGeneration<TPipeline, TUnit>(

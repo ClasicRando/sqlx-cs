@@ -233,7 +233,7 @@ public sealed class PgConnection :
                 TableOid = dataRow.GetPgNotNull<int, PgInt>("table_oid"),
                 ColumnName = dataRow.GetPgNotNull<string, PgString>("column_name"),
                 ColumnOrder = dataRow.GetPgNotNull<short, PgShort>("column_order"),
-                PgTypeInfo = PgTypeInfo.FromOid(dataRow.GetPgNotNull<PgOid>("type_oid")),
+                PgTypeInfo = PgTypeInfo.FromOid(dataRow.GetPgNotNull<PgOid, PgOid>("type_oid")),
                 ColumnLength = dataRow.GetPgNotNull<short, PgShort>("column_length"),
             };
         }
