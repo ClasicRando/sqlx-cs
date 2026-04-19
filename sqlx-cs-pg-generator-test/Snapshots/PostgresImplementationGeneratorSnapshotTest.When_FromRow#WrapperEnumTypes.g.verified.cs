@@ -5,46 +5,4 @@
 namespace Sqlx.Postgres.Generator.Type;
 
 public static class WrapperEnumTypes
-{
-    public static void Bind(this global::Sqlx.Postgres.Query.IPgBindable pgBindable, WrapperEnumType enumValue)
-    {
-        pgBindable.Bind((int)enumValue);
-    }
-
-    public static void Bind(this global::Sqlx.Postgres.Query.IPgBindable pgBindable, WrapperEnumType? enumValue)
-    {
-        if (enumValue.HasValue)
-        {
-            pgBindable.Bind((int)enumValue.Value);
-        }
-        else
-        {
-            pgBindable.BindNull<int>();
-        }
-    }
-
-    public static WrapperEnumType GetWrapperEnumTypeNotNull(this global::Sqlx.Postgres.Result.IPgDataRow pgDataRow, int index)
-    {
-        return (WrapperEnumType)pgDataRow.GetPgNotNull<int, global::Sqlx.Postgres.Type.PgInt>(index);
-    }
-
-    public static WrapperEnumType GetWrapperEnumTypeNotNull(this global::Sqlx.Postgres.Result.IPgDataRow pgDataRow, string name)
-    {
-        int index = pgDataRow.IndexOf(name);
-        return (WrapperEnumType)pgDataRow.GetPgNotNull<int, global::Sqlx.Postgres.Type.PgInt>(index);
-    }
-
-    public static WrapperEnumType? GetWrapperEnumType(this global::Sqlx.Postgres.Result.IPgDataRow pgDataRow, int index)
-    {
-        if (pgDataRow.IsNull(index)) return null;
-        return (WrapperEnumType)pgDataRow.GetPgNotNull<int, global::Sqlx.Postgres.Type.PgInt>(index);
-    }
-
-    public static WrapperEnumType? GetWrapperEnumType(this global::Sqlx.Postgres.Result.IPgDataRow pgDataRow, string name)
-    {
-        int index = pgDataRow.IndexOf(name);
-        if (pgDataRow.IsNull(index)) return null;
-        return (WrapperEnumType)pgDataRow.GetPgNotNull<int, global::Sqlx.Postgres.Type.PgInt>(index);
-    }
-
-}
+{}

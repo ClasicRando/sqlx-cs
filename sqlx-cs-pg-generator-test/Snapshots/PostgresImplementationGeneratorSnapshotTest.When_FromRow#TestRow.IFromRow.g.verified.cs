@@ -61,7 +61,7 @@ public partial struct TestRow : global::Sqlx.Core.Result.IFromRow<global::Sqlx.P
             PointField: dataRow.GetPgNotNull<global::Sqlx.Postgres.Type.PgPoint>(indexPointField),
             IntArrayField: dataRow.GetPgNotNull<global::System.Int32[],global::Sqlx.Postgres.Type.PgArrayTypeStruct<global::System.Int32, global::Sqlx.Postgres.Type.PgInt>>(indexIntArrayField),
             NullableIntField: dataRow.IsNull(indexNullableIntField) ? null : dataRow.GetPgNotNull<global::System.Int32,global::Sqlx.Postgres.Type.PgInt>(indexNullableIntField),
-            WrapperEnumTypeField: (WrapperEnumType)dataRow.GetPgNotNull<global::System.Int32,global::Sqlx.Postgres.Type.PgInt>(indexWrapperEnumTypeField),
+            WrapperEnumTypeField: (global::WrapperEnumType)dataRow.GetPgNotNull<global::System.Int32,global::Sqlx.Postgres.Type.PgInt>(indexWrapperEnumTypeField),
             PostgresEnumTypeField: dataRow.GetPgNotNull<global::PostgresEnumType,global::Sqlx.Postgres.Generator.Type.PgPostgresEnumType>(indexPostgresEnumTypeField));
     }
 }

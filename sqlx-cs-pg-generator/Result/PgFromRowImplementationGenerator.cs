@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using Sqlx.Postgres.Generator.Type;
 
 namespace Sqlx.Postgres.Generator.Result;
 
@@ -210,20 +211,32 @@ internal class PgFromRowImplementationGenerator : ISourceGenerationPipeline<PgFr
                         .Append(rowField.IndexVariableName)
                         .Append(')');
                     break;
-                case { FieldType: INamedTypeSymbol { IsWrapperEnum: true, IsNullable: true } }:
-                    builder.Append("dataRow.Get")
-                        .Append(rowField.FieldType.AsNotNullType())
-                        .Append(">(")
-                        .Append(rowField.IndexVariableName)
-                        .Append(')');
-                    break;
-                case { FieldType: INamedTypeSymbol { IsWrapperEnum: true, IsNullable: false } }:
-                    builder.Append("dataRow.Get")
-                        .Append(rowField.FieldType.Name)
-                        .Append("NotNull")
-                        .Append(">(")
-                        .Append(rowField.IndexVariableName)
-                        .Append(')');
+                case { FieldType: INamedTypeSymbol { IsWrapperEnum: true, IsNullable: var isNullable } fieldType }:
+                    if (isNullable)
+                    {
+                        builder.Append("dataRow.IsNull(")
+                            .Append(rowField.IndexVariableName)
+                            .Append(") ? null : ");
+                    }
+
+                    var wrapperEnum = new WrapperEnum(fieldType);
+                    switch (wrapperEnum.Representation)
+                    {
+                        case EnumRepresentation.Int:
+                            builder.Append('(')
+                                .AppendFullName(fieldType)
+                                .Append(")dataRow.GetPgNotNull<global::System.Int32,global::Sqlx.Postgres.Type.PgInt>(")
+                                .Append(rowField.IndexVariableName)
+                                .Append(')');
+                            break;
+                        case EnumRepresentation.Text:
+                            builder.Append("global::Sqlx.Postgres.Generator.Type.WrapperEnumTypes.")
+                                .Append(wrapperEnum.UniqueMethodName)
+                                .Append("_FromChars(dataRow.GetPgNotNull<global::System.String,global::Sqlx.Postgres.Type.PgString>(")
+                                .Append(rowField.IndexVariableName)
+                                .Append("))");
+                            break;
+                    }
                     break;
                 case { FieldType.IsNullable: true }:
                     builder.Append("dataRow.IsNull(")

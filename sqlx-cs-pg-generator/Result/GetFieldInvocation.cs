@@ -7,7 +7,7 @@ public readonly record struct GetFieldInvocation
 {
     public GetFieldInvocation(
         InterceptableLocation location,
-        INamedTypeSymbol decodeType,
+        ITypeSymbol decodeType,
         bool isNameParameter)
     {
         Location = location;
@@ -16,6 +16,6 @@ public readonly record struct GetFieldInvocation
     }
 
     public InterceptableLocation Location { get; }
-    public INamedTypeSymbol DecodeType { get; }
+    public ITypeSymbol DecodeType { get; }
     public bool IsNameParameter { get; }
 }

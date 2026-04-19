@@ -221,8 +221,14 @@ internal static class SourceGenerationHelper
                     var decoderName = elementType.IsValueType
                         ? "PgArrayTypeStruct"
                         : "PgArrayTypeClass";
+                    var dbType = elementType.GetIPgDbType();
+                    if (dbType is null)
+                    {
+                        return null;
+                    }
+
                     name =
-                        $"{typeNamespace}.{decoderName}<{elementType.FullName}, {elementType.GetIPgDbType()}>";
+                        $"{typeNamespace}.{decoderName}<{elementType.AsNotNullType().FullName}, {dbType}>";
                     break;
                 case { Name: nameof(Boolean) }:
                     name = $"{typeNamespace}.PgBool";
@@ -346,5 +352,19 @@ internal static class SourceGenerationHelper
                     null),
             };
         }
+    }
+
+    public static string GetSourceInterceptorFileName(
+        string interceptorTargetType,
+        ITypeSymbol nonNullType,
+        bool isNullableType)
+    {
+        var typeName = nonNullType switch
+        {
+            IArrayTypeSymbol at => at.ElementType.AsNotNullType().Name +
+                                   (at.ElementType.IsNullable ? "Nullable" : "") + "Array",
+            _ => nonNullType.Name,
+        };
+        return $"{interceptorTargetType}_{typeName}_{(isNullableType ? "Nullable" : "NotNull")}_Interception.g.cs";
     }
 }

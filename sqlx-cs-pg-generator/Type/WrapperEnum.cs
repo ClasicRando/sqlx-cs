@@ -3,11 +3,11 @@ using Microsoft.CodeAnalysis;
 
 namespace Sqlx.Postgres.Generator.Type;
 
-internal readonly struct WrapperEnumToIntercept : IFullNameType
+internal readonly struct WrapperEnum : IFullNameType
 {
     private readonly INamedTypeSymbol _enumType;
 
-    public WrapperEnumToIntercept(INamedTypeSymbol namedTypeSymbol)
+    public WrapperEnum(INamedTypeSymbol namedTypeSymbol)
     {
         _enumType = namedTypeSymbol;
         ContainingNamespace = namedTypeSymbol.ContainingNamespace.GetFullNamespaceName();
@@ -59,6 +59,14 @@ internal readonly struct WrapperEnumToIntercept : IFullNameType
     public string ContainingNamespace { get; }
 
     public EnumRepresentation Representation { get; }
+
+    public INamedTypeSymbol EnumUnderlyingType => _enumType.EnumUnderlyingType!;
+
+    public Accessibility DeclaredAccessibility => _enumType.DeclaredAccessibility;
+
+    public string UniqueMethodName => string.IsNullOrEmpty(ContainingNamespace)
+        ? "global_" + ShortName
+        : ContainingNamespace.Replace('.', '_') + "_" + ShortName;
 
     public ImmutableArray<KeyValuePair<string, string>> ValueNames { get; }
 }

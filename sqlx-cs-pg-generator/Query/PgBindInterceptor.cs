@@ -40,13 +40,12 @@ public sealed class PgBindInterceptor : ISourceInterceptorPipeline<BindInvocatio
                 Parameters: var parameters,
             }
             && typeArguments.Length == 1
-            && typeArguments[0] is INamedTypeSymbol namedTypeSymbol
             && parameters.Length == 1)
         {
             if (context.SemanticModel.GetInterceptableLocation(invocation, cancellationToken) is
                 { } location)
             {
-                return new BindInvocation(location, namedTypeSymbol);
+                return new BindInvocation(location, typeArguments[0]);
             }
         }
 
@@ -62,9 +61,9 @@ public sealed class PgBindInterceptor : ISourceInterceptorPipeline<BindInvocatio
         var encodeTypeGrouped = item.GroupBy(x => x.EncodeType, SymbolEqualityComparer.IncludeNullability);
         foreach (var encodeTypeGrouping in encodeTypeGrouped)
         {
-            INamedTypeSymbol encodeType = encodeTypeGrouping.First().EncodeType;
+            ITypeSymbol encodeType = encodeTypeGrouping.First().EncodeType;
             var isNullable = encodeType.IsNullable;
-            INamedTypeSymbol nonNullEncodeType = encodeType.AsNotNullType();
+            ITypeSymbol nonNullEncodeType = encodeType.AsNotNullType();
             
             var iPgDbType = encodeType.GetIPgDbType();
             if (iPgDbType is not null)
@@ -79,13 +78,13 @@ public sealed class PgBindInterceptor : ISourceInterceptorPipeline<BindInvocatio
                 continue;
             }
             
-            if (nonNullEncodeType.IsWrapperEnum)
+            if (nonNullEncodeType is INamedTypeSymbol { IsWrapperEnum: true } nt)
             {
                 GenerateWrapperEnumInterceptor(
                     context,
                     sb,
                     encodeTypeGrouping,
-                    nonNullEncodeType,
+                    nt,
                     isNullable);
                 continue;
             }
@@ -102,7 +101,7 @@ public sealed class PgBindInterceptor : ISourceInterceptorPipeline<BindInvocatio
         SourceProductionContext context,
         StringBuilder sb,
         IGrouping<ISymbol?, BindInvocation> encodeTypeGrouping,
-        INamedTypeSymbol nonNullEncodeType,
+        ITypeSymbol nonNullEncodeType,
         bool isNullable,
         string iPgDbType)
     {
@@ -179,7 +178,10 @@ public sealed class PgBindInterceptor : ISourceInterceptorPipeline<BindInvocatio
 
         // Add the source to the compilation
         var contents = sb.ToString();
-        var filename = $"IPgBindable_{nonNullEncodeType.Name}_{(isNullable ? "Nullable" : "NotNull")}_Interception.g.cs";
+        var filename = SourceGenerationHelper.GetSourceInterceptorFileName(
+            "IPgBindable",
+            nonNullEncodeType,
+            isNullable);
         context.AddSource(filename, SourceText.From(contents, Encoding.UTF8));
         sb.Clear();
     }
@@ -191,7 +193,7 @@ public sealed class PgBindInterceptor : ISourceInterceptorPipeline<BindInvocatio
         INamedTypeSymbol nonNullEncodeType,
         bool isNullable)
     {
-        var wrapperEnumToGenerate = new WrapperEnumToIntercept(nonNullEncodeType);
+        var wrapperEnumToGenerate = new WrapperEnum(nonNullEncodeType);
         
         sb.AppendLine("""
             #nullable enable
@@ -250,7 +252,9 @@ public sealed class PgBindInterceptor : ISourceInterceptorPipeline<BindInvocatio
                 case EnumRepresentation.Text:
                     sb.AppendLine("            if (enumValue.HasValue)");
                     sb.AppendLine("            {");
-                    sb.AppendLine("                pgBindable.Bind(enumValue.Value.ToEncodeString());");
+                    sb.Append("                pgBindable.Bind(global::Sqlx.Postgres.Generator.Type.WrapperEnumTypes.")
+                        .Append(wrapperEnumToGenerate.UniqueMethodName)
+                        .AppendLine("_ToEncodeString(enumValue.Value));");
                     sb.AppendLine("            }");
                     sb.AppendLine("            else");
                     sb.AppendLine("            {");
@@ -267,50 +271,15 @@ public sealed class PgBindInterceptor : ISourceInterceptorPipeline<BindInvocatio
                     sb.AppendLine("            pgBindable.BindPg<int, global::Sqlx.Postgres.Type.PgInt>((int)enumValue);");
                     break;
                 case EnumRepresentation.Text:
-                    sb.AppendLine("            pgBindable.Bind(enumValue.ToEncodeString());");
+                    sb.Append("                pgBindable.Bind(global::Sqlx.Postgres.Generator.Type.WrapperEnumTypes.")
+                        .Append(wrapperEnumToGenerate.UniqueMethodName)
+                        .AppendLine("_ToEncodeString(enumValue));");
                     break;
             }
         }
         sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine("}");
-        
-        if (wrapperEnumToGenerate.Representation is EnumRepresentation.Text)
-        {
-            sb.AppendLine(
-                """
-                namespace Sqlx.Postgres.Interceptors
-                {
-                    static file class WrapperEnumTypes
-                    {
-                """);
-            sb.Append("        extension(")
-                .AppendFullName(nonNullEncodeType)
-                .AppendLine(" enumValue)");
-            sb.AppendLine("        {");
-            sb.Append("            public global::System.ReadOnlySpan<char> ToEncodeString()");
-            sb.AppendLine("            {");
-            sb.AppendLine("                return enumValue switch");
-            sb.AppendLine("                {");
-            foreach (var kvp in wrapperEnumToGenerate.ValueNames)
-            {
-                sb.Append("                    ")
-                    .AppendFullName(wrapperEnumToGenerate)
-                    .Append('.')
-                    .Append(kvp.Key)
-                    .Append(" => \"")
-                    .Append(kvp.Value)
-                    .AppendLine("\",");
-            }
-
-            sb.AppendLine("                    _ => throw new global::System.InvalidOperationException($\"Attempted to encode an unknown enum variant, '{enumValue}'\"),");
-            sb.AppendLine("                };");
-            sb.AppendLine("            }");
-            sb.AppendLine("        }");
-            sb.AppendLine("    }");
-            sb.AppendLine("}");
-            sb.AppendLine();
-        }
 
         // Add the source to the compilation
         var contents = sb.ToString();

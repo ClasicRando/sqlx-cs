@@ -40,14 +40,16 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
                 Parameters: var parameters,
             }
             && typeArguments.Length == 1
-            && typeArguments[0] is INamedTypeSymbol namedTypeSymbol
             && parameters.Length == 1
             && parameters[0].Type is INamedTypeSymbol { Name: "Int32" or "String" } parameterType)
         {
             if (context.SemanticModel.GetInterceptableLocation(invocation, cancellationToken) is
                 { } location)
             {
-                return new GetFieldInvocation(location, namedTypeSymbol, parameterType.Name is "String");
+                return new GetFieldInvocation(
+                    location,
+                    typeArguments[0],
+                    parameterType.Name is "String");
             }
         }
 
@@ -63,9 +65,9 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
         var decodeTypeGrouped = item.GroupBy(x => x.DecodeType, SymbolEqualityComparer.IncludeNullability);
         foreach (var decodeTypeGrouping in decodeTypeGrouped)
         {
-            INamedTypeSymbol decodeType = decodeTypeGrouping.First().DecodeType;
+            ITypeSymbol decodeType = decodeTypeGrouping.First().DecodeType;
             var isNullable = decodeType.IsNullable;
-            INamedTypeSymbol nonNullDecodeType = decodeType.AsNotNullType();
+            ITypeSymbol nonNullDecodeType = decodeType.AsNotNullType();
 
             var iPgDbType = decodeType.GetIPgDbType();
             if (iPgDbType is not null)
@@ -80,13 +82,13 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
                 continue;
             }
 
-            if (nonNullDecodeType.IsWrapperEnum)
+            if (nonNullDecodeType is INamedTypeSymbol { IsWrapperEnum: true } nt)
             {
                 GenerateWrapperEnumInterceptor(
                     context,
                     sb,
                     decodeTypeGrouping,
-                    nonNullDecodeType,
+                    nt,
                     isNullable);
                 continue;
             }
@@ -103,7 +105,7 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
         SourceProductionContext context,
         StringBuilder sb,
         IGrouping<ISymbol?, GetFieldInvocation> decodeTypeGrouping,
-        INamedTypeSymbol nonNullDecodeType,
+        ITypeSymbol nonNullDecodeType,
         bool isNullable,
         string iPgDbType)
     {
@@ -175,7 +177,10 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
 
         // Add the source to the compilation
         var contents = sb.ToString();
-        var filename = $"IPgDataRow_{nonNullDecodeType.Name}_{(isNullable ? "Nullable" : "NotNull")}_Interception.g.cs";
+        var filename = SourceGenerationHelper.GetSourceInterceptorFileName(
+            "IPgDataRow",
+            nonNullDecodeType,
+            isNullable);
         context.AddSource(filename, SourceText.From(contents, Encoding.UTF8));
         sb.Clear();
     }
@@ -187,7 +192,7 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
         INamedTypeSymbol nonNullDecodeType,
         bool isNullable)
     {
-        var wrapperEnumToIntercept = new WrapperEnumToIntercept(nonNullDecodeType);
+        var wrapperEnumToIntercept = new WrapperEnum(nonNullDecodeType);
         sb.AppendLine("""
             #nullable enable
             namespace System.Runtime.CompilerServices
@@ -255,9 +260,9 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
                         .AppendLine(")pgDataRow.GetPgNotNull<int, global::Sqlx.Postgres.Type.PgInt>(index);");
                     break;
                 case EnumRepresentation.Text:
-                    sb.Append("            return ")
-                        .AppendFullName(wrapperEnumToIntercept)
-                        .AppendLine(".FromChars(pgDataRow.GetPgNotNull<string, global::Sqlx.Postgres.Type.PgString>(index));");
+                    sb.Append("            return global::Sqlx.Postgres.Generator.Type.WrapperEnumTypes.")
+                        .Append(wrapperEnumToIntercept.UniqueMethodName)
+                        .AppendLine("_FromChars(pgDataRow.GetPgNotNull<string, global::Sqlx.Postgres.Type.PgString>(index));");
                     break;
             }
             sb.AppendLine("        }");
@@ -265,46 +270,6 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
         
         sb.AppendLine("    }");
         sb.AppendLine("}");
-        
-        if (wrapperEnumToIntercept.Representation is EnumRepresentation.Text)
-        {
-            sb.AppendLine(
-                """
-                namespace Sqlx.Postgres.Interceptors
-                {
-                    static file class WrapperEnumTypes
-                    {
-                """);
-            sb.Append("        extension(")
-                .AppendFullName(nonNullDecodeType)
-                .AppendLine(" enumValue)");
-            sb.AppendLine("        {");
-            sb.Append("            public static ")
-                .AppendFullName(wrapperEnumToIntercept)
-                .AppendLine(" FromChars(in global::System.ReadOnlySpan<char> chars)");
-            sb.AppendLine("            {");
-            sb.AppendLine("                return chars switch");
-            sb.AppendLine("                {");
-            foreach (var kvp in wrapperEnumToIntercept.ValueNames)
-            {
-                sb.Append("                    \"")
-                    .Append(kvp.Value)
-                    .Append("\" => ")
-                    .AppendFullName(wrapperEnumToIntercept)
-                    .Append('.')
-                    .Append(kvp.Key)
-                    .AppendLine(",");
-            }
-
-            sb.AppendLine("                    _ => throw new global::System.InvalidOperationException($\"Attempted to decode an unknown enum variant with name, '{chars}'\"),");
-            sb.AppendLine("                };");
-            sb.AppendLine("            }");
-
-            sb.AppendLine("        }");
-            sb.AppendLine("    }");
-            sb.AppendLine("}");
-            sb.AppendLine();
-        }
 
         // Add the source to the compilation
         var contents = sb.ToString();

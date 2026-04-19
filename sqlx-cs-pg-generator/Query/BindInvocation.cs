@@ -7,12 +7,12 @@ public readonly record struct BindInvocation
 {
     public BindInvocation(
         InterceptableLocation location,
-        INamedTypeSymbol encodeType)
+        ITypeSymbol encodeType)
     {
         Location = location;
         EncodeType = encodeType;
     }
 
     public InterceptableLocation Location { get; }
-    public INamedTypeSymbol EncodeType { get; }
+    public ITypeSymbol EncodeType { get; }
 }

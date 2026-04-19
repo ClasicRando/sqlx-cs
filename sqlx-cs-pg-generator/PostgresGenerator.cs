@@ -320,6 +320,7 @@ public class PostgresGenerator : IIncrementalGenerator
                 SourceText.From(ToPgBinaryCopyRowAttribute, Encoding.UTF8));
         });
 
+        RegisterSourceGeneration<WrapperEnumSerdeMethodsGenerator, WrapperEnumToGenerate>(context);
         RegisterSourceGeneration<WrapperTypeImplementationGenerator, WrapperTypeToGenerate>(context);
         RegisterSourceGeneration<PgEnumImplementationGenerator, PgEnumToGenerate>(context);
         RegisterSourceGeneration<PgCompositeImplementationGenerator, PgCompositeToGenerate>(context);

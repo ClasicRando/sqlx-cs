@@ -332,4 +332,43 @@ public class PostgresImplementationGeneratorSnapshotTest
 
         await TestHelper.VerifyPostgresGenerator(source);
     }
+
+    [Test]
+    public async Task When_WrapperTextEnum()
+    {
+        const string source =
+            """
+            using Sqlx.Postgres.Generator;
+            using Sqlx.Postgres.Generator.Type;
+            
+            [WrapperEnum(Representation = EnumRepresentation.Text)]
+            public enum TestEnum
+            {
+                None,
+                Single,
+                MultipleWords,
+                Value_With4Words
+            }
+            """;
+
+        await TestHelper.VerifyPostgresGenerator(source);
+    }
+
+    [Test]
+    public async Task When_GetField()
+    {
+        const string source =
+            """
+            using Sqlx.Postgres.Result;
+            using Sqlx.Postgres.Generator;
+            using Sqlx.Postgres.Generator.Type;
+
+            void Test(IPgDataRow dataRow)
+            {
+                dataRow.GetField<byte[]>(0);
+            }
+            """;
+
+        await TestHelper.VerifyPostgresGenerator(source);
+    }
 }
