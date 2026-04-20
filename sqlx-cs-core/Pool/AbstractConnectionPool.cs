@@ -111,6 +111,7 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
             return;
         }
 
+        stream.Cleanup();
         Interlocked.Increment(ref _idleConnectionCount);
         _idleConnectionWriter.TryWrite(stream);
     }
@@ -213,7 +214,6 @@ public abstract class AbstractConnectionPool<TConnection, TSelf> : IAsyncDisposa
             stream.Id);
         CloseStream(stream);
         return false;
-
     }
 
     [SuppressMessage(

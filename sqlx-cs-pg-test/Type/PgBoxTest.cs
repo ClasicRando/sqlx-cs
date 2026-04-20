@@ -27,7 +27,7 @@ public class PgBoxTest
         double y2,
         byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
         var value = new PgBox(new PgPoint(x1, y1), new PgPoint(x2, y2));
 
         PgBox.Encode(value, buffer);
@@ -59,7 +59,7 @@ public class PgBoxTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgBox actualValue = PgBox.DecodeBytes(ref binaryValue);
+        PgBox actualValue = PgBox.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

@@ -14,7 +14,7 @@ internal static class NetworkUtils
     private const byte PgsqlAfInet6 = PgsqlAfInet + 1;
     public const byte MaxIpv6NetmaskSize = 128;
     public const byte MaxIpv4NetmaskSize = 32;
-    
+
     /// <summary>
     /// <para>
     /// Writes 5 values to the buffer:
@@ -58,9 +58,10 @@ internal static class NetworkUtils
                 dataType.TypeOid.Inner,
                 "Wrote a different number of bytes to the parameter buffer than expected");
         }
+
         buffer.Advance(written);
     }
-    
+
     /// <summary>
     /// <para>
     /// Reads the buffer for the following components:
@@ -84,10 +85,11 @@ internal static class NetworkUtils
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/network.c#L292">pg source code</a>
     /// </summary>
     public static (IPAddress Address, byte Prefix) DecodeNetworkValuesAsBytes<T>(
-        ref PgBinaryValue value)
+        in PgBinaryValue value)
         where T : notnull
     {
-        var remainingBytes = value.Buffer.Length;
+        var buff = value.Buffer;
+        var remainingBytes = buff.Length;
         if (remainingBytes < 8)
         {
             throw ColumnDecodeException.Create<T, PgColumnMetadata>(
@@ -95,15 +97,14 @@ internal static class NetworkUtils
                 $"Network values must have at least 8 bytes available. Found {remainingBytes}");
         }
 
-        var family = value.Buffer.ReadByte();
-        var prefix = value.Buffer.ReadByte();
-        value.Buffer.Skip(2);
-        var span = value.Buffer;
-        var address = new IPAddress(span);
+        var family = buff.ReadByte();
+        var prefix = buff.ReadByte();
+        buff.Skip(2);
+        var address = new IPAddress(buff);
         return family switch
         {
-            PgsqlAfInet when span.Length == 4 => (address, prefix),
-            PgsqlAfInet6 when span.Length == 16 => (address, prefix),
+            PgsqlAfInet when buff.Length == 4 => (address, prefix),
+            PgsqlAfInet6 when buff.Length == 16 => (address, prefix),
             _ => throw ColumnDecodeException.Create<T, PgColumnMetadata>(value.ColumnMetadata),
         };
     }

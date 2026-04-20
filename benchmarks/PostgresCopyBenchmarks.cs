@@ -5,7 +5,6 @@ using CsvHelper;
 using Npgsql;
 using Sqlx.Core.Pool;
 using Sqlx.Core.Result;
-using Sqlx.Postgres;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Copy;
 using Sqlx.Postgres.Pool;
@@ -186,7 +185,7 @@ public class PostgresCopyBenchmarks
     public async Task<QueryResult> CopyInCsvSqlx()
     {
         await using IPgConnection connection = _sqlxPgConnectionPool.CreateConnection();
-        TableFromCsv copyStatement = new()
+        CopyTableFromCsv copyStatement = new()
         {
             SchemaName = "public",
             TableName = "copy_target",
@@ -198,7 +197,7 @@ public class PostgresCopyBenchmarks
     public async Task<QueryResult> CopyInBinarySqlx()
     {
         await using IPgConnection connection = _sqlxPgConnectionPool.CreateConnection();
-        TableFromBinary copyStatement = new()
+        CopyTableFromBinary copyStatement = new()
         {
             SchemaName = "public",
             TableName = "copy_target",
@@ -210,7 +209,7 @@ public class PostgresCopyBenchmarks
     public async Task CopyOutCsvSqlx()
     {
         await using IPgConnection connection = _sqlxPgConnectionPool.CreateConnection();
-        TableToCsv copyStatement = new()
+        CopyTableToCsv copyStatement = new()
         {
             SchemaName = "public",
             TableName = "copy_source",
@@ -222,7 +221,7 @@ public class PostgresCopyBenchmarks
     public async Task<List<RowData>> CopyOutBinarySqlx()
     {
         await using IPgConnection connection = _sqlxPgConnectionPool.CreateConnection();
-        TableToBinary copyStatement = new()
+        CopyTableToBinary copyStatement = new()
         {
             SchemaName = "public",
             TableName = "copy_source",

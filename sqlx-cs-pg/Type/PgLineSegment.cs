@@ -15,7 +15,8 @@ namespace Sqlx.Postgres.Type;
 public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
     : IPgDbType<PgLineSegment>, IGeometryType, IHasArrayType, IEquatable<PgLineSegment>
 {
-    private readonly Lazy<string> _geometryLiteral = new(() => $"({point1.GeometryLiteral},{point2.GeometryLiteral})");
+    private readonly Lazy<string> _geometryLiteral =
+        new(() => $"({point1.GeometryLiteral},{point2.GeometryLiteral})");
 
     public PgPoint Point1 { get; } = point1;
 
@@ -43,9 +44,18 @@ public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L2111">pg source code</a>
     /// </summary>
-    public static PgLineSegment DecodeBytes(ref PgBinaryValue value)
+    public static PgLineSegment DecodeBytes(in PgBinaryValue value)
     {
-        return new PgLineSegment(PgPoint.DecodeBytes(ref value), PgPoint.DecodeBytes(ref value));
+        var buff = value.Buffer;
+        var point1Value = new PgBinaryValue(
+            buff.ReadBytesAsSpan(PgPoint.Size),
+            value.ColumnMetadata);
+        var point2Value = new PgBinaryValue(
+            buff.ReadBytesAsSpan(PgPoint.Size),
+            value.ColumnMetadata);
+        return new PgLineSegment(
+            PgPoint.DecodeBytes(point1Value),
+            PgPoint.DecodeBytes(point2Value));
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -78,7 +88,7 @@ public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
         PgPoint point2 = GeometryUtils.DecodePoint<PgLineSegment>(slice2);
         return new PgLineSegment(point1, point2);
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Lseg;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.LsegArray;
@@ -102,7 +112,7 @@ public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
     {
         return HashCode.Combine(Point1, Point2);
     }
-    
+
     public static bool operator ==(PgLineSegment left, PgLineSegment right)
     {
         return left.Equals(right);
@@ -115,6 +125,7 @@ public readonly struct PgLineSegment(PgPoint point1, PgPoint point2)
 
     public override string ToString()
     {
-        return $"{nameof(PgLineSegment)} {{ {nameof(Point1)} = {Point1}, {nameof(Point2)} = {Point2} }}";
+        return
+            $"{nameof(PgLineSegment)} {{ {nameof(Point1)} = {Point1}, {nameof(Point2)} = {Point2} }}";
     }
 }

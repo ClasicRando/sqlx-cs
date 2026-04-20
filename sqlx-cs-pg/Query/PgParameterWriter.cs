@@ -14,10 +14,10 @@ namespace Sqlx.Postgres.Query;
 /// </summary>
 internal sealed class PgParameterWriter : IPgBindable
 {
-    private readonly PooledArrayBufferWriter _buffer;
+    private readonly ArrayBufferWriter _buffer;
     private readonly List<PgTypeInfo> _pgTypes = [];
 
-    public PgParameterWriter(PooledArrayBufferWriter buffer)
+    public PgParameterWriter(ArrayBufferWriter buffer)
     {
         _buffer = buffer;
     }
@@ -32,84 +32,14 @@ internal sealed class PgParameterWriter : IPgBindable
     /// </summary>
     public IReadOnlyList<PgTypeInfo> PgTypes => _pgTypes;
 
-    public void Bind(bool value)
-    {
-        Bind<bool, PgBool>(value);
-    }
-
-    public void Bind(sbyte value)
-    {
-        Bind<sbyte, PgChar>(value);
-    }
-
-    public void Bind(short value)
-    {
-        Bind<short, PgShort>(value);
-    }
-
-    public void Bind(int value)
-    {
-        Bind<int, PgInt>(value);
-    }
-
-    public void Bind(long value)
-    {
-        Bind<long, PgLong>(value);
-    }
-
-    public void Bind(float value)
-    {
-        Bind<float, PgFloat>(value);
-    }
-
-    public void Bind(double value)
-    {
-        Bind<double, PgDouble>(value);
-    }
-
-    public void Bind(TimeOnly value)
-    {
-        Bind<TimeOnly, PgTime>(value);
-    }
-
-    public void Bind(DateOnly value)
-    {
-        Bind<DateOnly, PgDate>(value);
-    }
-
-    public void Bind(DateTime value)
-    {
-        Bind<DateTime, PgDateTime>(value);
-    }
-
-    public void Bind(DateTimeOffset value)
-    {
-        Bind<DateTimeOffset, PgDateTimeOffset>(value);
-    }
-
-    public void Bind(decimal value)
-    {
-        Bind<decimal, PgDecimal>(value);
-    }
-
-    public void Bind(byte[]? value)
-    {
-        this.BindRef<byte[], PgBytea>(value);
-    }
-
-    public void Bind(ReadOnlySpan<byte> value)
+    public void Bind(in ReadOnlySpan<byte> value)
     {
         _buffer.WriteInt(value.Length);
         _buffer.Write(value);
         _pgTypes.Add(PgBytea.DbType);
     }
 
-    public void Bind(string? value)
-    {
-        this.BindRef<string, PgString>(value);
-    }
-
-    public void Bind(ReadOnlySpan<char> value)
+    public void Bind(in ReadOnlySpan<char> value)
     {
         var byteLength = Charsets.Default.GetByteCount(value);
         _buffer.WriteInt(byteLength);
@@ -117,11 +47,6 @@ internal sealed class PgParameterWriter : IPgBindable
         Charsets.Default.GetBytes(value, span);
         _buffer.Advance(byteLength);
         _pgTypes.Add(PgString.DbType);
-    }
-
-    public void Bind(Guid value)
-    {
-        Bind<Guid, PgUuid>(value);
     }
 
     public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
@@ -138,7 +63,7 @@ internal sealed class PgParameterWriter : IPgBindable
         _pgTypes.Add(PgTypeInfo.Unspecified);
     }
 
-    public void Bind<TValue, TType>(TValue value)
+    public void BindPg<TValue, TType>(TValue value)
         where TValue : notnull where TType : IPgDbType<TValue>
     {
         var startLocation = _buffer.StartWritingLengthPrefixed();
@@ -150,7 +75,7 @@ internal sealed class PgParameterWriter : IPgBindable
     public void Reset()
     {
         _pgTypes.Clear();
-        _buffer.Reset();
+        _buffer.Clear();
     }
 
     public void Dispose()

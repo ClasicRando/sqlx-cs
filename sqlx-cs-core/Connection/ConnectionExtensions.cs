@@ -25,7 +25,8 @@ public static class ConnectionExtensions
             string nonQuery,
             CancellationToken cancellationToken = default)
         {
-            using TQuery query = connection.CreateQuery(nonQuery);
+            TQuery query = connection.CreateQuery(nonQuery);
+            await using ConfiguredAsyncDisposable _ = query.ConfigureAwait(false);
             return await query.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -43,7 +44,8 @@ public static class ConnectionExtensions
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = connection.CreateQuery(sql);
+            TQuery query = connection.CreateQuery(sql);
+            await using ConfiguredAsyncDisposable _ = query.ConfigureAwait(false);
             var rows = query.FetchAsync<TDataRow, TRow>(cancellationToken);
             await foreach (TRow row in rows.ConfigureAwait(false))
             {
@@ -65,7 +67,8 @@ public static class ConnectionExtensions
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = connection.CreateQuery(sql);
+            TQuery query = connection.CreateQuery(sql);
+            await using ConfiguredAsyncDisposable _ = query.ConfigureAwait(false);
             return await query.FetchAllAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -85,7 +88,8 @@ public static class ConnectionExtensions
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = connection.CreateQuery(sql);
+            TQuery query = connection.CreateQuery(sql);
+            await using ConfiguredAsyncDisposable _ = query.ConfigureAwait(false);
             return await query.FetchFirstAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -107,7 +111,8 @@ public static class ConnectionExtensions
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = connection.CreateQuery(sql);
+            TQuery query = connection.CreateQuery(sql);
+            await using ConfiguredAsyncDisposable _ = query.ConfigureAwait(false);
             return await query.FetchFirstOrDefaultAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -128,7 +133,8 @@ public static class ConnectionExtensions
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = connection.CreateQuery(sql);
+            TQuery query = connection.CreateQuery(sql);
+            await using ConfiguredAsyncDisposable _ = query.ConfigureAwait(false);
             return await query.FetchSingleAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -152,12 +158,13 @@ public static class ConnectionExtensions
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = connection.CreateQuery(sql);
+            TQuery query = connection.CreateQuery(sql);
+            await using ConfiguredAsyncDisposable _ = query.ConfigureAwait(false);
             return await query.FetchSingleOrDefaultAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
         }
     }
-    
+
     extension<TQuery, TBindable, TQueryBatch, TBindMany, TDataRow>(
         IConnection<TQuery, TBindable, TQueryBatch, TDataRow> connection)
         where TQuery : IExecutableQuery<TDataRow>, TBindable
@@ -188,12 +195,13 @@ public static class ConnectionExtensions
             ArgumentNullException.ThrowIfNull(parameters);
             TQueryBatch queryBatch = connection.CreateQueryBatch();
             queryBatch.WrapBatchInTransaction = wrapBatchInTransaction;
-            await using var _ = queryBatch.ConfigureAwait(false);
+            await using ConfiguredAsyncDisposable _ = queryBatch.ConfigureAwait(false);
             foreach (TBindMany bindMany in parameters)
             {
                 TBindable query = queryBatch.CreateQuery(nonQuery);
                 bindMany.BindMany(query);
             }
+
             return await queryBatch.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -212,7 +220,8 @@ public static class ConnectionExtensions
             TBindMany parameters,
             CancellationToken cancellationToken = default)
         {
-            using TQuery query = connection.CreateQuery(nonQuery);
+            TQuery query = connection.CreateQuery(nonQuery);
+            await using ConfiguredAsyncDisposable _ = query.ConfigureAwait(false);
             parameters.BindMany(query);
             return await query.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -233,7 +242,8 @@ public static class ConnectionExtensions
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = connection.CreateQuery(sql);
+            TQuery query = connection.CreateQuery(sql);
+            await using ConfiguredAsyncDisposable _ = query.ConfigureAwait(false);
             parameters.BindMany(query);
             var rows = query.FetchAsync<TDataRow, TRow>(cancellationToken);
             await foreach (TRow row in rows.ConfigureAwait(false))
@@ -258,7 +268,8 @@ public static class ConnectionExtensions
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = connection.CreateQuery(sql);
+            TQuery query = connection.CreateQuery(sql);
+            await using ConfiguredAsyncDisposable _ = query.ConfigureAwait(false);
             parameters.BindMany(query);
             return await query.FetchAllAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
@@ -281,7 +292,8 @@ public static class ConnectionExtensions
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = connection.CreateQuery(sql);
+            TQuery query = connection.CreateQuery(sql);
+            await using ConfiguredAsyncDisposable _ = query.ConfigureAwait(false);
             parameters.BindMany(query);
             return await query.FetchFirstAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
@@ -306,7 +318,8 @@ public static class ConnectionExtensions
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = connection.CreateQuery(sql);
+            TQuery query = connection.CreateQuery(sql);
+            await using ConfiguredAsyncDisposable _ = query.ConfigureAwait(false);
             parameters.BindMany(query);
             return await query.FetchFirstOrDefaultAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
@@ -330,7 +343,8 @@ public static class ConnectionExtensions
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = connection.CreateQuery(sql);
+            TQuery query = connection.CreateQuery(sql);
+            await using ConfiguredAsyncDisposable _ = query.ConfigureAwait(false);
             parameters.BindMany(query);
             return await query.FetchSingleAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);
@@ -358,7 +372,8 @@ public static class ConnectionExtensions
             CancellationToken cancellationToken = default)
             where TRow : IFromRow<TDataRow, TRow>
         {
-            using TQuery query = connection.CreateQuery(sql);
+            TQuery query = connection.CreateQuery(sql);
+            await using ConfiguredAsyncDisposable _ = query.ConfigureAwait(false);
             parameters.BindMany(query);
             return await query.FetchSingleOrDefaultAsync<TDataRow, TRow>(cancellationToken)
                 .ConfigureAwait(false);

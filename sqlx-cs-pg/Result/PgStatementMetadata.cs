@@ -2,9 +2,11 @@ using Sqlx.Postgres.Column;
 
 namespace Sqlx.Postgres.Result;
 
-internal class PgStatementMetadata
+internal sealed class PgStatementMetadata
 {
     private readonly PgColumnMetadata[] _columns;
+
+    public int ColumnCount => _columns.Length;
     
     public PgStatementMetadata(PgColumnMetadata[] columns)
     {

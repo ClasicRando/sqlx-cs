@@ -1,4 +1,4 @@
-using Sqlx.Core.Query;
+using System.Runtime.CompilerServices;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Query;
@@ -22,13 +22,15 @@ internal sealed partial class PgConnectionPool
                 AND n.nspname = $2
                 AND t.typcategory = 'E'
             """;
-        using IPgConnection connection = CreateConnection();
-        using IPgExecutableQuery typeOidQuery = connection.CreateQuery(pgEnumTypeByName);
+        IPgConnection connection = CreateConnection();
+        await using ConfiguredAsyncDisposable _1 = connection.ConfigureAwait(false);
+        IPgExecutableQuery typeOidQuery = connection.CreateQuery(pgEnumTypeByName);
+        await using ConfiguredAsyncDisposable _2 = typeOidQuery.ConfigureAwait(false);
         AddTypeNameAndSchemaToQuery<TEnum, TType>(typeOidQuery);
 
         try
         {
-            PgOid oid = await typeOidQuery.ExecuteScalar<PgOid>(cancellationToken)
+            PgOid oid = await typeOidQuery.ExecuteScalarPg<PgOid, PgOid>(cancellationToken)
                 .ConfigureAwait(false);
             TType.DbType = new PgTypeInfo(oid.Inner, new EnumType());
         }
@@ -63,14 +65,17 @@ internal sealed partial class PgConnectionPool
                 and t.typcategory = 'C'
                 and a.attnum > 0
             """;
-        using IPgConnection connection = CreateConnection();
-        using IPgExecutableQuery typeOidQuery = connection.CreateQuery(pgCompositeTypeByName);
+        IPgConnection connection = CreateConnection();
+        await using ConfiguredAsyncDisposable _1 = connection.ConfigureAwait(false);
+        IPgExecutableQuery typeOidQuery = connection.CreateQuery(pgCompositeTypeByName);
+        await using ConfiguredAsyncDisposable _2 = typeOidQuery.ConfigureAwait(false);
         AddTypeNameAndSchemaToQuery<TComposite, TComposite>(typeOidQuery);
 
         PgOid oid;
         try
         {
-            oid = await typeOidQuery.ExecuteScalar<PgOid>(cancellationToken).ConfigureAwait(false);
+            oid = await typeOidQuery.ExecuteScalarPg<PgOid, PgOid>(cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (PgException e)
         {
@@ -79,9 +84,10 @@ internal sealed partial class PgConnectionPool
                 e);
         }
 
-        using IPgExecutableQuery attributeOidsQuery =
+        IPgExecutableQuery attributeOidsQuery =
             connection.CreateQuery(pgCompositeAttributeOidsByOid);
-        attributeOidsQuery.Bind(oid);
+        await using ConfiguredAsyncDisposable _3 = attributeOidsQuery.ConfigureAwait(false);
+        attributeOidsQuery.BindPg<PgOid, PgOid>(oid);
 
         var attributeOids = await attributeOidsQuery
             .FetchAsync<CompositeField>(cancellationToken)
@@ -92,7 +98,7 @@ internal sealed partial class PgConnectionPool
             new CompositeType { Fields = [..attributeOids] });
     }
 
-    private static void AddTypeNameAndSchemaToQuery<TValue, TType>(IBindable query)
+    private static void AddTypeNameAndSchemaToQuery<TValue, TType>(IPgBindable query)
         where TValue : notnull
         where TType : IPgUdt<TValue>
     {
@@ -106,8 +112,8 @@ internal sealed partial class PgConnectionPool
         }
         else
         {
-            query.Bind(typeName);
-            query.Bind(defaultSchemaName);
+            query.Bind(typeName.AsSpan());
+            query.Bind(defaultSchemaName.AsSpan());
         }
     }
 }

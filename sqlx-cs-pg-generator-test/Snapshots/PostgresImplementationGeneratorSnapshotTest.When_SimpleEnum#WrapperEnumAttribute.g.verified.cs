@@ -4,6 +4,12 @@
 
 namespace Sqlx.Postgres.Generator.Type;
 
+/// <summary>
+/// Source generation attribute applied to enum types that will be read from and written to
+/// the database in another simple type. This can either be as text or an integer through
+/// the <see cref="Representation" /> field. You can also set type level rules for how text
+/// values are transformed to the database text if the underlining representation is text.
+/// </summary>
 [global::System.AttributeUsage(validOn: global::System.AttributeTargets.Enum)]
 public sealed class WrapperEnumAttribute : global::System.Attribute
 {

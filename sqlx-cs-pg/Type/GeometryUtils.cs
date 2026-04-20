@@ -56,7 +56,7 @@ public static class GeometryUtils
     /// If either coordinate cannot be parsed from the characters
     /// </exception>
     public static PgPoint DecodePoint<T>(in PgTextValue value)
-        where T : notnull 
+        where T : notnull
     {
         var commaIndex = value.Chars.IndexOf(',');
         if (commaIndex == -1)
@@ -74,7 +74,8 @@ public static class GeometryUtils
         }
 
         return !double.TryParse(
-            value.Chars.Slice(commaIndex + 1, value.Chars.Length - commaIndex - 2), out var y)
+            value.Chars.Slice(commaIndex + 1, value.Chars.Length - commaIndex - 2),
+            out var y)
             ? throw ColumnDecodeException.Create<T, PgColumnMetadata>(
                 value.ColumnMetadata,
                 "Could not parse Y coordinate")
@@ -89,7 +90,9 @@ public static class GeometryUtils
     /// <param name="points">Points to encode into a literal value</param>
     /// <param name="isClosed">True if the collection points close into a complete shape</param>
     /// <returns>The string literal representation of this collection of points</returns>
-    public static string GeneratePointCollectionLiteral(in ImmutableArray<PgPoint> points, bool isClosed)
+    public static string GeneratePointCollectionLiteral(
+        in ImmutableArray<PgPoint> points,
+        bool isClosed)
     {
         var builder = new StringBuilder();
         builder.Append(isClosed ? '(' : '[');
@@ -100,8 +103,10 @@ public static class GeometryUtils
             {
                 builder.Append(',');
             }
+
             builder.Append(point.GeometryLiteral);
         }
+
         builder.Append(isClosed ? ')' : ']');
         return builder.ToString();
     }
@@ -128,13 +133,17 @@ public static class GeometryUtils
     /// </summary>
     /// <param name="value">Binary encoded value that contains a collection of points</param>
     /// <returns>An array of points decoded from the binary value</returns>
-    public static ImmutableArray<PgPoint> DecodePoints(ref PgBinaryValue value)
+    public static ImmutableArray<PgPoint> DecodePoints(in PgBinaryValue value)
     {
-        var size = value.Buffer.ReadInt();
+        var buff = value.Buffer;
+        var size = buff.ReadInt();
         ImmutableArray<PgPoint>.Builder arrayBuilder = ImmutableArray.CreateBuilder<PgPoint>(size);
         for (var i = 0; i < size; i++)
         {
-            arrayBuilder.Add(PgPoint.DecodeBytes(ref value));
+            var span = buff.ReadBytesAsSpan(PgPoint.Size);
+            var pointValue = new PgBinaryValue(span, value.ColumnMetadata);
+            PgPoint point = PgPoint.DecodeBytes(pointValue);
+            arrayBuilder.Add(point);
         }
 
         return arrayBuilder.MoveToImmutable();
@@ -151,12 +160,14 @@ public static class GeometryUtils
     {
         PgTextValue pointChars = value.Slice(1..^1);
         var indexPairs = ExtractPointRanges(pointChars.Chars);
-        ImmutableArray<PgPoint>.Builder points = ImmutableArray.CreateBuilder<PgPoint>(indexPairs.Length);
+        ImmutableArray<PgPoint>.Builder points =
+            ImmutableArray.CreateBuilder<PgPoint>(indexPairs.Length);
         foreach (Range range in indexPairs)
         {
             PgTextValue slice = pointChars.Slice(range);
             points.Add(DecodePoint<T>(in slice));
         }
+
         return points.MoveToImmutable();
     }
 }

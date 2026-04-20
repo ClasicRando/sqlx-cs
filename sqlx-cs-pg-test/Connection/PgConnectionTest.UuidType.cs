@@ -1,5 +1,4 @@
 using Sqlx.Postgres.Query;
-using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Connection;
 
@@ -9,10 +8,10 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_UuidAndDefaultEncoding(CancellationToken ct)
     {
         Guid value = Guid.Parse("019a22a1-8d4c-7e71-8ac5-e31d330b866c");
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 uuid_col;");
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 uuid_col;");
         query.Bind(value);
-        Guid result = await query.ExecuteScalar<Guid, PgUuid>(ct);
+        var result = await query.ExecuteScalar<Guid>(ct);
         await Assert.That(result).IsEqualTo(value);
     }
 
@@ -21,10 +20,10 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT '019a22a1-8d4c-7e71-8ac5-e31d330b866c'::uuid;";
         Guid value = Guid.Parse("019a22a1-8d4c-7e71-8ac5-e31d330b866c");
-        using IPgConnection
+        await using IPgConnection
             connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery(sql);
-        Guid result = await query.ExecuteScalar<Guid, PgUuid>(ct);
+        await using IPgExecutableQuery query = connection.CreateQuery(sql);
+        var result = await query.ExecuteScalar<Guid>(ct);
         await Assert.That(result).IsEqualTo(value);
     }
 }

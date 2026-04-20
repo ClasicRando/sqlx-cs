@@ -41,7 +41,7 @@ namespace Sqlx.Postgres.Type;
 public sealed class PgRecordEncoder : IPgBindable
 {
     private readonly ImmutableArray<CompositeField> _compositeFields;
-    private readonly PooledArrayBufferWriter _buffer;
+    private readonly ArrayBufferWriter _buffer;
     private readonly PgParameterWriter _parameterWriter;
 
     private ReadOnlySpan<byte> Data => _buffer.ReadableSpan;
@@ -49,102 +49,28 @@ public sealed class PgRecordEncoder : IPgBindable
     private PgRecordEncoder(PgTypeInfo typeInfo)
     {
         ArgumentNullException.ThrowIfNull(typeInfo);
-        _buffer = new PooledArrayBufferWriter();
+        _buffer = new ArrayBufferWriter();
         _parameterWriter = new PgParameterWriter(_buffer);
         if (typeInfo.TypeKind is not CompositeType compositeType)
         {
             throw new PgException(
                 $"Attempted to encode a type using a {nameof(PgRecordEncoder)} but that type if not a composite or the composite type was not mapped to the connection pool using {nameof(PgConnectionPool.MapCompositeAsync)}");
         }
+
         _compositeFields = compositeType.Fields;
         _buffer.WriteInt(_compositeFields.Length);
     }
-    
-    public void Bind(bool value)
-    {
-        Bind<bool, PgBool>(value);
-    }
 
-    public void Bind(sbyte value)
-    {
-        Bind<sbyte, PgChar>(value);
-    }
-
-    public void Bind(short value)
-    {
-        Bind<short, PgShort>(value);
-    }
-
-    public void Bind(int value)
-    {
-        Bind<int, PgInt>(value);
-    }
-
-    public void Bind(long value)
-    {
-        Bind<long, PgLong>(value);
-    }
-
-    public void Bind(float value)
-    {
-        Bind<float, PgFloat>(value);
-    }
-
-    public void Bind(double value)
-    {
-        Bind<double, PgDouble>(value);
-    }
-
-    public void Bind(TimeOnly value)
-    {
-        Bind<TimeOnly, PgTime>(value);
-    }
-
-    public void Bind(DateOnly value)
-    {
-        Bind<DateOnly, PgDate>(value);
-    }
-
-    public void Bind(DateTime value)
-    {
-        Bind<DateTime, PgDateTime>(value);
-    }
-
-    public void Bind(DateTimeOffset value)
-    {
-        Bind<DateTimeOffset, PgDateTimeOffset>(value);
-    }
-
-    public void Bind(decimal value)
-    {
-        Bind<decimal, PgDecimal>(value);
-    }
-    
-    public void Bind(byte[]? value)
-    {
-        this.BindRef<byte[], PgBytea>(value);
-    }
-
-    public void Bind(ReadOnlySpan<byte> value)
+    public void Bind(in ReadOnlySpan<byte> value)
     {
         _buffer.WriteUInt(PgBytea.DbType.TypeOid.Inner);
         _parameterWriter.Bind(value);
     }
 
-    public void Bind(string? value)
-    {
-        this.BindRef<string, PgString>(value);
-    }
-
-    public void Bind(ReadOnlySpan<char> value)
+    public void Bind(in ReadOnlySpan<char> value)
     {
         _buffer.WriteUInt(PgString.DbType.TypeOid.Inner);
         _parameterWriter.Bind(value);
-    }
-
-    public void Bind(Guid value)
-    {
-        Bind<Guid, PgUuid>(value);
     }
 
     public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
@@ -164,13 +90,13 @@ public sealed class PgRecordEncoder : IPgBindable
         _buffer.Dispose();
         _parameterWriter.Dispose();
     }
-    
-    public void Bind<TValue, TType>(TValue value)
+
+    public void BindPg<TValue, TType>(TValue value)
         where TType : IPgDbType<TValue>
         where TValue : notnull
     {
         _buffer.WriteUInt(TType.DbType.TypeOid.Inner);
-        _parameterWriter.Bind<TValue, TType>(value);
+        _parameterWriter.BindPg<TValue, TType>(value);
     }
 
     public static void EncodeRecord<T>(T value, IBufferWriter<byte> buffer)

@@ -25,6 +25,7 @@ public static class PgConnectionExtensions
         }
 
         /// <inheritdoc cref="ConnectionExtensions.FetchAsync{TExecutableQuery,TBindable,TQueryBatch,TDataRow,TRow}"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IAsyncEnumerable<TRow> FetchAsync<TRow>(
             string sql,
             CancellationToken cancellationToken = default)
@@ -243,7 +244,7 @@ public static class PgConnectionExtensions
         {
             var fileStream = new FileStream(path, fileMode);
             // This is a workaround for calling ConfigureAwait on an IAsyncDisposable
-            await using var _ = fileStream.ConfigureAwait(false);
+            await using ConfiguredAsyncDisposable _ = fileStream.ConfigureAwait(false);
             await pgConnection.CopyOutAsync(copyOutStatement, fileStream, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -262,7 +263,7 @@ public static class PgConnectionExtensions
         {
             var fileStream = new FileStream(path, FileMode.Open);
             // This is a workaround for calling ConfigureAwait on an IAsyncDisposable
-            await using var _ = fileStream.ConfigureAwait(false);
+            await using ConfiguredAsyncDisposable _ = fileStream.ConfigureAwait(false);
             return await pgConnection.CopyInAsync(copyInStatement, fileStream, cancellationToken)
                 .ConfigureAwait(false);
         }

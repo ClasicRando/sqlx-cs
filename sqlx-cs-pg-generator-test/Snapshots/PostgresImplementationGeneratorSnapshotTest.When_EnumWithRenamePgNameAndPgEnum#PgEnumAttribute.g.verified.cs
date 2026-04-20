@@ -4,10 +4,25 @@
 
 namespace Sqlx.Postgres.Generator.Type;
 
+/// <summary>
+/// <para>
+/// Source generation attribute applied to enum types that will be read from and written to
+/// the database as a custom Postgres `ENUM` type. The <see cref="Name" /> property supplies
+/// the name of type (schema qualified) to allow for finding the type OID during connection
+/// pool startup. You can also set type level rules for how the enum type labels are mapped
+/// to the database `ENUM` type labels.
+/// </para>
+/// <para>
+/// This attribute also generates an extension method on
+/// <see cref="Sqlx.Postgres.Pool.IPgConnectionPool" /> called `Map{enumName}Async` that
+/// must be called before using the type in any query statements. This fetches the type OID
+/// from the database for subsequent queries.
+/// </para>
+/// </summary>
 [global::System.AttributeUsage(validOn: global::System.AttributeTargets.Enum)]
 public sealed class PgEnumAttribute : global::System.Attribute
 {
-    public required string Name { get; set; }
+    public required string Name { get; init; }
 
     public Sqlx.Postgres.Generator.Rename RenameAll { get; init; } = Sqlx.Postgres.Generator.Rename.None;
 }

@@ -36,11 +36,8 @@ public interface IPgConnection :
     /// <param name="cancellationToken">Token to cancel async operation</param>
     /// <typeparam name="TRow">Row type to decode to</typeparam>
     /// <returns>Stream of rows from the copy statement</returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// If the copy statement is not <see cref="ICopyQuery"/> or <see cref="ICopyTable"/>
-    /// </exception>
     IAsyncEnumerable<TRow> CopyOutRowsAsync<TRow>(
-        TableToBinary copyOutStatement,
+        CopyTableToBinary copyOutStatement,
         CancellationToken cancellationToken = default)
         where TRow : IFromRow<IPgDataRow, TRow>;
 

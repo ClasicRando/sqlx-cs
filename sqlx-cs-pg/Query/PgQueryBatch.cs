@@ -17,11 +17,11 @@ public sealed class PgQueryBatch(PgConnection queryExecutor) : IPgQueryBatch
     private PgConnection? _queryExecutor = queryExecutor;
 #pragma warning restore CA2213
     private readonly List<PgExecutableQuery> _queries = [];
-    
+
     public bool WrapBatchInTransaction { get; set; }
 
     internal IReadOnlyList<PgExecutableQuery> Queries => _queries;
-    
+
     public IPgBindable CreateQuery(string sql)
     {
         CheckDisposed();
@@ -36,18 +36,20 @@ public sealed class PgQueryBatch(PgConnection queryExecutor) : IPgQueryBatch
         return _queryExecutor!.ExecuteQueryBatchAsync(this, cancellationToken);
     }
 
-    private void CheckDisposed() => ObjectDisposedException.ThrowIf(_disposed, typeof(PgQueryBatch));
-    
+    private void CheckDisposed() =>
+        ObjectDisposedException.ThrowIf(_disposed, typeof(PgQueryBatch));
+
     public void Dispose()
     {
         if (_disposed) return;
-        
+
         _disposed = true;
         _queryExecutor = null;
         foreach (PgExecutableQuery query in _queries)
         {
             query.Dispose();
         }
+
         _queries.Clear();
     }
 

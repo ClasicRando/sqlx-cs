@@ -19,7 +19,7 @@ public class PgLongTest
     [Arguments(long.MaxValue, new byte[] { 127, 255, 255, 255, 255, 255, 255, 255 })]
     public async Task Encode_Should_WriteLong(long value, byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgLong.Encode(value, buffer);
 
@@ -43,7 +43,7 @@ public class PgLongTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        var actualValue = PgLong.DecodeBytes(ref binaryValue);
+        var actualValue = PgLong.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
@@ -61,7 +61,7 @@ public class PgLongTest
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
         try
         {
-            PgLong.DecodeBytes(ref binaryValue);
+            PgLong.DecodeBytes(binaryValue);
             Assert.Fail("Decoding should have failed");
         }
         catch (ColumnDecodeException e)

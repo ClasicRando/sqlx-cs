@@ -16,9 +16,11 @@ namespace Sqlx.Postgres.Type;
 /// </summary>
 public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<PgMoney>
 {
-    private static readonly SearchValues<char> SearchValues = System.Buffers.SearchValues.Create("0123456789.-");
+    private static readonly SearchValues<char> SearchValues =
+        System.Buffers.SearchValues.Create("0123456789.-");
+
     private readonly long _inner;
-    
+
     private PgMoney(long integer)
     {
         _inner = integer;
@@ -36,7 +38,9 @@ public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<P
         _inner = decimal.ToInt64(value * 100);
     }
 
-    public PgMoney(double value) : this(Convert.ToDecimal(value)) {}
+    public PgMoney(double value) : this(Convert.ToDecimal(value))
+    {
+    }
 
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -58,9 +62,10 @@ public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<P
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/cash.c#L524">pg source code</a>
     /// </summary>
-    public static PgMoney DecodeBytes(ref PgBinaryValue value)
+    public static PgMoney DecodeBytes(in PgBinaryValue value)
     {
-        return new PgMoney(value.Buffer.ReadLong());
+        var buff = value.Buffer;
+        return new PgMoney(buff.ReadLong());
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -90,7 +95,7 @@ public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<P
                     tempSpan[charCount++] = chr;
                 }
             }
-            
+
             if (decimal.TryParse(tempSpan[..charCount], null, out var result))
             {
                 return new PgMoney(result);
@@ -103,7 +108,7 @@ public readonly struct PgMoney : IPgDbType<PgMoney>, IHasArrayType, IEquatable<P
                 return new PgMoney(result);
             }
         }
-            
+
         throw ColumnDecodeException.Create<PgMoney, PgColumnMetadata>(
             value.ColumnMetadata,
             $"Could not parse '{value.Chars}' into a money value");

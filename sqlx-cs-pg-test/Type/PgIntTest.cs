@@ -17,7 +17,7 @@ public class PgIntTest
     [Arguments(int.MaxValue, new byte[] { 127, 255, 255, 255 })]
     public async Task Encode_Should_WriteInt(int value, byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgInt.Encode(value, buffer);
 
@@ -45,7 +45,7 @@ public class PgIntTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        var actualValue = PgInt.DecodeBytes(ref binaryValue);
+        var actualValue = PgInt.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
@@ -59,7 +59,7 @@ public class PgIntTest
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
         try
         {
-            var temp = PgInt.DecodeBytes(ref binaryValue);
+            var temp = PgInt.DecodeBytes(binaryValue);
             Assert.Fail($"Decoding should have failed. Found '{temp}'");
         }
         catch (ColumnDecodeException e)
@@ -86,7 +86,7 @@ public class PgIntTest
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
         try
         {
-            PgInt.DecodeBytes(ref binaryValue);
+            PgInt.DecodeBytes(binaryValue);
             Assert.Fail("Decoding should have failed");
         }
         catch (ColumnDecodeException e)

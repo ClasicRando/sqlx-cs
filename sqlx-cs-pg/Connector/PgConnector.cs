@@ -26,6 +26,7 @@ namespace Sqlx.Postgres.Connector;
 /// </summary>
 public sealed partial class PgConnector : IPooledConnection
 {
+    private const int MessageHeaderSize = sizeof(byte) + sizeof(int);
     private const string BeginQuery = "BEGIN;";
     private const string CommitQuery = "COMMIT;";
     private const string RollbackQuery = "ROLLBACK;";
@@ -54,6 +55,7 @@ public sealed partial class PgConnector : IPooledConnection
     internal int PendingReadyForQuery => _pendingReadyForQuery;
 
     private int _connectionStatus = (int)ConnectionStatus.Closed;
+
     public ConnectionStatus Status
     {
         get => (ConnectionStatus)_connectionStatus;
@@ -81,6 +83,7 @@ public sealed partial class PgConnector : IPooledConnection
         or ConnectionStatus.Connecting or ConnectionStatus.Broken);
 
     private long _inTransaction;
+
     public bool InTransaction
     {
         get => Interlocked.Read(ref _inTransaction) == 1;
@@ -137,9 +140,6 @@ public sealed partial class PgConnector : IPooledConnection
                 await SimplePasswordAuthFlow(ConnectOptions.Password, cancellationToken)
                     .ConfigureAwait(false);
                 break;
-            case MD5PasswordAuthMessage:
-                throw new PgException(
-                    "MD5 passwords are not supported by sqlx-cs-pg. They have been deprecated for removal by Postgres in version 18 so we will not support their usage");
             case SaslAuthMessage saslAuthMessage:
                 await SaslAuthFlow(ConnectOptions.Password, saslAuthMessage, cancellationToken)
                     .ConfigureAwait(false);
@@ -348,8 +348,9 @@ public sealed partial class PgConnector : IPooledConnection
         Status = ConnectionStatus.Fetching;
         while (true)
         {
-            PgBackendMessageType backendMessageType = await ReceiveNextMessageType(cancellationToken)
-                .ConfigureAwait(false);
+            PgBackendMessageType backendMessageType =
+                await ReceiveNextMessageType(cancellationToken)
+                    .ConfigureAwait(false);
             var size = await ReceiveNextMessageSize(cancellationToken)
                 .ConfigureAwait(false);
 
@@ -361,7 +362,7 @@ public sealed partial class PgConnector : IPooledConnection
             {
                 continue;
             }
-            
+
             cancellationToken.ThrowIfCancellationRequested();
             switch (backendMessageType)
             {
@@ -435,7 +436,7 @@ public sealed partial class PgConnector : IPooledConnection
                 var result = ReceiveMessage<T>(size);
                 return Either.Left<T, ErrorResponseMessage>(result);
             }
-            
+
             AdvanceReadBuffer(size);
             _logger.LogIgnoreUnexpectedMessage(
                 SqlxConfig.DetailedLoggingLevel,
@@ -496,6 +497,7 @@ public sealed partial class PgConnector : IPooledConnection
                 {
                     BreakConnection();
                 }
+
                 return throwOnError ? throw new PgException(errorResponse) : false;
             default:
                 return false;
@@ -569,7 +571,8 @@ public sealed partial class PgConnector : IPooledConnection
             case ConnectionStatus.Connecting:
             case ConnectionStatus.Executing:
             case ConnectionStatus.Fetching:
-                throw new InvalidOperationException($"Action against this connection is already in progress. Status = {currentStatus}");
+                throw new InvalidOperationException(
+                    $"Action against this connection is already in progress. Status = {currentStatus}");
             default:
 #pragma warning disable CA2208
                 throw new ArgumentOutOfRangeException(nameof(Status), "Invalid status flag");
@@ -586,7 +589,7 @@ public sealed partial class PgConnector : IPooledConnection
         {
             return;
         }
-        
+
         Status = ConnectionStatus.Idle;
     }
 
@@ -599,6 +602,11 @@ public sealed partial class PgConnector : IPooledConnection
     {
         Status = ConnectionStatus.Broken;
         Dispose();
+    }
+
+    public void Cleanup()
+    {
+        _asyncConnector.ResetBuffers();
     }
 
     private void CheckDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);

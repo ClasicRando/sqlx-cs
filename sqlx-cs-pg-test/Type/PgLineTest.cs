@@ -18,7 +18,7 @@ public class PgLineTest
             0, 0, 0,
         ];
         var value = new PgLine(5.63, 8.59, 4);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgLine.Encode(value, buffer);
 
@@ -39,7 +39,7 @@ public class PgLineTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgLine actualValue = PgLine.DecodeBytes(ref binaryValue);
+        PgLine actualValue = PgLine.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

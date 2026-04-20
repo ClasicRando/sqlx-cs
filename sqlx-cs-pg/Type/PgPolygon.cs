@@ -39,13 +39,13 @@ public readonly struct PgPolygon(ImmutableArray<PgPoint> points)
     /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
     /// <summary>
     /// <para>
-    /// Reads all points using <see cref="GeometryUtils.DecodePoints(ref PgBinaryValue)"/>.
+    /// Reads all points using <see cref="GeometryUtils.DecodePoints"/>.
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L3510">pg source code</a>
     /// </summary>
-    public static PgPolygon DecodeBytes(ref PgBinaryValue value)
+    public static PgPolygon DecodeBytes(in PgBinaryValue value)
     {
-        return new PgPolygon(GeometryUtils.DecodePoints(ref value));
+        return new PgPolygon(GeometryUtils.DecodePoints(value));
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -64,7 +64,7 @@ public readonly struct PgPolygon(ImmutableArray<PgPoint> points)
     {
         return new PgPolygon(GeometryUtils.DecodePoints<PgPolygon>(value));
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Polygon;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.PolygonArray;
@@ -91,14 +91,17 @@ public readonly struct PgPolygon(ImmutableArray<PgPoint> points)
             {
                 x1 = point.X;
             }
+
             if (point.X > x2)
             {
                 x2 = point.X;
             }
+
             if (point.Y < y1)
             {
                 y1 = point.Y;
             }
+
             if (point.Y > y2)
             {
                 y2 = point.Y;
@@ -126,7 +129,7 @@ public readonly struct PgPolygon(ImmutableArray<PgPoint> points)
     {
         return HashCode.Combine(Points);
     }
-    
+
     public static bool operator ==(PgPolygon left, PgPolygon right)
     {
         return left.Equals(right);

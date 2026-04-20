@@ -9,6 +9,7 @@ internal enum PgFrontendMessageType : byte
     CopyFail = (byte)'f',
     Describe = (byte)'D',
     Execute = (byte)'E',
+
     // Flush = (byte)'H',
     Parse = (byte)'P',
     Password = (byte)'p',

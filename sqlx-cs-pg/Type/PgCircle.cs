@@ -15,7 +15,8 @@ namespace Sqlx.Postgres.Type;
 public readonly struct PgCircle(PgPoint center, double radius)
     : IPgDbType<PgCircle>, IGeometryType, IHasArrayType, IEquatable<PgCircle>
 {
-    private readonly Lazy<string> _geometryLiteral = new(() => $"<{center.GeometryLiteral},{radius}>");
+    private readonly Lazy<string> _geometryLiteral =
+        new(() => $"<{center.GeometryLiteral},{radius}>");
 
     public PgPoint Center { get; } = center;
 
@@ -43,9 +44,13 @@ public readonly struct PgCircle(PgPoint center, double radius)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L4727">pg source code</a>
     /// </summary>
-    public static PgCircle DecodeBytes(ref PgBinaryValue value)
+    public static PgCircle DecodeBytes(in PgBinaryValue value)
     {
-        return new PgCircle(PgPoint.DecodeBytes(ref value), value.Buffer.ReadDouble());
+        var buff = value.Buffer;
+        var pointValue = new PgBinaryValue(
+            buff.ReadBytesAsSpan(PgPoint.Size),
+            value.ColumnMetadata);
+        return new PgCircle(PgPoint.DecodeBytes(pointValue), buff.ReadDouble());
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -70,9 +75,10 @@ public readonly struct PgCircle(PgPoint center, double radius)
                 value.ColumnMetadata,
                 $"Could not parse radius from '{value.Chars}'");
         }
+
         return new PgCircle(center, radius);
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Circle;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.CircleArray;
@@ -96,7 +102,7 @@ public readonly struct PgCircle(PgPoint center, double radius)
     {
         return HashCode.Combine(Center, Radius);
     }
-    
+
     public static bool operator ==(PgCircle left, PgCircle right)
     {
         return left.Equals(right);

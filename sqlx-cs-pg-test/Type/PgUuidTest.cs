@@ -19,7 +19,7 @@ public class PgUuidTest
     public async Task Encode_Should_WriteGuid(string uuid, byte[] address)
     {
         Guid value = Guid.Parse(uuid);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgUuid.Encode(value, buffer);
 
@@ -41,7 +41,7 @@ public class PgUuidTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        Guid actualValue = PgUuid.DecodeBytes(ref binaryValue);
+        Guid actualValue = PgUuid.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

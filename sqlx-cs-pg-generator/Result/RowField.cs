@@ -9,6 +9,8 @@ internal readonly struct RowField
     public string FieldName { get; }
 
     public ITypeSymbol FieldType { get; }
+    
+    public string IndexVariableName { get; }
 
     public bool Flatten { get; }
 
@@ -19,6 +21,7 @@ internal readonly struct RowField
         Name = name;
         FieldName = fieldName;
         FieldType = fieldType;
+        IndexVariableName = $"index{fieldName.ToPascalCase()}";
         Flatten = flatten;
         IsJson = isJson;
     }

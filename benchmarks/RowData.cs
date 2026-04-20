@@ -1,17 +1,13 @@
 using CsvHelper.Configuration.Attributes;
-using Sqlx.Core.Query;
-using Sqlx.Postgres.Copy;
 using Sqlx.Postgres.Generator;
+using Sqlx.Postgres.Generator.Copy;
 using Sqlx.Postgres.Generator.Result;
-using Sqlx.Postgres.Query;
 
 namespace benchmarks;
 
-[FromRow(RenameAll = Rename.SnakeCase)]
-public readonly partial struct RowData : IPgBinaryCopyRow
+[FromRow(RenameAll = Rename.SnakeCase), ToPgBinaryCopyRow]
+public readonly partial struct RowData
 {
-    public static short ColumnCount => 5;
-
     [Name("id")]
     public required int Id { get; init; }
 
@@ -27,15 +23,6 @@ public readonly partial struct RowData : IPgBinaryCopyRow
 
     [Name("counter")]
     public required int? Counter { get; init; }
-
-    public void BindMany(IPgBindable bindable)
-    {
-        bindable.Bind(Id);
-        bindable.Bind(Text);
-        bindable.Bind(CreationDate);
-        bindable.Bind(LastChangeDate);
-        bindable.Bind(Counter);
-    }
 
     public override string ToString()
     {

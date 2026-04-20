@@ -48,15 +48,15 @@ internal readonly struct PgEnumToGenerate : IFullNameType
 
     public string ShortName => _enumType.Name;
 
-    public string FullName => string.IsNullOrEmpty(ContainingNamespace)
-        ? _enumType.Name
-        : $"{ContainingNamespace}.{_enumType.Name}";
+    public string FullName => _enumType.FullName;
     
     public string ContainingNamespace { get; }
 
     public string TypeDefName => $"Pg{ShortName}";
 
     public string PgTypeName { get; }
+
+    public Accessibility DeclaredAccessibility => _enumType.DeclaredAccessibility;
 
     public ImmutableArray<KeyValuePair<string, string>> ValueNames { get; }
 }

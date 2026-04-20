@@ -14,8 +14,8 @@ namespace Sqlx.Postgres.Type;
 public readonly struct PgPath(bool isClosed, ImmutableArray<PgPoint> points)
     : IPgDbType<PgPath>, IGeometryType, IHasArrayType, IEquatable<PgPath>
 {
-    private readonly Lazy<string> _geometryLiteral = new(
-        () => GeometryUtils.GeneratePointCollectionLiteral(points, isClosed));
+    private readonly Lazy<string> _geometryLiteral =
+        new(() => GeometryUtils.GeneratePointCollectionLiteral(points, isClosed));
 
     public bool IsClosed { get; } = isClosed;
 
@@ -42,14 +42,16 @@ public readonly struct PgPath(bool isClosed, ImmutableArray<PgPoint> points)
     /// <summary>
     /// <para>
     /// Reads the first byte in the buffer to figure out if the path is closed or open. Then reads
-    /// all points using <see cref="GeometryUtils.DecodePoints(ref PgBinaryValue)"/>.
+    /// all points using <see cref="GeometryUtils.DecodePoints"/>.
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1526">pg source code</a>
     /// </summary>
-    public static PgPath DecodeBytes(ref PgBinaryValue value)
+    public static PgPath DecodeBytes(in PgBinaryValue value)
     {
-        var isClosed = value.Buffer.ReadByte() == 1;
-        return new PgPath(isClosed, GeometryUtils.DecodePoints(ref value));
+        var buff = value.Buffer;
+        var isClosed = buff.ReadByte() == 1;
+        var pointsValue = new PgBinaryValue(buff, value.ColumnMetadata);
+        return new PgPath(isClosed, GeometryUtils.DecodePoints(pointsValue));
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -70,7 +72,7 @@ public readonly struct PgPath(bool isClosed, ImmutableArray<PgPoint> points)
         var isClosed = value.Chars[0] == '(';
         return new PgPath(isClosed, GeometryUtils.DecodePoints<PgPath>(value));
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Path;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.PathArray;
@@ -94,7 +96,7 @@ public readonly struct PgPath(bool isClosed, ImmutableArray<PgPoint> points)
     {
         return HashCode.Combine(IsClosed, Points);
     }
-    
+
     public static bool operator ==(PgPath left, PgPath right)
     {
         return left.Equals(right);
@@ -107,6 +109,7 @@ public readonly struct PgPath(bool isClosed, ImmutableArray<PgPoint> points)
 
     public override string ToString()
     {
-        return $"{nameof(PgPath)} {{ {nameof(IsClosed)} = {IsClosed}, {nameof(Points)} = [{string.Join(",", Points)}] }}";
+        return
+            $"{nameof(PgPath)} {{ {nameof(IsClosed)} = {IsClosed}, {nameof(Points)} = [{string.Join(",", Points)}] }}";
     }
 }

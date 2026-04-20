@@ -15,8 +15,9 @@ internal readonly struct PgToParamToGenerate
 
     public bool IsStruct => _typeSymbol.IsValueType;
 
-    public ImmutableArray<string> Properties { get; } =
-        ImmutableArray<string>.Empty;
+    public Accessibility DeclaredAccessibility => _typeSymbol.DeclaredAccessibility;
+
+    public ImmutableArray<IPropertySymbol> Properties { get; }
 
     public PgToParamToGenerate(
         INamedTypeSymbol namedTypeSymbol,
@@ -27,10 +28,7 @@ internal readonly struct PgToParamToGenerate
         ContainingNamespace = namedTypeSymbol.ContainingNamespace.GetFullNamespaceName();
         Properties = namedTypeSymbol.GetMembers()
             .OfType<IPropertySymbol>()
-            .Where(property => !property.IsWriteOnly)
-            .Where(property => !property.GetAttributes().Any(attr =>
-                attr.AttributeClass?.Name == "PgPropertySkipAttribute"))
-            .Select(property => property.Name)
+            .Where(property => !property.IsWriteOnly && property.IsNotSkip)
             .ToImmutableArray();
     }
 
@@ -41,8 +39,20 @@ internal readonly struct PgToParamToGenerate
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     SourceGenerationHelper.DefinitionIsNotPartial,
-                    Location.None,
+                    _typeDeclarationSyntax.GetLocation(),
                     ShortName));
+            return false;
+        }
+
+        var invalidProperties = Properties.Where(property => !property.Type.HasIPgDbType())
+            .ToImmutableArray();
+        if (!invalidProperties.IsEmpty)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    SourceGenerationHelper.UnknownDbType,
+                    _typeDeclarationSyntax.GetLocation(),
+                    $"Properties to bind have invalid DB types: [{string.Join(",", invalidProperties.Select(p => p.Name))}]"));
             return false;
         }
 

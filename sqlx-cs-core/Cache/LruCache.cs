@@ -43,7 +43,7 @@ public class LruCache<TKey, TValue> where TKey : notnull
             Put(entry.Key, entry.Value);
         }
     }
-    
+
     /// <summary>
     /// Max capacity of the cache. This does not reflect how many items are currently in the cache.
     /// For that use <see cref="Count"/>.

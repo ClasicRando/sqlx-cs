@@ -6,7 +6,9 @@ namespace Sqlx.Postgres.Message.Auth;
 /// </summary>
 internal sealed class OkAuthMessage : IAuthMessage
 {
-    private OkAuthMessage() {}
+    private OkAuthMessage()
+    {
+    }
 
     internal static OkAuthMessage Instance { get; } = new();
 }

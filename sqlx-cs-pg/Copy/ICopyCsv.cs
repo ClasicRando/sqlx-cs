@@ -13,7 +13,7 @@ public interface ICopyCsv : ICopyText
     /// double-quote. This must be a single one-byte character.
     /// </summary>
     char Quote { get; }
-    
+
     /// <summary>
     /// Specifies the character that should appear before a data character that matches the
     /// <see cref="Quote"/> value. The default is the same as the <see cref="Quote"/> value (so that

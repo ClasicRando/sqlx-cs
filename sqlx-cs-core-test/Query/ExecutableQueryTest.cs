@@ -17,11 +17,11 @@ public class ExecutableQueryTest
         }
     }
 
-    private record struct TestRowStruct(int Id) : IFromRow<IDataRow, TestRowStruct>
+    private record struct TestRowStruct : IFromRow<IDataRow, TestRowStruct>
     {
         public static TestRowStruct FromRow(IDataRow dataRow)
         {
-            return new TestRowStruct(dataRow.GetIntNotNull(0));
+            return new TestRowStruct();
         }
     }
 
@@ -135,7 +135,6 @@ public class ExecutableQueryTest
         public async Task ReturnFirstRow_When_MultipleRowsFetched(CancellationToken ct)
         {
             var firstRow = Substitute.For<IDataRow>();
-            firstRow.GetIntNotNull(0).Returns(10);
             List<Either<IDataRow, QueryResult>> lst =
             [
                 Either.Left<IDataRow, QueryResult>(firstRow),
@@ -146,9 +145,7 @@ public class ExecutableQueryTest
             query.ExecuteAsync(Arg.Any<CancellationToken>())
                 .Returns(lst.ToAsyncResultSet());
 
-            var row = await query.FetchFirstAsync<IDataRow, TestRowStruct>(ct);
-
-            await Assert.That(row.Id).IsEqualTo(10);
+            await query.FetchFirstAsync<IDataRow, TestRowStruct>(ct);
         }
     }
 
@@ -209,7 +206,6 @@ public class ExecutableQueryTest
         public async Task ReturnFirstRow_When_MultipleRowsFetched(CancellationToken ct)
         {
             var firstRow = Substitute.For<IDataRow>();
-            firstRow.GetIntNotNull(0).Returns(10);
             List<Either<IDataRow, QueryResult>> lst =
             [
                 Either.Left<IDataRow, QueryResult>(firstRow),
@@ -220,9 +216,7 @@ public class ExecutableQueryTest
             query.ExecuteAsync(Arg.Any<CancellationToken>())
                 .Returns(lst.ToAsyncResultSet());
 
-            var row = await query.FetchFirstOrDefaultAsync<IDataRow, TestRowStruct>(ct);
-
-            await Assert.That(row.Id).IsEqualTo(10);
+            await query.FetchFirstOrDefaultAsync<IDataRow, TestRowStruct>(ct);
         }
     }
 

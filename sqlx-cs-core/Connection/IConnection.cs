@@ -53,7 +53,7 @@ public interface
     /// </summary>
     /// <param name="cancellationToken">token to signal a cancellation</param>
     Task RollbackAsync(CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Create a new executable query the uses this connection to run the query. Make sure to keep
     /// this connection open until you complete the query execution and extract all results.

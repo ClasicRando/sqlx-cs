@@ -1,0 +1,233 @@
+using System.Buffers;
+using System.Text.Json.Serialization.Metadata;
+using Sqlx.Core;
+using Sqlx.Core.Buffer;
+using Sqlx.Core.Column;
+using Sqlx.Core.Exceptions;
+using Sqlx.Postgres.Column;
+using Sqlx.Postgres.Type;
+
+namespace Sqlx.Postgres.Result;
+
+/// <summary>
+/// <see cref="Sqlx.Core.Result.IDataRow"/> implementation for Postgres. Represents the bytes sent
+/// by the database backend and the statement's metadata.
+/// </summary>
+internal abstract class AbstractPgDataRow : IPgDataRow
+{
+    private const int MaxStackSize = 256 / (sizeof(char) / sizeof(byte));
+    private static readonly ArrayPool<char> CharArrayPool = ArrayPool<char>.Shared;
+    
+    protected ReadOnlyMemory<byte> RowData;
+    protected PgStatementMetadata? StatementMetadata;
+        
+    public int ColumnCount
+    {
+        get
+        {
+            CheckIfWithinRow();
+            return StatementMetadata!.ColumnCount;
+        }
+    }
+
+    public int IndexOf(string name)
+    {
+        CheckIfWithinRow();
+        return StatementMetadata!.IndexOfFieldName(name);
+    }
+
+    public IColumnMetadata GetColumnMetadata(int index)
+    {
+        CheckIfWithinRow();
+        CheckValidIndex(index);
+        return StatementMetadata![index];
+    }
+
+    public bool IsNull(int index)
+    {
+        CheckIfWithinRow();
+        CheckValidIndex(index);
+        return GetColumnData(index).IsNull;
+    }
+
+    public T GetJsonNotNull<T>(int index, JsonTypeInfo<T>? jsonTypeInfo = null) where T : notnull
+    {
+        CheckIfWithinRow();
+        ColumnData columnData = GetColumnData(index);
+        if (columnData.IsNull)
+        {
+            throw new SqlxException($"Expected field #{index} to be non-null but found null");
+        }
+
+        ref readonly PgColumnMetadata columnMetadata = ref columnData.ColumnMetadata;
+        if (PgJson<T>.DbType != columnMetadata.TypeInfo
+            && !PgJson<T>.IsCompatible(columnMetadata.TypeInfo))
+        {
+            throw ColumnDecodeException.Create<T, PgColumnMetadata>(columnMetadata);
+        }
+
+        var bytes = columnData.Data;
+        switch (columnMetadata.FormatCode)
+        {
+            case PgFormatCode.Text:
+                char[]? rentedFromPool = null;
+                var characterCount = Charsets.Default.GetCharCount(bytes);
+                var chars = characterCount >= MaxStackSize
+                    ? (rentedFromPool = CharArrayPool.Rent(characterCount))
+                    : stackalloc char[characterCount];
+                chars = chars[..characterCount];
+                try
+                {
+                    Charsets.Default.GetChars(bytes, chars);
+                    PgTextValue textValue = new(chars, columnMetadata);
+                    return PgJson<T>.DecodeText(textValue, jsonTypeInfo);
+                }
+                finally
+                {
+                    if (rentedFromPool is not null)
+                    {
+                        CharArrayPool.Return(rentedFromPool);
+                    }
+                }
+            case PgFormatCode.Binary:
+                PgBinaryValue binaryValue = new(bytes, columnMetadata);
+                return PgJson<T>.DecodeBytes(binaryValue, jsonTypeInfo);
+            default:
+                throw ColumnDecodeException.Create<T, PgColumnMetadata>(
+                    columnData.ColumnMetadata,
+                    $"Unexpected format code: {columnData.ColumnMetadata.FormatCode}");
+        }
+    }
+
+    private readonly ref struct ColumnData(
+        bool isNull,
+        ReadOnlySpan<byte> data,
+        in PgColumnMetadata columnMetadata)
+    {
+        public readonly bool IsNull = isNull;
+        public readonly ReadOnlySpan<byte> Data = data;
+        public readonly ref readonly PgColumnMetadata ColumnMetadata = ref columnMetadata;
+    }
+
+    private ColumnData GetColumnData(int index)
+    {
+        CheckValidIndex(index);
+        ref PgColumnMetadata columnMetadata = ref StatementMetadata![index];
+        var span = GetColumnSpan(index, out var isNull);
+        return new ColumnData(isNull, span, in columnMetadata);
+    }
+
+    private ReadOnlySpan<byte> GetColumnSpan(int index, out bool isNull)
+    {
+        var columnCount = ColumnCount;
+        var span = RowData.Span[2..];
+        for (var i = 0; i < columnCount; i++)
+        {
+            var length = span.ReadInt();
+
+            if (i == index)
+            {
+                isNull = length < 0;
+                return isNull
+                    ? default
+                    : span[..length];
+            }
+
+            if (length < 0)
+            {
+                continue;
+            }
+
+            span.Skip(length);
+        }
+
+        throw new InvalidOperationException("Attempted to capture ");
+    }
+
+    public TResult GetPgNotNull<TResult, TType>(int index)
+        where TType : IPgDbType<TResult>
+        where TResult : notnull
+    {
+        CheckIfWithinRow();
+        ColumnData columnData = GetColumnData(index);
+        if (columnData.IsNull)
+        {
+            throw new SqlxException($"Expected field #{index} to be non-null but found null");
+        }
+
+        ref readonly PgColumnMetadata columnMetadata = ref columnData.ColumnMetadata;
+        if (TType.DbType != columnMetadata.TypeInfo
+            && !TType.IsCompatible(columnMetadata.TypeInfo))
+        {
+            throw ColumnDecodeException.Create<TResult, PgColumnMetadata>(columnMetadata);
+        }
+
+        var bytes = columnData.Data;
+        switch (columnMetadata.FormatCode)
+        {
+            case PgFormatCode.Text:
+                char[]? rentedFromPool = null;
+                var characterCount = Charsets.Default.GetCharCount(bytes);
+                var chars = characterCount >= MaxStackSize
+                    ? (rentedFromPool = CharArrayPool.Rent(characterCount))
+                    : stackalloc char[characterCount];
+                chars = chars[..characterCount];
+                try
+                {
+                    Charsets.Default.GetChars(bytes, chars);
+                    PgTextValue textValue = new(chars, columnMetadata);
+                    return TType.DecodeText(textValue);
+                }
+                finally
+                {
+                    if (rentedFromPool is not null)
+                    {
+                        CharArrayPool.Return(rentedFromPool);
+                    }
+                }
+            case PgFormatCode.Binary:
+                var value = new PgBinaryValue(bytes, columnMetadata);
+                return TType.DecodeBytes(value);
+            default:
+                throw ColumnDecodeException.Create<TResult, PgColumnMetadata>(
+                    columnData.ColumnMetadata,
+                    $"Unexpected format code: {columnData.ColumnMetadata.FormatCode}");
+        }
+    }
+
+    private void CheckValidIndex(int index)
+    {
+        var columnCount = ColumnCount;
+        switch (index)
+        {
+            case -1:
+                throw new ArgumentOutOfRangeException(
+                    nameof(index),
+                    "Invalid Index. Could not find column name");
+            case >= 0 when index < columnCount:
+                return;
+            default:
+                throw new ArgumentOutOfRangeException(
+                    nameof(index),
+                    $"Invalid index. Must be between 0..{columnCount - 1}");
+        }
+    }
+
+    private void CheckIfWithinRow()
+    {
+        if (RowData.IsEmpty)
+        {
+            throw new InvalidOperationException(
+                "Attempted to interact with row while row data not loaded");
+        }
+    }
+
+    protected abstract void Dispose(bool disposing);
+
+    public void Dispose()
+    {
+        RowData = default;
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+}

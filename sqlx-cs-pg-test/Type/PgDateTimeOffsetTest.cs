@@ -34,7 +34,7 @@ public class PgDateTimeOffsetTest
             millisecond,
             microsecond,
             TimeSpan.FromHours(offsetHours));
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgDateTimeOffset.Encode(value, buffer);
 
@@ -70,7 +70,7 @@ public class PgDateTimeOffsetTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        DateTimeOffset actualValue = PgDateTimeOffset.DecodeBytes(ref binaryValue);
+        DateTimeOffset actualValue = PgDateTimeOffset.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

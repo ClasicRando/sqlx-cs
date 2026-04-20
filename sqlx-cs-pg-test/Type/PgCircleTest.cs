@@ -18,7 +18,7 @@ public class PgCircleTest
             0, 0, 0,
         ];
         var value = new PgCircle(new PgPoint(5.63, 8.59), 4);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgCircle.Encode(value, buffer);
 
@@ -39,7 +39,7 @@ public class PgCircleTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgCircle actualValue = PgCircle.DecodeBytes(ref binaryValue);
+        PgCircle actualValue = PgCircle.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

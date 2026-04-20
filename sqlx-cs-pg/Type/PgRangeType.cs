@@ -11,7 +11,8 @@ namespace Sqlx.Postgres.Type;
 /// <see cref="IPgDbType{T}"/> for <see cref="PgRange{T}"/> values. Maps to any database type that
 /// has a range and the CLR type must implement <see cref="IHasRangeType"/>.
 /// </summary>
-internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>, IHasArrayType
+[SuppressMessage("Design", "CA1000:Do not declare static members on generic types")]
+public abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>, IHasArrayType
     where TType : IPgDbType<TValue>, IHasRangeType
     where TValue : notnull
 {
@@ -27,6 +28,8 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
     /// </summary>
     public static void Encode(PgRange<TValue> value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(value);
+        ArgumentNullException.ThrowIfNull(buffer);
         var flags = RangeMetadata.None;
 
         flags |= value.Lower.Type switch
@@ -104,12 +107,13 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/rangetypes.c#L261">pg source code</a>
     /// </summary>
     [SuppressMessage("ReSharper", "InvertIf")]
-    public static PgRange<TValue> DecodeBytes(ref PgBinaryValue value)
+    public static PgRange<TValue> DecodeBytes(in PgBinaryValue value)
     {
+        var buff = value.Buffer;
         var start = Bound.Unbounded<TValue>();
         var end = Bound.Unbounded<TValue>();
 
-        var flags = (RangeMetadata)value.Buffer.ReadByte();
+        var flags = (RangeMetadata)buff.ReadByte();
         if (flags.HasFlag(RangeMetadata.EmptyRange))
         {
             return new PgRange<TValue>(start, end);
@@ -117,13 +121,12 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
 
         if (!flags.HasFlag(RangeMetadata.LowerBoundInfinite))
         {
-            var lowerBoundLength = value.Buffer.ReadInt();
+            var lowerBoundLength = buff.ReadInt();
             var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary);
             var lowerBoundValue = new PgBinaryValue(
-                value.Buffer[..lowerBoundLength],
+                buff.ReadBytesAsSpan(lowerBoundLength),
                 in columnMetadata);
-            TValue lowerValue = TType.DecodeBytes(ref lowerBoundValue);
-            value.Buffer = value.Buffer[lowerBoundLength..];
+            TValue lowerValue = TType.DecodeBytes(lowerBoundValue);
             start = flags.HasFlag(RangeMetadata.LowerBoundInclusive)
                 ? Bound.Included(lowerValue)
                 : Bound.Excluded(lowerValue);
@@ -131,13 +134,12 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
 
         if (!flags.HasFlag(RangeMetadata.UpperBoundInfinite))
         {
-            var upperBoundLength = value.Buffer.ReadInt();
+            var upperBoundLength = buff.ReadInt();
             var columnMetadata = PgColumnMetadata.CreateMinimal(TType.DbType, PgFormatCode.Binary);
             var upperBoundValue = new PgBinaryValue(
-                value.Buffer[..upperBoundLength],
+                buff.ReadBytesAsSpan(upperBoundLength),
                 in columnMetadata);
-            TValue upperValue = TType.DecodeBytes(ref upperBoundValue);
-            value.Buffer = value.Buffer[upperBoundLength..];
+            TValue upperValue = TType.DecodeBytes(upperBoundValue);
             end = flags.HasFlag(RangeMetadata.UpperBoundInclusive)
                 ? Bound.Included(upperValue)
                 : Bound.Excluded(upperValue);
@@ -199,6 +201,7 @@ internal abstract class PgRangeType<TValue, TType> : IPgDbType<PgRange<TValue>>,
 
     public static bool IsCompatible(PgTypeInfo typeInfo)
     {
+        ArgumentNullException.ThrowIfNull(typeInfo);
         if (typeInfo == DbType)
         {
             return true;

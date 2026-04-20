@@ -5,14 +5,14 @@ using Sqlx.Postgres.Column;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Message.Auth;
 using Sqlx.Postgres.Message.Backend;
-using Sqlx.Postgres.Result;
 using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Connector;
 
 public partial class PgConnector
 {
-    internal async ValueTask<PgBackendMessageType> ReceiveNextMessageType(CancellationToken cancellationToken)
+    internal async ValueTask<PgBackendMessageType> ReceiveNextMessageType(
+        CancellationToken cancellationToken)
     {
         var format = await _asyncConnector.ReadByteAsync(cancellationToken).ConfigureAwait(false);
         return (PgBackendMessageType)format;
@@ -21,20 +21,20 @@ public partial class PgConnector
     internal async ValueTask<int> ReceiveNextMessageSize(CancellationToken cancellationToken)
     {
         var size = await _asyncConnector.ReadIntAsync(cancellationToken).ConfigureAwait(false) - 4;
-        await _asyncConnector.EnsureBufferFilled(size, cancellationToken).ConfigureAwait(false);
+        await _asyncConnector.EnsureReadBufferFilled(size, cancellationToken).ConfigureAwait(false);
         return size;
     }
 
     internal void AdvanceReadBuffer(int size)
     {
-        _asyncConnector.AdvanceBufferPosition(size);
+        _asyncConnector.Reader.AdvanceBufferPosition(size);
     }
 
     internal PgColumnMetadata[] ReceiveRowDescriptionMessage(
         int size,
         PgFormatCode? formatCodeOverride = null)
     {
-        var buffer = _asyncConnector.ReadBuffer[..size];
+        var buffer = _asyncConnector.Reader.Span[..size];
         var columnCount = buffer.ReadShort();
         var metadata = new PgColumnMetadata[columnCount];
         for (var i = 0; i < columnCount; i++)
@@ -57,21 +57,20 @@ public partial class PgConnector
         }
 
         AdvanceReadBuffer(size);
-        
+
         return metadata;
     }
 
-    internal PgDataRow ReceiveRowDataMessage(int size, PgStatementMetadata pgStatementMetadata)
+    internal ReadOnlyMemory<byte> ReceiveRowDataMessage(int size)
     {
-        var buffer = _asyncConnector.ReadBufferMemory[..size];
-        var dataRow = new PgDataRow(buffer, pgStatementMetadata);
+        var buffer = _asyncConnector.Reader.Memory[..size];
         AdvanceReadBuffer(size);
-        return dataRow;
+        return buffer;
     }
 
     internal QueryResult ReceiveQueryResult(int size)
     {
-        var buffer = _asyncConnector.ReadBuffer[..size];
+        var buffer = _asyncConnector.Reader.Span[..size];
         var message = buffer.ReadCString();
         var rowCount = ExtractRowCount(message);
         AdvanceReadBuffer(size);
@@ -91,7 +90,7 @@ public partial class PgConnector
         for (; i >= 0; i--)
         {
             if (char.IsDigit(message[i])) continue;
-            
+
             i++;
             break;
         }
@@ -101,7 +100,7 @@ public partial class PgConnector
 
     internal void HandleReadyForQueryMessage(int size)
     {
-        var buffer = _asyncConnector.ReadBuffer[..size];
+        var buffer = _asyncConnector.Reader.Span[..size];
         var status = (TransactionStatus)buffer.ReadByte();
         AdvanceReadBuffer(size);
         HandleReadyForQuery(status);
@@ -109,7 +108,7 @@ public partial class PgConnector
 
     private T ReceiveMessage<T>(int size) where T : IPgBackendMessage, IPgBackendMessageDecoder<T>
     {
-        var buffer = _asyncConnector.ReadBuffer[..size];
+        var buffer = _asyncConnector.Reader.Span[..size];
         T message = T.Decode(buffer);
         AdvanceReadBuffer(size);
         return message;
@@ -120,7 +119,7 @@ public partial class PgConnector
         PgBackendMessageType messageType =
             await ReceiveNextMessageType(cancellationToken).ConfigureAwait(false);
         var size = await ReceiveNextMessageSize(cancellationToken).ConfigureAwait(false);
-        
+
         cancellationToken.ThrowIfCancellationRequested();
 
         if (messageType is not PgBackendMessageType.Authentication)
@@ -128,8 +127,8 @@ public partial class PgConnector
             AdvanceReadBuffer(size);
             throw new PgException($"Expected an Authentication message but found {messageType}");
         }
-        
-        var buffer = _asyncConnector.ReadBuffer[..size];
+
+        var buffer = _asyncConnector.Reader.Span[..size];
         IAuthMessage message = AuthenticationMessage.Decode(buffer);
         AdvanceReadBuffer(size);
         return message;

@@ -119,224 +119,224 @@ public sealed class PgTypeInfo : IEquatable<PgTypeInfo>
         TypeKind = typeKind;
     }
 
-    public static readonly PgTypeInfo Bool = new(BoolOid, new SimpleType());
+    public static readonly PgTypeInfo Bool = new(BoolOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo BoolArray = new(
         BoolArrayOid,
         new ArrayType { ElementType = Bool });
 
-    public static readonly PgTypeInfo Bytea = new(ByteaOid, new SimpleType());
+    public static readonly PgTypeInfo Bytea = new(ByteaOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo ByteaArray = new(
         ByteaArrayOid,
         new ArrayType { ElementType = Bytea });
 
-    public static readonly PgTypeInfo Char = new(CharOid, new SimpleType());
+    public static readonly PgTypeInfo Char = new(CharOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo CharArray = new(
         CharArrayOid,
         new ArrayType { ElementType = Char });
 
-    public static readonly PgTypeInfo Name = new(NameOid, new SimpleType());
+    public static readonly PgTypeInfo Name = new(NameOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo NameArray = new(
         NameArrayOid,
         new ArrayType { ElementType = Name });
 
-    public static readonly PgTypeInfo Int2 = new(Int2Oid, new SimpleType());
+    public static readonly PgTypeInfo Int2 = new(Int2Oid, SimpleType.Instance);
 
     public static readonly PgTypeInfo Int2Array = new(
         Int2ArrayOid,
         new ArrayType { ElementType = Int2 });
 
-    public static readonly PgTypeInfo Int4 = new(Int4Oid, new SimpleType());
+    public static readonly PgTypeInfo Int4 = new(Int4Oid, SimpleType.Instance);
 
     public static readonly PgTypeInfo Int4Array = new(
         Int4ArrayOid,
         new ArrayType { ElementType = Int4 });
 
-    public static readonly PgTypeInfo Int8 = new(Int8Oid, new SimpleType());
+    public static readonly PgTypeInfo Int8 = new(Int8Oid, SimpleType.Instance);
 
     public static readonly PgTypeInfo Int8Array = new(
         Int8ArrayOid,
         new ArrayType { ElementType = Int8 });
 
-    public static readonly PgTypeInfo Text = new(TextOid, new SimpleType());
+    public static readonly PgTypeInfo Text = new(TextOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo TextArray = new(
         TextArrayOid,
         new ArrayType { ElementType = Text });
 
-    public static readonly PgTypeInfo Oid = new(OidOid, new SimpleType());
+    public static readonly PgTypeInfo Oid = new(OidOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo OidArray = new(
         OidArrayOid,
         new ArrayType { ElementType = Oid });
 
-    public static readonly PgTypeInfo Json = new(JsonOid, new SimpleType());
+    public static readonly PgTypeInfo Json = new(JsonOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo JsonArray = new(
         JsonArrayOid,
         new ArrayType { ElementType = Json });
 
-    public static readonly PgTypeInfo Point = new(PointOid, new SimpleType());
+    public static readonly PgTypeInfo Point = new(PointOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo PointArray = new(
         PointArrayOid,
         new ArrayType { ElementType = Point });
 
-    public static readonly PgTypeInfo Lseg = new(LsegOid, new SimpleType());
+    public static readonly PgTypeInfo Lseg = new(LsegOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo LsegArray = new(
         LsegArrayOid,
         new ArrayType { ElementType = Lseg });
 
-    public static readonly PgTypeInfo Path = new(PathOid, new SimpleType());
+    public static readonly PgTypeInfo Path = new(PathOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo PathArray = new(
         PathArrayOid,
         new ArrayType { ElementType = Path });
 
-    public static readonly PgTypeInfo Box = new(BoxOid, new SimpleType());
+    public static readonly PgTypeInfo Box = new(BoxOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo BoxArray = new(
         BoxArrayOid,
         new ArrayType { ElementType = Box });
 
-    public static readonly PgTypeInfo Polygon = new(PolygonOid, new SimpleType());
+    public static readonly PgTypeInfo Polygon = new(PolygonOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo PolygonArray = new(
         PolygonArrayOid,
         new ArrayType { ElementType = Polygon });
 
-    public static readonly PgTypeInfo Line = new(LineOid, new SimpleType());
+    public static readonly PgTypeInfo Line = new(LineOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo LineArray = new(
         LineArrayOid,
         new ArrayType { ElementType = Line });
 
-    public static readonly PgTypeInfo Cidr = new(CidrOid, new SimpleType());
+    public static readonly PgTypeInfo Cidr = new(CidrOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo CidrArray = new(
         CidrArrayOid,
         new ArrayType { ElementType = Cidr });
 
-    public static readonly PgTypeInfo Float4 = new(Float4Oid, new SimpleType());
+    public static readonly PgTypeInfo Float4 = new(Float4Oid, SimpleType.Instance);
 
     public static readonly PgTypeInfo Float4Array = new(
         Float4ArrayOid,
         new ArrayType { ElementType = Float4 });
 
-    public static readonly PgTypeInfo Float8 = new(Float8Oid, new SimpleType());
+    public static readonly PgTypeInfo Float8 = new(Float8Oid, SimpleType.Instance);
 
     public static readonly PgTypeInfo Float8Array = new(
         Float8ArrayOid,
         new ArrayType { ElementType = Float8 });
 
-    public static readonly PgTypeInfo Unknown = new(UnknownOid, new SimpleType());
-    public static readonly PgTypeInfo Circle = new(CircleOid, new SimpleType());
+    public static readonly PgTypeInfo Unknown = new(UnknownOid, SimpleType.Instance);
+    public static readonly PgTypeInfo Circle = new(CircleOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo CircleArray = new(
         CircleArrayOid,
         new ArrayType { ElementType = Circle });
 
-    public static readonly PgTypeInfo Macaddr8 = new(Macaddr8Oid, new SimpleType());
+    public static readonly PgTypeInfo Macaddr8 = new(Macaddr8Oid, SimpleType.Instance);
 
     public static readonly PgTypeInfo Macaddr8Array = new(
         Macaddr8ArrayOid,
         new ArrayType { ElementType = Macaddr8 });
 
-    public static readonly PgTypeInfo Macaddr = new(MacaddrOid, new SimpleType());
+    public static readonly PgTypeInfo Macaddr = new(MacaddrOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo MacaddrArray = new(
         MacaddrArrayOid,
         new ArrayType { ElementType = Macaddr });
 
-    public static readonly PgTypeInfo Inet = new(InetOid, new SimpleType());
+    public static readonly PgTypeInfo Inet = new(InetOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo InetArray = new(
         InetArrayOid,
         new ArrayType { ElementType = Inet });
 
-    public static readonly PgTypeInfo Bpchar = new(BpcharOid, new SimpleType());
+    public static readonly PgTypeInfo Bpchar = new(BpcharOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo BpcharArray = new(
         BpcharArrayOid,
         new ArrayType { ElementType = Bpchar });
 
-    public static readonly PgTypeInfo Varchar = new(VarcharOid, new SimpleType());
+    public static readonly PgTypeInfo Varchar = new(VarcharOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo VarcharArray = new(
         VarcharArrayOid,
         new ArrayType { ElementType = Varchar });
 
-    public static readonly PgTypeInfo Date = new(DateOid, new SimpleType());
+    public static readonly PgTypeInfo Date = new(DateOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo DateArray = new(
         DateArrayOid,
         new ArrayType { ElementType = Date });
 
-    public static readonly PgTypeInfo Time = new(TimeOid, new SimpleType());
+    public static readonly PgTypeInfo Time = new(TimeOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo TimeArray = new(
         TimeArrayOid,
         new ArrayType { ElementType = Time });
 
-    public static readonly PgTypeInfo Timestamp = new(TimestampOid, new SimpleType());
+    public static readonly PgTypeInfo Timestamp = new(TimestampOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo TimestampArray = new(
         TimestampArrayOid,
         new ArrayType { ElementType = Timestamp });
 
-    public static readonly PgTypeInfo Timestamptz = new(TimestamptzOid, new SimpleType());
+    public static readonly PgTypeInfo Timestamptz = new(TimestamptzOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo TimestamptzArray = new(
         TimestamptzArrayOid,
         new ArrayType { ElementType = Timestamptz });
 
-    public static readonly PgTypeInfo Interval = new(IntervalOid, new SimpleType());
+    public static readonly PgTypeInfo Interval = new(IntervalOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo IntervalArray = new(
         IntervalArrayOid,
         new ArrayType { ElementType = Interval });
 
-    public static readonly PgTypeInfo Timetz = new(TimetzOid, new SimpleType());
+    public static readonly PgTypeInfo Timetz = new(TimetzOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo TimetzArray = new(
         TimetzArrayOid,
         new ArrayType { ElementType = Timetz });
 
-    public static readonly PgTypeInfo Bit = new(BitOid, new SimpleType());
+    public static readonly PgTypeInfo Bit = new(BitOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo BitArray = new(
         BitArrayOid,
         new ArrayType { ElementType = Bit });
 
-    public static readonly PgTypeInfo Varbit = new(VarbitOid, new SimpleType());
+    public static readonly PgTypeInfo Varbit = new(VarbitOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo VarbitArray = new(
         VarbitArrayOid,
         new ArrayType { ElementType = Varbit });
 
-    public static readonly PgTypeInfo Numeric = new(NumericOid, new SimpleType());
+    public static readonly PgTypeInfo Numeric = new(NumericOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo NumericArray = new(
         NumericArrayOid,
         new ArrayType { ElementType = Numeric });
 
-    public static readonly PgTypeInfo Record = new(RecordOid, new SimpleType());
+    public static readonly PgTypeInfo Record = new(RecordOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo RecordArray = new(
         RecordArrayOid,
         new ArrayType { ElementType = Record });
 
-    public static readonly PgTypeInfo Uuid = new(UuidOid, new SimpleType());
+    public static readonly PgTypeInfo Uuid = new(UuidOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo UuidArray = new(
         UuidArrayOid,
         new ArrayType { ElementType = Uuid });
 
-    public static readonly PgTypeInfo Jsonb = new(JsonbOid, new SimpleType());
+    public static readonly PgTypeInfo Jsonb = new(JsonbOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo JsonbArray = new(
         JsonbArrayOid,
@@ -390,26 +390,26 @@ public sealed class PgTypeInfo : IEquatable<PgTypeInfo>
         Int8RangeArrayOid,
         new ArrayType { ElementType = Int8Range });
 
-    public static readonly PgTypeInfo Jsonpath = new(JsonpathOid, new SimpleType());
+    public static readonly PgTypeInfo Jsonpath = new(JsonpathOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo JsonpathArray = new(
         JsonpathArrayOid,
         new ArrayType { ElementType = Jsonpath });
 
-    public static readonly PgTypeInfo Money = new(MoneyOid, new SimpleType());
+    public static readonly PgTypeInfo Money = new(MoneyOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo MoneyArray = new(
         MoneyArrayOid,
         new ArrayType { ElementType = Money });
 
-    public static readonly PgTypeInfo Xml = new(XmlOid, new SimpleType());
+    public static readonly PgTypeInfo Xml = new(XmlOid, SimpleType.Instance);
 
     public static readonly PgTypeInfo XmlArray = new(
         XmlArrayOid,
         new ArrayType { ElementType = Xml });
 
     public static readonly PgTypeInfo Void = new(VoidOid, new PseudoType());
-    public static readonly PgTypeInfo Unspecified = new(UnspecifiedOid, new SimpleType());
+    public static readonly PgTypeInfo Unspecified = new(UnspecifiedOid, SimpleType.Instance);
 
     public bool Equals(PgTypeInfo? other)
     {

@@ -25,7 +25,7 @@ namespace Sqlx.Postgres.Type;
 /// <code>
 /// public record Example(int Id, string Name) : IPgUdt&lt;Example&gt;, IFromRow&lt;IPgDataRow, Example&gt;
 /// {
-///     public static Example DecodeBytes(ref PgBinaryValue value)
+///     public static Example DecodeBytes(in PgBinaryValue value)
 ///     {
 ///         return PgRecordDecoder.DecodeBinary&lt;Example&gt;(ref value);
 ///     }
@@ -47,9 +47,10 @@ namespace Sqlx.Postgres.Type;
 /// </summary>
 public static class PgRecordDecoder
 {
-    public static T DecodeBinary<T>(ref PgBinaryValue binaryValue)
+    public static T DecodeBinary<T>(in PgBinaryValue binaryValue)
         where T : IPgDbType<T>, IFromRow<IPgDataRow, T>
     {
+        var buff = binaryValue.Buffer;
         PgTypeInfo typeInfo = T.DbType;
         if (typeInfo.TypeKind is not CompositeType compositeType)
         {
@@ -57,7 +58,7 @@ public static class PgRecordDecoder
                 $"Attempted to decode a type using a {nameof(PgRecordDecoder)} but that type if not a composite or the composite type was not mapped to the connection pool using {nameof(PgConnectionPool.MapCompositeAsync)}");
         }
 
-        var attributeCount = binaryValue.Buffer.ReadInt();
+        var attributeCount = buff.ReadInt();
         if (attributeCount != compositeType.Fields.Length)
         {
             throw new PgException(
@@ -65,7 +66,7 @@ public static class PgRecordDecoder
         }
 
         var columns = new PgColumnMetadata[attributeCount];
-        using PooledArrayBufferWriter bufferWriter = new();
+        using ArrayBufferWriter bufferWriter = new();
         bufferWriter.WriteShort((short)attributeCount);
 
         for (var i = 0; i < attributeCount; i++)
@@ -80,19 +81,21 @@ public static class PgRecordDecoder
                 0,
                 PgFormatCode.Binary);
             // Skip attribute Oid
-            binaryValue.Buffer.ReadInt();
+            buff.ReadInt();
 
-            var attributeLength = binaryValue.Buffer.ReadInt();
+            var attributeLength = buff.ReadInt();
             bufferWriter.WriteInt(attributeLength);
             if (attributeLength == -1)
             {
                 continue;
             }
-            
-            bufferWriter.Write(binaryValue.Buffer.ReadBytesAsSpan(attributeLength));
+
+            bufferWriter.Write(buff.ReadBytesAsSpan(attributeLength));
         }
 
-        using var row = new PgDataRow(bufferWriter.ReadableMemory, new PgStatementMetadata(columns));
+        using var row = new SimplePgDataRow(
+            bufferWriter.ReadableMemory,
+            new PgStatementMetadata(columns));
         return T.FromRow(row);
     }
 
@@ -113,9 +116,9 @@ public static class PgRecordDecoder
             throw new PgException(
                 $"Mismatch in attribute counts. Expected {compositeType.Fields.Length}, Found {attributeLiterals.Count}");
         }
-        
+
         var columns = new PgColumnMetadata[attributeLiterals.Count];
-        using PooledArrayBufferWriter bufferWriter = new();
+        using ArrayBufferWriter bufferWriter = new();
         bufferWriter.WriteShort((short)attributeLiterals.Count);
 
         for (var i = 0; i < attributeLiterals.Count; i++)
@@ -144,7 +147,9 @@ public static class PgRecordDecoder
             bufferWriter.Advance(literalByteCount);
         }
 
-        using var row = new PgDataRow(bufferWriter.ReadableMemory, new PgStatementMetadata(columns));
+        using var row = new SimplePgDataRow(
+            bufferWriter.ReadableMemory,
+            new PgStatementMetadata(columns));
         return T.FromRow(row);
     }
 
@@ -157,7 +162,7 @@ public static class PgRecordDecoder
                 value.ColumnMetadata,
                 $"Composite literal must be enclosed in parenthesis. Found '{value.Chars}'");
         }
-        
+
         List<string?> result = [];
         using ReadOnlySpan<char>.Enumerator chars = value.Chars[1..^1].GetEnumerator();
         var builder = new StringBuilder();
@@ -176,7 +181,7 @@ public static class PgRecordDecoder
                     isDone = true;
                     break;
                 }
-                
+
                 var currentChar = chars.Current;
                 if (inEscape)
                 {
@@ -197,6 +202,7 @@ public static class PgRecordDecoder
                         {
                             builder.Append(currentChar);
                         }
+
                         break;
                     }
                     case '\\' when !inEscape:
@@ -209,7 +215,7 @@ public static class PgRecordDecoder
                         builder.Append(currentChar);
                         break;
                 }
-                
+
                 if (foundDelimiter) break;
 
                 previousChar = currentChar;

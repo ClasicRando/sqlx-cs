@@ -20,7 +20,7 @@ public partial class PgConnector
             ? new byte[bufferSize]
             : stackalloc byte[bufferSize];
         Charsets.Default.GetBytes(password, passwordBytes);
-        
+
         await SendSimplePasswordMessage(passwordBytes, cancellationToken)
             .ConfigureAwait(false);
 
@@ -31,6 +31,7 @@ public partial class PgConnector
             return;
         }
 
-        throw new PgException($"Expected final authentication message to be OK but found {authentication}");
+        throw new PgException(
+            $"Expected final authentication message to be OK but found {authentication}");
     }
 }

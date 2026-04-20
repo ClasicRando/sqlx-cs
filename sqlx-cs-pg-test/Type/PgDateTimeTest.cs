@@ -24,7 +24,7 @@ public class PgDateTimeTest
         byte[] expectedBytes)
     {
         var value = new DateTime(year, month, day, hour, minute, second, millisecond, microsecond);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgDateTime.Encode(value, buffer);
 
@@ -52,7 +52,7 @@ public class PgDateTimeTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        DateTime actualValue = PgDateTime.DecodeBytes(ref binaryValue);
+        DateTime actualValue = PgDateTime.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

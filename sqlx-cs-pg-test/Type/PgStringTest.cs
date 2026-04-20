@@ -15,7 +15,7 @@ public class PgStringTest
     [Arguments("😀", new byte[] { 240, 159, 152, 128 })]
     public async Task Encode_Should_WriteText(string value, byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgString.Encode(value, buffer);
 
@@ -36,7 +36,7 @@ public class PgStringTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        var actualValue = PgString.DecodeBytes(ref binaryValue);
+        var actualValue = PgString.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

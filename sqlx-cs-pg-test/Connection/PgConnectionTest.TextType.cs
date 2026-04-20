@@ -1,5 +1,4 @@
 using Sqlx.Postgres.Query;
-using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Connection;
 
@@ -9,10 +8,10 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_TextAndDefaultEncoding(CancellationToken ct)
     {
         const string value = "This is a test";
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 text_col;");
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 text_col;");
         query.Bind(value);
-        var result = await query.ExecuteScalar<string, PgString>(ct);
+        var result = await query.ExecuteScalar<string>(ct);
         await Assert.That(result).IsEqualTo(value);
     }
 
@@ -21,10 +20,10 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT 'This is a test';";
         const string value = "This is a test";
-        using IPgConnection
+        await using IPgConnection
             connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery(sql);
-        var result = await query.ExecuteScalar<string, PgString>(ct);
+        await using IPgExecutableQuery query = connection.CreateQuery(sql);
+        var result = await query.ExecuteScalar<string>(ct);
         await Assert.That(result).IsEqualTo(value);
     }
 }

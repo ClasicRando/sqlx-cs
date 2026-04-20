@@ -29,7 +29,7 @@ public static class JsonHelper
 
         JsonSerializer.Serialize(writer, value);
     }
-    
+
     /// <summary>
     /// Deserialize the supplied bytes as JSON into <typeparamref name="T"/>. Although the type info
     /// parameter is optional, it's recommend to supply the type info to not require runtime magic
@@ -52,6 +52,7 @@ public static class JsonHelper
                 "JSON deserialization returned null. Cannot create Json from null",
                 nameof(bytes));
         }
+
         return result;
     }
 
@@ -77,6 +78,7 @@ public static class JsonHelper
                 "JSON deserialization returned null. Cannot create Json from null",
                 nameof(chars));
         }
+
         return result;
     }
 }

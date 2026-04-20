@@ -28,7 +28,7 @@ public interface IPgConnectionPool : IConnectionPool<IPgConnection, IPgBindable,
     /// </summary>
     /// <returns>A listener using a connection from this pool to listen for notifications</returns>
     IPgListener CreateListener();
-    
+
     /// <summary>
     /// <para>
     /// Map the specified <see cref="Enum"/> type as a Postgres enum type to enable encoding and

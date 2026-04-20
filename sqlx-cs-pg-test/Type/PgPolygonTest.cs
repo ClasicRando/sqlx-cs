@@ -26,7 +26,7 @@ public class PgPolygonTest
         double[] values,
         byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
         var points = new PgPoint[values.Length / 2];
         var j = 0;
         for (var i = 0; i < points.Length; i++)
@@ -76,7 +76,7 @@ public class PgPolygonTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgPolygon actualValue = PgPolygon.DecodeBytes(ref binaryValue);
+        PgPolygon actualValue = PgPolygon.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

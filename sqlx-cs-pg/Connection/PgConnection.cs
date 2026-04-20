@@ -92,14 +92,14 @@ public sealed class PgConnection :
     }
 
     public async IAsyncEnumerable<TRow> CopyOutRowsAsync<TRow>(
-        TableToBinary copyOutStatement,
+        CopyTableToBinary copyOutStatement,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
         where TRow : IFromRow<IPgDataRow, TRow>
     {
         ArgumentNullException.ThrowIfNull(copyOutStatement);
         CheckDisposed();
         await ConnectIfClosed(cancellationToken).ConfigureAwait(false);
-        
+
         var columns = await QueryTableMetadataAsync(copyOutStatement, cancellationToken)
             .ConfigureAwait(false);
         var statementMetadata = new PgStatementMetadata(columns);
@@ -179,14 +179,14 @@ public sealed class PgConnection :
     }
 
     private async ValueTask<PgColumnMetadata[]> QueryTableMetadataAsync(
-        TableToBinary copyTable,
+        CopyTableToBinary copyTable,
         CancellationToken cancellationToken)
     {
         IPgExecutableQuery query = CreateQuery(CopyTableMetadata.Query);
         // This is a workaround for calling ConfigureAwait on an IAsyncDisposable
         await using var _ = query.ConfigureAwait(false);
-        query.Bind(copyTable.TableName);
-        query.Bind(copyTable.SchemaName);
+        query.BindPg<string, PgString>(copyTable.TableName);
+        query.BindPg<string, PgString>(copyTable.SchemaName);
         return await query.FetchAsync<CopyTableMetadata>(cancellationToken)
             .Select(m => m.GetColumnMetadata())
             .ToArrayAsync(cancellationToken)
@@ -230,11 +230,11 @@ public sealed class PgConnection :
         {
             return new CopyTableMetadata
             {
-                TableOid = dataRow.GetIntNotNull("table_oid"),
-                ColumnName = dataRow.GetStringNotNull("column_name"),
-                ColumnOrder = dataRow.GetShortNotNull("column_order"),
-                PgTypeInfo = PgTypeInfo.FromOid(dataRow.GetPgNotNull<PgOid>("type_oid")),
-                ColumnLength = dataRow.GetShortNotNull("column_length"),
+                TableOid = dataRow.GetPgNotNull<int, PgInt>("table_oid"),
+                ColumnName = dataRow.GetPgNotNull<string, PgString>("column_name"),
+                ColumnOrder = dataRow.GetPgNotNull<short, PgShort>("column_order"),
+                PgTypeInfo = PgTypeInfo.FromOid(dataRow.GetPgNotNull<PgOid, PgOid>("type_oid")),
+                ColumnLength = dataRow.GetPgNotNull<short, PgShort>("column_length"),
             };
         }
     }

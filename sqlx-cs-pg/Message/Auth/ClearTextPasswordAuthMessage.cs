@@ -6,7 +6,9 @@ namespace Sqlx.Postgres.Message.Auth;
 /// </summary>
 internal sealed class ClearTextPasswordAuthMessage : IAuthMessage
 {
-    private ClearTextPasswordAuthMessage() {}
+    private ClearTextPasswordAuthMessage()
+    {
+    }
 
     internal static ClearTextPasswordAuthMessage Instance { get; } = new();
 }

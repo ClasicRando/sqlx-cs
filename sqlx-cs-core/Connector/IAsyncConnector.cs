@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using Sqlx.Core.Buffer;
 
@@ -12,17 +11,16 @@ namespace Sqlx.Core.Connector;
 /// </p>
 /// <h3>Reading</h3>
 /// To read data from the stream, request a minimum number of bytes using
-/// <see cref="EnsureBufferFilled"/> and then use <see cref="ReadBuffer"/> or
-/// <see cref="ReadBufferMemory"/> to process the incoming data. After processing your required
-/// data, the caller must finalize the read action by invoking <see cref="AdvanceBufferPosition"/>
-/// which moves the read buffer forward past the consumed data. There is an underlining assumption
-/// that the number of bytes needed is known but database protocols have sized messages so that
-/// should always be true. Use extension methods in <see cref="BufferExtensions"/> to process the
-/// read buffer data.
+/// <see cref="EnsureReadBufferFilled"/> and then use the <see cref="Reader"/> to view the buffered
+/// data read from the stream. After processing your required data, the caller must finalize the
+/// read action by invoking <see cref="IBufferReader.AdvanceBufferPosition"/> which moves the read
+/// buffer forward past the consumed data. There is an underlining assumption that the number of
+/// bytes needed is known but database protocols have sized messages so that should always be true.
+/// Use extension methods in <see cref="BufferExtensions"/> to process the read buffer data.
 /// <h3>Writing</h3>
 /// To write data to the stream, buffer data into <see cref="Writer"/> using the appropriate
 /// <see cref="BufferExtensions"/> method for <see cref="IBufferWriter{byte}"/>s. Once all data is
-/// written, call <see cref="PipeWriter.FlushAsync"/> to push all pending data to the stream.
+/// written, call <see cref="FlushWriteBuffer"/> to push all pending data to the stream.
 /// </summary>
 public interface IAsyncConnector : IDisposable
 {
@@ -30,26 +28,17 @@ public interface IAsyncConnector : IDisposable
     /// True if the underlining stream is connected to the host
     /// </summary>
     bool IsConnected { get; }
+
+    /// <summary>
+    /// Writer for the buffer in front of the underlining stream forwarding send data
+    /// </summary>
+    IBufferWriter<byte> Writer { get; }
     
     /// <summary>
-    /// Writer for the underlining stream
+    /// Reader for the buffer that consumes data from the underlining stream
     /// </summary>
-    PipeWriter Writer { get; }
-    
-    /// <summary>
-    /// Read-only view of the read buffer. This span is only valid until a call to
-    /// <see cref="EnsureBufferFilled"/> where the underlining buffer might become reset.
-    /// </summary>
-    ReadOnlySpan<byte> ReadBuffer { get; }
-    
-    /// <summary>
-    /// Read-only view of the read buffer. This memory segment is only valid until a call to
-    /// <see cref="EnsureBufferFilled"/> where the underlining buffer might become reset. Prefer
-    /// using <see cref="ReadBuffer"/> unless you need a memory view that must exist past the scope
-    /// that a ref struct can persist.
-    /// </summary>
-    ReadOnlyMemory<byte> ReadBufferMemory { get; }
-    
+    IBufferReader Reader { get; }
+
     /// <summary>
     /// Open the stream's connection to a remote host at the specified port
     /// </summary>
@@ -59,20 +48,25 @@ public interface IAsyncConnector : IDisposable
     Task OpenAsync(string host, ushort port, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Fill the internal read buffer with at least the desired number of bytes. Returns immediately
-    /// if the buffer already has that many bytes available.
+    /// Fill the internal <see cref="Reader"/> with at least the desired number of bytes. Returns
+    /// immediately if the buffer already has that many bytes available.
     /// </summary>
     /// <param name="size">Number of bytes requested to be available in the read buffer</param>
     /// <param name="cancellationToken">Token to cancel the async action</param>
     /// <returns></returns>
-    ValueTask EnsureBufferFilled(int size, CancellationToken cancellationToken);
+    ValueTask EnsureReadBufferFilled(int size, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Move the internal read buffer forward the number of bytes that were consumed. This will make
-    /// the data inaccessible upon future reads.
+    /// Flush all previously written data to the <see cref="Writer"/> buffer
     /// </summary>
-    /// <param name="bytesConsumed">Number of bytes consumed by a previous operation</param>
-    void AdvanceBufferPosition(int bytesConsumed);
+    /// <param name="cancellationToken">Token to cancel the async operation</param>
+    ValueTask FlushWriteBuffer(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Request that the read and write buffers be reset to their initial size if oversized. Does
+    /// nothing if the buffers are not oversized.
+    /// </summary>
+    void ResetBuffers();
 }
 
 public static class AsyncConnectorExtensions
@@ -88,14 +82,16 @@ public static class AsyncConnectorExtensions
         [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
         public async ValueTask<byte> ReadByteAsync(CancellationToken cancellationToken)
         {
-            await asyncConnector.EnsureBufferFilled(sizeof(byte), cancellationToken)
+            const int bytesNeeded = sizeof(byte);
+            await asyncConnector.EnsureReadBufferFilled(bytesNeeded, cancellationToken)
                 .ConfigureAwait(false);
-            var span = asyncConnector.ReadBuffer;
+            IBufferReader reader = asyncConnector.Reader;
+            var span = reader.Span;
             var result = span.ReadByte();
-            asyncConnector.AdvanceBufferPosition(sizeof(byte));
+            reader.AdvanceBufferPosition(bytesNeeded);
             return result;
         }
-        
+
         /// <summary>
         /// Read 4 bytes from the connection as an int. Returns immediately if the internal read
         /// buffer has enough bytes already.
@@ -105,11 +101,13 @@ public static class AsyncConnectorExtensions
         [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
         public async ValueTask<int> ReadIntAsync(CancellationToken cancellationToken)
         {
-            await asyncConnector.EnsureBufferFilled(sizeof(int), cancellationToken)
+            const int bytesNeeded = sizeof(int);
+            await asyncConnector.EnsureReadBufferFilled(bytesNeeded, cancellationToken)
                 .ConfigureAwait(false);
-            var span = asyncConnector.ReadBuffer;
+            IBufferReader reader = asyncConnector.Reader;
+            var span = reader.Span;
             var result = span.ReadInt();
-            asyncConnector.AdvanceBufferPosition(sizeof(int));
+            reader.AdvanceBufferPosition(bytesNeeded);
             return result;
         }
     }

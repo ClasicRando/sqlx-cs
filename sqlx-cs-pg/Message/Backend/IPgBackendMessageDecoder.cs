@@ -8,6 +8,7 @@ namespace Sqlx.Postgres.Message.Backend;
 internal interface IPgBackendMessageDecoder<out TMessage> where TMessage : IPgBackendMessage
 {
     internal static abstract PgBackendMessageType MessageType { get; }
+
     /// <summary>
     /// Decode the supplied buffer into the message type
     /// </summary>

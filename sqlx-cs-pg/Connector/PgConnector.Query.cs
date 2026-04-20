@@ -144,7 +144,8 @@ public partial class PgConnector
     {
         ThrowIfNotOpen();
         PgQueryBatch pgQueryBatch = queryBatch as PgQueryBatch
-                                    ?? throw new PgException("Invalid query batch. Must be a PgQueryBatch");
+                                    ?? throw new PgException(
+                                        "Invalid query batch. Must be a PgQueryBatch");
         var syncAll = queryBatch.WrapBatchInTransaction;
 
         UserAction userAction = StartUserAction();
@@ -312,13 +313,14 @@ public partial class PgConnector
 
         while (true)
         {
-            PgBackendMessageType backendMessageType = await ReceiveNextMessageType(cancellationToken)
-                .ConfigureAwait(false);
+            PgBackendMessageType backendMessageType =
+                await ReceiveNextMessageType(cancellationToken)
+                    .ConfigureAwait(false);
             var size = await ReceiveNextMessageSize(cancellationToken)
                 .ConfigureAwait(false);
-            
+
             if (ApplyStandardMessageProcessing(backendMessageType, size)) continue;
-            
+
             cancellationToken.ThrowIfCancellationRequested();
             switch (backendMessageType)
             {

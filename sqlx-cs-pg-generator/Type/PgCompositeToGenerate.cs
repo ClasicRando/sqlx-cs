@@ -15,6 +15,8 @@ internal readonly struct PgCompositeToGenerate : IFullNameType
     public string ContainingNamespace { get; }
 
     public bool IsStruct => _typeSymbol.IsValueType;
+
+    public Accessibility DeclaredAccessibility => _typeSymbol.DeclaredAccessibility;
     
     public bool IsIFromRow { get; }
     
@@ -57,7 +59,7 @@ internal readonly struct PgCompositeToGenerate : IFullNameType
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     SourceGenerationHelper.DefinitionIsNotPartial,
-                    Location.None,
+                    _typeDeclarationSyntax.GetLocation(),
                     ShortName));
             return false;
         }

@@ -5,12 +5,12 @@ namespace Sqlx.Postgres.Message.Backend;
 /// <summary>
 /// <para>
 /// Message sent after initializing a copy operation using the <c>COPY FROM</c> command. The client
-/// will then send zero or more <see cref="CopyDataMessage"/>s as part of the protocol.
+/// will then send zero or more copy data messages as part of the protocol.
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/protocol-message-formats.html#PROTOCOL-MESSAGE-FORMATS-COPYINRESPONSE">docs</a>
 /// </summary>
 [SuppressMessage("ReSharper", "NotAccessedPositionalProperty.Global")]
-internal record CopyInResponseMessage(CopyResponse CopyResponse)
+internal readonly record struct CopyInResponseMessage(CopyResponse CopyResponse)
     : IPgBackendMessage, IPgBackendMessageDecoder<CopyInResponseMessage>
 {
     public static PgBackendMessageType MessageType => PgBackendMessageType.CopyInResponse;

@@ -15,7 +15,7 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
 {
     private const long PostgresEpochSeconds = 946_684_800;
     private const long PostgresEpochTicks = PostgresEpochSeconds * TimeSpan.TicksPerSecond;
-    
+
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
     /// <para>
@@ -38,9 +38,10 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/timestamp.c#L292">pg source code</a>
     /// </summary>
-    public static DateTime DecodeBytes(ref PgBinaryValue value)
+    public static DateTime DecodeBytes(in PgBinaryValue value)
     {
-        return new DateTime(value.Buffer.ReadLong() * TimeSpan.TicksPerMicrosecond + PostgresEpochTicks);
+        var buff = value.Buffer;
+        return new DateTime(buff.ReadLong() * TimeSpan.TicksPerMicrosecond + PostgresEpochTicks);
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -55,16 +56,20 @@ public abstract class PgDateTime : IPgDbType<DateTime>, IHasRangeType, IHasArray
     /// </exception>
     public static DateTime DecodeText(in PgTextValue value)
     {
-        if (DateTime.TryParse(value.Chars, null, DateTimeStyles.AdjustToUniversal, out DateTime dateTime))
+        if (DateTime.TryParse(
+                value.Chars,
+                null,
+                DateTimeStyles.AdjustToUniversal,
+                out DateTime dateTime))
         {
             return dateTime;
         }
-        
+
         throw ColumnDecodeException.Create<DateTime, PgColumnMetadata>(
             value.ColumnMetadata,
             $"Cannot parse '{value.Chars}' as a DateTime");
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Timestamp;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.TimestampArray;

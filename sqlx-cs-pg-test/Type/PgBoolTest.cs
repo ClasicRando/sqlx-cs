@@ -14,7 +14,7 @@ public class PgBoolTest
     [Arguments(false, new byte[] { 0 })]
     public async Task Encode_Should_WriteByte(bool value, byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgBool.Encode(value, buffer);
 
@@ -34,7 +34,7 @@ public class PgBoolTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        var actualValue = PgBool.DecodeBytes(ref binaryValue);
+        var actualValue = PgBool.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

@@ -10,6 +10,7 @@ using Sqlx.Postgres.Logging;
 using Sqlx.Postgres.Message.Backend;
 using Sqlx.Postgres.Message.Backend.Information;
 using Sqlx.Postgres.Pool;
+using Sqlx.Postgres.Type;
 using PgConnector = Sqlx.Postgres.Connector.PgConnector;
 
 namespace Sqlx.Postgres.Notify;
@@ -180,7 +181,7 @@ internal sealed class PgListener : IPgListener
             var current = stream.Current;
             if (current.IsLeft)
             {
-                yield return current.Left.GetStringNotNull(0);
+                yield return current.Left.GetPgNotNull<string, PgString>(0);
             }
         }
     }

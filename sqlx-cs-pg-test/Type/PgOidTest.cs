@@ -16,7 +16,7 @@ public class PgOidTest
     [Arguments(uint.MaxValue, new byte[] { 255, 255, 255, 255 })]
     public async Task Encode_Should_WriteInt(uint value, byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgOid.Encode(new PgOid(value), buffer);
 
@@ -41,7 +41,7 @@ public class PgOidTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgOid actualValue = PgOid.DecodeBytes(ref binaryValue);
+        PgOid actualValue = PgOid.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue.Inner).IsEqualTo(expectedValue);
     }
@@ -55,7 +55,7 @@ public class PgOidTest
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
         try
         {
-            PgOid temp = PgOid.DecodeBytes(ref binaryValue);
+            PgOid temp = PgOid.DecodeBytes(binaryValue);
             Assert.Fail($"Decoding should have failed. Found '{temp}'");
         }
         catch (ColumnDecodeException e)
@@ -82,7 +82,7 @@ public class PgOidTest
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
         try
         {
-            PgOid.DecodeBytes(ref binaryValue);
+            PgOid.DecodeBytes(binaryValue);
             Assert.Fail("Decoding should have failed");
         }
         catch (ColumnDecodeException e)

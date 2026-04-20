@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Config;
@@ -16,8 +15,6 @@ namespace Sqlx.Postgres.Connector;
 
 public sealed partial class PgConnector
 {
-    private const int MaxCopyDataSendSize = 8192;
-
     /// <summary>
     /// Execute a <c>COPY TO</c> statement against this connection. Initiates the copy operation
     /// followed by yielding each data row until the query execution is complete
@@ -49,7 +46,9 @@ public sealed partial class PgConnector
             switch (backendMessageType)
             {
                 case PgBackendMessageType.CopyData:
-                    await stream.WriteAsync(_asyncConnector.ReadBufferMemory[..size], cancellationToken)
+                    await stream.WriteAsync(
+                            _asyncConnector.Reader.Memory[..size],
+                            cancellationToken)
                         .ConfigureAwait(false);
                     AdvanceReadBuffer(size);
                     break;
@@ -79,7 +78,7 @@ public sealed partial class PgConnector
     /// <param name="cancellationToken">Token to cancel async operation</param>
     /// <returns>Stream of data rows as raw bytes</returns>
     internal async IAsyncEnumerable<TRow> CopyOut<TRow>(
-        TableToBinary copyOutStatement,
+        CopyTableToBinary copyOutStatement,
         PgStatementMetadata statementMetadata,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
         where TRow : IFromRow<IPgDataRow, TRow>
@@ -87,6 +86,7 @@ public sealed partial class PgConnector
         ThrowIfNotOpen();
 
         using UserAction _ = StartUserAction();
+        using SimplePgDataRow dataRow = new();
 
         await InitializeCopyOut(copyOutStatement, cancellationToken).ConfigureAwait(false);
 
@@ -101,32 +101,32 @@ public sealed partial class PgConnector
             switch (backendMessageType)
             {
                 case PgBackendMessageType.CopyData:
-                    TRow currentRow;
+                    // ReSharper disable once BadControlBracesIndent
+                {
+                    var rowData = _asyncConnector.Reader.Memory[..size];
+                    // The first row will always be prefixed by 19 bytes of header data. We can
+                    // just skip that
+                    if (isFirstRow)
                     {
-                        var rowData = _asyncConnector.ReadBufferMemory[..size];
-                        // The first row will always be prefixed by 19 bytes of header data. We can just
-                        // skip that
-                        if (isFirstRow)
-                        {
-                            isFirstRow = false;
-                            rowData = rowData[19..];
-                        }
-
-                        // The final row will just be a -1 short value to indicate no more rows are
-                        // present so we skip that row. To ensure we complete the async enumeration
-                        // we continue here but the enumerable should not yield any more rows
-                        var span = rowData.Span;
-                        if (span.ReadShort() == -1)
-                        {
-                            AdvanceReadBuffer(size);
-                            continue;
-                        }
-                        
-                        using var dataRow = new PgDataRow(rowData, statementMetadata);
-                        currentRow = TRow.FromRow(dataRow);
+                        isFirstRow = false;
+                        rowData = rowData[19..];
                     }
+
+                    // The final row will just be a -1 short value to indicate no more rows are
+                    // present so we skip that row. To ensure we complete the async enumeration
+                    // we continue here but the enumerable should not yield any more rows
+                    var span = rowData.Span;
+                    if (span.ReadShort() == -1)
+                    {
+                        AdvanceReadBuffer(size);
+                        continue;
+                    }
+
+                    dataRow.SetRowData(rowData, statementMetadata);
+                    yield return TRow.FromRow(dataRow);
+                }
+
                     AdvanceReadBuffer(size);
-                    yield return currentRow;
                     break;
                 case PgBackendMessageType.CopyDone:
                 case PgBackendMessageType.CommandComplete:
@@ -152,18 +152,19 @@ public sealed partial class PgConnector
         await WaitUntilReady(cancellationToken).ConfigureAwait(false);
         await SendQueryMessage(copyOutStatement.ToCopyQuery(), cancellationToken)
             .ConfigureAwait(false);
-        CopyOutResponseMessage message = await WaitForOrThrowError<CopyOutResponseMessage>(cancellationToken)
-            .ConfigureAwait(false);
+        CopyOutResponseMessage message =
+            await WaitForOrThrowError<CopyOutResponseMessage>(cancellationToken)
+                .ConfigureAwait(false);
         _pendingReadyForQuery++;
         _logger.LogCopyOutResponse(message);
-        
+
         Status = ConnectionStatus.Fetching;
     }
 
     /// <summary>
     /// Executes a <c>COPY FROM</c> statement against this connection. Initiates the copy operation
-    /// followed by forwarding all data received from the <see cref="PipeReader"/> to the database
-    /// as COPY data messages. 
+    /// followed by forwarding all data received from the <see cref="Stream"/> to the database as
+    /// COPY data messages. 
     /// </summary>
     /// <param name="copyInStatement">Copy from statement</param>
     /// <param name="data">Data pipe containing all user supplied data</param>
@@ -182,6 +183,7 @@ public sealed partial class PgConnector
         try
         {
             await SendCopyDataAsync(data, cancellationToken).ConfigureAwait(false);
+            await SendCopyDoneMessage(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -206,23 +208,28 @@ public sealed partial class PgConnector
     /// </exception>
     private async Task SendCopyDataAsync(Stream data, CancellationToken cancellationToken)
     {
-        var buffer = ArrayPool<byte>.Shared.Rent(1024 * 4);
+        var maxBufferedDataSize = ConnectOptions.WriteBufferSize;
+        var bufferSize = maxBufferedDataSize - MessageHeaderSize;
+
+        var buffer = ArrayPool<byte>.Shared.Rent(bufferSize);
         try
         {
-            var bytesWritten = 0;
+            var bytesBuffered = 0;
             int length;
-            while ((length = await data.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false)) > 0)
+            while ((length = await data.ReadAsync(buffer.AsMemory(0, bufferSize), cancellationToken)
+                       .ConfigureAwait(false)) > 0)
             {
-                if (bytesWritten > MaxCopyDataSendSize)
+                if (bytesBuffered + MessageHeaderSize + length > maxBufferedDataSize)
                 {
                     await FlushStream(cancellationToken).ConfigureAwait(false);
+                    bytesBuffered = 0;
                 }
 
                 WriteCopyDataMessage(buffer.AsSpan(0, length));
-                bytesWritten += length;
+                bytesBuffered += MessageHeaderSize + length;
             }
+
             await FlushStream(cancellationToken).ConfigureAwait(false);
-            await SendCopyDoneMessage(cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -272,17 +279,16 @@ public sealed partial class PgConnector
         await WaitUntilReady(cancellationToken).ConfigureAwait(false);
         await SendQueryMessage(copyInStatement.ToCopyQuery(), cancellationToken)
             .ConfigureAwait(false);
-        CopyInResponseMessage message = await WaitForOrThrowError<CopyInResponseMessage>(cancellationToken)
-            .ConfigureAwait(false);
+        CopyInResponseMessage message =
+            await WaitForOrThrowError<CopyInResponseMessage>(cancellationToken)
+                .ConfigureAwait(false);
         _pendingReadyForQuery++;
         _logger.LogCopyInResponse(message);
     }
 
-    private const int MaxCopyBufferSize = 8192;
-
     private static readonly byte[] BinaryCopyHeader =
     [
-        (byte)'P',(byte)'G',(byte)'C',(byte)'O',(byte)'P',(byte)'Y',
+        (byte)'P', (byte)'G', (byte)'C', (byte)'O', (byte)'P', (byte)'Y',
         (byte)'\n', 0xFF, (byte)'\r', (byte)'\n', 0x00,
         0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00,
@@ -305,31 +311,32 @@ public sealed partial class PgConnector
         CancellationToken cancellationToken)
         where TCopyRow : IPgBinaryCopyRow
     {
-        using PooledArrayBufferWriter buffer = new();
-        using PgParameterWriter parameterWriter = new(buffer);
+        var maxBufferedDataSize = ConnectOptions.WriteBufferSize;
+        using ArrayBufferWriter rowDataBuffer = new();
+        using PgParameterWriter parameterWriter = new(rowDataBuffer);
         WriteCopyDataMessage(BinaryCopyHeader);
         await FlushStream(cancellationToken).ConfigureAwait(false);
+
+        var bytesBuffered = 0;
         await foreach (TCopyRow row in rows.ConfigureAwait(false)
                            .WithCancellation(cancellationToken))
         {
-            buffer.WriteShort(TCopyRow.ColumnCount);
+            rowDataBuffer.WriteShort(TCopyRow.ColumnCount);
             row.BindMany(parameterWriter);
 
-            if (buffer.WrittenCount < MaxCopyBufferSize)
+            var bytesWritten = rowDataBuffer.WrittenCount;
+            if (bytesBuffered + MessageHeaderSize + bytesWritten > maxBufferedDataSize)
             {
-                continue;
+                await FlushStream(cancellationToken).ConfigureAwait(false);
+                bytesBuffered = 0;
             }
 
-            WriteCopyDataMessage(buffer.ReadableSpan);
-            await FlushStream(cancellationToken).ConfigureAwait(false);
+            WriteCopyDataMessage(rowDataBuffer.ReadableSpan);
+            bytesBuffered += MessageHeaderSize + bytesWritten;
             parameterWriter.Reset();
         }
 
-        if (buffer.WrittenCount > 0)
-        {
-            WriteCopyDataMessage(buffer.ReadableSpan);
-        }
-
+        await FlushStream(cancellationToken).ConfigureAwait(false);
         WriteCopyDataMessage(BinaryCopyFooter);
         await FlushStream(cancellationToken).ConfigureAwait(false);
         await SendCopyDoneMessage(cancellationToken).ConfigureAwait(false);
@@ -368,8 +375,9 @@ public sealed partial class PgConnector
         var result = new QueryResult(0L, "Default copy in complete message");
         while (true)
         {
-            PgBackendMessageType backendMessageType = await ReceiveNextMessageType(cancellationToken)
-                .ConfigureAwait(false);
+            PgBackendMessageType backendMessageType =
+                await ReceiveNextMessageType(cancellationToken)
+                    .ConfigureAwait(false);
             var size = await ReceiveNextMessageSize(cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
             switch (backendMessageType)

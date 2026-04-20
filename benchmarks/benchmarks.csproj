@@ -1,4 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="../sqlx-cs-pg/build/Sqlx.Postgres.props" />
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -14,7 +16,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\sqlx-cs-core\sqlx-cs-core.csproj"/>
         <ProjectReference Include="..\sqlx-cs-pg\sqlx-cs-pg.csproj"/>
         <ProjectReference Include="..\sqlx-cs-pg-generator\sqlx-cs-pg-generator.csproj"
                           OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>

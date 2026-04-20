@@ -14,7 +14,7 @@ public class PgMacAddress8Test
     public async Task Encode_Should_WriteMacAddr8(byte[] address)
     {
         PgMacAddress8 value = PgMacAddress8.FromBytes(address);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgMacAddress8.Encode(value, buffer);
 
@@ -31,7 +31,7 @@ public class PgMacAddress8Test
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgMacAddress8 actualValue = PgMacAddress8.DecodeBytes(ref binaryValue);
+        PgMacAddress8 actualValue = PgMacAddress8.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

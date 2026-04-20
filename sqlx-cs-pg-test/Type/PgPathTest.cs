@@ -12,7 +12,7 @@ public class PgPathTest
     [MethodDataSource(nameof(EncodeCases))]
     public async Task Encode_Should_WritePath(PgPath value, byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgPath.Encode(value, buffer);
 
@@ -36,7 +36,7 @@ public class PgPathTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgPath actualValue = PgPath.DecodeBytes(ref binaryValue);
+        PgPath actualValue = PgPath.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

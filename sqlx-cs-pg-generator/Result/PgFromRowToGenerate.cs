@@ -15,6 +15,8 @@ internal readonly struct PgFromRowToGenerate
 
     public bool IsStruct => _typeSymbol.IsValueType;
 
+    public Accessibility DeclaredAccessibility => _typeSymbol.DeclaredAccessibility;
+
     public ImmutableArray<RowField> ConstructorParameters { get; } =
         ImmutableArray<RowField>.Empty;
 
@@ -49,8 +51,7 @@ internal readonly struct PgFromRowToGenerate
             InitProperties = namedTypeSymbol.GetMembers()
                 .OfType<IPropertySymbol>()
                 .Where(property => property.IsRequired || !property.IsReadOnly)
-                .Where(property => !property.GetAttributes().Any(attr =>
-                    attr.AttributeClass?.Name == "PgPropertySkipAttribute"))
+                .Where(property => property.IsNotSkip)
                 .Select(property => RowField.FromProperty(property, renameAll))
                 .ToImmutableArray();
         }
@@ -63,23 +64,22 @@ internal readonly struct PgFromRowToGenerate
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     SourceGenerationHelper.DefinitionIsNotPartial,
-                    Location.None,
+                    _typeDeclarationSyntax.GetLocation(),
                     ShortName));
             return false;
         }
 
         var invalidParameterTypes = ConstructorParameters
             .Where(param => param is not { Flatten: true } and not { IsJson: true })
-            .Where(param => !param.FieldType.IsValidDbType())
+            .Where(param => !param.FieldType.HasIPgDbType())
             .ToImmutableArray();
         if (!invalidParameterTypes.IsEmpty)
         {
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     SourceGenerationHelper.UnknownDbType,
-                    Location.None,
-                    "parameter",
-                    string.Join(",", invalidParameterTypes.Select(field => field.Name))));
+                    _typeDeclarationSyntax.GetLocation(),
+                    $"FromRow type declaration parameters that failed: {string.Join(",", invalidParameterTypes.Select(field => field.Name))}"));
             return false;
         }
 
@@ -91,7 +91,7 @@ internal readonly struct PgFromRowToGenerate
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     SourceGenerationHelper.ExcessiveFieldAttributes,
-                    Location.None,
+                    _typeDeclarationSyntax.GetLocation(),
                     "parameter",
                     string.Join(",", invalidParameters.Select(field => field.Name))));
             return false;
@@ -99,16 +99,15 @@ internal readonly struct PgFromRowToGenerate
 
         var invalidPropertyTypes = InitProperties
             .Where(param => param is not { Flatten: true } and not { IsJson: true })
-            .Where(property => !property.FieldType.IsValidDbType())
+            .Where(property => !property.FieldType.HasIPgDbType())
             .ToImmutableArray();
         if (!invalidPropertyTypes.IsEmpty)
         {
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     SourceGenerationHelper.UnknownDbType,
-                    Location.None,
-                    "property",
-                    string.Join(",", invalidPropertyTypes.Select(field => field.Name))));
+                    _typeDeclarationSyntax.GetLocation(),
+                    $"FromRow type declaration properties that failed: {string.Join(",", invalidPropertyTypes.Select(field => field.Name))}"));
             return false;
         }
 
@@ -120,7 +119,7 @@ internal readonly struct PgFromRowToGenerate
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     SourceGenerationHelper.ExcessiveFieldAttributes,
-                    Location.None,
+                    _typeDeclarationSyntax.GetLocation(),
                     "property",
                     string.Join(",", invalidProperties.Select(field => field.Name))));
             return false;

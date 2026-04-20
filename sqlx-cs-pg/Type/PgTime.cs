@@ -9,8 +9,10 @@ namespace Sqlx.Postgres.Type;
 /// <summary>
 /// <see cref="IPgDbType{T}"/> for <see cref="TimeOnly"/> values. Maps to the <c>TIME</c> type.
 /// </summary>
-internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
+public abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
 {
+    public const int Size = sizeof(long);
+
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
     /// <para>
@@ -20,7 +22,7 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
     /// </summary>
     public static void Encode(TimeOnly value, IBufferWriter<byte> buffer)
     {
-        
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteLong(value.Ticks / TimeSpan.TicksPerMicrosecond);
     }
 
@@ -33,9 +35,10 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L1547">pg source code</a>
     /// </summary>
-    public static TimeOnly DecodeBytes(ref PgBinaryValue value)
+    public static TimeOnly DecodeBytes(in PgBinaryValue value)
     {
-        var microSeconds = value.Buffer.ReadLong();
+        var buff = value.Buffer;
+        var microSeconds = buff.ReadLong();
         return new TimeOnly(microSeconds * TimeSpan.TicksPerMicrosecond);
     }
 
@@ -57,10 +60,10 @@ internal abstract class PgTime : IPgDbType<TimeOnly>, IHasArrayType
                 value.ColumnMetadata,
                 $"Could not parse '{value.Chars}' into a time value");
         }
-        
+
         return time;
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Time;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.TimeArray;

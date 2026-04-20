@@ -42,10 +42,12 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/date.c#L2371">pg source code</a>
     /// </summary>
-    public static PgTimeTz DecodeBytes(ref PgBinaryValue value)
+    public static PgTimeTz DecodeBytes(in PgBinaryValue value)
     {
-        TimeOnly time = PgTime.DecodeBytes(ref value);
-        var offsetSeconds = value.Buffer.ReadInt();
+        var buff = value.Buffer;
+        var timeValue = new PgBinaryValue(buff.ReadBytesAsSpan(PgTime.Size), value.ColumnMetadata);
+        TimeOnly time = PgTime.DecodeBytes(timeValue);
+        var offsetSeconds = buff.ReadInt();
         return new PgTimeTz(time, offsetSeconds);
     }
 
@@ -84,7 +86,7 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
             offsetStart = value.Chars.Length;
             return 0;
         }
-        
+
         var offsetChar = value.Chars[offsetStart];
         if (offsetChar is 'Z')
         {
@@ -106,6 +108,7 @@ public readonly record struct PgTimeTz(TimeOnly Time, int OffsetSeconds)
                     value.ColumnMetadata,
                     $"Could not parse offset from '{value.Chars}'");
             }
+
             offset += result * (int)Math.Pow(60.0, digitMultiplier--);
         }
 

@@ -15,7 +15,7 @@ public class PgCharTest
     [Arguments(sbyte.MaxValue, new byte[] { 127 })]
     public async Task Encode_Should_WriteByte(sbyte value, byte[] expectedBytes)
     {
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgChar.Encode(value, buffer);
 
@@ -36,7 +36,7 @@ public class PgCharTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        var actualValue = PgChar.DecodeBytes(ref binaryValue);
+        var actualValue = PgChar.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

@@ -14,10 +14,11 @@ namespace Sqlx.Postgres.Type;
 public readonly struct PgPoint(double x, double y)
     : IPgDbType<PgPoint>, IGeometryType, IHasArrayType, IEquatable<PgPoint>
 {
+    internal const int Size = sizeof(double) + sizeof(double);
     private readonly Lazy<string> _geometryLiteral = new(() => $"({x},{y})");
 
     public double X { get; } = x;
-    
+
     public double Y { get; } = y;
 
     public string GeometryLiteral => _geometryLiteral.Value;
@@ -60,9 +61,10 @@ public readonly struct PgPoint(double x, double y)
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/1fe66680c09b6cc1ed20236c84f0913a7b786bbc/src/backend/utils/adt/geo_ops.c#L1868">pg source code</a>
     /// </summary>
-    public static PgPoint DecodeBytes(ref PgBinaryValue value)
+    public static PgPoint DecodeBytes(in PgBinaryValue value)
     {
-        return new PgPoint(value.Buffer.ReadDouble(), value.Buffer.ReadDouble());
+        var buff = value.Buffer;
+        return new PgPoint(buff.ReadDouble(), buff.ReadDouble());
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -71,7 +73,7 @@ public readonly struct PgPoint(double x, double y)
     {
         return GeometryUtils.DecodePoint<PgPoint>(value);
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Point;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.PointArray;
@@ -95,7 +97,7 @@ public readonly struct PgPoint(double x, double y)
     {
         return HashCode.Combine(X, Y);
     }
-    
+
     public static bool operator ==(PgPoint left, PgPoint right)
     {
         return left.Equals(right);

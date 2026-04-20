@@ -33,7 +33,7 @@ public class PgTimeTzTest
         var value = new PgTimeTz(
             new TimeOnly(hour, minute, second, millisecond, microsecond),
             offset);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgTimeTz.Encode(value, buffer);
 
@@ -69,7 +69,7 @@ public class PgTimeTzTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgTimeTz actualValue = PgTimeTz.DecodeBytes(ref binaryValue);
+        PgTimeTz actualValue = PgTimeTz.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

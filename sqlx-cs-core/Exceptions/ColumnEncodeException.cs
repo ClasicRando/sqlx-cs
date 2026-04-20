@@ -2,16 +2,24 @@ using System.Runtime.CompilerServices;
 
 namespace Sqlx.Core.Exceptions;
 
-public class ColumnEncodeException(
-    uint dataTypeId,
-    Type encodeType,
-    string reason = "",
-    Exception? cause = null) : SqlxException(
-    $"Could not encode value into desired type. Actual type ID: {dataTypeId}. " +
-    $"Input: {encodeType}" +
-    $"{(string.IsNullOrWhiteSpace(reason) ? string.Empty : $"\n{reason}")}",
-    cause)
+/// <summary>
+/// Special <see cref="SqlxException"/> for when column encoding fails. Requires
+/// data type information with optional reason/cause.
+/// </summary>
+public class ColumnEncodeException : SqlxException
 {
+    private ColumnEncodeException(
+        uint dataTypeId,
+        Type encodeType,
+        string reason = "",
+        Exception? cause = null) : base(
+        $"Could not encode value into desired type. Actual type ID: {dataTypeId}. " +
+        $"Input: {encodeType}" +
+        $"{(string.IsNullOrWhiteSpace(reason) ? string.Empty : $"\n{reason}")}",
+        cause)
+    {
+    }
+    
     /// <summary>
     /// Create a new <see cref="ColumnEncodeException"/> using the supplied data
     /// </summary>

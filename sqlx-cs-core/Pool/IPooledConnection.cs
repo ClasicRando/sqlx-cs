@@ -29,10 +29,12 @@ public interface IPooledConnection : IDisposable
 
     /// <summary>
     /// Check if the connection is truly valid. Sometimes <see cref="Status"/> might be stale so
-    /// this actual will perform a minimal operation with the database to confirm the underlining
+    /// this method will perform a minimal operation with the database to confirm the underlining
     /// connection is still usable.
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the async operations</param>
     /// <returns>True if the connection is still valid</returns>
     Task<bool> IsValidAsync(CancellationToken cancellationToken);
+
+    void Cleanup();
 }

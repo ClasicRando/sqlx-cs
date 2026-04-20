@@ -89,7 +89,7 @@ public readonly record struct PgMacAddress(
     /// <exception cref="ColumnDecodeException">
     /// If the number of available bytes is not 6
     /// </exception>
-    public static PgMacAddress DecodeBytes(ref PgBinaryValue value)
+    public static PgMacAddress DecodeBytes(in PgBinaryValue value)
     {
         var byteCount = value.Buffer.Length;
         if (byteCount != 6)

@@ -24,9 +24,9 @@ public abstract class PgDateTimeOffset : IPgDbType<DateTimeOffset>, IHasRangeTyp
     /// creates a new <see cref="DateTimeOffset"/> using an offset of <see cref="TimeSpan.Zero"/>.
     /// This is because the client's Timezone parameter is assumed to be UTC.
     /// </summary>
-    public static DateTimeOffset DecodeBytes(ref PgBinaryValue value)
+    public static DateTimeOffset DecodeBytes(in PgBinaryValue value)
     {
-        return new DateTimeOffset(PgDateTime.DecodeBytes(ref value), TimeSpan.Zero);
+        return new DateTimeOffset(PgDateTime.DecodeBytes(value), TimeSpan.Zero);
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -40,7 +40,7 @@ public abstract class PgDateTimeOffset : IPgDbType<DateTimeOffset>, IHasRangeTyp
     {
         return new DateTimeOffset(PgDateTime.DecodeText(value), TimeSpan.Zero);
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Timestamptz;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.TimestamptzArray;

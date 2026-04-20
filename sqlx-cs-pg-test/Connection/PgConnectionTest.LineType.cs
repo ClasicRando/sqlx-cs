@@ -9,8 +9,8 @@ public partial class PgConnectionTest
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_LineAndDefaultEncoding(CancellationToken ct)
     {
         var value = new PgLine(5.63, 8.59, 4);
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 line_col;");
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 line_col;");
         query.Bind(value);
         var result = await query.ExecuteScalar<PgLine>(ct);
         await Assert.That(result).IsEqualTo(value);
@@ -21,9 +21,9 @@ public partial class PgConnectionTest
     {
         const string sql = "SELECT '{5.63,8.59,4}'::line;";
         var value = new PgLine(5.63, 8.59, 4);
-        using IPgConnection
+        await using IPgConnection
             connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery(sql);
+        await using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalar<PgLine>(ct);
         await Assert.That(result).IsEqualTo(value);
     }

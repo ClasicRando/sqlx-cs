@@ -4,7 +4,6 @@ using Npgsql;
 using NpgsqlTypes;
 using Sqlx.Core.Pool;
 using Sqlx.Core.Result;
-using Sqlx.Postgres;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Pool;
 using Sqlx.Postgres.Query;

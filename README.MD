@@ -96,6 +96,7 @@ The interface can be implemented manually or source generated. The source genera
 implemented for each database and might provide different options. Example of a database
 implementation:
 ```c#
+// Each database driver will have it's own source generator due to custom types
 [Sqlx.Postgres.Generated.FromRow]
 partial struct Row
 {
@@ -176,11 +177,3 @@ than it could be a future addition.
 #### Why does everything involve extension methods?
 As mentioned [here](#implement-general-use-cases-as-extension-methods), extension methods are the
 best way to add behaviour and compose multiple concepts/types into a single general use case.
-
-There are also cases where extension methods may seem a little overkill such as row field
-deserialization. Honestly, I agree that it's a little convoluted, but it's the only way to add the
-ability to deserialize certain types without making a general `IDataRow.Get<T>`. These types of
-generic methods without bounds are rife for developers to add values that can never be deserialized,
-and you won't know until you run your application. With that in mind, we hope to remove those
-methods when this [feature](https://github.com/dotnet/csharplang/issues/9319) is finally implemented
-in C#.

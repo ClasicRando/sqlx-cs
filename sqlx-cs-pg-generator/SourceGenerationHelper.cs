@@ -30,8 +30,8 @@ internal static class SourceGenerationHelper
         new(
             "SQLxPG005",
             "Unknown DB type reference",
-            "Type definition {0} must reference a type that can " +
-            "be encoded to or decoded from the database. Fields: [{1}]",
+            "Type reference must be a type that can be encoded to or decoded " +
+            "from the database. {0}.",
             "sqlx-cs-pg Generation",
             DiagnosticSeverity.Error,
             true);
@@ -41,7 +41,25 @@ internal static class SourceGenerationHelper
             "SQLxPG006",
             "Excessive field attributes",
             "Type definition {0} has multiple row field attributes. Must either " +
-            "be Flatten or Json but not both. Field(s): [{1}]",
+            "be Flatten or Json but not both. Field(s): [{1}].",
+            "sqlx-cs-pg Generation",
+            DiagnosticSeverity.Error,
+            true);
+
+    public static readonly DiagnosticDescriptor DefinitionShouldBeValueType =
+        new(
+            "SQLxPG002",
+            "Annotated type declaration should be a struct",
+            "Currently, '{0}' is a reference type but it's recommended to be a value type",
+            "sqlx-cs-pg Generation",
+            DiagnosticSeverity.Warning,
+            true);
+
+    public static readonly DiagnosticDescriptor InvalidTypeDefinition =
+        new(
+            "SQLxPG003",
+            "Annotated type declaration is not valid",
+            "'{0}' is invalid for the purposes of the attached source generation attribute '{1}'. {2}.",
             "sqlx-cs-pg Generation",
             DiagnosticSeverity.Error,
             true);
@@ -72,6 +90,7 @@ internal static class SourceGenerationHelper
     {
         public StringBuilder AppendFullName<T>(T fullNameType) where T : IFullNameType
         {
+            builder.Append("global::");
             if (!string.IsNullOrEmpty(fullNameType.ContainingNamespace))
             {
                 builder.Append(fullNameType.ContainingNamespace);
@@ -84,6 +103,12 @@ internal static class SourceGenerationHelper
 
         public StringBuilder AppendFullName(ITypeSymbol typeSymbol)
         {
+            if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
+            {
+                return builder.AppendFullName(arrayTypeSymbol);
+            }
+
+            builder.Append("global::");
             var containingNamespace = typeSymbol.ContainingNamespace.GetFullNamespaceName();
             if (!string.IsNullOrEmpty(containingNamespace))
             {
@@ -92,7 +117,34 @@ internal static class SourceGenerationHelper
             }
 
             builder.Append(typeSymbol.Name);
-            return builder;
+
+            if (typeSymbol is { IsReferenceType: true, IsNullable: true })
+            {
+                builder.Append('?');
+            }
+
+            if (typeSymbol is not INamedTypeSymbol { TypeArguments.IsEmpty: false } namedTypeSymbol)
+            {
+                return builder;
+            }
+
+            builder.Append('<');
+            for (var i = 0; i < namedTypeSymbol.TypeArguments.Length; i++)
+            {
+                builder.AppendFullName(namedTypeSymbol.TypeArguments[i]);
+                if (i != namedTypeSymbol.TypeArguments.Length - 1)
+                {
+                    builder.Append(',');
+                }
+            }
+
+            return builder.Append('>');
+        }
+
+        private StringBuilder AppendFullName(IArrayTypeSymbol typeSymbol)
+        {
+            return builder.AppendFullName(typeSymbol.ElementType)
+                .Append("[]");
         }
     }
 
@@ -102,92 +154,201 @@ internal static class SourceGenerationHelper
             .Any(mod => mod.IsKind(SyntaxKind.PartialKeyword));
     }
 
-    extension(ITypeSymbol typeSymbol)
+    extension(ISymbol symbol)
     {
-        public bool IsNullable => typeSymbol.NullableAnnotation is NullableAnnotation.Annotated ||
-                                  typeSymbol.Name.StartsWith("Nullable");
+        private bool HasAttribute(params string[] name) => symbol.GetAttributes()
+            .Any(attr => name.Contains(attr.AttributeClass?.Name));
+    }
 
-        public ITypeSymbol AsNotNullType()
+    extension<T>(T typeSymbol) where T : ITypeSymbol
+    {
+        public T AsNotNullType()
         {
             if (typeSymbol.NullableAnnotation is NullableAnnotation.NotAnnotated)
             {
                 return typeSymbol;
             }
 
-            return typeSymbol.Name.StartsWith("Nullable")
+            ITypeSymbol newType = typeSymbol.Name.StartsWith("Nullable")
                 ? ((INamedTypeSymbol)typeSymbol).TypeArguments[0]
                 : typeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
+            return newType is T result
+                ? result
+                : throw new InvalidOperationException(
+                    $"Cannot get non-null variant of type because it's not a {typeof(T)}");
         }
+    }
 
-        private bool IsDbType =>
+    extension(ITypeSymbol typeSymbol)
+    {
+        public string FullName => new StringBuilder().AppendFullName(typeSymbol).ToString();
+
+        public bool IsNullable => typeSymbol.NullableAnnotation is NullableAnnotation.Annotated ||
+                                  typeSymbol.Name.StartsWith("Nullable");
+
+        public bool IsDbType =>
             typeSymbol.AllInterfaces.Any(i => i.Name.StartsWith("IPgDbType")) ||
-            typeSymbol.GetAttributes()
-                .Any(attr => attr.AttributeClass?.Name is "PgCompositeAttribute");
+            typeSymbol.HasAttribute("PgCompositeAttribute", "WrapperTypeAttribute");
 
-        public string? GetDecodeMethodSuffix()
+        public string? GetIPgDbType()
         {
-            var isNullable = typeSymbol.IsNullable;
-            ITypeSymbol finalType = typeSymbol.AsNotNullType();
-            var name = finalType.GetDecodeMethodSuffixInner();
-            if (name is "PgVal" or "PgRef")
+            const string typeNamespace = "global::Sqlx.Postgres.Type";
+            string name;
+            switch (typeSymbol.AsNotNullType())
             {
-                return isNullable ? name : "PgNotNull";
+                case INamedTypeSymbol { IsDbType: true } namedTypeSymbol:
+                    name = namedTypeSymbol.FullName;
+                    break;
+                case INamedTypeSymbol { IsPgEnum: true } namedTypeSymbol:
+                    name = $"global::Sqlx.Postgres.Generator.Type.Pg{namedTypeSymbol.Name}";
+                    break;
+                case IArrayTypeSymbol { ElementType.Name: nameof(Byte) }:
+                    name = $"{typeNamespace}.PgBytea";
+                    break;
+                case IArrayTypeSymbol arrayTypeSymbol:
+                    var elementType = (INamedTypeSymbol)arrayTypeSymbol.ElementType;
+                    var decoderName = elementType.IsValueType
+                        ? "PgArrayTypeStruct"
+                        : "PgArrayTypeClass";
+                    var dbType = elementType.GetIPgDbType();
+                    if (dbType is null)
+                    {
+                        return null;
+                    }
+
+                    name =
+                        $"{typeNamespace}.{decoderName}<{elementType.AsNotNullType().FullName}, {dbType}>";
+                    break;
+                case { Name: nameof(Boolean) }:
+                    name = $"{typeNamespace}.PgBool";
+                    break;
+                case { Name: nameof(SByte) }:
+                    name = $"{typeNamespace}.PgChar";
+                    break;
+                case { Name: nameof(Int16) }:
+                    name = $"{typeNamespace}.PgShort";
+                    break;
+                case { Name: nameof(Int32) }:
+                    name = $"{typeNamespace}.PgInt";
+                    break;
+                case { Name: nameof(Int64) }:
+                    name = $"{typeNamespace}.PgLong";
+                    break;
+                case { Name: nameof(Single) }:
+                    name = $"{typeNamespace}.PgFloat";
+                    break;
+                case { Name: nameof(Double) }:
+                    name = $"{typeNamespace}.PgDouble";
+                    break;
+                case { Name: "TimeOnly" }:
+                    name = $"{typeNamespace}.PgTime";
+                    break;
+                case { Name: "DateOnly" }:
+                    name = $"{typeNamespace}.PgDate";
+                    break;
+                case { Name: nameof(DateTime) }:
+                    name = $"{typeNamespace}.PgDateTime";
+                    break;
+                case { Name: "DateTimeOffset" }:
+                    name = $"{typeNamespace}.PgDateTimeOffset";
+                    break;
+                case { Name: nameof(Decimal) }:
+                    name = $"{typeNamespace}.PgDecimal";
+                    break;
+                case { Name: nameof(String) }:
+                    name = $"{typeNamespace}.PgString";
+                    break;
+                case { Name: nameof(Guid) }:
+                    name = $"{typeNamespace}.PgUuid";
+                    break;
+                case { Name: "IPNetwork" }:
+                    name = $"{typeNamespace}.PgIpNetwork";
+                    break;
+                case { Name: nameof(BitArray) }:
+                    name = $"{typeNamespace}.PgBitString";
+                    break;
+                case INamedTypeSymbol { IsRangeType: true } namedTypeSymbol:
+                    var innerType = (INamedTypeSymbol)namedTypeSymbol.TypeArguments[0];
+                    if (!innerType.IsValidRangeType)
+                    {
+                        return null;
+                    }
+
+                    name =
+                        $"{typeNamespace}.PgRangeType<{innerType.FullName}, {innerType.GetIPgDbType()}>";
+                    break;
+                default:
+                    return null;
             }
 
-            return isNullable ? name : name + "NotNull";
+            return name;
         }
 
-        private string? GetDecodeMethodSuffixInner()
+        public bool HasIPgDbType()
         {
-            return typeSymbol switch
-            {
-                { IsDbType: true } => typeSymbol.IsValueType ? "PgVal" : "PgRef",
-                INamedTypeSymbol { IsDecodableEnum: true } => typeSymbol.Name,
-                IArrayTypeSymbol { ElementType.Name: nameof(Byte) } => "Bytes",
-                IArrayTypeSymbol arrayTypeSymbol =>
-                    $"{arrayTypeSymbol.ElementType.AsNotNullType().GetDecodeMethodSuffixInner()}Array",
-                { Name: nameof(Boolean) } => "Boolean",
-                { Name: nameof(SByte) } => "Byte",
-                { Name: nameof(Int16) } => "Short",
-                { Name: nameof(Int32) } => "Int",
-                { Name: nameof(Int64) } => "Long",
-                { Name: nameof(Single) } => "Float",
-                { Name: nameof(Double) } => "Double",
-                { Name: "TimeOnly" } => "Time",
-                { Name: "DateOnly" } => "Date",
-                { Name: nameof(DateTime) } => "DateTime",
-                { Name: "DateTimeOffset" } => "DateTimeOffset",
-                { Name: nameof(Decimal) } => "Decimal",
-                { Name: nameof(String) } => "String",
-                { Name: nameof(Guid) } => "Guid",
-                { Name: "IPNetwork" } => "IpNetwork",
-                { Name: nameof(BitArray) } => "BitArray",
-                INamedTypeSymbol { Name: "PgRange" } namedTypeSymbol => namedTypeSymbol
-                        .TypeArguments[0] switch
-                    {
-                        { Name: nameof(Int64) } => "PgRangeLong",
-                        { Name: nameof(Int32) } => "PgRangeInt",
-                        { Name: "DateOnly" } => "PgRangeDate",
-                        { Name: nameof(DateTime) } => "PgRangeDateTime",
-                        { Name: "DateTimeOffset" } => "PgRangeDateTimeOffset",
-                        { Name: nameof(Decimal) } => "PgRangeDecimal",
-                        _ => null,
-                    },
-                _ => null,
-            };
-        }
-
-        public bool IsValidDbType()
-        {
-            return typeSymbol.AsNotNullType().GetDecodeMethodSuffixInner() is not null;
+            return typeSymbol.GetIPgDbType() is not null ||
+                   typeSymbol is INamedTypeSymbol { IsWrapperEnum: true };
         }
     }
 
     extension(INamedTypeSymbol namedTypeSymbol)
     {
-        private bool IsDecodableEnum => namedTypeSymbol.EnumUnderlyingType is not null &&
-                                        namedTypeSymbol.GetAttributes().Any(attr =>
-                                            attr.AttributeClass?.Name is "PgEnumAttribute"
-                                                or "WrapperEnumAttribute");
+        public bool IsWrapperEnum => namedTypeSymbol.EnumUnderlyingType is not null &&
+                                     namedTypeSymbol.HasAttribute("WrapperEnumAttribute");
+
+        public bool IsPgEnum => namedTypeSymbol.EnumUnderlyingType is not null &&
+                                namedTypeSymbol.HasAttribute("PgEnumAttribute");
+
+        public bool IsRangeType => namedTypeSymbol.Name == "PgRange";
+
+        private bool IsValidRangeType => namedTypeSymbol.Name is nameof(Int64) or nameof(Int32)
+            or "DateOnly" or nameof(DateTime) or "DateTimeOffset" or nameof(Decimal);
+    }
+
+    extension(IPropertySymbol propertySymbol)
+    {
+        public bool IsNotSkip => !(propertySymbol.IsIndexer ||
+                                   propertySymbol.IsImplicitlyDeclared ||
+                                   propertySymbol.HasAttribute("PgPropertySkipAttribute"));
+    }
+
+    extension(SyntaxNode syntaxNode)
+    {
+        public bool IsEnum => syntaxNode is EnumDeclarationSyntax;
+
+        public bool IsProductType => syntaxNode is ClassDeclarationSyntax or StructDeclarationSyntax
+            or RecordDeclarationSyntax;
+    }
+
+    extension(Accessibility accessibility)
+    {
+        public string GetModifierToken()
+        {
+            return accessibility switch
+            {
+                Accessibility.Private => "private",
+                Accessibility.ProtectedAndInternal or Accessibility.Protected => "protected",
+                Accessibility.Internal or Accessibility.ProtectedOrInternal => "internal",
+                Accessibility.Public => "public",
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(accessibility),
+                    accessibility,
+                    null),
+            };
+        }
+    }
+
+    public static string GetSourceInterceptorFileName(
+        string interceptorTargetType,
+        ITypeSymbol nonNullType,
+        bool isNullableType)
+    {
+        var typeName = nonNullType switch
+        {
+            IArrayTypeSymbol at => at.ElementType.AsNotNullType().Name +
+                                   (at.ElementType.IsNullable ? "Nullable" : "") + "Array",
+            _ => nonNullType.Name,
+        };
+        return $"{interceptorTargetType}_{typeName}_{(isNullableType ? "Nullable" : "NotNull")}_Interception.g.cs";
     }
 }

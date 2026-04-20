@@ -1,0 +1,5 @@
+<Project>
+    <PropertyGroup>
+        <InterceptorsNamespaces>$(InterceptorsNamespaces);Sqlx.Postgres.Interceptors</InterceptorsNamespaces>
+    </PropertyGroup>
+</Project>

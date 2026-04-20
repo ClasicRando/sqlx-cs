@@ -23,7 +23,7 @@ public class PgInetTest
         byte[] expectedBytes)
     {
         var value = new PgInet(new IPAddress(address), prefixLength);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgInet.Encode(value, buffer);
 
@@ -48,7 +48,7 @@ public class PgInetTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        PgInet actualValue = PgInet.DecodeBytes(ref binaryValue);
+        PgInet actualValue = PgInet.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }

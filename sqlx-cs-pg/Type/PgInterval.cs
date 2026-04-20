@@ -29,9 +29,10 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
     {
         return Months > 0
             ? throw new ArgumentException("TimeSpan does not support a month value", nameof(Months))
-            : new TimeSpan(Microseconds * TimeSpan.TicksPerMicrosecond + Days * TimeSpan.TicksPerDay);
+            : new TimeSpan(
+                Microseconds * TimeSpan.TicksPerMicrosecond + Days * TimeSpan.TicksPerDay);
     }
-    
+
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
     /// <para>
@@ -64,11 +65,12 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/timestamp.c#L1032">pg source code</a>
     /// </summary>
-    public static PgInterval DecodeBytes(ref PgBinaryValue value)
+    public static PgInterval DecodeBytes(in PgBinaryValue value)
     {
-        var microSeconds = value.Buffer.ReadLong();
-        var days = value.Buffer.ReadInt();
-        var months = value.Buffer.ReadInt();
+        var buff = value.Buffer;
+        var microSeconds = buff.ReadLong();
+        var days = buff.ReadInt();
+        var months = buff.ReadInt();
         return new PgInterval(months, days, microSeconds);
     }
 
@@ -122,6 +124,7 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
                     {
                         month = currentNumber * scale;
                     }
+
                     currentNumber = 0;
                     scale = 1;
                     break;
@@ -201,6 +204,7 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
                     {
                         millisecond = currentNumber * scale;
                     }
+
                     break;
                 case '0':
                 case '1':
@@ -218,6 +222,7 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
                         millisecond = currentNumber * scale;
                         currentNumber = 0;
                     }
+
                     break;
             }
         }
@@ -226,10 +231,10 @@ public readonly record struct PgInterval(int Months, int Days, long Microseconds
             year * 12 + month,
             week * 7 + day,
             hour * MicrosecondsPerHour +
-                minute * MicrosecondsPerMinute +
-                second * MicrosecondsPerSecond +
-                millisecond * MicrosecondsPerMillisecond +
-                microsecond);
+            minute * MicrosecondsPerMinute +
+            second * MicrosecondsPerSecond +
+            millisecond * MicrosecondsPerMillisecond +
+            microsecond);
     }
 
     public static PgTypeInfo DbType => PgTypeInfo.Interval;

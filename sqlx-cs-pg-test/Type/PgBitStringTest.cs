@@ -18,7 +18,7 @@ public class PgBitStringTest
     public async Task Encode_Should_WriteVarBit(bool[] bits, byte[] expectedBytes)
     {
         var value = new BitArray(bits);
-        using var buffer = new PooledArrayBufferWriter();
+        using var buffer = new ArrayBufferWriter();
 
         PgBitString.Encode(value, buffer);
 
@@ -40,7 +40,7 @@ public class PgBitStringTest
         var columnMetadata = new PgColumnMetadata();
         var binaryValue = new PgBinaryValue(binaryData, in columnMetadata);
 
-        BitArray actualValue = PgBitString.DecodeBytes(ref binaryValue);
+        BitArray actualValue = PgBitString.DecodeBytes(binaryValue);
 
         await Assert.That(actualValue).IsEquivalentTo(expectedValue);
     }

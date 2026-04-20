@@ -13,7 +13,7 @@ namespace Sqlx.Postgres.Type;
 /// </para>
 /// <a href="https://www.postgresql.org/docs/current/datatype-binary.html">docs</a>
 /// </summary>
-internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
+public abstract class PgBytea : IPgDbType<byte[]>, IHasArrayType
 {
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -34,9 +34,9 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/varlena.c#L490">pg source code</a>
     /// </summary>
-    public static byte[] DecodeBytes(ref PgBinaryValue value)
+    public static byte[] DecodeBytes(in PgBinaryValue value)
     {
-        return value.Buffer.ReadBytes();
+        return value.Buffer.ToArray();
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -54,7 +54,7 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
             ? DecodeWithPrefix(value.Chars, value.ColumnMetadata)
             : DecodeWithoutPrefix(value.Chars);
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Bytea;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.ByteaArray;
@@ -77,13 +77,15 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
     /// <param name="value">Span of hex encoded characters</param>
     /// <param name="metadata">Column metadata</param>
     /// <returns>A byte array that corresponds to the hex string</returns>
-    private static byte[] DecodeWithPrefix(ReadOnlySpan<char> value, PgColumnMetadata metadata)
+    private static byte[] DecodeWithPrefix(ReadOnlySpan<char> value, in PgColumnMetadata metadata)
     {
         var hexCharCount = value.Length - HexStart.Length;
-        ColumnDecodeException.CheckOrThrow<byte[], PgColumnMetadata>(
-            (hexCharCount & 0x01) == 0,
-            metadata,
-            "Hex encoded byte array must have an even number of elements");
+        if ((hexCharCount & 0x01) != 0)
+        {
+            throw ColumnDecodeException.Create<byte[], PgColumnMetadata>(
+                metadata,
+                "Hex encoded byte array must have an even number of elements");
+        }
 
         var size = hexCharCount >> 1;
         var index = HexStart.Length;
@@ -94,6 +96,7 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
             var other = HexUtils.CharToDigit<byte[]>(value[index++], metadata);
             result[i] = (byte)(currentByte | other);
         }
+
         return result;
     }
 
@@ -114,7 +117,7 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
     private static byte[] DecodeWithoutPrefix(ReadOnlySpan<char> value)
     {
         var maxIndex = value.Length - 1;
-        using var buffer = new PooledArrayBufferWriter(maxIndex);
+        using var buffer = new ArrayBufferWriter(maxIndex);
         var index = 0;
 
         while (index <= maxIndex)
@@ -138,6 +141,7 @@ internal abstract class PgBytea: IPgDbType<byte[]>, IHasArrayType
             var result = thirdDigit + secondDigit * 8 + nextChar * 8 * 8;
             buffer.WriteByte((byte)result);
         }
+
         return buffer.ReadableSpan.ToArray();
     }
 }

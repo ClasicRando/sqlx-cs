@@ -4,6 +4,12 @@
 
 namespace Sqlx.Postgres.Generator.Query;
 
+/// <summary>
+/// Source generation attribute applied to class/struct types that represent a prepared
+/// statements parameters. Applying this attribute generates a
+/// <see cref="Sqlx.Core.Query.IBindMany{T}"/> implementation where every readable property
+/// is bound to the query in the order they are declared in the type definition.
+/// </summary>
 [global::System.AttributeUsage(validOn: global::System.AttributeTargets.Struct | global::System.AttributeTargets.Class)]
 public sealed class ToParamAttribute : global::System.Attribute
 {

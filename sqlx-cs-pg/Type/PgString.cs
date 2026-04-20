@@ -8,7 +8,7 @@ namespace Sqlx.Postgres.Type;
 /// <see cref="IPgDbType{T}"/> for <see cref="string"/> values. Maps to the
 /// <c>TEXT</c>/<c>VARCHAR</c>/<c>NAME</c>/<c>XML</c>/<c>BPCHAR</c> types.
 /// </summary>
-internal abstract class PgString : IPgDbType<string>, IHasArrayType
+public abstract class PgString : IPgDbType<string>, IHasArrayType
 {
     /// <inheritdoc cref="IPgDbType{T}.Encode"/>
     /// <summary>
@@ -16,6 +16,7 @@ internal abstract class PgString : IPgDbType<string>, IHasArrayType
     /// </summary>
     public static void Encode(string value, IBufferWriter<byte> buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteString(value);
     }
 
@@ -23,9 +24,10 @@ internal abstract class PgString : IPgDbType<string>, IHasArrayType
     /// <summary>
     /// Read the entire byte buffer as UTF8 encoded characters
     /// </summary>
-    public static string DecodeBytes(ref PgBinaryValue value)
+    public static string DecodeBytes(in PgBinaryValue value)
     {
-        return value.Buffer.ReadString();
+        var buff = value.Buffer;
+        return buff.ReadString();
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeText"/>
@@ -36,7 +38,7 @@ internal abstract class PgString : IPgDbType<string>, IHasArrayType
     {
         return new string(value.Chars);
     }
-    
+
     public static PgTypeInfo DbType => PgTypeInfo.Text;
 
     public static PgTypeInfo ArrayDbType => PgTypeInfo.TextArray;

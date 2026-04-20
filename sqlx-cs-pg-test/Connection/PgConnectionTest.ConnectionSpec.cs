@@ -56,6 +56,6 @@ public partial class PgConnectionTest
         var current = queryResult.Current;
         return !current.IsLeft
             ? throw new InvalidOperationException("No rows found")
-            : current.Left.GetLongNotNull(0);
+            : current.Left.GetField<long>(0);
     }
 }

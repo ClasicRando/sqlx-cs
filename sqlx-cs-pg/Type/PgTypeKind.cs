@@ -6,7 +6,14 @@ namespace Sqlx.Postgres.Type;
 
 internal interface IPgTypeKind;
 
-public readonly record struct SimpleType : IPgTypeKind;
+public record SimpleType : IPgTypeKind
+{
+    private SimpleType()
+    {
+    }
+
+    public static readonly SimpleType Instance = new();
+}
 
 public readonly record struct PseudoType : IPgTypeKind;
 
@@ -30,8 +37,8 @@ public readonly record struct CompositeField : IFromRow<IPgDataRow, CompositeFie
         ArgumentNullException.ThrowIfNull(dataRow);
         return new CompositeField
         {
-            Name = dataRow.GetStringNotNull("attname"),
-            TypeOid = dataRow.GetPgNotNull<PgOid>("atttypid"),
+            Name = dataRow.GetPgNotNull<string, PgString>("attname"),
+            TypeOid = dataRow.GetPgNotNull<PgOid, PgOid>("atttypid"),
         };
     }
 }
