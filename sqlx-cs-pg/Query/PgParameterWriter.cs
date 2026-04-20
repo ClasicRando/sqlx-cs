@@ -32,81 +32,11 @@ internal sealed class PgParameterWriter : IPgBindable
     /// </summary>
     public IReadOnlyList<PgTypeInfo> PgTypes => _pgTypes;
 
-    public void Bind(bool value)
-    {
-        Bind<bool, PgBool>(value);
-    }
-
-    public void Bind(sbyte value)
-    {
-        Bind<sbyte, PgChar>(value);
-    }
-
-    public void Bind(short value)
-    {
-        Bind<short, PgShort>(value);
-    }
-
-    public void Bind(int value)
-    {
-        Bind<int, PgInt>(value);
-    }
-
-    public void Bind(long value)
-    {
-        Bind<long, PgLong>(value);
-    }
-
-    public void Bind(float value)
-    {
-        Bind<float, PgFloat>(value);
-    }
-
-    public void Bind(double value)
-    {
-        Bind<double, PgDouble>(value);
-    }
-
-    public void Bind(TimeOnly value)
-    {
-        Bind<TimeOnly, PgTime>(value);
-    }
-
-    public void Bind(DateOnly value)
-    {
-        Bind<DateOnly, PgDate>(value);
-    }
-
-    public void Bind(DateTime value)
-    {
-        Bind<DateTime, PgDateTime>(value);
-    }
-
-    public void Bind(in DateTimeOffset value)
-    {
-        Bind<DateTimeOffset, PgDateTimeOffset>(value);
-    }
-
-    public void Bind(decimal value)
-    {
-        Bind<decimal, PgDecimal>(value);
-    }
-
-    public void Bind(byte[]? value)
-    {
-        this.BindRef<byte[], PgBytea>(value);
-    }
-
     public void Bind(in ReadOnlySpan<byte> value)
     {
         _buffer.WriteInt(value.Length);
         _buffer.Write(value);
         _pgTypes.Add(PgBytea.DbType);
-    }
-
-    public void Bind(string? value)
-    {
-        this.BindRef<string, PgString>(value);
     }
 
     public void Bind(in ReadOnlySpan<char> value)
@@ -117,11 +47,6 @@ internal sealed class PgParameterWriter : IPgBindable
         Charsets.Default.GetBytes(value, span);
         _buffer.Advance(byteLength);
         _pgTypes.Add(PgString.DbType);
-    }
-
-    public void Bind(in Guid value)
-    {
-        Bind<Guid, PgUuid>(value);
     }
 
     public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
@@ -138,7 +63,7 @@ internal sealed class PgParameterWriter : IPgBindable
         _pgTypes.Add(PgTypeInfo.Unspecified);
     }
 
-    public void Bind<TValue, TType>(TValue value)
+    public void BindPg<TValue, TType>(TValue value)
         where TValue : notnull where TType : IPgDbType<TValue>
     {
         var startLocation = _buffer.StartWritingLengthPrefixed();

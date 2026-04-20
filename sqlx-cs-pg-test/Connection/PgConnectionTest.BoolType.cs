@@ -1,5 +1,4 @@
 using Sqlx.Postgres.Query;
-using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Connection;
 
@@ -10,10 +9,10 @@ public partial class PgConnectionTest
     [Arguments(false)]
     public async Task ExecuteScalar_Should_EncodeAndDecode_When_BoolAndDefaultEncoding(bool value, CancellationToken ct)
     {
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 bool_col;");
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 bool_col;");
         query.Bind(value);
-        var result = await query.ExecuteScalar<bool, PgBool>(ct);
+        var result = await query.ExecuteScalar<bool>(ct);
         await Assert.That(result).IsEqualTo(value);
     }
 
@@ -25,10 +24,10 @@ public partial class PgConnectionTest
         string sql,
         CancellationToken ct)
     {
-        using IPgConnection
+        await using IPgConnection
             connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery(sql);
-        var result = await query.ExecuteScalar<bool, PgBool>(ct);
+        await using IPgExecutableQuery query = connection.CreateQuery(sql);
+        var result = await query.ExecuteScalar<bool>(ct);
         await Assert.That(result).IsEqualTo(value);
     }
 }

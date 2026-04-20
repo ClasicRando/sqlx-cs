@@ -11,7 +11,7 @@ public partial class PgConnectionTest
     {
         var value = new PgInet(new IPAddress([192, 168, 0, 1]), 24);
         await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 inet_col;");
+        await using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 inet_col;");
         query.Bind(value);
         var result = await query.ExecuteScalar<PgInet>(ct);
         await Assert.That(result).IsEqualTo(value);
@@ -24,7 +24,7 @@ public partial class PgConnectionTest
         var value = new PgInet(new IPAddress([192, 168, 0, 1]), 24);
         await using IPgConnection
             connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery(sql);
+        await using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalar<PgInet>(ct);
         await Assert.That(result).IsEqualTo(value);
     }
@@ -36,7 +36,7 @@ public partial class PgConnectionTest
         var value = new PgInet(new IPAddress([192, 168, 0, 0]), 24);
         await using IPgConnection
             connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery(sql);
+        await using IPgExecutableQuery query = connection.CreateQuery(sql);
         var result = await query.ExecuteScalar<PgInet>(ct);
         await Assert.That(result).IsEqualTo(value);
     }
@@ -46,9 +46,9 @@ public partial class PgConnectionTest
     {
         var value = new IPNetwork(new IPAddress([192, 168, 0, 0]), 24);
         await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 ipnetwork_col;");
+        await using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 ipnetwork_col;");
         query.Bind(value);
-        IPNetwork result = await query.ExecuteScalar<IPNetwork, PgIpNetwork>(ct);
+        var result = await query.ExecuteScalar<IPNetwork>(ct);
         await Assert.That(result).IsEqualTo(value);
     }
 
@@ -59,8 +59,8 @@ public partial class PgConnectionTest
         var value = new IPNetwork(new IPAddress([192, 168, 0, 0]), 24);
         await using IPgConnection
             connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery(sql);
-        IPNetwork result = await query.ExecuteScalar<IPNetwork, PgIpNetwork>(ct);
+        await using IPgExecutableQuery query = connection.CreateQuery(sql);
+        var result = await query.ExecuteScalar<IPNetwork>(ct);
         await Assert.That(result).IsEqualTo(value);
     }
 
@@ -71,8 +71,8 @@ public partial class PgConnectionTest
         var value = new IPNetwork(new IPAddress([192, 168, 0, 0]), 24);
         await using IPgConnection
             connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery(sql);
-        IPNetwork result = await query.ExecuteScalar<IPNetwork, PgIpNetwork>(ct);
+        await using IPgExecutableQuery query = connection.CreateQuery(sql);
+        var result = await query.ExecuteScalar<IPNetwork>(ct);
         await Assert.That(result).IsEqualTo(value);
     }
 }

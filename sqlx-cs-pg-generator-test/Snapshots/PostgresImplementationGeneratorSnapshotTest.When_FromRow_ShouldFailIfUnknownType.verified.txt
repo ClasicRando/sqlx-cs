@@ -1,12 +1,26 @@
 ﻿{
   Diagnostics: [
     {
-      Message: Type definition property must reference a type that can be encoded to or decoded from the database. Fields: [Inner],
+      Location: /*
+
+[FromRow]
+^^^^^^^^^
+public readonly partial struct TestRowUnknownType
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+{
+^
+    public Dictionary<int, string> Inner { get; init; }
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+}
+^
+*/
+ : (2,0)-(6,1),
+      Message: Type reference must be a type that can be encoded to or decoded from the database. FromRow type declaration properties that failed: Inner.,
       Severity: Error,
       Descriptor: {
         Id: SQLxPG005,
         Title: Unknown DB type reference,
-        MessageFormat: Type definition {0} must reference a type that can be encoded to or decoded from the database. Fields: [{1}],
+        MessageFormat: Type reference must be a type that can be encoded to or decoded from the database. {0}.,
         Category: sqlx-cs-pg Generation,
         DefaultSeverity: Error,
         IsEnabledByDefault: true

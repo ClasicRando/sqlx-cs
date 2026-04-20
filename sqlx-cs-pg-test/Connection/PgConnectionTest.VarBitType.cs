@@ -1,6 +1,5 @@
 using System.Collections;
 using Sqlx.Postgres.Query;
-using Sqlx.Postgres.Type;
 
 namespace Sqlx.Postgres.Connection;
 
@@ -14,10 +13,10 @@ public partial class PgConnectionTest
         CancellationToken ct)
     {
         var value = new BitArray(bits);
-        using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 varbit_col;");
+        await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
+        await using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 varbit_col;");
         query.Bind(value);
-        BitArray result = await query.ExecuteScalar<BitArray, PgBitString>(ct);
+        var result = await query.ExecuteScalar<BitArray>(ct);
         await Assert.That(result).IsEquivalentTo(value);
     }
 
@@ -30,10 +29,10 @@ public partial class PgConnectionTest
         CancellationToken ct)
     {
         var value = new BitArray(bits);
-        using IPgConnection
+        await using IPgConnection
             connection = DatabaseFixture.SimpleQueryTextPool.CreateConnection();
-        using IPgExecutableQuery query = connection.CreateQuery(sql);
-        BitArray result = await query.ExecuteScalar<BitArray, PgBitString>(ct);
+        await using IPgExecutableQuery query = connection.CreateQuery(sql);
+        var result = await query.ExecuteScalar<BitArray>(ct);
         await Assert.That(result).IsEquivalentTo(value);
     }
 }

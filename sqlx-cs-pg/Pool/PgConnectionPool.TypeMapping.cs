@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Sqlx.Core.Query;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Exceptions;
 using Sqlx.Postgres.Query;
@@ -31,7 +30,7 @@ internal sealed partial class PgConnectionPool
 
         try
         {
-            PgOid oid = await typeOidQuery.ExecuteScalar<PgOid>(cancellationToken)
+            PgOid oid = await typeOidQuery.ExecuteScalarPg<PgOid, PgOid>(cancellationToken)
                 .ConfigureAwait(false);
             TType.DbType = new PgTypeInfo(oid.Inner, new EnumType());
         }
@@ -75,7 +74,8 @@ internal sealed partial class PgConnectionPool
         PgOid oid;
         try
         {
-            oid = await typeOidQuery.ExecuteScalar<PgOid>(cancellationToken).ConfigureAwait(false);
+            oid = await typeOidQuery.ExecuteScalarPg<PgOid, PgOid>(cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (PgException e)
         {
@@ -87,7 +87,7 @@ internal sealed partial class PgConnectionPool
         IPgExecutableQuery attributeOidsQuery =
             connection.CreateQuery(pgCompositeAttributeOidsByOid);
         await using ConfiguredAsyncDisposable _3 = attributeOidsQuery.ConfigureAwait(false);
-        attributeOidsQuery.Bind(oid);
+        attributeOidsQuery.BindPg<PgOid, PgOid>(oid);
 
         var attributeOids = await attributeOidsQuery
             .FetchAsync<CompositeField>(cancellationToken)
@@ -98,7 +98,7 @@ internal sealed partial class PgConnectionPool
             new CompositeType { Fields = [..attributeOids] });
     }
 
-    private static void AddTypeNameAndSchemaToQuery<TValue, TType>(IBindable query)
+    private static void AddTypeNameAndSchemaToQuery<TValue, TType>(IPgBindable query)
         where TValue : notnull
         where TType : IPgUdt<TValue>
     {
@@ -112,8 +112,8 @@ internal sealed partial class PgConnectionPool
         }
         else
         {
-            query.Bind(typeName);
-            query.Bind(defaultSchemaName);
+            query.Bind(typeName.AsSpan());
+            query.Bind(defaultSchemaName.AsSpan());
         }
     }
 }

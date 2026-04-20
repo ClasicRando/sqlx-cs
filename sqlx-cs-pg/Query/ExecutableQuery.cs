@@ -19,7 +19,7 @@ public static class ExecutableQuery
         /// <typeparam name="TValue">Final type to decode a scalar value for</typeparam>
         /// <returns>The first row's first column decoded as the desired value type</returns>
         /// <exception cref="Exception">If the query or column decoding fails</exception>
-        public async Task<TValue> ExecuteScalar<TValue, TType>(
+        public async Task<TValue> ExecuteScalarPg<TValue, TType>(
             CancellationToken cancellationToken = default)
             where TType : IPgDbType<TValue>
             where TValue : notnull
@@ -35,19 +35,6 @@ public static class ExecutableQuery
             return current.IsLeft
                 ? current.Left.GetPgNotNull<TValue, TType>(0)
                 : throw new InvalidOperationException("Scalar query cannot be non-query");
-        }
-
-        /// <summary>
-        /// Execute the query and extract the first row's first column as the desired type
-        /// </summary>
-        /// <param name="cancellationToken">Optional cancellation token</param>
-        /// <typeparam name="TType">Type that can decode itself from a row column</typeparam>
-        /// <returns>The first row's first column decoded as the desired type</returns>
-        /// <exception cref="Exception">If the query or column decoding fails</exception>
-        public Task<TType> ExecuteScalar<TType>(CancellationToken cancellationToken = default)
-            where TType : IPgDbType<TType>
-        {
-            return executableQuery.ExecuteScalar<TType, TType>(cancellationToken);
         }
 
         /// <summary>
