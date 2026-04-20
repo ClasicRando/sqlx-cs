@@ -21,7 +21,7 @@ namespace Sqlx.Postgres.Interceptors
         [global::System.Runtime.CompilerServices.InterceptsLocation(1, "h0UqGfPwoHGV4YdJ3UU/KowAAAA=")] // (7,13)
         public static global::System.Byte[] GetNotNull(this global::Sqlx.Postgres.Result.IPgDataRow pgDataRow, int index)
         {
-            return pgDataRow.GetPgNotNull<global::System.Byte[], global::Sqlx.Postgres.Type.PgBytea>(index);
+            return pgDataRow.GetPgNotNull<global::System.Byte[],global::Sqlx.Postgres.Type.PgBytea>(index);
         }
     }
 }
