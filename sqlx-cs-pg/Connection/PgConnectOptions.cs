@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Connector;
@@ -152,6 +153,11 @@ public record PgConnectOptions
     /// nothing.
     /// </summary>
     public ChannelBinding ChannelBinding { get; init; } = ChannelBinding.Prefer;
+
+    /// <summary>
+    /// Options supplied when calling <see cref="JsonSerializer.Serialize{T}(T, JsonSerializerOptions?)"/>
+    /// </summary>
+    public JsonSerializerOptions JsonSerializerOptions { get; init; } = new();
 
     /// <summary>
     /// <see cref="ILogger{TCategoryName}"/> factor used by the connection pool and all objects

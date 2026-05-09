@@ -162,16 +162,22 @@ internal class PgFromRowImplementationGenerator : ISourceGenerationPipeline<PgFr
                         .Append(".FromRow(dataRow)");
                     break;
                 case { IsJson: true, FieldType.IsNullable: true }:
-                    builder.Append("dataRow.GetJson<")
+                    builder.Append("dataRow.IsNull(")
+                        .Append(rowField.IndexVariableName)
+                        .Append(") ? null : dataRow.GetPgNotNull<")
                         .AppendFullName(rowField.FieldType.AsNotNullType())
-                        .Append(">(")
+                        .Append(",PgJson<")
+                        .AppendFullName(rowField.FieldType.AsNotNullType())
+                        .Append(">>(")
                         .Append(rowField.IndexVariableName)
                         .Append(')');
                     break;
                 case { IsJson: true }:
-                    builder.Append("dataRow.GetJsonNotNull<")
+                    builder.Append("dataRow.GetPgNotNull<")
                         .AppendFullName(rowField.FieldType)
-                        .Append(">(")
+                        .Append(",global::Sqlx.Postgres.Type.PgJson<")
+                        .AppendFullName(rowField.FieldType)
+                        .Append(">>(")
                         .Append(rowField.IndexVariableName)
                         .Append(')');
                     break;
@@ -249,13 +255,26 @@ internal class PgFromRowImplementationGenerator : ISourceGenerationPipeline<PgFr
                         .Append(')');
                     break;
                 default:
-                    builder.Append("dataRow.GetPgNotNull<")
-                        .AppendFullName(rowField.FieldType)
-                        .Append(',')
-                        .Append(rowField.FieldType.GetIPgDbType())
-                        .Append(">(")
-                        .Append(rowField.IndexVariableName)
-                        .Append(')');
+                    if (rowField.FieldType.IsWrapperJson(out _, out var innerTypeFullName))
+                    {
+                        builder.Append("new global::Sqlx.Core.Types.JsonValue { Inner = dataRow.GetPgNotNull<")
+                            .Append(innerTypeFullName)
+                            .Append(",global::Sqlx.Postgres.Type.PgJson<")
+                            .Append(innerTypeFullName)
+                            .Append(">>(")
+                            .Append(rowField.IndexVariableName)
+                            .Append(") }");
+                    }
+                    else
+                    {
+                        builder.Append("dataRow.GetPgNotNull<")
+                            .AppendFullName(rowField.FieldType)
+                            .Append(',')
+                            .Append(rowField.FieldType.GetIPgDbType())
+                            .Append(">(")
+                            .Append(rowField.IndexVariableName)
+                            .Append(')');
+                    }
                     break;
             }
 

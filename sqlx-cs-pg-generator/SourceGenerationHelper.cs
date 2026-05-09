@@ -68,26 +68,48 @@ internal static class SourceGenerationHelper
     {
         public string GetFullNamespaceName()
         {
-            if (string.IsNullOrEmpty(namespaceSymbol.Name))
-            {
-                return string.Empty;
-            }
-
-            StringBuilder builder = new(namespaceSymbol.Name);
+            return new StringBuilder()
+                .AppendFullNamespace(namespaceSymbol, includeTrailingSeparator: false)
+                .ToString();
+        }
+        
+        private IEnumerable<string> GetNamespaceComponents()
+        {
+            yield return namespaceSymbol.Name;
             INamespaceSymbol currentNamespace = namespaceSymbol.ContainingNamespace;
             while (!string.IsNullOrEmpty(currentNamespace.Name))
             {
-                builder.Insert(0, '.');
-                builder.Insert(0, currentNamespace.Name);
+                yield return currentNamespace.Name;
                 currentNamespace = currentNamespace.ContainingNamespace;
             }
-
-            return builder.ToString();
         }
     }
 
     extension(StringBuilder builder)
     {
+        private StringBuilder AppendFullNamespace(
+            INamespaceSymbol namespaceSymbol,
+            bool includeTrailingSeparator = true)
+        {
+            if (string.IsNullOrEmpty(namespaceSymbol.Name))
+            {
+                return builder;
+            }
+
+            foreach (var component in namespaceSymbol.GetNamespaceComponents().Reverse())
+            {
+                builder.Append(component);
+                builder.Append('.');
+            }
+
+            if (!includeTrailingSeparator)
+            {
+                builder.Remove(builder.Length - 1, 1);
+            }
+
+            return builder;
+        }
+        
         public StringBuilder AppendFullName<T>(T fullNameType) where T : IFullNameType
         {
             builder.Append("global::");
@@ -108,15 +130,9 @@ internal static class SourceGenerationHelper
                 return builder.AppendFullName(arrayTypeSymbol);
             }
 
-            builder.Append("global::");
-            var containingNamespace = typeSymbol.ContainingNamespace.GetFullNamespaceName();
-            if (!string.IsNullOrEmpty(containingNamespace))
-            {
-                builder.Append(containingNamespace);
-                builder.Append('.');
-            }
-
-            builder.Append(typeSymbol.Name);
+            builder.Append("global::")
+                .AppendFullNamespace(typeSymbol.ContainingNamespace)
+                .Append(typeSymbol.Name);
 
             if (typeSymbol is { IsReferenceType: true, IsNullable: true })
             {
@@ -190,11 +206,20 @@ internal static class SourceGenerationHelper
             typeSymbol.AllInterfaces.Any(i => i.Name.StartsWith("IPgDbType")) ||
             typeSymbol.HasAttribute("PgCompositeAttribute", "WrapperTypeAttribute");
 
+        public bool IsWrapperJson(out string fullName, out string innerFullName)
+        {
+            fullName = typeSymbol.FullName;
+            var result = fullName.StartsWith("global::Sqlx.Core.Types.JsonValue<");
+            innerFullName = result ? fullName[34..^1] : string.Empty;
+            return result;
+        }
+
         public string? GetIPgDbType()
         {
             const string typeNamespace = "global::Sqlx.Postgres.Type";
+            ITypeSymbol nonNullType = typeSymbol.AsNotNullType();
             string name;
-            switch (typeSymbol.AsNotNullType())
+            switch (nonNullType)
             {
                 case INamedTypeSymbol { IsDbType: true } namedTypeSymbol:
                     name = namedTypeSymbol.FullName;
@@ -278,7 +303,9 @@ internal static class SourceGenerationHelper
                         $"{typeNamespace}.PgRangeType<{innerType.FullName}, {innerType.GetIPgDbType()}>";
                     break;
                 default:
-                    return null;
+                    return nonNullType.IsWrapperJson(out _, out var innerFullName)
+                        ? $"{typeNamespace}.PgJson<{innerFullName}>"
+                        : null;
             }
 
             return name;

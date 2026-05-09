@@ -21,7 +21,7 @@ public partial class JsonHelperTest
     {
         using var buffer = new ArrayBufferWriter();
         
-        JsonHelper.WriteToBuffer(buffer, _jsonType, SourceGenerationContext.Default.JsonType);
+        JsonHelper.WriteToBuffer(buffer, _jsonType, SourceGenerationContext.Default.Options);
         
         await Assert.That(Encoding.UTF8.GetString(buffer.ReadableSpan)).IsEqualTo(JsonTypeStr);
     }
@@ -31,7 +31,7 @@ public partial class JsonHelperTest
     {
         using var buffer = new ArrayBufferWriter();
         
-        JsonHelper.WriteToBuffer(buffer, _jsonType, null);
+        JsonHelper.WriteToBuffer(buffer, _jsonType);
         
         await Assert.That(Encoding.UTF8.GetString(buffer.ReadableSpan)).IsEqualTo(JsonTypeStr);
     }
@@ -41,7 +41,7 @@ public partial class JsonHelperTest
     {
         var bytes = Encoding.UTF8.GetBytes(JsonTypeStr);
 
-        var result = JsonHelper.FromBytes<JsonType>(bytes, SourceGenerationContext.Default.JsonType);
+        var result = JsonHelper.FromBytes<JsonType>(bytes, SourceGenerationContext.Default.Options);
         
         await Assert.That(result).IsEqualTo(_jsonType);
     }
@@ -61,7 +61,7 @@ public partial class JsonHelperTest
     {
         var result = JsonHelper.FromChars<JsonType>(
             JsonTypeStr,
-            SourceGenerationContext.Default.JsonType);
+            SourceGenerationContext.Default.Options);
         
         await Assert.That(result).IsEqualTo(_jsonType);
     }

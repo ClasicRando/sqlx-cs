@@ -84,7 +84,12 @@ public partial class PgConnector
         _pendingReadyForQuery++;
 
         Status = ConnectionStatus.Fetching;
-        _currentResultSet = new PgAsyncResultSet(this, userAction, [], true);
+        _currentResultSet = new PgAsyncResultSet(
+            this,
+            ConnectOptions.JsonSerializerOptions,
+            userAction,
+            [],
+            true);
         return _currentResultSet;
     }
 
@@ -128,7 +133,12 @@ public partial class PgConnector
                 cancellationToken)
             .ConfigureAwait(false);
         Status = ConnectionStatus.Fetching;
-        _currentResultSet = new PgAsyncResultSet(this, userAction, [statement], true);
+        _currentResultSet = new PgAsyncResultSet(
+            this,
+            ConnectOptions.JsonSerializerOptions,
+            userAction,
+            [statement],
+            true);
         return _currentResultSet;
     }
 
@@ -180,7 +190,12 @@ public partial class PgConnector
         }
 
         Status = ConnectionStatus.Fetching;
-        _currentResultSet = new PgAsyncResultSet(this, userAction, statements, syncAll);
+        _currentResultSet = new PgAsyncResultSet(
+            this,
+            ConnectOptions.JsonSerializerOptions,
+            userAction,
+            statements,
+            syncAll);
         return _currentResultSet;
     }
 

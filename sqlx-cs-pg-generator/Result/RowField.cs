@@ -5,18 +5,23 @@ namespace Sqlx.Postgres.Generator.Result;
 internal readonly struct RowField
 {
     public string Name { get; }
-    
+
     public string FieldName { get; }
 
     public ITypeSymbol FieldType { get; }
-    
+
     public string IndexVariableName { get; }
 
     public bool Flatten { get; }
 
     public bool IsJson { get; }
 
-    private RowField(string name, string fieldName, ITypeSymbol fieldType, bool flatten, bool isJson)
+    private RowField(
+        string name,
+        string fieldName,
+        ITypeSymbol fieldType,
+        bool flatten,
+        bool isJson)
     {
         Name = name;
         FieldName = fieldName;

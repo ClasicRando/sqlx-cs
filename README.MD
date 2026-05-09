@@ -19,9 +19,9 @@ struct Row : IFromRow<DbRow, Row>
     {
         return new Row
         {
-            Id = dataRow.GetIntNotNull("id"),
-            Name = dataRow.GetStringNotNull("name"),
-            ChildId = dataRow.GetInt("child_id"),
+            Id = dataRow.GetField<int>("id"),
+            Name = dataRow.GetField<string>("name"),
+            ChildId = dataRow.GetField<int?>("child_id"),
         };
     }
 }
@@ -57,7 +57,7 @@ struct Param : IBindMany<DbBindable>
 await using var connection = pool.CreateConnection();
 using var query = connection.CreateQuery(parameterizedQuery);
 // Binds to first parameter present in query
-query.Bind(1); 
+query.Bind(1);
 var rows = await query.FetchAllAsync<Row>();
 
 // With no query and param type

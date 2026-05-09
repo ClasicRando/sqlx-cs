@@ -43,7 +43,7 @@ internal sealed partial class PgConnectionPool
     }
 
     public async Task MapCompositeAsync<TComposite>(CancellationToken cancellationToken = default)
-        where TComposite : IPgUdt<TComposite>
+        where TComposite : IPgComposite<TComposite>
     {
         const string pgCompositeTypeByName =
             """
@@ -96,6 +96,7 @@ internal sealed partial class PgConnectionPool
         TComposite.DbType = new PgTypeInfo(
             oid.Inner,
             new CompositeType { Fields = [..attributeOids] });
+        TComposite.JsonOptions = ConnectOptions.JsonSerializerOptions;
     }
 
     private static void AddTypeNameAndSchemaToQuery<TValue, TType>(IPgBindable query)

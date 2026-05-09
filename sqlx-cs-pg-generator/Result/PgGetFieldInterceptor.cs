@@ -109,6 +109,9 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
         bool isNullable,
         string iPgDbType)
     {
+        var isJsonWrapper = nonNullDecodeType.IsWrapperJson(
+            out var nonNullDecodeTypeFullName,
+            out var innerTypeFullName);
         sb.AppendLine("""
             #nullable enable
             namespace System.Runtime.CompilerServices
@@ -146,7 +149,7 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
             }
 
             sb.Append("        public static ")
-                .AppendFullName(nonNullDecodeType);
+                .Append(nonNullDecodeTypeFullName);
             if (isNullable)
             {
                 sb.Append('?');
@@ -168,11 +171,31 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
             {
                 sb.AppendLine("            if (pgDataRow.IsNull(index)) return null;");
             }
-            sb.Append("            return pgDataRow.GetPgNotNull<")
-                .AppendFullName(nonNullDecodeType)
-                .Append(',')
-                .Append(iPgDbType)
-                .AppendLine(">(index);");
+            sb.Append("            return ");
+            if (isJsonWrapper)
+            {
+                sb.Append("new global::Sqlx.Core.JsonValue { Inner = ");
+            }
+
+            sb.Append("pgDataRow.GetPgNotNull<")
+                .Append(isJsonWrapper ? innerTypeFullName : nonNullDecodeTypeFullName)
+                .Append(',');
+            if (isJsonWrapper)
+            {
+                sb.Append("global::Sqlx.Postgres.Type.PgJson<")
+                    .Append(innerTypeFullName);
+            }
+            else
+            {
+                sb.Append(iPgDbType);
+            }
+            sb.Append(">(index)");
+            if (isJsonWrapper)
+            {
+                sb.Append(" }");
+            }
+
+            sb.AppendLine(";");
             sb.AppendLine("        }");
         }
         

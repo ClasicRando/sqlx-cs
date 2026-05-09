@@ -86,7 +86,7 @@ public sealed partial class PgConnector
         ThrowIfNotOpen();
 
         using UserAction _ = StartUserAction();
-        using SimplePgDataRow dataRow = new();
+        using SimplePgDataRow dataRow = new(ConnectOptions.JsonSerializerOptions);
 
         await InitializeCopyOut(copyOutStatement, cancellationToken).ConfigureAwait(false);
 

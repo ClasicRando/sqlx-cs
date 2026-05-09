@@ -48,7 +48,7 @@ namespace Sqlx.Postgres.Type;
 public static class PgRecordDecoder
 {
     public static T DecodeBinary<T>(in PgBinaryValue binaryValue)
-        where T : IPgDbType<T>, IFromRow<IPgDataRow, T>
+        where T : IPgComposite<T>, IFromRow<IPgDataRow, T>
     {
         var buff = binaryValue.Buffer;
         PgTypeInfo typeInfo = T.DbType;
@@ -95,12 +95,13 @@ public static class PgRecordDecoder
 
         using var row = new SimplePgDataRow(
             bufferWriter.ReadableMemory,
-            new PgStatementMetadata(columns));
+            new PgStatementMetadata(columns),
+            T.JsonOptions);
         return T.FromRow(row);
     }
 
     public static T DecodeText<T>(in PgTextValue textValue)
-        where T : IPgDbType<T>, IFromRow<IPgDataRow, T>
+        where T : IPgComposite<T>, IFromRow<IPgDataRow, T>
     {
         PgTypeInfo typeInfo = T.DbType;
         if (typeInfo.TypeKind is not CompositeType compositeType)
@@ -149,7 +150,8 @@ public static class PgRecordDecoder
 
         using var row = new SimplePgDataRow(
             bufferWriter.ReadableMemory,
-            new PgStatementMetadata(columns));
+            new PgStatementMetadata(columns),
+            T.JsonOptions);
         return T.FromRow(row);
     }
 

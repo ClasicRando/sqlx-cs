@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core.Column;
 
 namespace Sqlx.Core.Result;
@@ -35,18 +34,6 @@ public interface IDataRow
     /// <param name="index">0-based index of the column to check</param>
     /// <returns>True if the value found at the index is a DB null</returns>
     bool IsNull(int index);
-
-    /// <summary>
-    /// Extract a not-null <typeparamref name="T"/> value after deserializing the inner value
-    /// as JSON. Some databases have a JSON specific field type but other database drivers will
-    /// treat string or byte[] fields as JSON compatible. When using this method, it's recommended
-    /// to supply the <see cref="JsonTypeInfo{T}"/> parameter to aid deserialization.
-    /// </summary>
-    /// <param name="index">0-based index of the column to extract</param>
-    /// <param name="jsonTypeInfo">optional JSON source generated deserialization metadata</param>
-    /// <returns><c>T</c> value at the specified column</returns>
-    /// <exception cref="Sqlx.Core.Exceptions.SqlxException">if the column value is null</exception>
-    T GetJsonNotNull<T>(int index, JsonTypeInfo<T>? jsonTypeInfo = null) where T : notnull;
 }
 
 public static class DataRowExtensions
@@ -62,62 +49,6 @@ public static class DataRowExtensions
         public IColumnMetadata GetColumnMetadata(string name)
         {
             return dataRow.GetColumnMetadata(dataRow.IndexOf(name));
-        }
-
-        /// <summary>
-        /// Extract a possibly null <typeparamref name="T"/> value after deserializing the inner value
-        /// as JSON. Some databases have a JSON specific field type but other database drivers will
-        /// treat string or byte[] fields as JSON compatible. When using this method, it's recommended
-        /// to supply the <see cref="JsonTypeInfo{T}"/> parameter to aid deserialization.
-        /// </summary>
-        /// <param name="index">0-based index of the column to extract</param>
-        /// <param name="jsonTypeInfo">optional JSON source generated deserialization metadata</param>
-        /// <returns>
-        /// <c>T</c> value at the specified column or default if the DB value was null
-        /// </returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T? GetJson<T>(
-            int index,
-            JsonTypeInfo<T>? jsonTypeInfo = null)
-            where T : notnull
-        {
-            return dataRow.IsNull(index) ? default : dataRow.GetJsonNotNull(index, jsonTypeInfo);
-        }
-
-        /// <summary>
-        /// Extract a possibly null <typeparamref name="T"/> value after deserializing the inner value
-        /// as JSON. Some databases have a JSON specific field type but other database drivers will
-        /// treat string or byte[] fields as JSON compatible. When using this method, it's recommended
-        /// to supply the <see cref="JsonTypeInfo{T}"/> parameter to aid deserialization.
-        /// </summary>
-        /// <param name="name">name of the column to extract</param>
-        /// <param name="jsonTypeInfo">optional JSON source generated deserialization metadata</param>
-        /// <returns><c>T</c> value at the specified column or null if the DB value was null</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T? GetJson<T>(
-            string name,
-            JsonTypeInfo<T>? jsonTypeInfo = null)
-            where T : notnull
-        {
-            return dataRow.GetJson(dataRow.IndexOf(name), jsonTypeInfo);
-        }
-
-        /// <summary>
-        /// Extract a not-null <typeparamref name="T"/> value after deserializing the inner value
-        /// as JSON. Some databases have a JSON specific field type but other database drivers will
-        /// treat string or byte[] fields as JSON compatible. When using this method, it's recommended
-        /// to supply the <see cref="JsonTypeInfo{T}"/> parameter to aid deserialization.
-        /// </summary>
-        /// <param name="name">name of the column to extract</param>
-        /// <param name="jsonTypeInfo">optional JSON source generated deserialization metadata</param>
-        /// <returns><c>T</c> value at the specified column</returns>
-        /// <exception cref="Sqlx.Core.Exceptions.SqlxException">if the column value is null</exception>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T GetJsonNotNull<T>(
-            string name,
-            JsonTypeInfo<T>? jsonTypeInfo = null) where T : notnull
-        {
-            return dataRow.GetJsonNotNull(dataRow.IndexOf(name), jsonTypeInfo);
         }
     }
 }
