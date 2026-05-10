@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Connection;
@@ -24,7 +23,9 @@ internal sealed class PgExecutableQuery : IPgExecutableQuery
         _queryExecutor = queryExecutor;
         Query = sql;
         _buffer = new ArrayBufferWriter();
-        _parameterWriter = new PgParameterWriter(_buffer);
+        _parameterWriter = new PgParameterWriter(
+            _buffer,
+            queryExecutor.ConnectOptions.JsonSerializerOptions);
     }
 
     public string Query { get; }
@@ -43,11 +44,6 @@ internal sealed class PgExecutableQuery : IPgExecutableQuery
     public void Bind(in ReadOnlySpan<char> value)
     {
         _parameterWriter.Bind(value);
-    }
-
-    public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
-    {
-        _parameterWriter.BindJson(value, typeInfo);
     }
 
     public void BindNull<T>() where T : notnull

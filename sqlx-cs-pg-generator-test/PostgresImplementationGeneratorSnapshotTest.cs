@@ -131,7 +131,7 @@ public class PostgresImplementationGeneratorSnapshotTest
                 int? NullableIntField,
                 WrapperEnumType WrapperEnumTypeField,
                 PostgresEnumType PostgresEnumTypeField,
-                JsonValue<Inner> JsonValueField,
+                Sqlx.Core.Types.JsonValue<Inner> JsonValueField,
                 JsonElement JsonElementField,
                 JsonDocument JsonDocumentField,
                 JsonNode JsonNodeField,

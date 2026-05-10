@@ -45,7 +45,7 @@ internal readonly struct RowField
             fieldName,
             fieldType,
             attributes.Any(attr => attr.AttributeClass!.Name == "FlattenFieldAttribute"),
-            attributes.Any(attr => attr.AttributeClass!.Name == "JsonFieldAttribute"));
+            fieldType.IsSystemJsonType || attributes.Any(attr => attr.AttributeClass!.Name == "JsonFieldAttribute"));
     }
 
     public static RowField FromParameter(IParameterSymbol parameterSymbol, Rename rename)

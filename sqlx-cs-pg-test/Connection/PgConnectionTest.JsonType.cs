@@ -12,7 +12,7 @@ public partial class PgConnectionTest
         var value = new Inner(1, "Test1");
         await using IPgConnection connection = DatabaseFixture.BasicPool.CreateConnection();
         await using IPgExecutableQuery query = connection.CreateQuery("SELECT $1 json_col;");
-        query.BindJson(value);
+        query.Bind(new JsonValue<Inner> { Inner = value });
         var result = await query.ExecuteScalar<JsonValue<Inner>>(ct);
         await Assert.That(result.Inner).IsEqualTo(value);
     }

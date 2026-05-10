@@ -87,6 +87,7 @@ internal class PgToParamImplementationGenerator : ISourceGenerationPipeline<PgTo
         builder.AppendLine("    {");
         foreach (IPropertySymbol property in pgToParamToGenerate.Properties)
         {
+            var isWrapperJson = property.Type.IsWrapperJson(out ITypeSymbol? innerType);
             if (property.Type.IsNullable)
             {
                 ITypeSymbol finalType = property.Type.AsNotNullType();
@@ -101,23 +102,25 @@ internal class PgToParamImplementationGenerator : ISourceGenerationPipeline<PgTo
                 builder.AppendLine("        else");
                 builder.AppendLine("        {");
                 builder.Append("            bindable.BindPg<")
-                    .AppendFullName(finalType)
+                    .AppendFullName(isWrapperJson ? innerType! : finalType)
                     .Append(',')
                     .Append(finalType.GetIPgDbType()!)
                     .Append(">(this.")
                     .Append(property.Name)
-                    .Append(finalType.IsValueType ? ".Value" : "")
+                    .Append(finalType.IsValueType ? ".Value" : string.Empty)
+                    .Append(isWrapperJson ? ".Inner" : string.Empty)
                     .AppendLine(");");
                 builder.AppendLine("        }");
             }
             else
             {
                 builder.Append("        bindable.BindPg<")
-                    .AppendFullName(property.Type)
+                    .AppendFullName(isWrapperJson ? innerType! : property.Type)
                     .Append(',')
                     .Append(property.Type.GetIPgDbType()!)
                     .Append(">(this.")
                     .Append(property.Name)
+                    .Append(isWrapperJson ? ".Inner" : string.Empty)
                     .AppendLine(");");
             }
         }

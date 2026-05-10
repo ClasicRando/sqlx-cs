@@ -313,7 +313,9 @@ public sealed partial class PgConnector
     {
         var maxBufferedDataSize = ConnectOptions.WriteBufferSize;
         using ArrayBufferWriter rowDataBuffer = new();
-        using PgParameterWriter parameterWriter = new(rowDataBuffer);
+        using PgParameterWriter parameterWriter = new(
+            rowDataBuffer,
+            ConnectOptions.JsonSerializerOptions);
         WriteCopyDataMessage(BinaryCopyHeader);
         await FlushStream(cancellationToken).ConfigureAwait(false);
 

@@ -145,6 +145,8 @@ public sealed class PgBindInterceptor : ISourceInterceptorPipeline<BindInvocatio
             .Append(isNullable ? "?" : string.Empty)
             .AppendLine(" value)");
         sb.AppendLine("        {");
+
+        var isWrapperJson = nonNullEncodeType.IsWrapperJson(out ITypeSymbol? innerType);
         if (isNullable)
         {
             sb.AppendLine("            if (value is null)");
@@ -156,21 +158,24 @@ public sealed class PgBindInterceptor : ISourceInterceptorPipeline<BindInvocatio
             sb.AppendLine("            else");
             sb.AppendLine("            {");
             sb.Append("                pgBindable.BindPg<")
-                .AppendFullName(nonNullEncodeType)
+                .AppendFullName(isWrapperJson ? innerType! : nonNullEncodeType)
                 .Append(',')
                 .Append(iPgDbType)
                 .Append(">(value")
                 .Append(nonNullEncodeType.IsValueType ? ".Value" : string.Empty)
+                .Append(isWrapperJson ? ".Inner" : string.Empty)
                 .AppendLine(");");
             sb.AppendLine("            }");
         }
         else
         {
             sb.Append("            pgBindable.BindPg<")
-                .AppendFullName(nonNullEncodeType)
+                .AppendFullName(isWrapperJson ? innerType! : nonNullEncodeType)
                 .Append(',')
                 .Append(iPgDbType)
-                .AppendLine(">(value);");
+                .Append(">(value")
+                .Append(isWrapperJson ? ".Inner" : string.Empty)
+                .AppendLine(");");
         }
         sb.AppendLine("        }");
         sb.AppendLine("    }");
