@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -64,6 +65,23 @@ internal static class SourceGenerationHelper
             DiagnosticSeverity.Error,
             true);
 
+    private static readonly ConcurrentDictionary<INamespaceSymbol, string> FullNamespaceNameLookup =
+        new(SymbolEqualityComparer.Default);
+
+    private static readonly ConcurrentDictionary<ITypeSymbol, string> FullNameLookup =
+        new(SymbolEqualityComparer.IncludeNullability);
+
+    private static void AddStringBuilderSliceToLookup(
+        StringBuilder builder,
+        int startIndex,
+        ITypeSymbol typeSymbol)
+    {
+        var length = builder.Length - startIndex;
+        var buffer = new char[length];
+        builder.CopyTo(startIndex, buffer.AsSpan(), length);
+        FullNameLookup[typeSymbol] = new string(buffer);
+    }
+
     extension(INamespaceSymbol namespaceSymbol)
     {
         public string GetFullNamespaceName()
@@ -72,7 +90,7 @@ internal static class SourceGenerationHelper
                 .AppendFullNamespace(namespaceSymbol, includeTrailingSeparator: false)
                 .ToString();
         }
-        
+
         private IEnumerable<string> GetNamespaceComponents()
         {
             yield return namespaceSymbol.Name;
@@ -96,11 +114,28 @@ internal static class SourceGenerationHelper
                 return builder;
             }
 
+            if (FullNamespaceNameLookup.TryGetValue(namespaceSymbol, out var fullName))
+            {
+                builder.Append(fullName);
+                if (includeTrailingSeparator)
+                {
+                    builder.Append('.');
+                }
+
+                return builder;
+            }
+
+            var startIndex = builder.Length;
             foreach (var component in namespaceSymbol.GetNamespaceComponents().Reverse())
             {
                 builder.Append(component);
                 builder.Append('.');
             }
+
+            var length = builder.Length - 1 - startIndex;
+            var buffer = new char[length];
+            builder.CopyTo(startIndex, buffer.AsSpan(), length);
+            FullNamespaceNameLookup[namespaceSymbol] = new string(buffer);
 
             if (!includeTrailingSeparator)
             {
@@ -109,7 +144,7 @@ internal static class SourceGenerationHelper
 
             return builder;
         }
-        
+
         public StringBuilder AppendFullName<T>(T fullNameType) where T : IFullNameType
         {
             builder.Append("global::");
@@ -125,9 +160,17 @@ internal static class SourceGenerationHelper
 
         public StringBuilder AppendFullName(ITypeSymbol typeSymbol)
         {
+            if (FullNameLookup.TryGetValue(typeSymbol, out var fullName))
+            {
+                return builder.Append(fullName);
+            }
+
+            var startIndex = builder.Length;
             if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
             {
-                return builder.AppendFullName(arrayTypeSymbol);
+                builder.AppendFullName(arrayTypeSymbol);
+                AddStringBuilderSliceToLookup(builder, startIndex, typeSymbol);
+                return builder;
             }
 
             builder.Append("global::")
@@ -141,6 +184,7 @@ internal static class SourceGenerationHelper
 
             if (typeSymbol is not INamedTypeSymbol { TypeArguments.IsEmpty: false } namedTypeSymbol)
             {
+                AddStringBuilderSliceToLookup(builder, startIndex, typeSymbol);
                 return builder;
             }
 
@@ -154,7 +198,9 @@ internal static class SourceGenerationHelper
                 }
             }
 
-            return builder.Append('>');
+            builder.Append('>');
+            AddStringBuilderSliceToLookup(builder, startIndex, typeSymbol);
+            return builder;
         }
 
         private StringBuilder AppendFullName(IArrayTypeSymbol typeSymbol)
@@ -197,7 +243,24 @@ internal static class SourceGenerationHelper
 
     extension(ITypeSymbol typeSymbol)
     {
-        public string FullName => new StringBuilder().AppendFullName(typeSymbol).ToString();
+        public string FullName =>
+            FullNameLookup.TryGetValue(typeSymbol, out var value)
+                ? value
+                : new StringBuilder().AppendFullName(typeSymbol).ToString();
+
+        public bool IsSystemJsonType
+        {
+            get
+            {
+                var fullName = typeSymbol.FullName;
+                return fullName is "System.Text.Json.JsonElement"
+                    or "System.Text.Json.JsonDocument"
+                    or "System.Text.Json.Nodes.JsonNode"
+                    or "System.Text.Json.Nodes.JsonArray"
+                    or "System.Text.Json.Nodes.JsonObject"
+                    or "System.Text.Json.Nodes.JsonValue";
+            }
+        }
 
         public bool IsNullable => typeSymbol.NullableAnnotation is NullableAnnotation.Annotated ||
                                   typeSymbol.Name.StartsWith("Nullable");
@@ -376,6 +439,7 @@ internal static class SourceGenerationHelper
                                    (at.ElementType.IsNullable ? "Nullable" : "") + "Array",
             _ => nonNullType.Name,
         };
-        return $"{interceptorTargetType}_{typeName}_{(isNullableType ? "Nullable" : "NotNull")}_Interception.g.cs";
+        return
+            $"{interceptorTargetType}_{typeName}_{(isNullableType ? "Nullable" : "NotNull")}_Interception.g.cs";
     }
 }
