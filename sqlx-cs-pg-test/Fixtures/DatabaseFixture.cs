@@ -2,58 +2,65 @@ using Sqlx.Core.Pool;
 using Sqlx.Postgres.Connection;
 using Sqlx.Postgres.Generator.Type;
 using Sqlx.Postgres.Pool;
+using Testcontainers.PostgreSql;
 using TUnit.Core.Interfaces;
 
 namespace Sqlx.Postgres.Fixtures;
 
 public sealed class DatabaseFixture : IAsyncInitializer, IAsyncDisposable
 {
-    public IPgConnectionPool BasicPool { get; }
+    private const string ContainerDatabase = "sqlx_cs_tests";
+    private const string ContainerUsername = "sqlx_cs_user";
+    private const string ContainerPassword = "sqlx_cs_password";
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:18-alpine")
+        .WithDatabase(ContainerDatabase)
+        .WithUsername(ContainerUsername)
+        .WithPassword(ContainerPassword)
+        .Build();
+    
+    public IPgConnectionPool BasicPool { get; private set; } = null!;
 
-    public IPgConnectionPool SimpleQueryTextPool { get; }
+    public IPgConnectionPool SimpleQueryTextPool { get; private set; } = null!;
 
-    public IPgConnectionPool QueryTimeoutPool { get; }
+    public IPgConnectionPool QueryTimeoutPool { get; private set; } = null!;
 
-    public DatabaseFixture()
+    public async Task InitializeAsync()
     {
         const string host = "localhost";
-        var username = Environment.GetEnvironmentVariable("PG_USERNAME")
-                       ?? throw new Exception("PG_USERNAME is not present");
-        var password = Environment.GetEnvironmentVariable("PG_PASSWORD")
-                       ?? throw new Exception("PG_PASSWORD is not present");
-        var database = Environment.GetEnvironmentVariable("PG_DATABASE")
-                       ?? throw new Exception("PG_DATABASE is not present");
+        await _container.StartAsync();
+        
+        var port = _container.GetMappedPublicPort(5432);
         var poolOptions = new PoolOptions();
         var options1 = new PgConnectOptions
         {
             Host = host,
-            Username = username,
-            Database = database,
-            Password = password,
+            Port = port,
+            Username = ContainerUsername,
+            Database = ContainerDatabase,
+            Password = ContainerPassword,
         };
         BasicPool = new PgConnectionPool(options1, poolOptions);
         var options2 = new PgConnectOptions
         {
             Host = host,
-            Username = username,
-            Database = database,
-            Password = password,
+            Port = port,
+            Username = ContainerUsername,
+            Database = ContainerDatabase,
+            Password = ContainerPassword,
             UseExtendedProtocolForSimpleQueries = false,
         };
         SimpleQueryTextPool = new PgConnectionPool(options2, poolOptions);
         var options3 = new PgConnectOptions
         {
             Host = host,
-            Username = username,
-            Database = database,
-            Password = password,
+            Port = port,
+            Username = ContainerUsername,
+            Database = ContainerDatabase,
+            Password = ContainerPassword,
             QueryTimeout = TimeSpan.FromSeconds(1),
         };
         QueryTimeoutPool = new PgConnectionPool(options3, poolOptions);
-    }
-
-    public async Task InitializeAsync()
-    {
+        
         await CreateStoredProcedures();
         await CreateCompositeType();
         await CreateEnumType();

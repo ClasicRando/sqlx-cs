@@ -53,15 +53,19 @@ public class PgExecuteScalarInterceptor : ISourceInterceptorPipeline<ExecuteScal
         return null;
     }
 
-    public void ExecuteInterceptorGeneration(SourceProductionContext context, ImmutableArray<ExecuteScalarInvocation> item)
+    public void ExecuteInterceptorGeneration(
+        SourceProductionContext context,
+        ImmutableArray<ExecuteScalarInvocation> item)
     {
         var sb = new StringBuilder();
 
-        var decodeTypeGrouped = item.GroupBy(x => x.DecodeType, SymbolEqualityComparer.IncludeNullability);
+        var decodeTypeGrouped = item.GroupBy(
+            x => x.DecodeType,
+            SymbolEqualityComparer.IncludeNullability);
         foreach (var decodeTypeGrouping in decodeTypeGrouped)
         {
             ITypeSymbol decodeType = decodeTypeGrouping.First().DecodeType;
-            
+
             var iPgDbType = decodeType.GetIPgDbType();
             if (iPgDbType is not null)
             {
@@ -73,7 +77,7 @@ public class PgExecuteScalarInterceptor : ISourceInterceptorPipeline<ExecuteScal
                     iPgDbType);
                 continue;
             }
-            
+
             if (decodeType is INamedTypeSymbol { IsWrapperEnum: true } nt)
             {
                 GenerateWrapperEnumInterceptor(
@@ -91,7 +95,7 @@ public class PgExecuteScalarInterceptor : ISourceInterceptorPipeline<ExecuteScal
                     $"Calls to 'ExecuteScalar' must resolve to a known DB type. SampleLocation {decodeTypeGrouping.First().Location.GetDisplayLocation()}"));
         }
     }
-    
+
     private static void GenerateIDbTypeInterceptor(
         SourceProductionContext context,
         StringBuilder sb,
@@ -99,7 +103,9 @@ public class PgExecuteScalarInterceptor : ISourceInterceptorPipeline<ExecuteScal
         ITypeSymbol nonNullDecodeType,
         string iPgDbType)
     {
-        sb.AppendLine("""
+        var isJsonWrapper = nonNullDecodeType.IsWrapperJson(out ITypeSymbol? innerType);
+        sb.AppendLine(
+            """
             #nullable enable
             namespace System.Runtime.CompilerServices
             {
@@ -114,7 +120,7 @@ public class PgExecuteScalarInterceptor : ISourceInterceptorPipeline<ExecuteScal
                     }
                 }
             }
-            
+
             namespace Sqlx.Postgres.Interceptors
             {
                 static file class GetInterceptors
@@ -131,17 +137,31 @@ public class PgExecuteScalarInterceptor : ISourceInterceptorPipeline<ExecuteScal
                 $"""        [global::System.Runtime.CompilerServices.InterceptsLocation({version}, "{data}")] // {displayLocation}""");
         }
 
-        sb.Append("        public static Task<")
+        sb.Append("        public static ")
+            .Append(isJsonWrapper ? "async " : string.Empty)
+            .Append("Task<")
             .AppendFullName(nonNullDecodeType)
             .Append("> ExecuteScalar")
             .Append(nonNullDecodeType.Name)
-            .AppendLine("(this global::Sqlx.Postgres.Query.IPgExecutableQuery pgExecutableQuery, CancellationToken cancellationToken = default)");
+            .AppendLine(
+                "(this global::Sqlx.Postgres.Query.IPgExecutableQuery pgExecutableQuery, CancellationToken cancellationToken = default)");
         sb.AppendLine("        {");
-        sb.Append("            return global::Sqlx.Postgres.Query.ExecutableQuery.ExecuteScalarPg<")
-            .AppendFullName(nonNullDecodeType)
+        sb.Append("            return ");
+        if (isJsonWrapper)
+        {
+            sb.Append("new global::Sqlx.Core.Types.JsonValue<")
+                .AppendFullName(innerType!)
+                .Append("> { Inner = await ");
+        }
+
+        sb.Append("global::Sqlx.Postgres.Query.ExecutableQuery.ExecuteScalarPg<")
+            .AppendFullName(isJsonWrapper ? innerType! : nonNullDecodeType)
             .Append(',')
-            .Append(iPgDbType)
-            .AppendLine(">(pgExecutableQuery, cancellationToken);");
+            .Append(iPgDbType);
+
+        sb.Append(">(pgExecutableQuery, cancellationToken)")
+            .Append(isJsonWrapper ? " }" : string.Empty)
+            .AppendLine(";");
         sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine("}");
@@ -163,8 +183,9 @@ public class PgExecuteScalarInterceptor : ISourceInterceptorPipeline<ExecuteScal
         INamedTypeSymbol nonNullDecodeType)
     {
         var wrapperEnumToIntercept = new WrapperEnum(nonNullDecodeType);
-        
-        sb.AppendLine("""
+
+        sb.AppendLine(
+            """
             #nullable enable
             namespace System.Runtime.CompilerServices
             {
@@ -179,7 +200,7 @@ public class PgExecuteScalarInterceptor : ISourceInterceptorPipeline<ExecuteScal
                     }
                 }
             }
-            
+
             namespace Sqlx.Postgres.Interceptors
             {
                 static file class GetInterceptors
@@ -195,26 +216,30 @@ public class PgExecuteScalarInterceptor : ISourceInterceptorPipeline<ExecuteScal
             sb.AppendLine(
                 $"""        [global::System.Runtime.CompilerServices.InterceptsLocation({version}, "{data}")] // {displayLocation}""");
         }
-        
+
         sb.Append("        public static async Task<")
             .AppendFullName(nonNullDecodeType)
             .Append("> ExecuteScalar")
             .Append(nonNullDecodeType.Name)
-            .Append("(this global::Sqlx.Postgres.Query.IPgExecutableQuery pgExecutableQuery, CancellationToken cancellationToken = default)");
+            .Append(
+                "(this global::Sqlx.Postgres.Query.IPgExecutableQuery pgExecutableQuery, CancellationToken cancellationToken = default)");
         sb.AppendLine("        {");
         switch (wrapperEnumToIntercept.Representation)
         {
             case EnumRepresentation.Int:
                 sb.Append("            return (")
                     .AppendFullName(wrapperEnumToIntercept)
-                    .AppendLine(")await global::Sqlx.Postgres.Query.ExecutableQuery.ExecuteScalarPg<int, global::Sqlx.Postgres.Type.PgInt>(pgExecutableQuery, cancellationToken);");
+                    .AppendLine(
+                        ")await global::Sqlx.Postgres.Query.ExecutableQuery.ExecuteScalarPg<int, global::Sqlx.Postgres.Type.PgInt>(pgExecutableQuery, cancellationToken);");
                 break;
             case EnumRepresentation.Text:
                 sb.Append("            return ")
                     .Append(wrapperEnumToIntercept.UniqueMethodFullName)
-                    .AppendLine("_FromChars(await global::Sqlx.Postgres.Query.ExecutableQuery.ExecuteScalarPg<string, global::Sqlx.Postgres.Type.PgString>(pgExecutableQuery, cancellationToken));");
+                    .AppendLine(
+                        "_FromChars(await global::Sqlx.Postgres.Query.ExecutableQuery.ExecuteScalarPg<string, global::Sqlx.Postgres.Type.PgString>(pgExecutableQuery, cancellationToken));");
                 break;
         }
+
         sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine("}");

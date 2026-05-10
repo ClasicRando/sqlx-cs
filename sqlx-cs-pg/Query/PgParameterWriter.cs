@@ -1,5 +1,5 @@
 using System.Buffers;
-using System.Text.Json.Serialization.Metadata;
+using System.Text.Json;
 using Sqlx.Core;
 using Sqlx.Core.Buffer;
 using Sqlx.Postgres.Type;
@@ -15,11 +15,13 @@ namespace Sqlx.Postgres.Query;
 internal sealed class PgParameterWriter : IPgBindable
 {
     private readonly ArrayBufferWriter _buffer;
+    private readonly JsonSerializerOptions _serializerOptions;
     private readonly List<PgTypeInfo> _pgTypes = [];
 
-    public PgParameterWriter(ArrayBufferWriter buffer)
+    public PgParameterWriter(ArrayBufferWriter buffer, JsonSerializerOptions serializerOptions)
     {
         _buffer = buffer;
+        _serializerOptions = serializerOptions;
     }
 
     /// <summary>
@@ -49,14 +51,6 @@ internal sealed class PgParameterWriter : IPgBindable
         _pgTypes.Add(PgString.DbType);
     }
 
-    public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
-    {
-        var startLocation = _buffer.StartWritingLengthPrefixed();
-        PgJson<T>.Encode(value, _buffer);
-        _buffer.FinishWritingLengthPrefixed(startLocation, includeLength: false);
-        _pgTypes.Add(PgJson<T>.DbType);
-    }
-
     public void BindNull<T>() where T : notnull
     {
         _buffer.WriteInt(-1);
@@ -67,7 +61,14 @@ internal sealed class PgParameterWriter : IPgBindable
         where TValue : notnull where TType : IPgDbType<TValue>
     {
         var startLocation = _buffer.StartWritingLengthPrefixed();
-        TType.Encode(value, _buffer);
+        if (typeof(TType) == typeof(PgJson<TValue>))
+        {
+            PgJson<TValue>.Encode(value, _buffer, _serializerOptions);
+        }
+        else
+        {
+            TType.Encode(value, _buffer);
+        }
         _buffer.FinishWritingLengthPrefixed(startLocation, includeLength: false);
         _pgTypes.Add(TType.DbType);
     }

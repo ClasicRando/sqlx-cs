@@ -4,14 +4,14 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Sqlx.Postgres.Generator.Result;
 
-internal readonly struct PgFromRowToGenerate
+internal readonly struct PgFromRowToGenerate : IFullNameType
 {
     private readonly INamedTypeSymbol _typeSymbol;
     private readonly TypeDeclarationSyntax _typeDeclarationSyntax;
 
     public string ShortName => _typeSymbol.Name;
 
-    public string ContainingNamespace { get; }
+    public INamespaceSymbol ContainingNamespace => _typeSymbol.ContainingNamespace;
 
     public bool IsStruct => _typeSymbol.IsValueType;
 
@@ -29,7 +29,6 @@ internal readonly struct PgFromRowToGenerate
     {
         _typeSymbol = namedTypeSymbol;
         _typeDeclarationSyntax = typeDeclarationSyntax;
-        ContainingNamespace = namedTypeSymbol.ContainingNamespace.GetFullNamespaceName();
         var renameAll = (Rename)(namedTypeSymbol.GetAttributes()
             .Select(attr => attr.NamedArguments
                 .Where(arg => arg.Key == "RenameAll")
@@ -41,19 +40,21 @@ internal readonly struct PgFromRowToGenerate
             .FirstOrDefault();
         if (primaryConstructor is not null)
         {
-            ConstructorParameters = primaryConstructor.Parameters
-                .Select(param => RowField.FromParameter(param, renameAll))
-                .ToImmutableArray();
+            ConstructorParameters = [
+                ..primaryConstructor.Parameters
+                    .Select(param => RowField.FromParameter(param, renameAll)),
+            ];
         }
 
         if (primaryConstructor is null || (IsStruct && primaryConstructor.Parameters.IsEmpty))
         {
-            InitProperties = namedTypeSymbol.GetMembers()
-                .OfType<IPropertySymbol>()
-                .Where(property => property.IsRequired || !property.IsReadOnly)
-                .Where(property => property.IsNotSkip)
-                .Select(property => RowField.FromProperty(property, renameAll))
-                .ToImmutableArray();
+            InitProperties = [
+                ..namedTypeSymbol.GetMembers()
+                    .OfType<IPropertySymbol>()
+                    .Where(property => property.IsRequired || !property.IsReadOnly)
+                    .Where(property => property.IsNotSkip)
+                    .Select(property => RowField.FromProperty(property, renameAll)),
+            ];
         }
     }
 

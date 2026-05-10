@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core.Query;
 using Sqlx.Core.Result;
 using Sqlx.Postgres.Result;
@@ -34,34 +33,6 @@ public static class ExecutableQuery
             var current = resultSet.Current;
             return current.IsLeft
                 ? current.Left.GetPgNotNull<TValue, TType>(0)
-                : throw new InvalidOperationException("Scalar query cannot be non-query");
-        }
-
-        /// <summary>
-        /// Execute the query and extract the first row's first column as a JSON of the desired type
-        /// </summary>
-        /// <param name="cancellationToken">Optional cancellation token</param>
-        /// <param name="jsonTypeInfo">Optional JSON type deserialization info</param>
-        /// <typeparam name="TValue"></typeparam>
-        /// <returns>The first row's first column decoded as JSON of the desired type</returns>
-        /// <exception cref="Exception">
-        /// If the query, column decoding or deserialization fails
-        /// </exception>
-        public async Task<TValue> ExecuteScalarJson<TValue>(
-            JsonTypeInfo<TValue>? jsonTypeInfo = null,
-            CancellationToken cancellationToken = default)
-            where TValue : notnull
-        {
-            using var resultSet = await executableQuery.ExecuteAsync(cancellationToken)
-                .ConfigureAwait(false);
-            if (!await resultSet.MoveNextAsync(cancellationToken).ConfigureAwait(false))
-            {
-                throw new InvalidOperationException("Scalar queries must return at least 1 row");
-            }
-
-            var current = resultSet.Current;
-            return current.IsLeft
-                ? current.Left.GetJsonNotNull(0, jsonTypeInfo)
                 : throw new InvalidOperationException("Scalar query cannot be non-query");
         }
 

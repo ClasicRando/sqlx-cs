@@ -19,9 +19,9 @@ struct Row : IFromRow<DbRow, Row>
     {
         return new Row
         {
-            Id = dataRow.GetIntNotNull("id"),
-            Name = dataRow.GetStringNotNull("name"),
-            ChildId = dataRow.GetInt("child_id"),
+            Id = dataRow.GetField<int>("id"),
+            Name = dataRow.GetField<string>("name"),
+            ChildId = dataRow.GetField<int?>("child_id"),
         };
     }
 }
@@ -57,7 +57,7 @@ struct Param : IBindMany<DbBindable>
 await using var connection = pool.CreateConnection();
 using var query = connection.CreateQuery(parameterizedQuery);
 // Binds to first parameter present in query
-query.Bind(1); 
+query.Bind(1);
 var rows = await query.FetchAllAsync<Row>();
 
 // With no query and param type
@@ -169,6 +169,13 @@ would be an easier option.
 SSL connections are not implemented.... yet!
 
 ### FAQs
+#### Did AI write any of this code?
+No, but that doesn't mean it's better than code written with AI. I started this project before LLM
+based AI was more accessible but even when I did get easier access to such tools, I decided to keep
+it out of this project. That is because I found this more enjoyable and truly wanted to make sure I
+understood what the code was doing at every step. I use AI for personal projects that don't need
+quite as much scrutiny and at work where it does help my productivity which means something to me.
+
 #### Is there support for non-async/blocking connections?
 No. Database interactions generally involve some sort of IO so it would be best to put that into an
 async operation. However, if there is enough desire to use this library for blocking connections

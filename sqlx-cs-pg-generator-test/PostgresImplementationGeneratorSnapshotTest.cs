@@ -77,10 +77,15 @@ public class PostgresImplementationGeneratorSnapshotTest
             using System;
             using System.Collections;
             using System.Net;
+            using System.Text.Json;
+            using System.Text.Json.Nodes;
+            using Sqlx.Core.Types;
             using Sqlx.Postgres.Type;
             using Sqlx.Postgres.Generator;
             using Sqlx.Postgres.Generator.Result;
             using Sqlx.Postgres.Generator.Type;
+            
+            public record Inner(int Id, string Name);
 
             [WrapperEnum(Representation = EnumRepresentation.Int)]
             public enum WrapperEnumType
@@ -125,7 +130,14 @@ public class PostgresImplementationGeneratorSnapshotTest
                 int[] IntArrayField,
                 int? NullableIntField,
                 WrapperEnumType WrapperEnumTypeField,
-                PostgresEnumType PostgresEnumTypeField)
+                PostgresEnumType PostgresEnumTypeField,
+                Sqlx.Core.Types.JsonValue<Inner> JsonValueField,
+                JsonElement JsonElementField,
+                JsonDocument JsonDocumentField,
+                JsonNode JsonNodeField,
+                JsonArray JsonArrayField,
+                JsonObject JsonObjectField,
+                JsonValue JsonValueField)
             {
             }
             """;

@@ -61,17 +61,29 @@ These options are provided to a connection pool to use for every new connection 
 | PgPoint*                       | POINT                                        |
 | PgPolygon*                     | POLYGON                                      |
 | PgTimeTz*                      | TIME WITH TIME ZONE                          |
-| T                              | JSONB, JSON                                  |
+| T, JsonValue&lt;T&gt;          | JSONB, JSON                                  |
+| Enum                           | ENUM                                         |
+| Enum                           | INTEGER                                      |
+| Enum                           | TEXT, VARCHAR(x)                             |
+| T                              | COMPOSITE                                    |
 
 \* Type custom to the sqlx-cs-pg library
 
+### FromRow
+All drivers implement a source generator for `IFromRow`. The Postgres driver supports deserializing
+to any type that is found in the table above. It also supports a few attributes for custom
+behaviour:
+- `[PgPropertySkip]` - Skip this property during deserialization
+- `[PgName(string)]` - Use a custom name instead of translating the property name to a field name
+- `[FlattenField]` - Defer to the field's type for deserialization, intended for nested type within
+the row
+- `[JsonField]` - Treat the field value as JSON and deserialize into the field type, see notes below
+
 ### JSON
 Postgres supports unstructured data through the `JSON` and `JSONB` types. Extracting those field
-types are handled by the `IDataRow.GetJson` methods where a generic argument or
-`JsonTypeInfo<T>` is provided to tell the row how to deserialize the JSON value. If you require
-working with an opaque JSON object then you must specify `JsonNode` as the deserialization type.
-Similarly, `IBindable.BindJson` allow for serializing a CLR type or `JsonNode` for sending to the
-database.
+types are handled with the `IPgDataRow.GetField` method where the parameter is `JsonValue<T>` and
+`T` is the underlining type that the JSON represents. If you intend to source generate
+`JsonTypeInfo<T>`, you can include those in the `PgConnectOptions.JsonSerializerOptions`.
 
 ### Array Types
 All postgres types have an implicit array type created and can be extracted as a `T[]` using

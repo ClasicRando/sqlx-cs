@@ -34,6 +34,8 @@ public sealed class PgConnection :
 
     public override bool InTransaction => _pgConnector?.InTransaction ?? false;
 
+    internal PgConnectOptions ConnectOptions => _pool.ConnectOptions;
+
     private async ValueTask OpenAsync(CancellationToken cancellationToken = default)
     {
         CheckDisposed();

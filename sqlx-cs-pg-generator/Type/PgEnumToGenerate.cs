@@ -10,7 +10,6 @@ internal readonly struct PgEnumToGenerate : IFullNameType
     public PgEnumToGenerate(INamedTypeSymbol namedTypeSymbol)
     {
         _enumType = namedTypeSymbol;
-        ContainingNamespace = namedTypeSymbol.ContainingNamespace.GetFullNamespaceName();
         var namedArguments = namedTypeSymbol.GetAttributes()
             .FirstOrDefault(attr => attr.AttributeClass!.Name == "PgEnumAttribute")
             !.NamedArguments;
@@ -23,34 +22,14 @@ internal readonly struct PgEnumToGenerate : IFullNameType
             .Value
             .Value ?? Rename.None);
 
-        List<KeyValuePair<string, string>> builder = [];
-        foreach (IFieldSymbol? field in namedTypeSymbol.GetMembers().OfType<IFieldSymbol>())
-        {
-            if (field is null)
-            {
-                continue;
-            }
-
-            var name = field.Name;
-            var overrideName = (string?)field
-                .GetAttributes()
-                .FirstOrDefault(a => a.AttributeClass?.Name == "PgNameAttribute")
-                ?.ConstructorArguments
-                .FirstOrDefault()
-                .Value;
-
-            var value = overrideName ?? renameAll.TransformName(name);
-            builder.Add(new KeyValuePair<string, string>(name, value.Replace("\"", "\\\"")));
-        }
-
-        ValueNames = builder.ToImmutableArray();
+        ValueNames = namedTypeSymbol.GenerateFieldLookup(renameAll);
     }
 
     public string ShortName => _enumType.Name;
 
     public string FullName => _enumType.FullName;
-    
-    public string ContainingNamespace { get; }
+
+    public INamespaceSymbol ContainingNamespace => _enumType.ContainingNamespace;
 
     public string TypeDefName => $"Pg{ShortName}";
 

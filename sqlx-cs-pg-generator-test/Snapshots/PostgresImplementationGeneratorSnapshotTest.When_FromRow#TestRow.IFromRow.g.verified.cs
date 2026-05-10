@@ -34,6 +34,13 @@ public partial struct TestRow : global::Sqlx.Core.Result.IFromRow<global::Sqlx.P
         var indexNullableIntField = dataRow.IndexOf("NullableIntField");
         var indexWrapperEnumTypeField = dataRow.IndexOf("WrapperEnumTypeField");
         var indexPostgresEnumTypeField = dataRow.IndexOf("PostgresEnumTypeField");
+        var indexJsonValueField = dataRow.IndexOf("JsonValueField");
+        var indexJsonElementField = dataRow.IndexOf("JsonElementField");
+        var indexJsonDocumentField = dataRow.IndexOf("JsonDocumentField");
+        var indexJsonNodeField = dataRow.IndexOf("JsonNodeField");
+        var indexJsonArrayField = dataRow.IndexOf("JsonArrayField");
+        var indexJsonObjectField = dataRow.IndexOf("JsonObjectField");
+        var indexJsonValueField = dataRow.IndexOf("JsonValueField");
         return new TestRow(
             BoolField: dataRow.GetPgNotNull<global::System.Boolean,global::Sqlx.Postgres.Type.PgBool>(indexBoolField),
             ByteField: dataRow.GetPgNotNull<global::System.SByte,global::Sqlx.Postgres.Type.PgChar>(indexByteField),
@@ -62,6 +69,13 @@ public partial struct TestRow : global::Sqlx.Core.Result.IFromRow<global::Sqlx.P
             IntArrayField: dataRow.GetPgNotNull<global::System.Int32[],global::Sqlx.Postgres.Type.PgArrayTypeStruct<global::System.Int32, global::Sqlx.Postgres.Type.PgInt>>(indexIntArrayField),
             NullableIntField: dataRow.IsNull(indexNullableIntField) ? null : dataRow.GetPgNotNull<global::System.Int32,global::Sqlx.Postgres.Type.PgInt>(indexNullableIntField),
             WrapperEnumTypeField: (global::WrapperEnumType)dataRow.GetPgNotNull<global::System.Int32,global::Sqlx.Postgres.Type.PgInt>(indexWrapperEnumTypeField),
-            PostgresEnumTypeField: dataRow.GetPgNotNull<global::PostgresEnumType,global::Sqlx.Postgres.Generator.Type.PgPostgresEnumType>(indexPostgresEnumTypeField));
+            PostgresEnumTypeField: dataRow.GetPgNotNull<global::PostgresEnumType,global::Sqlx.Postgres.Generator.Type.PgPostgresEnumType>(indexPostgresEnumTypeField),
+            JsonValueField: new global::Sqlx.Core.Types.JsonValue { Inner = dataRow.GetPgNotNull<global::Inner,global::Sqlx.Postgres.Type.PgJson<global::Inner>>(indexJsonValueField) },
+            JsonElementField: dataRow.GetPgNotNull<global::System.Text.Json.JsonElement,global::Sqlx.Postgres.Type.PgJson<global::System.Text.Json.JsonElement>>(indexJsonElementField),
+            JsonDocumentField: dataRow.GetPgNotNull<global::System.Text.Json.JsonDocument,global::Sqlx.Postgres.Type.PgJson<global::System.Text.Json.JsonDocument>>(indexJsonDocumentField),
+            JsonNodeField: dataRow.GetPgNotNull<global::System.Text.Json.Nodes.JsonNode,global::Sqlx.Postgres.Type.PgJson<global::System.Text.Json.Nodes.JsonNode>>(indexJsonNodeField),
+            JsonArrayField: dataRow.GetPgNotNull<global::System.Text.Json.Nodes.JsonArray,global::Sqlx.Postgres.Type.PgJson<global::System.Text.Json.Nodes.JsonArray>>(indexJsonArrayField),
+            JsonObjectField: dataRow.GetPgNotNull<global::System.Text.Json.Nodes.JsonObject,global::Sqlx.Postgres.Type.PgJson<global::System.Text.Json.Nodes.JsonObject>>(indexJsonObjectField),
+            JsonValueField: dataRow.GetPgNotNull<global::System.Text.Json.Nodes.JsonValue,global::Sqlx.Postgres.Type.PgJson<global::System.Text.Json.Nodes.JsonValue>>(indexJsonValueField));
     }
 }

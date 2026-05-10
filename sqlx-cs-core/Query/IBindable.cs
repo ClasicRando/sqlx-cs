@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization.Metadata;
-
 namespace Sqlx.Core.Query;
 
 /// <summary>
@@ -10,19 +8,6 @@ namespace Sqlx.Core.Query;
 /// </summary>
 public interface IBindable : IDisposable
 {
-    /// <summary>
-    /// Bind a <typeparamref name="T"/> value as a JSON. Some databases have a JSON specific field
-    /// type but other database drivers will treat the JSON encoding as string or bytes. When using
-    /// this method, it's recommended to supply the <see cref="JsonTypeInfo"/> parameter to aid
-    /// serialization. If you need to bind a possibly null value, use
-    /// <see cref="Bindable.BindJsonRef"/> and <see cref="Bindable.BindJsonVal"/> for class and
-    /// struct types respectively.
-    /// </summary>
-    /// <param name="value">Value to encode as JSON</param>
-    /// <param name="typeInfo">Optional type metadata for JSON serialization</param>
-    /// <typeparam name="T">CLR type to encode as JSON</typeparam>
-    void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull;
-
     /// <summary>
     /// Bind a null value to the query
     /// </summary>

@@ -4,14 +4,14 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Sqlx.Postgres.Generator.Query;
 
-internal readonly struct PgToParamToGenerate
+internal readonly struct PgToParamToGenerate : IFullNameType
 {
     private readonly INamedTypeSymbol _typeSymbol;
     private readonly TypeDeclarationSyntax _typeDeclarationSyntax;
 
     public string ShortName => _typeSymbol.Name;
 
-    public string ContainingNamespace { get; }
+    public INamespaceSymbol ContainingNamespace => _typeSymbol.ContainingNamespace;
 
     public bool IsStruct => _typeSymbol.IsValueType;
 
@@ -25,11 +25,11 @@ internal readonly struct PgToParamToGenerate
     {
         _typeSymbol = namedTypeSymbol;
         _typeDeclarationSyntax = typeDeclarationSyntax;
-        ContainingNamespace = namedTypeSymbol.ContainingNamespace.GetFullNamespaceName();
-        Properties = namedTypeSymbol.GetMembers()
-            .OfType<IPropertySymbol>()
-            .Where(property => !property.IsWriteOnly && property.IsNotSkip)
-            .ToImmutableArray();
+        Properties = [
+            ..namedTypeSymbol.GetMembers()
+                .OfType<IPropertySymbol>()
+                .Where(property => !property.IsWriteOnly && property.IsNotSkip),
+        ];
     }
 
     public bool Validate(SourceProductionContext context)

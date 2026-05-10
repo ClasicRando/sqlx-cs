@@ -65,5 +65,5 @@ public interface IPgConnectionPool : IConnectionPool<IPgConnection, IPgBindable,
     /// User defined type that represents a Postgres composite UDT
     /// </typeparam>
     Task MapCompositeAsync<TComposite>(CancellationToken cancellationToken = default)
-        where TComposite : IPgUdt<TComposite>;
+        where TComposite : IPgComposite<TComposite>;
 }

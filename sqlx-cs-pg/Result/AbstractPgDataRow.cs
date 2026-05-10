@@ -1,5 +1,5 @@
 using System.Buffers;
-using System.Text.Json.Serialization.Metadata;
+using System.Text.Json;
 using Sqlx.Core;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Column;
@@ -13,10 +13,11 @@ namespace Sqlx.Postgres.Result;
 /// <see cref="Sqlx.Core.Result.IDataRow"/> implementation for Postgres. Represents the bytes sent
 /// by the database backend and the statement's metadata.
 /// </summary>
-internal abstract class AbstractPgDataRow : IPgDataRow
+internal abstract class AbstractPgDataRow(JsonSerializerOptions jsonSerializerOptions) : IPgDataRow
 {
     private const int MaxStackSize = 256 / (sizeof(char) / sizeof(byte));
     private static readonly ArrayPool<char> CharArrayPool = ArrayPool<char>.Shared;
+    private readonly JsonSerializerOptions _jsonSerializerOptions = jsonSerializerOptions;
     
     protected ReadOnlyMemory<byte> RowData;
     protected PgStatementMetadata? StatementMetadata;
@@ -48,55 +49,6 @@ internal abstract class AbstractPgDataRow : IPgDataRow
         CheckIfWithinRow();
         CheckValidIndex(index);
         return GetColumnData(index).IsNull;
-    }
-
-    public T GetJsonNotNull<T>(int index, JsonTypeInfo<T>? jsonTypeInfo = null) where T : notnull
-    {
-        CheckIfWithinRow();
-        ColumnData columnData = GetColumnData(index);
-        if (columnData.IsNull)
-        {
-            throw new SqlxException($"Expected field #{index} to be non-null but found null");
-        }
-
-        ref readonly PgColumnMetadata columnMetadata = ref columnData.ColumnMetadata;
-        if (PgJson<T>.DbType != columnMetadata.TypeInfo
-            && !PgJson<T>.IsCompatible(columnMetadata.TypeInfo))
-        {
-            throw ColumnDecodeException.Create<T, PgColumnMetadata>(columnMetadata);
-        }
-
-        var bytes = columnData.Data;
-        switch (columnMetadata.FormatCode)
-        {
-            case PgFormatCode.Text:
-                char[]? rentedFromPool = null;
-                var characterCount = Charsets.Default.GetCharCount(bytes);
-                var chars = characterCount >= MaxStackSize
-                    ? (rentedFromPool = CharArrayPool.Rent(characterCount))
-                    : stackalloc char[characterCount];
-                chars = chars[..characterCount];
-                try
-                {
-                    Charsets.Default.GetChars(bytes, chars);
-                    PgTextValue textValue = new(chars, columnMetadata);
-                    return PgJson<T>.DecodeText(textValue, jsonTypeInfo);
-                }
-                finally
-                {
-                    if (rentedFromPool is not null)
-                    {
-                        CharArrayPool.Return(rentedFromPool);
-                    }
-                }
-            case PgFormatCode.Binary:
-                PgBinaryValue binaryValue = new(bytes, columnMetadata);
-                return PgJson<T>.DecodeBytes(binaryValue, jsonTypeInfo);
-            default:
-                throw ColumnDecodeException.Create<T, PgColumnMetadata>(
-                    columnData.ColumnMetadata,
-                    $"Unexpected format code: {columnData.ColumnMetadata.FormatCode}");
-        }
     }
 
     private readonly ref struct ColumnData(
@@ -176,7 +128,9 @@ internal abstract class AbstractPgDataRow : IPgDataRow
                 {
                     Charsets.Default.GetChars(bytes, chars);
                     PgTextValue textValue = new(chars, columnMetadata);
-                    return TType.DecodeText(textValue);
+                    return typeof(TType) == typeof(PgJson<TResult>)
+                        ? PgJson<TResult>.DecodeText(textValue, _jsonSerializerOptions)
+                        : TType.DecodeText(textValue);
                 }
                 finally
                 {
@@ -187,7 +141,9 @@ internal abstract class AbstractPgDataRow : IPgDataRow
                 }
             case PgFormatCode.Binary:
                 var value = new PgBinaryValue(bytes, columnMetadata);
-                return TType.DecodeBytes(value);
+                return typeof(TType) == typeof(PgJson<TResult>)
+                    ? PgJson<TResult>.DecodeBytes(value, _jsonSerializerOptions)
+                    : TType.DecodeBytes(value);
             default:
                 throw ColumnDecodeException.Create<TResult, PgColumnMetadata>(
                     columnData.ColumnMetadata,

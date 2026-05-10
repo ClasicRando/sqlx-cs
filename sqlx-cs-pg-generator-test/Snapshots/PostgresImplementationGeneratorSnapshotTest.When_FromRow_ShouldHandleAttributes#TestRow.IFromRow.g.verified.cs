@@ -14,8 +14,8 @@ public partial struct TestRow : global::Sqlx.Core.Result.IFromRow<global::Sqlx.P
         {
             Id = dataRow.GetPgNotNull<global::System.Int32,global::Sqlx.Postgres.Type.PgInt>(indexId),
             Inner = global::InnerRow.FromRow(dataRow),
-            JsonField = dataRow.GetJsonNotNull<global::JsonFieldType>(indexJsonField),
-            OptionalJsonField = dataRow.GetJson<global::JsonFieldType>(indexOptionalJsonField),
+            JsonField = dataRow.GetPgNotNull<global::JsonFieldType,global::Sqlx.Postgres.Type.PgJson<global::JsonFieldType>>(indexJsonField),
+            OptionalJsonField = dataRow.IsNull(indexOptionalJsonField) ? null : dataRow.GetPgNotNull<global::JsonFieldType,PgJson<global::JsonFieldType>>(indexOptionalJsonField),
         };
     }
 }

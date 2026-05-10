@@ -109,6 +109,7 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
         bool isNullable,
         string iPgDbType)
     {
+        var isJsonWrapper = nonNullDecodeType.IsWrapperJson(out ITypeSymbol? innerType);
         sb.AppendLine("""
             #nullable enable
             namespace System.Runtime.CompilerServices
@@ -168,11 +169,23 @@ public sealed class PgGetFieldInterceptor : ISourceInterceptorPipeline<GetFieldI
             {
                 sb.AppendLine("            if (pgDataRow.IsNull(index)) return null;");
             }
-            sb.Append("            return pgDataRow.GetPgNotNull<")
-                .AppendFullName(nonNullDecodeType)
+            sb.Append("            return ");
+            if (isJsonWrapper)
+            {
+                sb.Append("new global::Sqlx.Core.JsonValue { Inner = ");
+            }
+
+            sb.Append("pgDataRow.GetPgNotNull<")
+                .AppendFullName(isJsonWrapper ? innerType! : nonNullDecodeType)
                 .Append(',')
                 .Append(iPgDbType)
-                .AppendLine(">(index);");
+                .Append(">(index)");
+            if (isJsonWrapper)
+            {
+                sb.Append(" }");
+            }
+
+            sb.AppendLine(";");
             sb.AppendLine("        }");
         }
         

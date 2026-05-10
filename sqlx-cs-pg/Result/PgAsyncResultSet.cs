@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Sqlx.Core;
 using Sqlx.Core.Config;
@@ -23,9 +24,10 @@ internal sealed class PgAsyncResultSet : AbstractPgDataRow, IAsyncResultSet<IPgD
 
     public PgAsyncResultSet(
         PgConnector connector,
+        JsonSerializerOptions serializerOptions,
         PgConnector.UserAction userAction,
         PgPreparedStatement[] statements,
-        bool isSyncAll)
+        bool isSyncAll) : base(serializerOptions)
     {
         _connector = connector;
         _logger = connector.ConnectOptions.LoggerFactory.CreateLogger<PgAsyncResultSet>();

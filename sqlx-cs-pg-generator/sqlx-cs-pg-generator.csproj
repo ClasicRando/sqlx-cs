@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
+        <TargetFramework>netstandard2.1</TargetFramework>
         <LangVersion>Latest</LangVersion>
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <PackageId>Sqlx.Postgres.Generator</PackageId>
@@ -29,6 +29,11 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="sqlx-cs-pg-generator-test"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+      <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
     </ItemGroup>
     
 </Project>

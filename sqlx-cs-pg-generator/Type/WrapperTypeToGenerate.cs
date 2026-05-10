@@ -11,7 +11,7 @@ public readonly record struct WrapperTypeToGenerate : IFullNameType
 
     public string ShortName => _typeSymbol.Name;
 
-    public string ContainingNamespace { get; }
+    public INamespaceSymbol ContainingNamespace => _typeSymbol.ContainingNamespace;
 
     public Accessibility DeclaredAccessibility => _typeSymbol.DeclaredAccessibility;
 
@@ -30,11 +30,11 @@ public readonly record struct WrapperTypeToGenerate : IFullNameType
     {
         _typeSymbol = namedTypeSymbol;
         _typeDeclarationSyntax = typeDeclarationSyntax;
-        ContainingNamespace = namedTypeSymbol.ContainingNamespace.GetFullNamespaceName();
-        Properties = _typeSymbol.GetMembers()
-            .OfType<IPropertySymbol>()
-            .Where(property => property.IsNotSkip)
-            .ToImmutableArray();
+        Properties = [
+            .._typeSymbol.GetMembers()
+                .OfType<IPropertySymbol>()
+                .Where(property => property.IsNotSkip),
+        ];
     }
     
     public bool Validate(SourceProductionContext context)

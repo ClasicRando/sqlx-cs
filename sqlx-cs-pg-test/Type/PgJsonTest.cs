@@ -41,7 +41,7 @@ public class PgJsonTest
         PgJson<Inner>.Encode(
             value,
             buffer,
-            useSourceGeneration ? SourceGenerationContext.Default.Inner : null);
+            useSourceGeneration ? SourceGenerationContext.Default.Options : null);
 
         var actualBytes = buffer.ReadableSpan.ToArray();
 
@@ -89,7 +89,7 @@ public class PgJsonTest
 
         Inner actualValue = PgJson<Inner>.DecodeBytes(
             binaryValue,
-            useSourceGeneration ? SourceGenerationContext.Default.Inner : null);
+            useSourceGeneration ? SourceGenerationContext.Default.Options : null);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
@@ -117,7 +117,7 @@ public class PgJsonTest
 
         Inner actualValue = PgJson<Inner>.DecodeText(
             textValue,
-            useSourceGeneration ? SourceGenerationContext.Default.Inner : null);
+            useSourceGeneration ? SourceGenerationContext.Default.Options : null);
 
         await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
@@ -164,7 +164,7 @@ public class PgJsonTest
         {
             Inner value = PgJson<Inner>.DecodeText(
                 textValue,
-                SourceGenerationContext.Default.Inner);
+                SourceGenerationContext.Default.Options);
             Assert.Fail($"Decoding should have failed. Found '{value}'");
         }
         catch (JsonException e)

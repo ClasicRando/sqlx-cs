@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Exceptions;
@@ -22,7 +23,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// <summary>
     /// <para>
     /// Encode a value of type <typeparamref name="T"/> as JSON by deferring to
-    /// <see cref="Encode(T, IBufferWriter{byte}, JsonTypeInfo{T})"/>. This method always uses
+    /// <see cref="Encode(T, IBufferWriter{byte}, JsonSerializerOptions)"/>. This method always uses
     /// runtime JSON serialization which is slower and uses more memory when compared to JSON
     /// serialization with source generation.
     /// </para>
@@ -47,18 +48,18 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/jsonb.c#L93">pg source code</a>
     /// </summary>
-    public static void Encode(T value, IBufferWriter<byte> buffer, JsonTypeInfo<T>? typeInfo)
+    public static void Encode(T value, IBufferWriter<byte> buffer, JsonSerializerOptions? options)
     {
         ArgumentNullException.ThrowIfNull(buffer);
         buffer.WriteByte(JsonBVersion);
-        JsonHelper.WriteToBuffer(buffer, value, typeInfo);
+        JsonHelper.WriteToBuffer(buffer, value, options);
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
     /// <summary>
     /// <para>
     /// Decode a value of type <typeparamref name="T"/> as JSON by deferring to
-    /// <see cref="DecodeBytes(in PgBinaryValue, JsonTypeInfo{T})"/>. This method always uses
+    /// <see cref="DecodeBytes(in PgBinaryValue, JsonSerializerOptions)"/>. This method always uses
     /// runtime JSON serialization which is slower and uses more memory when compared to JSON
     /// serialization with source generation.
     /// </para>
@@ -87,7 +88,7 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/json.c#L136">pg source code</a>
     /// </summary>
     [SuppressMessage("ReSharper", "InvertIf")]
-    public static T DecodeBytes(in PgBinaryValue value, JsonTypeInfo<T>? typeInfo)
+    public static T DecodeBytes(in PgBinaryValue value, JsonSerializerOptions? options)
     {
         var buff = value.Buffer;
         if (value.ColumnMetadata.TypeInfo == PgTypeInfo.Jsonb)
@@ -101,16 +102,16 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
             }
         }
 
-        return JsonHelper.FromBytes(buff, typeInfo);
+        return JsonHelper.FromBytes<T>(buff, options);
     }
 
     /// <inheritdoc cref="IPgDbType{T}.DecodeBytes"/>
     /// <summary>
     /// <para>
     /// Decode a value of type <typeparamref name="T"/> as JSON by deferring to
-    /// <see cref="DecodeText(in PgTextValue, JsonTypeInfo{T})"/>. This method always uses runtime
-    /// JSON serialization which is slower and uses more memory when compared to JSON serialization
-    /// with source generation.
+    /// <see cref="DecodeText(in PgTextValue, JsonSerializerOptions)"/>. This method always uses
+    /// runtime JSON serialization which is slower and uses more memory when compared to JSON
+    /// serialization with source generation.
     /// </para>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/jsonb.c#L112">pg source code</a>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/json.c#L124">pg source code</a>
@@ -136,9 +137,9 @@ internal abstract class PgJson<T> : IPgDbType<T>, IHasArrayType where T : notnul
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/jsonb.c#L128">pg source code</a>
     /// <a href="https://github.com/postgres/postgres/blob/874d817baa160ca7e68bee6ccc9fc1848c56e750/src/backend/utils/adt/json.c#L136">pg source code</a>
     /// </summary>
-    public static T DecodeText(in PgTextValue value, JsonTypeInfo<T>? typeInfo)
+    public static T DecodeText(in PgTextValue value, JsonSerializerOptions? options)
     {
-        return JsonHelper.FromChars(value.Chars, typeInfo);
+        return JsonHelper.FromChars<T>(value.Chars, options);
     }
 
     public static PgTypeInfo DbType => PgTypeInfo.Jsonb;

@@ -1,6 +1,6 @@
 using System.Buffers;
 using System.Collections.Immutable;
-using System.Text.Json.Serialization.Metadata;
+using System.Text.Json;
 using Sqlx.Core.Buffer;
 using Sqlx.Core.Query;
 using Sqlx.Postgres.Exceptions;
@@ -46,11 +46,11 @@ public sealed class PgRecordEncoder : IPgBindable
 
     private ReadOnlySpan<byte> Data => _buffer.ReadableSpan;
 
-    private PgRecordEncoder(PgTypeInfo typeInfo)
+    private PgRecordEncoder(PgTypeInfo typeInfo, JsonSerializerOptions serializerOptions)
     {
         ArgumentNullException.ThrowIfNull(typeInfo);
         _buffer = new ArrayBufferWriter();
-        _parameterWriter = new PgParameterWriter(_buffer);
+        _parameterWriter = new PgParameterWriter(_buffer, serializerOptions);
         if (typeInfo.TypeKind is not CompositeType compositeType)
         {
             throw new PgException(
@@ -71,12 +71,6 @@ public sealed class PgRecordEncoder : IPgBindable
     {
         _buffer.WriteUInt(PgString.DbType.TypeOid.Inner);
         _parameterWriter.Bind(value);
-    }
-
-    public void BindJson<T>(T value, JsonTypeInfo<T>? typeInfo = null) where T : notnull
-    {
-        _buffer.WriteUInt(PgJson<T>.DbType.TypeOid.Inner);
-        _parameterWriter.BindJson(value, typeInfo);
     }
 
     public void BindNull<T>() where T : notnull
@@ -100,9 +94,9 @@ public sealed class PgRecordEncoder : IPgBindable
     }
 
     public static void EncodeRecord<T>(T value, IBufferWriter<byte> buffer)
-        where T : IPgDbType<T>, IBindMany<IPgBindable>
+        where T : IPgComposite<T>, IBindMany<IPgBindable>
     {
-        using PgRecordEncoder recordEncoder = new(T.DbType);
+        using PgRecordEncoder recordEncoder = new(T.DbType, T.JsonOptions);
         value.BindMany(recordEncoder);
         buffer.Write(recordEncoder.Data);
     }
