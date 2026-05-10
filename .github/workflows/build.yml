@@ -10,24 +10,6 @@ jobs:
   build:
     
     runs-on: ubuntu-latest
-    env:
-      POSTGRES_PORT: 5432
-      POSTGRES_USERNAME: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DATABASE: postgres
-    services:
-      postgres:
-        image: postgres
-        env:
-          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
-        ports:
-          - 5432:5432
-        # Set health checks to wait until postgres has started
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     
     steps:
       - uses: actions/checkout@v4
@@ -38,7 +20,3 @@ jobs:
       - name: Run Tests
         run: |
           dotnet test
-        env:
-          PG_USERNAME: ${{ env.POSTGRES_USERNAME }}
-          PG_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
-          PG_DATABASE: ${{ env.POSTGRES_DATABASE }}

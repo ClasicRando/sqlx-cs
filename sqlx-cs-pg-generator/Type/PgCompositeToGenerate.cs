@@ -12,7 +12,7 @@ internal readonly struct PgCompositeToGenerate : IFullNameType
 
     public string ShortName => _typeSymbol.Name;
 
-    public string ContainingNamespace { get; }
+    public INamespaceSymbol ContainingNamespace => _typeSymbol.ContainingNamespace;
 
     public bool IsStruct => _typeSymbol.IsValueType;
 
@@ -30,7 +30,6 @@ internal readonly struct PgCompositeToGenerate : IFullNameType
     {
         _typeSymbol = namedTypeSymbol;
         _typeDeclarationSyntax = typeDeclarationSyntax;
-        ContainingNamespace = namedTypeSymbol.ContainingNamespace.GetFullNamespaceName();
         IsIFromRow = namedTypeSymbol.AllInterfaces.Any(i => i.Name.StartsWith("IFromRow"));
         IsIBindMany = namedTypeSymbol.AllInterfaces.Any(i => i.Name.StartsWith("IBindMany"));
         var namedArguments = namedTypeSymbol.GetAttributes()
