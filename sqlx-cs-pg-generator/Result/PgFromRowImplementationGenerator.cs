@@ -255,12 +255,12 @@ internal class PgFromRowImplementationGenerator : ISourceGenerationPipeline<PgFr
                         .Append(')');
                     break;
                 default:
-                    if (rowField.FieldType.IsWrapperJson(out _, out var innerTypeFullName))
+                    if (rowField.FieldType.IsWrapperJson(out ITypeSymbol? innerType))
                     {
                         builder.Append("new global::Sqlx.Core.Types.JsonValue { Inner = dataRow.GetPgNotNull<")
-                            .Append(innerTypeFullName)
+                            .AppendFullName(innerType)
                             .Append(",global::Sqlx.Postgres.Type.PgJson<")
-                            .Append(innerTypeFullName)
+                            .AppendFullName(innerType)
                             .Append(">>(")
                             .Append(rowField.IndexVariableName)
                             .Append(") }");

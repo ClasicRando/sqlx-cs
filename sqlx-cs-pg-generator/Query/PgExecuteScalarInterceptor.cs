@@ -103,9 +103,7 @@ public class PgExecuteScalarInterceptor : ISourceInterceptorPipeline<ExecuteScal
         ITypeSymbol nonNullDecodeType,
         string iPgDbType)
     {
-        var isJsonWrapper = nonNullDecodeType.IsWrapperJson(
-            out var nonNullDecodeTypeFullName,
-            out var innerTypeFullName);
+        var isJsonWrapper = nonNullDecodeType.IsWrapperJson(out ITypeSymbol? innerType);
         sb.AppendLine(
             """
             #nullable enable
@@ -142,7 +140,7 @@ public class PgExecuteScalarInterceptor : ISourceInterceptorPipeline<ExecuteScal
         sb.Append("        public static ")
             .Append(isJsonWrapper ? "async " : string.Empty)
             .Append("Task<")
-            .Append(nonNullDecodeTypeFullName)
+            .AppendFullName(nonNullDecodeType)
             .Append("> ExecuteScalar")
             .Append(nonNullDecodeType.Name)
             .AppendLine(
@@ -152,23 +150,14 @@ public class PgExecuteScalarInterceptor : ISourceInterceptorPipeline<ExecuteScal
         if (isJsonWrapper)
         {
             sb.Append("new global::Sqlx.Core.Types.JsonValue<")
-                .Append(innerTypeFullName)
+                .AppendFullName(innerType!)
                 .Append("> { Inner = await ");
         }
 
         sb.Append("global::Sqlx.Postgres.Query.ExecutableQuery.ExecuteScalarPg<")
-            .Append(isJsonWrapper ? innerTypeFullName : nonNullDecodeTypeFullName)
-            .Append(',');
-        if (isJsonWrapper)
-        {
-            sb.Append("global::Sqlx.Postgres.Type.PgJson<")
-                .Append(innerTypeFullName)
-                .Append('>');
-        }
-        else
-        {
-            sb.Append(iPgDbType);
-        }
+            .AppendFullName(isJsonWrapper ? innerType! : nonNullDecodeType)
+            .Append(',')
+            .Append(iPgDbType);
 
         sb.Append(">(pgExecutableQuery, cancellationToken)")
             .Append(isJsonWrapper ? " }" : string.Empty)

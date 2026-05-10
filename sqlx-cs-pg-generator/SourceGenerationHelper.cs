@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -86,9 +87,11 @@ internal static class SourceGenerationHelper
     {
         public string GetFullNamespaceName()
         {
-            return new StringBuilder()
-                .AppendFullNamespace(namespaceSymbol, includeTrailingSeparator: false)
-                .ToString();
+            return FullNamespaceNameLookup.TryGetValue(namespaceSymbol, out var value)
+                ? value
+                : new StringBuilder()
+                    .AppendFullNamespace(namespaceSymbol, includeTrailingSeparator: false)
+                    .ToString();
         }
 
         private IEnumerable<string> GetNamespaceComponents()
@@ -241,6 +244,9 @@ internal static class SourceGenerationHelper
         }
     }
 
+    private static readonly ConcurrentDictionary<ITypeSymbol, string?> PgDbTypeLookup =
+        new(SymbolEqualityComparer.Default);
+
     extension(ITypeSymbol typeSymbol)
     {
         public string FullName =>
@@ -253,12 +259,12 @@ internal static class SourceGenerationHelper
             get
             {
                 var fullName = typeSymbol.FullName;
-                return fullName is "System.Text.Json.JsonElement"
-                    or "System.Text.Json.JsonDocument"
-                    or "System.Text.Json.Nodes.JsonNode"
-                    or "System.Text.Json.Nodes.JsonArray"
-                    or "System.Text.Json.Nodes.JsonObject"
-                    or "System.Text.Json.Nodes.JsonValue";
+                return fullName is "global::System.Text.Json.JsonElement"
+                    or "global::System.Text.Json.JsonDocument"
+                    or "global::System.Text.Json.Nodes.JsonNode"
+                    or "global::System.Text.Json.Nodes.JsonArray"
+                    or "global::System.Text.Json.Nodes.JsonObject"
+                    or "global::System.Text.Json.Nodes.JsonValue";
             }
         }
 
@@ -269,19 +275,35 @@ internal static class SourceGenerationHelper
             typeSymbol.AllInterfaces.Any(i => i.Name.StartsWith("IPgDbType")) ||
             typeSymbol.HasAttribute("PgCompositeAttribute", "WrapperTypeAttribute");
 
-        public bool IsWrapperJson(out string fullName, out string innerFullName)
+        public bool IsWrapperJson([NotNullWhen(true)] out ITypeSymbol? innerType)
         {
-            fullName = typeSymbol.FullName;
-            var result = fullName.StartsWith("global::Sqlx.Core.Types.JsonValue<");
-            innerFullName = result ? fullName[34..^1] : string.Empty;
-            return result;
+            if (typeSymbol is INamedTypeSymbol
+                {
+                    Name: "JsonValue",
+                    ContainingNamespace: var containingNamespace,
+                    TypeArguments: var typeArguments,
+                } &&
+                containingNamespace.GetFullNamespaceName() == "Sqlx.Core.Types" &&
+                typeArguments.Length == 1)
+            {
+                innerType = typeArguments[0];
+                return true;
+            }
+
+            innerType = null;
+            return false;
         }
 
         public string? GetIPgDbType()
         {
             const string typeNamespace = "global::Sqlx.Postgres.Type";
+            if (PgDbTypeLookup.TryGetValue(typeSymbol, out var value))
+            {
+                return value;
+            }
+            
             ITypeSymbol nonNullType = typeSymbol.AsNotNullType();
-            string name;
+            string? name;
             switch (nonNullType)
             {
                 case INamedTypeSymbol { IsDbType: true } namedTypeSymbol:
@@ -355,6 +377,9 @@ internal static class SourceGenerationHelper
                 case { Name: nameof(BitArray) }:
                     name = $"{typeNamespace}.PgBitString";
                     break;
+                case { IsSystemJsonType: true }:
+                    name = $"{typeNamespace}.PgJson<{typeSymbol.FullName}>";
+                    break;
                 case INamedTypeSymbol { IsRangeType: true } namedTypeSymbol:
                     var innerType = (INamedTypeSymbol)namedTypeSymbol.TypeArguments[0];
                     if (!innerType.IsValidRangeType)
@@ -366,11 +391,13 @@ internal static class SourceGenerationHelper
                         $"{typeNamespace}.PgRangeType<{innerType.FullName}, {innerType.GetIPgDbType()}>";
                     break;
                 default:
-                    return nonNullType.IsWrapperJson(out _, out var innerFullName)
-                        ? $"{typeNamespace}.PgJson<{innerFullName}>"
+                    name = nonNullType.IsWrapperJson(out ITypeSymbol? innerFullName)
+                        ? $"{typeNamespace}.PgJson<{innerFullName.FullName}>"
                         : null;
+                    break;
             }
 
+            PgDbTypeLookup[typeSymbol] = name;
             return name;
         }
 
